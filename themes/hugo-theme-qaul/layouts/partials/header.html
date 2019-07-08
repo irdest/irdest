@@ -1,0 +1,43 @@
+<nav class="main" role="navigation">
+    <div class="box m4 s12">
+        <a href="{{ .Site.BaseURL }}" class="logo">
+        {{ .Site.Title }}
+        </a>
+        <a href="#" onclick="toggle_visibility('nav-top');" style="toggle" class="toggle">
+                {{ partial "fontawesome.html" "bars" }}
+        </a>
+    </div>
+    <div class="box m8 s12 m-block" id="nav-top">
+    {{ if .Site.Menus.main }}
+        <ul>
+        {{ range .Site.Menus.main }}
+        <li class="box">
+            <a href="{{ .URL }}">
+            {{ .Name }}
+            </a>
+        </li>
+        {{ end }}
+        <li class="box languages">
+            <a href="#" onclick="toggle_visibility('nav-lang');">
+                {{ partial "fontawesome.html" "language" }} {{partial "fontawesome.html" "angle-down" }}
+            </a>
+            <ul class="block" id="nav-lang">
+                    {{ range $.Site.Home.AllTranslations }}
+                    <li class="box"><a href="{{ .Permalink }}">{{ .Language.LanguageName }}</a></li>
+                    {{ end }}
+            </ul>
+        </li>
+        <li>
+            <a href="" target="_blank" class="icons" title="Contact" rel="noopener">
+                {{ partial "fontawesome.html" "envelope" }}
+            </a>
+        </li>
+        <li>
+            <a href="https://github.com/qaul/qaul.net" target="_blank" class="icons" title="Github repository" rel="noopener">
+                {{ partial "fontawesome.html" "github" }}
+            </a>
+        </li>
+        </ul>
+    {{ end }}
+    </div>
+</nav>

@@ -1,0 +1,5 @@
+<!--<script type="text/javascript" src="{{ "js/jquery.min.js" | absURL }}"></script>-->
+<script type="text/javascript" src="{{ "js/qaul.js" | absURL }}"></script>
+{{ range .Site.Params.custom_js }}
+  <script type="text/javascript" src="{{ relURL ($.Site.BaseURL) }}{{ . }}"></script>
+{{ end }}

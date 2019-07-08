@@ -1,0 +1,55 @@
+<footer>
+    <nav>
+        <div class="box l4 m4 s6">
+            <h5>qaul.net community</h5>
+            <ul>
+                <li><a href="mailto:contact@qaul.net">
+                    {{ partial "fontawesome.html" "envelope" }}
+                    contact@qaul.net</a></li>
+                <li><a>
+                    {{ partial "fontawesome.html" "comments" }}
+                    Mailinglists</a></li>
+                <li><a href="https://github.com/qaul/qaul.net" target="_blank">
+                    {{ partial "fontawesome.html" "github" }} 
+                    Github Repository</a></li>
+                <li>Privacy Statement</li>
+                <li>Code of Conduct</li>
+                <li>About</li>
+            </ul>
+        </div>
+        <div class="box l2 m2 s4">
+            <h5>Pages</h5>
+            <ul>
+                <li>Download</li>
+                <li>Tutorials</li>
+                <li>Guides</li>
+                <li>Features</li>
+                <li>Participate</li>
+            </ul>
+        </div>
+        <div class="box l2 m2 s4">
+            <h5>Languages</h5>
+            <ul class="languages">
+                {{ range $.Site.Home.AllTranslations }}
+                <li><a href="{{ .Permalink }}">{{ .Language.LanguageName }}</a></li>
+                {{ end }}
+            </ul>
+        </div>
+        <div class="box l4 m4 s6">
+            <p>
+                <a href="https://creativecommons.org/licenses/by/4.0/deed.{{ .Language.Lang }}" target="_blank" 
+                    style="text-decoration: none;" class="cc-license">
+                    {{ partial "fontawesome.html" "creative-commons" }}
+                    {{ partial "fontawesome.html" "creative-commons-by" }}
+                </a>
+            </p>
+            <p>
+                Except where otherwise noted, content on this site is licensed under a 
+                <a href="https://creativecommons.org/licenses/by/4.0/deed.{{ .Language.Lang }}" target="_blank">
+                    Creative Commons Attribution 4.0 International license</a>.
+                <br/><br/>
+                You're welcome to copy, distribute and participate!
+            </p>
+        </div>
+    </nav>
+</footer>

@@ -1,0 +1,32 @@
+baseURL = "https://qaul.net/"
+title = "qaul.net – قول"
+theme = "hugo-theme-qaul"
+DefaultContentLanguage = "en"
+
+[languages]
+  [languages.en]
+    weight = 1
+    LanguageName = "English"
+  [languages.de]
+    weight = 3
+    LanguageName = "Deutsch"
+  [languages.ar]
+    weight = 2
+    LanguageName = "العربية"
+
+[params]
+  description = "Internet independent wireless mesh communication app"
+
+[menu]
+  [[menu.main]]
+    identifier = "download"
+    name = "Download"
+    url = "/#download"
+  [[menu.main]]
+    identifier = "features"
+    name = "Features"
+    url = "/#features"
+  [[menu.main]]
+    identifier = "tutorials"
+    name = "Tutorials"
+    url = "/tutorials/"

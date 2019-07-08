@@ -1,0 +1,133 @@
+/* css file with flex definitions */
+
+/* For mobile phones: */
+@media only screen and (max-width: 600px) {
+    .col {width: 100%;}
+    .box {width: 100%;}
+
+    .hide {display: none;}
+    .block {display: block;}
+}
+    
+/* For tablets: */
+@media only screen and (min-width: 600px) {
+    .s1 {width: 8.33%;}
+    .s2 {width: 16.66%;}
+    .s3 {width: 25%;}
+    .s4 {width: 33.33%;}
+    .s5 {width: 41.66%;}
+    .s6 {width: 50%;}
+    .s7 {width: 58.33%;}
+    .s8 {width: 66.66%;}
+    .s9 {width: 75%;}
+    .s10 {width: 83.33%;}
+    .s11 {width: 91.66%;}
+    .s12 {width: 100%;}
+
+    .s-hide {display: none;}
+    .s-block {display: block;}
+}
+
+/* For desktops: */
+@media only screen and (min-width: 768px) {
+    .m1 {width: 8.33%;}
+    .m2 {width: 16.66%;}
+    .m3 {width: 25%;}
+    .m4 {width: 33.33%;}
+    .m5 {width: 41.66%;}
+    .m6 {width: 50%;}
+    .m7 {width: 58.33%;}
+    .m8 {width: 66.66%;}
+    .m9 {width: 75%;}
+    .m10 {width: 83.33%;}
+    .m11 {width: 91.66%;}
+    .m12 {width: 100%;}
+
+    .m-hide {display: none;}
+    .m-block {display: block;}
+} 
+
+/* Large devices */
+@media only screen and (min-width: 992px) {
+    .l1 {width: 8.33%;}
+    .l2 {width: 16.66%;}
+    .l3 {width: 25%;}
+    .l4 {width: 33.33%;}
+    .l5 {width: 41.66%;}
+    .l6 {width: 50%;}
+    .l7 {width: 58.33%;}
+    .l8 {width: 66.66%;}
+    .l9 {width: 75%;}
+    .l10 {width: 83.33%;}
+    .l11 {width: 91.66%;}
+    .l12 {width: 100%;}
+
+    .l-hide {display: none;}
+    .l-block {display: block;}
+}
+
+/* Extra large devices */
+@media only screen and (min-width: 1200px) {
+    .xl1 {width: 8.33%;}
+    .xl2 {width: 16.66%;}
+    .xl3 {width: 25%;}
+    .xl4 {width: 33.33%;}
+    .xl5 {width: 41.66%;}
+    .xl6 {width: 50%;}
+    .xl7 {width: 58.33%;}
+    .xl8 {width: 66.66%;}
+    .xl9 {width: 75%;}
+    .xl10 {width: 83.33%;}
+    .xl11 {width: 91.66%;}
+    .xl12 {width: 100%;}
+
+    .xl-hide {display: none;}
+    .xl-block {display: block;}
+}
+
+
+
+/* general styles */
+/* svg icons */
+svg.inline {
+    height: 1.15rem;
+    width: 1.15rem;
+    top: 0.15rem;
+    position: relative;
+    color: inherit;
+    fill: white;
+}
+object.inline {
+    height: 1.15rem;
+    width: 1.15rem;
+    top: 0.15rem;
+    position: relative;
+    color: inherit;
+    fill: white;
+}
+
+.inline-svg {
+    display: inline-block;
+    height: 1.15rem;
+    width: 1.15rem;
+    top: 0.15rem;
+    position: relative;
+}
+.icon-svg {
+    display: inline-block;
+    height: 2rem;
+    width: 2rem;
+    top: 0.15rem;
+    position: relative;
+}
+
+/* CSS Icons */
+.icon-arrow-down {
+    transform: rotate(90deg);
+    width: 0;
+    height: 0;
+    border: 7px solid transparent;
+    border-top: 7px solid;
+    border-right: 7px solid;
+    margin: 15px;  
+}
