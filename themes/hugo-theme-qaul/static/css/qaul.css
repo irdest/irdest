@@ -3,14 +3,14 @@
 
 	/* colors */
 	--c-main-bg: #ffffff;
-	--c-main-bg-highlite: #d1e4f1;
+	--c-main-bg-highlite: #d0e3f0;
 	--c-main-txt: #333333;
 	--c-main-border: #333333;
 	--c-blue-bg: #0089c7;
 	--c-blue-bg-highlite: #1577ad;
-	--c-blue-txt: ;
-	--c-bright-bg: ;
-	--c-bright-bg-highlite:;
+	--c-blue-txt: #0089c7;
+	--c-bright-bg: #d0e3f0;
+	--c-bright-bg-highlite: ;
 	--c-bright-txt: ;
 	--c-grey-bg: #ececec;
 	--c-grey-bg-highlite:#ececec;
@@ -97,7 +97,7 @@ nav.main a {
 	padding-top:0.5rem;
 	padding-bottom: 0;
 	height: 2rem;
-	vertical-align: middle;
+	/*vertical-align: middle;*/
 }
 nav.main a:hover{
 	text-decoration: none;
@@ -208,12 +208,176 @@ footer h5 {
 
 /* main area */
 main {
-	padding-bottom: 3rem;
 }
 
 
 /* index page */
+#description {
+	margin:3%;
+	text-align: center;
+	padding-top: 56.25%;
+	position: relative;
+	background-image: url('/img/qaul-mesh.png');
+	background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+#description h1 {
+	position: absolute;
+	top: 15%;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	font-size: 5vw;
+	padding: 4%;
+	text-shadow: 4px 4px 2px rgba(150, 150, 150, 1);
+}
 
+#screenshots, #features {
+	text-align: center;
+	background-color: var(--c-blue-bg);
+	padding: 3%;
+}
+#screenshots img {
+	max-width: 100%;
+}
+
+#features {
+	padding-bottom: 3rem;
+	color: #ffffff;
+	display: flex;
+	flex-flow: row wrap;
+	justify-content: center;
+}
+#features .feature {
+	font-size: 1.5rem;
+	padding-bottom: 2rem;
+}
+#features .feature p {
+	max-width: 20rem;
+	padding: 1rem;
+	margin: auto;
+}
+#features .inline-svg {
+	width: 5rem;
+}
+#features .inline-svg.copy {
+	width: 4rem;
+}
+#features .inline-svg.phone-volume {
+	width: 3.5rem;
+}
+
+#download {
+	padding-bottom: 3rem;
+	display: flex;
+	flex-flow: row wrap;
+	justify-content: center;
+}
+#download h2 {
+	font-size: 2rem;
+	margin-bottom:0;
+	margin-top: 3rem;
+}
+#download .title {
+	width: 100%;
+	margin: 2rem;
+	padding: 1rem;
+	border: 1px solid var(--c-blue-bg);
+	border-radius: 1rem;
+	background-color: var(--c-main-bg-highlite);
+	color: var(--c-blue-txt);
+	display: flex;
+}
+#download .title .inline-svg {
+	width: 2rem;
+	padding-right: 1rem;
+}
+#download .distro {
+	text-align: center;
+	margin-bottom: 2rem;
+}
+#download .distro a {
+	color: var(--c-blue-bg);
+	font-weight: bold;
+}
+#download .distro a:hover {
+	text-shadow: 0px 5px 5px var(--c-blue-bg-highlite);
+	text-decoration: none;
+}
+#download .distro a .inline-svg {
+	width: 7rem;
+	height: 7rem;
+	border-radius: 3.5rem;
+	background-color: var(--c-blue-bg);
+	display: block;
+	margin: auto;
+	margin-bottom: 1rem;
+	color: #ffffff;
+}
+#download .distro a:hover .inline-svg {
+	box-shadow: 5px 5px 5px 0px var(--c-blue-bg-highlite);
+}
+#download .distro a .inline-svg.ubuntu {
+	background-color: transparent;
+	color: var(--c-blue-bg);
+}
+#download .distro a .inline-svg.ubuntu svg {
+	width: 7rem;
+	margin-top: 0;
+}
+#download .distro a .inline-svg.windows svg {
+	width: 3.5rem;
+	margin-top: 1.5rem;
+}
+#download .distro a .inline-svg.apple svg {
+	width: 3.5rem;
+}
+#download .distro svg {
+	width: 4.5rem;
+	margin-top: 1rem;
+}
+
+#participation nav {
+	background-color: var(--c-blue-bg);
+	display: flex;
+	padding-top: 3rem;
+	padding-bottom: 3rem;
+	color: #ffffff;
+	flex-flow: row wrap;
+	justify-content: center;
+}
+#participation nav a {
+	color: #ffffff;
+}
+#participation div {
+	margin-bottom: 2rem;
+	flex: flex-shrink;
+}
+#participation div h3, 
+#participation div ul {
+	padding-left: 3rem;
+	max-width: 20rem;
+	margin: auto;
+}
+#participation div h3 {
+	color: #ffffff;
+	margin-bottom: 1.5rem;
+}
+#participation div h3 .inline-svg {
+	width: 4rem;
+}
+#participation div h3 .inline-svg.laptop-code {
+	width: 5rem;
+}
+#participation ul .inline-svg {
+	display: inline-block;
+	width: 1.15rem;
+}
+
+#participation nav ul li {
+	height: auto;
+}
 
 /* tutorials */
 

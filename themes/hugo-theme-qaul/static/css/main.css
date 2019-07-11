@@ -2,6 +2,19 @@
 
 /* For mobile phones: */
 @media only screen and (max-width: 600px) {
+    .xs1 {width: 8.33%;}
+    .xs2 {width: 16.66%;}
+    .xs3 {width: 25%;}
+    .xs4 {width: 33.33%;}
+    .xs5 {width: 41.66%;}
+    .xs6 {width: 50%;}
+    .xs7 {width: 58.33%;}
+    .xs8 {width: 66.66%;}
+    .xs9 {width: 75%;}
+    .xs10 {width: 83.33%;}
+    .xs11 {width: 91.66%;}
+    .xs12 {width: 100%;}
+    
     .col {width: 100%;}
     .box {width: 100%;}
 
