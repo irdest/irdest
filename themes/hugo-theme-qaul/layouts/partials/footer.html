@@ -6,25 +6,25 @@
                 <li><a href="mailto:contact@qaul.net">
                     {{ partial "fontawesome.html" "envelope" }}
                     contact@qaul.net</a></li>
-                <li><a>
+                <!--<li><a href="https://lists.qaul.net" target="_blank">
                     {{ partial "fontawesome.html" "mail-bulk" }}
-                    Mailinglists</a></li>
+                    Mailinglists</a></li>-->
                 <li><a href="https://github.com/qaul/qaul.net" target="_blank">
                     {{ partial "fontawesome.html" "github" }} 
                     Github Repository</a></li>
-                <li>Privacy Statement</li>
-                <li>Code of Conduct</li>
-                <li>About</li>
+                <li><a href="{{ "privacy" | relURL }}">Privacy Statement</a></li>
+                <li><a href="{{ "code-of-conduct" | relURL }}">Code of Conduct</a></li>
+                <li><a href="{{ "about" | relURL }}">About</a></li>
             </ul>
         </div>
         <div class="box l2 m2 s4">
             <h5>Pages</h5>
             <ul>
-                <li>Download</li>
-                <li>Tutorials</li>
-                <li>Guides</li>
-                <li>Features</li>
-                <li>Participate</li>
+                <li><a href="{{ relURL ($.Site.BaseURL) }}#download">Download</a></li>
+                <li><a href="{{ "tutorials" | relURL }}">Tutorials</a></li>
+                <li><a href="https://docs.qaul.net" target="_blank">Guides</a></li>
+                <li><a href="{{ relURL ($.Site.BaseURL) }}#features">Features</a></li>
+                <li><a href="{{ relURL ($.Site.BaseURL) }}#participation">Participate</a></li>
             </ul>
         </div>
         <div class="box l2 m2 s4">
