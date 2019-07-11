@@ -1,3 +1,6 @@
 body {
     direction: rtl;
 }
+nav.main a.toggle {
+	float: left;
+}
