@@ -1,12 +1,18 @@
 
 {{ define "main" }}
-<section id="description">
+<section id="description" class="blue">
+    <div class="logo">qaul.net – قول</div>
     <h1>Internet Independent Wireless Mesh Communication</h1>
 </section>
-<section id="mesh">
-    <img src="/img/qaul-mesh.png">
+<section id="mesh" class="dark">
+    <div class="l8 m8 s12 box">
+        <img src="/img/qaul-mesh.svg">
+    </div>
+    <div class="l4 m4 box">
+        <p>qaul.net is a communication tool that makes information exchange possible via direct peer-to-peer local communication while providing all the basic communication necessities in one single application (voice chat, text messaging, file sharing). </p>
+    </div>
 </section>
-<section id="features">
+<section id="features" class="blue">
     <h2>Features</h2>
     <div class="feature s6 m4 box">
         {{ partial "fontawesome.html" "comments" }}
@@ -33,13 +39,12 @@
         <p>Multilingual Interface</p>
     </div>
 </section>
-<section id="screenshots">
+<section id="screenshots" class="dark">
     <img src="/img/qaul-GUI.png">
 </section>
-<section id="download">
+<section id="download" class="blue">
     <h2>Download</h2>
-    <div class="title">
-        <p>{{ partial "fontawesome.html" "info-circle" }}</p>
+    <div class="s12">
         <p>We are rewriting qaul.net at the moment. 
             Until we are ready, you can download the 1.0 legacy app.</p>
     </div>
@@ -68,9 +73,9 @@
         (<a href="https://github.com/qaul/qaul.net/blob/release-1.0.0/doc/Android_Devices.md" target="_blank">See compatibility list</a>)
     </div>            
 </section>
-<section id="participation">
+<section id="participation" class="dark">
     <nav>
-    <div class="s6 box">
+    <div class="s6 m4 box">
         <h3>{{ partial "fontawesome.html" "book-reader" }}</h3>
         <ul>
             <li><a href="{{ "tutorials" | relURL }}">
