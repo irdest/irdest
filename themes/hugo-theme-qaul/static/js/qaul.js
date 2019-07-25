@@ -1,7 +1,7 @@
 function toggle_visibility(id) {
   var e = document.getElementById(id);
-  if(e.style.display == 'block')
-     e.style.display = 'none';
+  if(e.classList.contains('hide'))
+     e.classList.remove('hide');
   else
-     e.style.display = 'block';
+     e.classList.add('hide');
 }

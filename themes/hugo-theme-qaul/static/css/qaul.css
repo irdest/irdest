@@ -81,12 +81,14 @@ nav.main .inline-svg.angle-down {
 	width: 1rem;
 }
 nav.main .languages ul {
-	display: none;
 	background-color: var(--c-blue-bg);
 	flex-direction: column;
 	position: absolute;
 	z-index: 10;
 	border: 1px solid var(--c-blue-border);
+}
+#nav-lang.hide {
+	display: none;
 }
 
 nav.main a {
@@ -142,7 +144,7 @@ nav.main .languages ul a:hover {
 	nav.main {
 		flex-flow: column;
 	}
-	#nav-top {
+	#nav-top.hide {
 		display: none;
 	}
 	nav.main a.toggle {
@@ -165,6 +167,7 @@ nav.main .languages ul a:hover {
 		position: static;
 		border-width: 0;
 	}
+
 	nav.main #nav-top .languages a {
 		background-color: var(--c-dark-bg);
 	}
@@ -211,8 +214,7 @@ footer h5 {
 
 
 /* main area */
-main {
-}
+
 
 
 /* index page */

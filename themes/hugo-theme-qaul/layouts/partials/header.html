@@ -7,7 +7,7 @@
                 {{ partial "fontawesome.html" "bars" }}
         </a>
     </div>
-    <div class="box m8 s12 m-block" id="nav-top">
+    <div class="box m8 s12 m-block hide" id="nav-top">
     {{ if .Site.Menus.main }}
         <ul>
         {{ range .Site.Menus.main }}
@@ -21,7 +21,7 @@
             <a href="#" onclick="toggle_visibility('nav-lang');">
                 {{ partial "fontawesome.html" "language" }} {{partial "fontawesome.html" "angle-down" }}
             </a>
-            <ul class="block" id="nav-lang">
+            <ul class="block hide" id="nav-lang">
                     {{ range $.Site.Home.AllTranslations }}
                     <li class="box"><a href="{{ .Permalink }}">{{ .Language.LanguageName }}</a></li>
                     {{ end }}
