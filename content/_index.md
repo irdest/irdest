@@ -1,5 +1,5 @@
 ---
-title: "qaul.net – قول | HOME"
+title: "HOME"
 ---
 
 
