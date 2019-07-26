@@ -1,0 +1,13 @@
+<article class="preview l4m1 m6m1 box">
+    <a href="{{ .URL }}">
+        <div class="visual" style="{{ if .Params.preview }}background-image:url({{ .URL }}{{ .Params.preview }});{{ end }}"></div>
+        <!--
+        {{ if .Params.preview }}
+            <img src="{{ .URL }}{{ .Params.preview }}" alt="{{ .Title }}">
+        {{ end }}
+        -->
+        <div class="caption">
+            {{ .Title }}
+        </div>
+    </a>
+</article>

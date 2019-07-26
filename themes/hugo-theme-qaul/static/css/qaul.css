@@ -484,3 +484,24 @@ h1 .tag {
 }
 
 
+/* tutorials */
+.tutorials {
+	display: flex;
+	flex-flow: row wrap;
+	justify-content: space-around;
+	margin: 0;
+	padding: 0;
+	max-width: 1600px;
+}
+.tutorials .preview {
+	margin: 0;
+	margin-top: 1rem;
+	margin-bottom: 1rem;
+	padding: 0;
+}
+.tutorials .visual {
+	width: 100%;
+	padding-top: 56.25%;
+	background-image: linear-gradient(to bottom right, var(--c-bright-bg), var(--c-blue-bg));
+	background-size: cover;
+}
