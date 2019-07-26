@@ -457,3 +457,30 @@ h1.top {
 	max-width: 100%;
 }
 
+
+/* tags */
+.taxonomy {
+	text-align: center;
+	padding: 1rem;
+}
+.taxonomy li {
+	display: inline-block;
+}
+.taxonomy a {
+	display: block;
+	padding: 0 0.8rem 0.2rem 0.8rem;
+	border-radius: 1rem;
+	background-color: var(--c-blue-bg);
+}
+.taxonomy a:hover {
+	background-color: var(--c-blue-bg-highlite);
+	text-decoration: none;
+}
+h1 .tag {
+	display: inline-block;
+	border: 1px solid var(--c-blue-txt);
+	padding: 0 0.8em 0.1em 0.8em;
+	border-radius: 1em;
+}
+
+
