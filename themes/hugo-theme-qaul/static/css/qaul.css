@@ -5,6 +5,7 @@
 	--c-main-bg: #ffffff;
 	--c-main-bg-highlite: #d0e3f0;
 	--c-main-txt: #333333;
+	--c-main-a: #000000;
 	--c-main-border: #333333;
 	--c-blue-bg: #0089c7;
 	--c-blue-bg-highlite: #1577ad;
@@ -41,6 +42,13 @@ a:hover {
 }
 
 /* general backgrounds */
+.main {
+	background-color: var(--c-main-bg);
+	color: var(--c-main-txt);
+}
+.main a {
+	color: var(--c-main-a);
+}
 .dark {
 	background-color: var(--c-dark-bg);
 	color: var(--c-dark-txt);
@@ -62,6 +70,7 @@ a:hover {
 .bright a {
 	color: --c-bright-
 }
+
 
 /* navigation */
 nav ul {
@@ -427,25 +436,13 @@ footer h5 {
 	height: auto;
 }
 
-/* tutorials */
-
-
 /* single page */
-
 h1.top {
 	background-color: var(--c-blue-bg);
 	color: var(--c-blue-txt);
 	margin: 0;
 	padding: 2rem;
 	text-align: center;
-}
-
-.dark {
-	background-color: var(--c-dark-bg);
-	color: var(--c-dark-txt);
-}
-.dark a {
-	color: var(--c-dark-a);
 }
 
 .page {
@@ -455,5 +452,8 @@ h1.top {
 	padding: 1rem 1rem 3rem 1rem;
 	max-width: 50rem;
 	margin: auto;
+}
+.page img, .page video {
+	max-width: 100%;
 }
 
