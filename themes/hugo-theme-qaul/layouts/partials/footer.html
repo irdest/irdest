@@ -12,8 +12,8 @@
                 <li><a href="https://github.com/qaul/qaul.net" target="_blank">
                     {{ partial "fontawesome.html" "github" }} 
                     Github Repository</a></li>
-                <li><a href="{{ "privacy" | relURL }}">Privacy Statement</a></li>
-                <li><a href="{{ "code-of-conduct" | relURL }}">Code of Conduct</a></li>
+                <li><a href="{{ "legal/privacy" | relURL }}">Privacy Statement</a></li>
+                <li><a href="{{ "legal/code-of-conduct" | relURL }}">Code of Conduct</a></li>
                 <li><a href="{{ "about" | relURL }}">About</a></li>
             </ul>
         </div>
@@ -37,7 +37,7 @@
         </div>
         <div class="box l4 m4 s6">
             <p>
-                <a href="https://creativecommons.org/licenses/by/4.0/deed.{{ .Language.Lang }}" target="_blank" 
+                <a href="{{ "legal/cc-by" | relURL }}" target="_blank" 
                     style="text-decoration: none;" class="cc-license">
                     {{ partial "fontawesome.html" "creative-commons" }}
                     {{ partial "fontawesome.html" "creative-commons-by" }}
@@ -45,7 +45,7 @@
             </p>
             <p>
                 Except where otherwise noted, content on this site is licensed under a 
-                <a href="https://creativecommons.org/licenses/by/4.0/deed.{{ .Language.Lang }}" target="_blank">
+                <a href="{{ "legal/cc-by" | relURL }}" target="_blank">
                     Creative Commons Attribution 4.0 International license</a>.
                 <br/><br/>
                 You're welcome to copy, distribute and participate!
