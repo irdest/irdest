@@ -504,4 +504,5 @@ h1 .tag {
 	padding-top: 56.25%;
 	background-image: linear-gradient(to bottom right, var(--c-bright-bg), var(--c-blue-bg));
 	background-size: cover;
+	background-position: center center;
 }
