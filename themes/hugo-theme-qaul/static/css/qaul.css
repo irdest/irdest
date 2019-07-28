@@ -294,14 +294,17 @@ footer h5 {
 }
 
 #features .page {
-	text-align: center;
 	display: flex;
 	flex-flow: row wrap;
 	justify-content: center;
 }
+#features h1 {
+	width: 100%;
+}
 #features .feature {
 	font-size: 1.5rem;
-	padding-bottom: 2rem;
+	margin-top: 2rem;
+	margin-bottom: 2rem;
 }
 #features .feature p {
 	max-width: 20rem;
