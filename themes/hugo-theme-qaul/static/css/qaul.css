@@ -2,11 +2,11 @@
 	font-family: Roboto, Arial, Helvetica, sans-serif;
 
 	/* colors */
-	--c-main-bg: #ffffff;
-	--c-main-bg-highlite: #d0e3f0;
-	--c-main-txt: #333333;
-	--c-main-a: #000000;
-	--c-main-border: #333333;
+	--c-white-bg: #ffffff;
+	--c-white-bg-highlite: #d0e3f0;
+	--c-white-txt: #333333;
+	--c-white-a: #0089c7;
+	--c-white-border: #333333;
 	--c-blue-bg: #0089c7;
 	--c-blue-bg-highlite: #1577ad;
 	--c-blue-txt: #eeeeee;
@@ -21,12 +21,15 @@
 	--c-grey-txt: #f6f6f6;
 	--c-dark-bg: #333333;
 	--c-dark-bg-highlite: #222222;
-	--c-dark-txt: #aaaaaa;
+	--c-dark-txt: #dddddd;
 	--c-dark-a: #ffffff;
 
 	--c-footer-bg: #222222;
 	--c-footer-txt:#aaa;
 	--c-footer-a:  #dddddd;
+
+	/* page sizes */
+	--s-pagewidth: 83rem;
 }
 
 body {
@@ -42,12 +45,12 @@ a:hover {
 }
 
 /* general backgrounds */
-.main {
-	background-color: var(--c-main-bg);
-	color: var(--c-main-txt);
+.white {
+	background-color: var(--c-white-bg);
+	color: var(--c-white-txt);
 }
-.main a {
-	color: var(--c-main-a);
+.white a {
+	color: var(--c-white-a);
 }
 .dark {
 	background-color: var(--c-dark-bg);
@@ -83,14 +86,14 @@ nav li {
 }
 
 /* tab navigation */
-nav.main li {
-	margin: 0;
-	padding: 0;
+header {
+	background-color: var(--c-blue-bg);
 }
 nav.main {
+	max-width: var(--s-pagewidth);
+	margin: 0 auto 0 auto;
 	display: flex;
 	flex-flow: row;
-	background-color: var(--c-blue-bg);
 	align-items: stretch;
 }
 nav.main div {
@@ -104,7 +107,9 @@ nav.main ul {
 	margin:0;
 	padding:0;
 }
-nav.main ul li {
+nav.main li {
+	margin: 0;
+	padding: 0;
 	white-space: nowrap;
 }
 nav.main .inline-svg.language {
@@ -135,7 +140,6 @@ nav.main a {
 	padding-top:0.5rem;
 	padding-bottom: 0;
 	height: 2rem;
-	/*vertical-align: middle;*/
 }
 nav.main a:hover{
 	text-decoration: none;
@@ -153,9 +157,6 @@ nav.main a.logo {
 	padding-right: 1rem;
 	white-space: nowrap;
 	display: inline-block;
-	/*color: transparent;
-	background: url(logo.svg);
-	background-size: 100px 82px;*/
 }
 nav.main a.icons {
 	padding-left:0.5rem;
@@ -227,6 +228,8 @@ footer {
 	box-shadow: 0 0 1rem 0 var(--c-footer-bg);
 }
 footer nav {
+	max-width: var(--s-pagewidth);
+	margin: 0 auto 0 auto;
 	display: flex;
 	align-items: flex-start;
 	flex-flow: row wrap;
@@ -247,58 +250,54 @@ footer h5 {
 }
 
 
-
 /* main area */
+.page {
+	max-width: var(--s-pagewidth);
+	margin: 0 auto 0 auto;
+}
 
 
 /* index page */
-#description {
+.home section {
 	text-align: center;
+	padding: 2rem 1rem;
+}
+
+#description {
 	padding-top: 56.25%;
 	position: relative;
 	background-image: url('/img/qaul-logo-white.svg');
 	background-position: 25vw 0vw;
 	background-repeat: no-repeat;
 }
-#description div.logo {
-	position: absolute;
+#description div.logo, #description h1 {
 	width: 100%;
+	max-width: var(--s-pagewidth);
+	margin: 0 auto 0 auto;
+	position: absolute;
+	font-size: 5vw;
+}
+#description div.logo {
 	top: 20%;
-	font-size: 4vw;
 }
 #description h1 {
-	position: absolute;
 	top: 40%;
-	left: 0;
-	bottom: 0;
-	right: 0;
-	font-size: 5vw;
-	padding: 4%;
-	margin:0;
-}
-#mesh {
-	padding: 5%;
-	display: flex;
-	flex-flow: row wrap;
-	justify-content: center;
-}
-#mesh div p {
-	padding-left: 2rem;
-}
-#mesh img {
-	max-width: 100%;
 }
 
-#features {
-	padding: 5%;
+#mesh {
+	text-align: initial;
+}
+#mesh .page {
+	display: flex;
+	flex-flow: row wrap;
+	justify-content: space-around;
+}
+
+#features .page {
 	text-align: center;
 	display: flex;
 	flex-flow: row wrap;
 	justify-content: center;
-}
-#features h2 {
-	width: 100%;
-	padding-bottom: 4rem;
 }
 #features .feature {
 	font-size: 1.5rem;
@@ -319,51 +318,21 @@ footer h5 {
 	width: 3.5rem;
 }
 
-#screenshots {
-	text-align: center;
-	padding: 3%;
-}
 #screenshots img {
-	max-width: 100%;
+	width: 100%;
 }
 
-#download {
-	padding: 5%;
-	background-color: var(--c-blue-bg);
-	color: var(--c-blue-txt);
+#download .page {
 	display: flex;
 	flex-flow: row wrap;
 	justify-content: center;
 }
-#download h2 {
-	font-size: 2rem;
-	margin-bottom:0;
-	margin-top: 3rem;
-}
-#download .title {
-	width: 100%;
-	margin: 2rem;
-	padding: 1rem;
-	background-color: var(--c-blue-bg-highlite);
-	border-radius: 1rem;
-	color: var(--c-blue-txt);
-	display: flex;
-}
-#download .title .inline-svg {
-	width: 2rem;
-	padding-right: 1rem;
-}
 #download .distro {
-	text-align: center;
 	margin-bottom: 2rem;
+	margin-top: 2rem;
 }
 #download .distro a {
-	color: var(--c-blue-txt);
 	font-weight: bold;
-}
-#download .distro a:hover {
-	text-shadow: 0px 5px 5px var(--c-blue-bg-highlite);
-	text-decoration: none;
 }
 #download .distro a .inline-svg {
 	width: 7rem;
@@ -396,45 +365,30 @@ footer h5 {
 }
 
 #participation nav {
-	background-color: var(--c-dark-bg);
-	color: var(--c-dark-txt);
 	display: flex;
-	padding-top: 3rem;
-	padding-bottom: 3rem;
 	flex-flow: row wrap;
 	justify-content: center;
 }
-#participation nav a {
-	color: #ffffff;
-}
 #participation div {
-	margin-bottom: 2rem;
-	flex: flex-shrink;
-}
-#participation div h3, 
-#participation div ul {
-	padding-left: 3rem;
-	max-width: 20rem;
-	margin: auto;
+	margin: 2rem 0;
 }
 #participation div h3 {
-	color: #ffffff;
 	margin-bottom: 1.5rem;
 }
-#participation div h3 .inline-svg {
+#participation h3 .inline-svg {
 	width: 4rem;
 }
-#participation div h3 .inline-svg.laptop-code {
+#participation h3 .inline-svg.laptop-code {
 	width: 5rem;
+}
+#participation h3 .inline-svg.comments-solid {
+	width: 4.8rem;
 }
 #participation ul .inline-svg {
 	display: inline-block;
 	width: 1.15rem;
 }
 
-#participation nav ul li {
-	height: auto;
-}
 
 /* single page */
 h1.top {
@@ -445,13 +399,8 @@ h1.top {
 	text-align: center;
 }
 
-.page {
-	margin: 0;
-}
 .page article {
 	padding: 1rem 1rem 3rem 1rem;
-	max-width: 50rem;
-	margin: auto;
 }
 .page img, .page video {
 	max-width: 100%;
@@ -460,28 +409,14 @@ h1.top {
 
 /* tags */
 .taxonomy {
-	text-align: center;
 	padding: 1rem;
 }
 .taxonomy li {
 	display: inline-block;
+	padding-right: 0.3rem;
 }
-.taxonomy a {
-	display: block;
-	padding: 0 0.8rem 0.2rem 0.8rem;
-	border-radius: 1rem;
-	background-color: var(--c-blue-bg);
-}
-.taxonomy a:hover {
-	background-color: var(--c-blue-bg-highlite);
-	text-decoration: none;
-}
-h1 .tag {
-	display: inline-block;
-	border: 1px solid var(--c-blue-txt);
-	padding: 0 0.8em 0.1em 0.8em;
-	border-radius: 1em;
-}
+
+
 
 
 /* tutorials */

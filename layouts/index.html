@@ -1,19 +1,28 @@
 
 {{ define "main" }}
+<main id="main" class="home">
+{{ with .Site.GetPage "home/description" }}
 <section id="description" class="blue">
+<div class="page">
     <div class="logo">qaul.net – قول</div>
-    <h1>Internet Independent Wireless Mesh Communication</h1>
+    <h1>{{ .Title }}</h1>
+</div>
 </section>
 <section id="mesh" class="dark">
-    <div class="l8 m8 s12 box">
+<div class="page">
+    <div class="l8 m7 s12 box">
         <img src="/img/qaul-mesh.svg">
     </div>
-    <div class="l4 m4 box">
-        <p>qaul.net is a communication tool that makes information exchange possible via direct peer-to-peer local communication while providing all the basic communication necessities in one single application (voice chat, text messaging, file sharing). </p>
+    <div class="xl2 l3 m4 s12 box">
+        {{ .Content }}
     </div>
+</div>
 </section>
+{{ end }}
+{{ with .Site.GetPage "home/features" }}
 <section id="features" class="blue">
-    <h2>Features</h2>
+<div class="page">
+    <h2>{{ .Title }}</h2>
     <div class="feature s6 m4 box">
         {{ partial "fontawesome.html" "comments" }}
         <p>Text Messaging</p>
@@ -39,14 +48,21 @@
         <p>Multilingual Interface</p>
     </div>
 </section>
+{{ end }}
+{{ with .Site.GetPage "home/screenshots" }}
 <section id="screenshots" class="dark">
-    <img src="/img/qaul-GUI.png">
+<div class="page">
+        <h1>{{ .Title }}</h1>
+    {{ .Content }}
+</div>
 </section>
+{{ end }}
+{{ with .Site.GetPage "home/download" }}
 <section id="download" class="blue">
-    <h2>Download</h2>
+<div class="page">
+    <h1>{{ .Title }}</h1>
     <div class="s12">
-        <p>We are rewriting qaul.net at the moment. 
-            Until we are ready, you can download the 1.0 legacy app.</p>
+        {{ .Content }}
     </div>
     <div class="distro m3 s6 box">
         <a href="https://get.qaul.net/legacy/qaul.net-fat_1.0.0-beta5_x86_64_05022016.deb">
@@ -71,11 +87,16 @@
         {{ partial "fontawesome.html" "android" }}
         Android</a><br/> 
         (<a href="https://github.com/qaul/qaul.net/blob/release-1.0.0/doc/Android_Devices.md" target="_blank">See compatibility list</a>)
-    </div>            
+    </div>
+</div>
 </section>
+{{ end }}
+{{ with .Site.GetPage "home/participation" }}
 <section id="participation" class="dark">
+<div class="page">
+    <h1>{{ .Title }}</h1>
     <nav>
-    <div class="s6 m4 box">
+    <div class="m4 s6 box">
         <h3>{{ partial "fontawesome.html" "book-reader" }}</h3>
         <ul>
             <li><a href="{{ "tutorials" | relURL }}">
@@ -83,16 +104,10 @@
                 Tutorials</a></li>
             <li><a href="https://docs.qaul.net">
                 {{ partial "fontawesome.html" "book" }}
-                Developer Guide</a></li>
-            <!--<li><a href="https://lists.qaul.net" target="_blank">
-                {{ partial "fontawesome.html" "mail-bulk" }}
-                Mailinglists</a></li>-->
-            <li><a href="https://webchat.freenode.net/#qaul.net" target="_blank"></a>
-                {{ partial "fontawesome.html" "comments" }} 
-                IRC: #qaul.net on freenode</a></li>
+                Contributers Guide</a></li>
         </ul>
     </div>
-    <div class="s6 box">
+    <div class="m4 s6 box">
         <h3>{{ partial "fontawesome.html" "laptop-code" }}</h3>
         <ul>
             <li><a href="https://github.com/qaul/qaul.net" target="_blank">
@@ -106,15 +121,35 @@
                 Bug report</a></li>
         </ul>
     </div>
+    <div class="m4 s6 box">
+        <h3>{{ partial "fontawesome.html" "comments-solid" }}</h3>
+        <ul>
+            <li><a href="https://qaul.zulipchat.com/" target="_blank">
+                {{ partial "fontawesome.html" "comments" }} 
+                Zulip Development &amp; Social Chat</a></li>
+            <li><a href="https://lists.sr.ht/%7Eqaul/community" target="_blank">
+                {{ partial "fontawesome.html" "envelope-open-text" }}
+                Community Mailing List</a></li>
+            <li><a href="https://lists.sr.ht/%7Eqaul/announcements" target="_blank">
+                {{ partial "fontawesome.html" "bullhorn" }}
+                Announcements Mailing List</a></li>
+            <li><a href="https://webchat.freenode.net/#qaul.net" target="_blank">
+                {{ partial "fontawesome.html" "hashtag" }} 
+                IRC: #qaul.net on freenode</a></li>
+        </ul>
+    </div>
 <!--
-    <div class="">
-        {{ partial "fontawesome.html" "globe" }}
+    <div class="xl3 s6 box">
+        <h3>{{ partial "fontawesome.html" "globe" }}</h3>
         <ul>
             <li><a href="#">
                 Translate this web site</a></li>
         </ul>
     </div>
- -->
+-->
     </nav>
+</div>
 </section>
+{{ end }}
+</main>
 {{ end }}
