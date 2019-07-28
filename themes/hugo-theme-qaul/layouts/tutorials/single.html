@@ -1,11 +1,14 @@
 {{ define "main" }}
-<section class="page main tutorial">
+<main id="main" class="tutorial">
+<section class="white">
+<div class="page"></div>
     <h1 class="top">{{ .Title }}</h1>
-    <nav class="taxonomy dark">
+    <nav class="taxonomy">
         {{- partial "tags.html" . -}}
     </nav>
     <article>
         {{ .Content }}
     </article>
 </section>
+</main>
 {{ end }}

@@ -1,7 +1,8 @@
 {{ define "main" }}
-<section class="page main tutorial">
+<main id="main">
+<section class="page white tutorial">
     <h1 class="top">{{ .Title }}</h1>
-    <nav class="taxonomy dark">
+    <nav class="taxonomy">
         {{- partial "tags-all.html" . -}}
     </nav>
     <div class="tutorials">
@@ -11,4 +12,5 @@
     </div>
     {{- template "_internal/pagination.html" . -}}
 </section>
+</main>
 {{ end }}
