@@ -4,7 +4,7 @@
 rm -R ./public
 
 # build site
-hugo
+HUGO_DISABLELANGUAGES="ar" hugo
 
 # upload site to web server
 rsync -azhe "ssh -p 2223" ./public/ admin@qaul.net:/home/admin
