@@ -44,7 +44,7 @@ other = "Einen Fehler melden"
 other = "Kompatibilitätsliste"
 
 [ContributersGuide]
-other = "Dokumentation für alle die Mitmachen"
+other = "Entwickler-Dokumentation"
 
 [Documentation]
 other = "Dokumentation"
@@ -53,7 +53,7 @@ other = "Dokumentation"
 other = "qaul.net API Dokumentation"
 
 [ZulipChat]
-other = "Zulip Entwickler- & Community-Chat"
+other = "Zulip Chat"
 
 [IrcChat]
 other = "IRC: #qaul.net auf freenode"
