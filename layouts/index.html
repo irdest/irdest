@@ -1,7 +1,6 @@
 
 {{ define "main" }}
 <main id="main" class="home">
-{{ with .Site.GetPage "home/description" }}
 <section id="description" class="blue">
 <div class="page">
     <div class="logo">qaul.net – قول</div>
@@ -11,15 +10,14 @@
 <section id="mesh" class="dark">
 <div class="page">
     <div class="l8 m7 s12 box">
-        <img src="/img/qaul-mesh.svg">
+        <img src="/home/qaul-mesh.svg">
     </div>
     <div class="xl2 l3 m4 s12 box">
         {{ .Content }}
     </div>
 </div>
 </section>
-{{ end }}
-{{ with .Site.GetPage "home/features" }}
+{{ with .Site.GetPage "page" "home/features" }}
 <section id="features" class="blue">
 <div class="page">
     <h1>{{ .Title }}</h1>
