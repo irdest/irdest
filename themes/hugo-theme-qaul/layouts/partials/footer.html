@@ -1,34 +1,37 @@
 <footer>
     <nav>
         <div class="box l4 m4 s6">
-            <h5>qaul.net community</h5>
+            <h5>{{ i18n "QaulNetCommunity" }}</h5>
             <ul>
-                <li><a href="mailto:contact@qaul.net">
-                    {{ partial "fontawesome.html" "envelope" }}
-                    contact@qaul.net</a></li>
-                <!--<li><a href="https://lists.qaul.net" target="_blank">
-                    {{ partial "fontawesome.html" "mail-bulk" }}
-                    Mailinglists</a></li>-->
-                <li><a href="https://github.com/qaul/qaul.net" target="_blank">
-                    {{ partial "fontawesome.html" "github" }} 
-                    Github Repository</a></li>
-                <li><a href="{{ "legal/privacy" | relURL }}">Privacy Statement</a></li>
-                <li><a href="{{ "legal/code-of-conduct" | relURL }}">Code of Conduct</a></li>
-                <li><a href="{{ "about" | relURL }}">About</a></li>
+                    <li><a href="https://github.com/qaul/qaul.net" target="_blank">
+                        {{ partial "fontawesome.html" "github" }} 
+                        {{ i18n "QaulNetGithub" }}</a></li>
+                <li><a href="https://lists.qaul.net" target="_blank">
+                    {{ partial "fontawesome.html" "envelope-open-text" }}
+                    {{ i18n "CommunityMailinglist" }}</a></li>
+                    <li><a href="https://lists.qaul.net" target="_blank">
+                        {{ partial "fontawesome.html" "bullhorn" }}
+                        {{ i18n "AnnouncementMailinglist" }}</a></li>
+                    <li><a href="mailto:contact@qaul.net">
+                        {{ partial "fontawesome.html" "envelope" }}
+                        contact@qaul.net</a></li>
+                        <li><a href="{{ "legal/privacy" | relURL }}">{{ i18n "Privacy" }}</a></li>
+                <li><a href="{{ "legal/code-of-conduct" | relURL }}">{{ i18n "CodeOfConduct" }}</a></li>
+                <li><a href="{{ "about" | relURL }}">{{ i18n "AboutQaulNet" }}</a></li>
             </ul>
         </div>
         <div class="box l2 m2 s4">
-            <h5>Pages</h5>
+            <h5>{{ i18n "Pages" }}</h5>
             <ul>
-                <li><a href="{{ relURL ($.Site.BaseURL) }}#download">Download</a></li>
-                <li><a href="{{ "tutorials" | relURL }}">Tutorials</a></li>
-                <li><a href="https://docs.qaul.net" target="_blank">Guides</a></li>
-                <li><a href="{{ relURL ($.Site.BaseURL) }}#features">Features</a></li>
-                <li><a href="{{ relURL ($.Site.BaseURL) }}#participation">Participate</a></li>
+                <li><a href="{{ relURL ($.Site.BaseURL) }}#download">{{ i18n "Download" }}</a></li>
+                <li><a href="{{ relURL ($.Site.BaseURL) }}#features">{{ i18n "Features" }}</a></li>
+                <li><a href="{{ "tutorials" | relURL }}">{{ i18n "Tutorials" }}</a></li>
+                <li><a href="{{ relURL ($.Site.BaseURL) }}#participation">{{ i18n "Documentation" }}</a></li>
+                <li><a href="{{ relURL ($.Site.BaseURL) }}#participation">{{ i18n "Participate" }}</a></li>
             </ul>
         </div>
         <div class="box l2 m2 s4">
-            <h5>Languages</h5>
+            <h5>{{ i18n "Languages" }}</h5>
             <ul class="languages">
                 {{ range $.Site.Home.AllTranslations }}
                 <li><a href="{{ .Permalink }}">{{ .Language.LanguageName }}</a></li>
@@ -37,18 +40,17 @@
         </div>
         <div class="box l4 m4 s6">
             <p>
-                <a href="{{ "legal/cc-by" | relURL }}" target="_blank" 
+                <a href="{{ "legal/cc-by" | relURL }}"
                     style="text-decoration: none;" class="cc-license">
                     {{ partial "fontawesome.html" "creative-commons" }}
                     {{ partial "fontawesome.html" "creative-commons-by" }}
                 </a>
             </p>
             <p>
-                Except where otherwise noted, content on this site is licensed under a 
-                <a href="{{ "legal/cc-by" | relURL }}" target="_blank">
-                    Creative Commons Attribution 4.0 International license</a>.
-                <br/><br/>
-                You're welcome to copy, distribute and participate!
+                {{ i18n "LicenseNotice" }}
+            </p>
+            <p>
+                {{ i18n "CopyAndDistribute" }}
             </p>
         </div>
     </nav>

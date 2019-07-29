@@ -1,6 +1,6 @@
 ---
-title: 'Download qaul.net App'
+title: 'Die qaul.net Software downloaden'
 ---
 
-**We are rewriting qaul.net at the moment. 
-Until qaul.net 2.0 is ready, you can download the 1.0 legacy app.**
+**Zur Zeit schreiben wir die qaul.net Software gerade neu.
+Bis die neue Version `qaul.net 2.0` bereit ist, kannst du hier die alte 1.0 version herunterladen.**

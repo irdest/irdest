@@ -2,4 +2,4 @@
 title: 'Screenshots'
 ---
 
-![](qaul-GUI.png)
+![](/home/qaul-GUI.png)

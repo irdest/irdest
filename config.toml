@@ -3,6 +3,11 @@ title = "qaul.net – قول"
 theme = "hugo-theme-qaul"
 DefaultContentLanguage = "en"
 
+
+[params]
+  description = "Internet independent wireless mesh communication app"
+
+
 [languages]
   [languages.en]
     weight = 1
@@ -14,19 +19,3 @@ DefaultContentLanguage = "en"
     weight = 2
     LanguageName = "العربية"
 
-[params]
-  description = "Internet independent wireless mesh communication app"
-
-[menu]
-  [[menu.main]]
-    identifier = "download"
-    name = "Download"
-    url = "/#download"
-  [[menu.main]]
-    identifier = "features"
-    name = "Features"
-    url = "/#features"
-  [[menu.main]]
-    identifier = "tutorials"
-    name = "Tutorials"
-    url = "/tutorials/"

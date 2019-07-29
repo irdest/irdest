@@ -1,0 +1,77 @@
+[More]
+other = "Mehr"
+
+[Download]
+other = "Download"
+
+[Features]
+other = "Funktionen"
+
+[Tutorials]
+other = "Tutorials"
+
+[Languages]
+other = "Sprachen"
+
+[Contact]
+other = "Kontakt"
+
+[Screenshots]
+other = "Screenshots"
+
+[Participate]
+other = "Mitmachen"
+
+[Pages]
+other = "Seiten"
+
+[QaulNetCommunity]
+other = "qaul.net Community"
+
+[AboutQaulNet]
+other = "Über qaul.net"
+
+[QaulNetGithub]
+other = "qaul.net Quelltext"
+
+[WebSiteGithub]
+other = "Web Seiten Quelltext"
+
+[BugReport]
+other = "Einen Fehler melden"
+
+[CompatibilityList]
+other = "Kompatibilitätsliste"
+
+[ContributersGuide]
+other = "Dokumentation für alle die Mitmachen"
+
+[Documentation]
+other = "Dokumentation"
+
+[QaulNetAPI]
+other = "qaul.net API Dokumentation"
+
+[ZulipChat]
+other = "Zulip Entwickler- & Community-Chat"
+
+[IrcChat]
+other = "IRC: #qaul.net auf freenode"
+
+[CommunityMailinglist]
+other = "Community-Mailing-Liste"
+
+[AnnouncementMailinglist]
+other = "Mailing-Liste für Mitteilungen"
+
+[Privacy]
+other = "Datenschutz"
+
+[CodeOfConduct]
+other = "Benimmregeln"
+
+[LicenseNotice]
+other = "Ausser wo anders angegeben, stehen alle Inhalte dieser Seite unter der [Creative Commons Attribution 4.0 International](legal/cc-by) Lizenz."
+
+[CopyAndDistribute]
+other = "Wir freuen uns, wenn du den Inhalt kopierst, verteilst und mitmachst!"

@@ -1,5 +1,5 @@
 ---
-title: 'Internet-Unabhängige Vermaschte Wifi Kommunikation'
+title: 'Internet-Unabhängige Vernetzte Wifi Kommunikation'
 ---
 
 qaul.net ist ein Kommunikationswerkzeug um eine direkte, lokale

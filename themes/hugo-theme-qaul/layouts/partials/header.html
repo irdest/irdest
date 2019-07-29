@@ -9,15 +9,16 @@
         </a>
     </div>
     <div class="box m8 s12 m-block hide" id="nav-top">
-    {{ if .Site.Menus.main }}
         <ul>
-        {{ range .Site.Menus.main }}
         <li class="box">
-            <a href="{{ .URL }}">
-            {{ .Name }}
-            </a>
+            <a href="{{ relURL ($.Site.BaseURL) }}#download">{{ i18n "Download" }}</a>
         </li>
-        {{ end }}
+        <li class="box">
+            <a href="{{ relURL ($.Site.BaseURL) }}#features">{{ i18n "Features" }}</a>
+        </li>
+        <li class="box">
+            <a href="{{ "tutorials" | relURL }}">{{ i18n "Tutorials" }}</a>
+        </li>
         <li class="box languages">
             <a href="#" onclick="toggle_visibility('nav-lang');">
                 {{ partial "fontawesome.html" "language" }} {{partial "fontawesome.html" "angle-down" }}
@@ -39,7 +40,6 @@
             </a>
         </li>
         </ul>
-    {{ end }}
     </div>
 </nav>
 </header>

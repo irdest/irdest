@@ -23,27 +23,27 @@
     <h1>{{ .Title }}</h1>
     <div class="feature s6 m4 box">
         {{ partial "fontawesome.html" "comments" }}
-        <p>Text Messaging</p>
+        <p>{{ .Params.TextMessaging }}</p>
     </div>
     <div class="feature s6 m4 box">
         {{ partial "fontawesome.html" "copy" }}
-        <p>File Sharing</p>
+        <p>{{ .Params.FileSharing }}</p>
     </div>
     <div class="feature s6 m4 box">
         {{ partial "fontawesome.html" "phone-volume" }}
-        <p>Voice Chat</p>
+        <p>{{ .Params.VoiceChat }}</p>
     </div>
     <div class="feature s6 m4 box">
         {{ partial "fontawesome.html" "users" }}
-        <p>User Discovery</p>
+        <p>{{ .Params.UserDiscovery }}</p>
     </div>
     <div class="feature s6 m4 box">
         {{ partial "fontawesome.html" "wifi" }}
-        <p>Wireless Peer to Peer off the Grid Communication</p>
+        <p>{{ .Params.WifiP2P }}</p>
     </div>
     <div class="feature s6 m4 box">
         {{ partial "fontawesome.html" "language" }}
-        <p>Multilingual Interface</p>
+        <p>{{ .Params.MultilingualInterface }}</p>
     </div>
 </section>
 {{ end }}
@@ -84,7 +84,7 @@
         <a href="https://get.qaul.net/legacy/qaul.net-fat_1.0.0-beta5_android_05022016.apk">
         {{ partial "fontawesome.html" "android" }}
         Android</a><br/> 
-        (<a href="https://github.com/qaul/qaul.net/blob/release-1.0.0/doc/Android_Devices.md" target="_blank">See compatibility list</a>)
+        (<a href="https://github.com/qaul/qaul.net/blob/release-1.0.0/doc/Android_Devices.md" target="_blank">{{ i18n "CompatibilityList" }}</a>)
     </div>
 </div>
 </section>
@@ -99,24 +99,27 @@
         <ul>
             <li><a href="{{ "tutorials" | relURL }}">
                 {{ partial "fontawesome.html" "chalkboard-teacher" }}
-                Tutorials</a></li>
-            <li><a href="https://docs.qaul.net">
+                {{ i18n "Tutorials" }}</a></li>
+            <li><a href="https://docs.qaul.net" target="_blank">
                 {{ partial "fontawesome.html" "book" }}
-                Contributers Guide</a></li>
-        </ul>
+                {{ i18n "ContributersGuide" }}</a></li>
+            <li><a href="https://api.qaul.net" target="_blank">
+                {{ partial "fontawesome.html" "book" }}
+                {{ i18n "QaulNetAPI" }}</a></li>
+            </ul>
     </div>
     <div class="m4 s6 box">
         <h3>{{ partial "fontawesome.html" "laptop-code" }}</h3>
         <ul>
             <li><a href="https://github.com/qaul/qaul.net" target="_blank">
                 {{ partial "fontawesome.html" "github" }} 
-                App repository</a></li>
+                {{i18n "QaulNetGithub"}}</a></li>
             <li><a href="https://github.com/qaul/qaul-website" target="_blank">
                 {{ partial "fontawesome.html" "github" }}
-                Web site repository</a></li>
+                {{i18n "WebSiteGithub"}}</a></li>
             <li><a href="https://github.com/qaul/qaul.net/issues" target="_blank">
                 {{ partial "fontawesome.html" "bug" }}
-                Bug report</a></li>
+                {{i18n "BugReport"}}</a></li>
         </ul>
     </div>
     <div class="m4 s6 box">
@@ -124,16 +127,16 @@
         <ul>
             <li><a href="https://qaul.zulipchat.com/" target="_blank">
                 {{ partial "fontawesome.html" "comments" }} 
-                Zulip Development &amp; Social Chat</a></li>
+                {{ i18n "ZulipChat" }}</a></li>
             <li><a href="https://lists.sr.ht/%7Eqaul/community" target="_blank">
                 {{ partial "fontawesome.html" "envelope-open-text" }}
-                Community Mailing List</a></li>
+                {{ i18n "CommunityMailinglist" }}</a></li>
             <li><a href="https://lists.sr.ht/%7Eqaul/announcements" target="_blank">
                 {{ partial "fontawesome.html" "bullhorn" }}
-                Announcements Mailing List</a></li>
+                {{ i18n "AnnouncementMailinglist" }}</a></li>
             <li><a href="https://webchat.freenode.net/#qaul.net" target="_blank">
                 {{ partial "fontawesome.html" "hashtag" }} 
-                IRC: #qaul.net on freenode</a></li>
+                {{ i18n "IrcChat" }}</a></li>
         </ul>
     </div>
 <!--
