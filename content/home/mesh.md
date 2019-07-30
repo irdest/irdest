@@ -1,11 +1,15 @@
 ---
 Description: |
-    **qaul.net** is an internet independent ad-hoc wireless mesh-network suite,
-    that allows everyday devices such as computers and smartphones
-    to create a **decentralised, free network**,
-    on which users can share files,
-    have voice calls and text conversations,
-    all in a single app.
+    **qaul.net** is a free software suite,
+    which enables everyday devices, such as laptops and smartphones
+    to create an internet independent **decentralised and open**
+    ad-hoc wireless mesh network.
+    It supports both public and private text messaging, voice calls,
+    audio broadcasts and file sharing - all in a single app.
+
+    Independent of existing wireless and celular infrastructure,
+    it empowers users to share ideas and organise, circumventing
+    government surveillence and censorship.
 
     In addition to this, it provides a powerful service library,
     which enables others to write applications that communicate
