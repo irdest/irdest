@@ -11,13 +11,13 @@
     <div class="box m8 s12 m-block hide" id="nav-top">
         <ul>
         <li class="box">
-            <a href="{{ relURL ($.Site.BaseURL) }}#download">{{ i18n "Download" }}</a>
+            <a href="{{ relLangURL "/" }}#download">{{ i18n "Download" }}</a>
         </li>
         <li class="box">
-            <a href="{{ relURL ($.Site.BaseURL) }}#features">{{ i18n "Features" }}</a>
+            <a href="{{ relLangURL "/" }}#features">{{ i18n "Features" }}</a>
         </li>
         <li class="box">
-            <a href="{{ "tutorials" | relURL }}">{{ i18n "Tutorials" }}</a>
+            <a href="{{ "tutorials" | relLangURL }}">{{ i18n "Tutorials" }}</a>
         </li>
         <li class="box languages">
             <a href="#" onclick="toggle_visibility('nav-lang');">
@@ -30,7 +30,7 @@
             </ul>
         </li>
         <li>
-            <a href="{{ relURL ($.Site.BaseURL) }}#participation" class="icons" title="Contact" rel="noopener">
+            <a href="{{ relLangURL "/" }}#participation" class="icons" title="Contact" rel="noopener">
                 {{ partial "fontawesome.html" "envelope" }}
             </a>
         </li>

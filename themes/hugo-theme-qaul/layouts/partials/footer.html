@@ -4,31 +4,31 @@
         <div class="box l4 m4 s6">
             <h5>{{ i18n "QaulNetCommunity" }}</h5>
             <ul>
-                    <li><a href="https://github.com/qaul/qaul.net" target="_blank">
-                        {{ partial "fontawesome.html" "github" }} 
-                        {{ i18n "QaulNetGithub" }}</a></li>
-                <li><a href="https://lists.qaul.net" target="_blank">
+                <li><a href="https://github.com/qaul/qaul.net" target="_blank">
+                    {{ partial "fontawesome.html" "github" }} 
+                    {{ i18n "QaulNetGithub" }}</a></li>
+                <li><a href="https://lists.sr.ht/%7Eqaul/community" target="_blank">
                     {{ partial "fontawesome.html" "envelope-open-text" }}
                     {{ i18n "CommunityMailinglist" }}</a></li>
-                    <li><a href="https://lists.qaul.net" target="_blank">
-                        {{ partial "fontawesome.html" "bullhorn" }}
-                        {{ i18n "AnnouncementMailinglist" }}</a></li>
-                    <li><a href="mailto:contact@qaul.net">
-                        {{ partial "fontawesome.html" "envelope" }}
-                        contact@qaul.net</a></li>
-                        <li><a href="{{ "legal/privacy" | relURL }}">{{ i18n "Privacy" }}</a></li>
-                <li><a href="{{ "legal/code-of-conduct" | relURL }}">{{ i18n "CodeOfConduct" }}</a></li>
-                <li><a href="{{ "about" | relURL }}">{{ i18n "AboutQaulNet" }}</a></li>
+                <li><a href="https://lists.sr.ht/%7Eqaul/announcements" target="_blank">
+                    {{ partial "fontawesome.html" "bullhorn" }}
+                    {{ i18n "AnnouncementMailinglist" }}</a></li>
+                <li><a href="mailto:contact@qaul.net">
+                    {{ partial "fontawesome.html" "envelope" }}
+                    contact@qaul.net</a></li>
+                <li><a href="{{ "legal/privacy" | relLangURL }}">{{ i18n "Privacy" }}</a></li>
+                <li><a href="{{ "legal/code-of-conduct" | relLangURL }}">{{ i18n "CodeOfConduct" }}</a></li>
+                <li><a href="{{ "about" | relLangURL }}">{{ i18n "AboutQaulNet" }}</a></li>
             </ul>
         </div>
         <div class="box l2 m2 s4">
             <h5>{{ i18n "Pages" }}</h5>
             <ul>
-                <li><a href="{{ relURL ($.Site.BaseURL) }}#download">{{ i18n "Download" }}</a></li>
-                <li><a href="{{ relURL ($.Site.BaseURL) }}#features">{{ i18n "Features" }}</a></li>
-                <li><a href="{{ "tutorials" | relURL }}">{{ i18n "Tutorials" }}</a></li>
-                <li><a href="{{ relURL ($.Site.BaseURL) }}#participation">{{ i18n "Documentation" }}</a></li>
-                <li><a href="{{ relURL ($.Site.BaseURL) }}#participation">{{ i18n "Participate" }}</a></li>
+                <li><a href="{{ relLangURL "/" }}#download">{{ i18n "Download" }}</a></li>
+                <li><a href="{{ relLangURL "/" }}#features">{{ i18n "Features" }}</a></li>
+                <li><a href="{{ "tutorials" | relLangURL }}">{{ i18n "Tutorials" }}</a></li>
+                <li><a href="{{ relLangURL "/" }}#participation">{{ i18n "Documentation" }}</a></li>
+                <li><a href="{{ relLangURL "/" }}#participation">{{ i18n "Participate" }}</a></li>
             </ul>
         </div>
         <div class="box l2 m2 s4">
@@ -41,7 +41,7 @@
         </div>
         <div class="box l4 m4 s6">
             <p>
-                <a href="{{ "legal/cc-by" | relURL }}"
+                <a href="{{ "legal/cc-by" | relLangURL }}"
                     style="text-decoration: none;" class="cc-license">
                     {{ partial "fontawesome.html" "creative-commons" }}
                     {{ partial "fontawesome.html" "creative-commons-by" }}
