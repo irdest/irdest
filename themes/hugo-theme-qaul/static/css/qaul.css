@@ -366,6 +366,9 @@ footer h5 {
 	margin-top: 1rem;
 }
 
+#participation .page {
+	margin: 0 auto 0 auto;
+}
 #participation nav {
 	display: flex;
 	flex-flow: row wrap;
@@ -416,14 +419,6 @@ h1.top {
 	font-style: italic;
 }
 
-/*
-@media only screen and (min-width: 850px) {
-	.page figure {
-		width: 50%;
-		float: left;
-	}
-}
-*/
 
 /* tags */
 .taxonomy li {
