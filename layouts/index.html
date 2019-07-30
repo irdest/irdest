@@ -1,10 +1,12 @@
 
 {{ define "main" }}
+{{ with .Site.GetPage "page" "home/main" }}
 <main id="main" class="home">
 <section id="description" class="blue">
     <h1>qaul.net – قول</h1>
-    <h2>{{ .Title }}</h2>
+    <h2>{{ .Params.Title }}</h2>
 </section>
+{{ end }}
 {{ with .Site.GetPage "home/mesh" }}
 <section id="mesh" class="dark">
 <div class="page">
