@@ -5,16 +5,18 @@
     <h1>qaul.net – قول</h1>
     <h2>{{ .Title }}</h2>
 </section>
+{{ with .Site.GetPage "home/mesh" }}
 <section id="mesh" class="dark">
 <div class="page">
     <div class="l7 m12 s12 box">
         <img src="/home/qaul-mesh.svg">
     </div>
-    <div class="xl3 l4 m12 s12 box">
-        {{ .Content }}
+    <div class="xl2 l3 m4 s12 box">
+        <p>{{ .Params.Description | markdownify }}</p>
     </div>
 </div>
 </section>
+{{ end }}
 {{ with .Site.GetPage "page" "home/features" }}
 <section id="features" class="blue">
 <div class="page">
