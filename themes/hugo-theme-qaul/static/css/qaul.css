@@ -314,12 +314,18 @@ footer h5 {
 
 #mesh {
 	text-align: initial;
+	padding-top: 4rem;
+	padding-bottom: 3rem;
 }
 #mesh .page {
 	display: flex;
 	flex-flow: row wrap;
 	justify-content: space-around;
 	align-items: center;
+}
+#mesh .page div {
+	padding-top: 1rem;
+	padding-bottom: 1rem;
 }
 
 #features .page {
