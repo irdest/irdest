@@ -229,6 +229,26 @@ nav.main .languages ul a:hover {
 		border-bottom: none;
 	}
 }
+/*
+ul.left-aligned {
+	padding: 0;
+	margin: 0;
+	list-style-type: none;
+}
+
+ul.left-aligned > li {
+	padding: 0;
+	margin: 0;
+}
+*/
+
+ul.left-aligned > li {
+	text-align: left;
+}
+
+ul.left-aligned {
+	padding-left: 2.5em;
+}
 
 /* footer */
 footer {
