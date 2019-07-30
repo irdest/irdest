@@ -421,6 +421,9 @@ h1.top {
 
 
 /* tags */
+.taxonomy {
+	padding: 1rem;
+}
 .taxonomy li {
 	display: inline-block;
 	padding-right: 0.3rem;
@@ -431,7 +434,7 @@ h1.top {
 
 /* tutorials */
 .tutorial .taxonomy {
-	padding: 1rem 1rem 0 1rem;
+	padding-bottom: 0;
 }
 .tutorial article :first-child {
 	margin-top: 0;
@@ -445,7 +448,8 @@ h1.top {
 	display: flex;
 	flex-flow: row wrap;
 	justify-content: space-around;
-	padding: 0;
+	padding: 1rem;
+	padding-bottom: 3rem;
 }
 .tutorials .preview {
 	margin: 0;
@@ -453,10 +457,13 @@ h1.top {
 	margin-bottom: 1rem;
 	padding: 0;
 }
-.tutorials .visual {
+.preview .visual {
 	width: 100%;
 	padding-top: 56.25%;
 	background-image: linear-gradient(to bottom right, var(--c-bright-bg), var(--c-blue-bg));
 	background-size: cover;
 	background-position: center center;
 }
+.preview .caption {
+	padding: 1rem 0;
+} 

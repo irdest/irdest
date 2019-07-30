@@ -1,11 +1,13 @@
 {{ define "main" }}
 <main id="main">
-<section class="page white tutorial">
+<section class="white tutoriallist">
     <h1 class="top">{{ .Title }}</h1>
     <nav class="taxonomy">
+        <div class="page">
         {{- partial "tags-all.html" . -}}
+        </div>
     </nav>
-    <div class="tutorials">
+    <div class="tutorials page">
         {{ range .Paginator.Pages }}
             {{- partial "tutorial-preview.html" . -}}
         {{ end }}
