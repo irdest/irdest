@@ -30,12 +30,22 @@
 
 	/* page sizes */
 	--s-pagewidth: 83rem;
+	--s-contentwidth: 60rem;
 }
 
 body {
 	margin: 0;
 	padding: 0;
 }
+
+h1{font-size:2.5rem;}
+h2{font-size:2rem;}
+h3{font-size:1.75rem;}
+h4{font-size:1.5rem;}
+h5{font-size:1.3rem;}
+h6{font-size:1.3rem;}
+body,p,div{font-size:1.3rem;}
+
 
 a {
 	text-decoration: none;
@@ -113,11 +123,11 @@ nav.main li {
 	white-space: nowrap;
 }
 nav.main .inline-svg.language {
+	top: -0.02rem;
 	width: 2.3rem;
-	top: -0.25rem;
 }
 nav.main .inline-svg.angle-down {
-	top: -0.25rem;
+	top: -0.02rem;
 	width: 1rem;
 }
 nav.main .languages ul {
@@ -139,7 +149,7 @@ nav.main a {
 	padding-right: 0.75rem;
 	padding-top:0.5rem;
 	padding-bottom: 0;
-	height: 2rem;
+	height: 2.5rem;
 }
 nav.main a:hover{
 	text-decoration: none;
