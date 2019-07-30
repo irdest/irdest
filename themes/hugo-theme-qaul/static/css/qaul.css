@@ -320,6 +320,9 @@ footer h5 {
 #features h1 {
 	width: 100%;
 }
+#features h3 {
+	margin-bottom: 0;
+}
 #features .feature {
 	font-size: 1.5rem;
 	margin-top: 2rem;
