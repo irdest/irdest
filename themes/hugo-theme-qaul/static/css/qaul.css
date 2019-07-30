@@ -289,7 +289,6 @@ footer h5 {
 	width: 100%;
 }
 #description h2 {
-	max-width: var(--s-pagewidth);
 	top: 40%;
 }
 
