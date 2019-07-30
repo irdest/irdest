@@ -23,27 +23,33 @@
     <h1>{{ .Title }}</h1>
     <div class="feature s6 m4 box">
         {{ partial "fontawesome.html" "comments" }}
-        <p>{{ .Params.TextMessaging }}</p>
+        <h3>{{ .Params.TextMessaging }}</h3>
+        <p>{{ .Params.TextMessagingDetails }}</p>
     </div>
     <div class="feature s6 m4 box">
         {{ partial "fontawesome.html" "copy" }}
-        <p>{{ .Params.FileSharing }}</p>
+        <h3>{{ .Params.FileSharing }}</h3>
+        <p>{{ .Params.FileSharingDetails }}</p>
     </div>
     <div class="feature s6 m4 box">
         {{ partial "fontawesome.html" "phone-volume" }}
-        <p>{{ .Params.VoiceChat }}</p>
+        <h3>{{ .Params.VoiceChat }}</h3>
+        <p>{{ .Params.VoiceChatDetails }}</p>
     </div>
     <div class="feature s6 m4 box">
         {{ partial "fontawesome.html" "users" }}
-        <p>{{ .Params.UserDiscovery }}</p>
+        <h3>{{ .Params.UserDiscovery }}</h3>
+        <p>{{ .Params.UserDiscoveryDetails }}</p>
     </div>
     <div class="feature s6 m4 box">
         {{ partial "fontawesome.html" "wifi" }}
-        <p>{{ .Params.WifiP2P }}</p>
+        <h3>{{ .Params.WifiP2P }}</h3>
+        <p>{{ .Params.WifiP2PDetails }}</p>
     </div>
     <div class="feature s6 m4 box">
         {{ partial "fontawesome.html" "language" }}
-        <p>{{ .Params.MultilingualInterface }}</p>
+        <h3>{{ .Params.MultilingualInterface }}</h3>
+        <p>{{ .Params.MultilingualInterfaceDetails }}</p>
     </div>
 </section>
 {{ end }}
