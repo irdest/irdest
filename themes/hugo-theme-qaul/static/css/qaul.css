@@ -239,6 +239,8 @@ footer {
 	background-color: var(--c-footer-bg);
 	color: var(--c-footer-txt);
 	box-shadow: 0 0 1rem 0 var(--c-footer-bg);
+	padding-top: 2rem;
+	padding-bottom: 4rem;
 }
 footer nav {
 	padding: 1rem;
