@@ -1,47 +1,57 @@
 
 {{ define "main" }}
+{{ with .Site.GetPage "page" "home/main" }}
 <main id="main" class="home">
 <section id="description" class="blue">
     <h1>qaul.net – قول</h1>
-    <h2>{{ .Title }}</h2>
+    <h2>{{ .Params.Title }}</h2>
 </section>
+{{ end }}
+{{ with .Site.GetPage "home/mesh" }}
 <section id="mesh" class="dark">
 <div class="page">
-    <div class="l8 m7 s12 box">
+    <div class="xl6 s12 box">
         <img src="/home/qaul-mesh.svg">
     </div>
-    <div class="xl2 l3 m4 s12 box">
-        {{ .Content }}
+    <div class="xl5 s12 box">
+        <p>{{ .Params.Description | markdownify }}</p>
     </div>
 </div>
 </section>
+{{ end }}
 {{ with .Site.GetPage "page" "home/features" }}
 <section id="features" class="blue">
 <div class="page">
     <h1>{{ .Title }}</h1>
     <div class="feature s6 m4 box">
         {{ partial "fontawesome.html" "comments" }}
-        <p>{{ .Params.TextMessaging }}</p>
+        <h3>{{ .Params.TextMessaging }}</h3>
+        <p>{{ .Params.TextMessagingDetails }}</p>
     </div>
     <div class="feature s6 m4 box">
         {{ partial "fontawesome.html" "copy" }}
-        <p>{{ .Params.FileSharing }}</p>
+        <h3>{{ .Params.FileSharing }}</h3>
+        <p>{{ .Params.FileSharingDetails }}</p>
     </div>
     <div class="feature s6 m4 box">
         {{ partial "fontawesome.html" "phone-volume" }}
-        <p>{{ .Params.VoiceChat }}</p>
+        <h3>{{ .Params.VoiceChat }}</h3>
+        <p>{{ .Params.VoiceChatDetails }}</p>
     </div>
     <div class="feature s6 m4 box">
         {{ partial "fontawesome.html" "users" }}
-        <p>{{ .Params.UserDiscovery }}</p>
+        <h3>{{ .Params.UserDiscovery }}</h3>
+        <p>{{ .Params.UserDiscoveryDetails }}</p>
     </div>
     <div class="feature s6 m4 box">
         {{ partial "fontawesome.html" "wifi" }}
-        <p>{{ .Params.WifiP2P }}</p>
+        <h3>{{ .Params.WifiP2P }}</h3>
+        <p>{{ .Params.WifiP2PDetails }}</p>
     </div>
     <div class="feature s6 m4 box">
         {{ partial "fontawesome.html" "language" }}
-        <p>{{ .Params.MultilingualInterface }}</p>
+        <h3>{{ .Params.MultilingualInterface }}</h3>
+        <p>{{ .Params.MultilingualInterfaceDetails }}</p>
     </div>
 </section>
 {{ end }}
@@ -92,9 +102,9 @@
 <div class="page">
     <h1>{{ .Title }}</h1>
     <nav>
-    <div class="m4 s6 box">
+    <div class="m4 s6 box participation__box">
         <h3>{{ partial "fontawesome.html" "book-reader" }}</h3>
-        <ul>
+        <ul class="left-aligned">
             <li><a href="{{ "tutorials" | relLangURL }}">
                 {{ partial "fontawesome.html" "chalkboard-teacher" }}
                 {{ i18n "Tutorials" }}</a></li>
@@ -106,9 +116,9 @@
                 {{ i18n "QaulNetAPI" }}</a></li>
             </ul>
     </div>
-    <div class="m4 s6 box">
+    <div class="m4 s6 box participation__box">
         <h3>{{ partial "fontawesome.html" "laptop-code" }}</h3>
-        <ul>
+        <ul class="left-aligned">
             <li><a href="https://github.com/qaul/qaul.net" target="_blank">
                 {{ partial "fontawesome.html" "github" }} 
                 {{i18n "QaulNetGithub"}}</a></li>
@@ -120,9 +130,9 @@
                 {{i18n "BugReport"}}</a></li>
         </ul>
     </div>
-    <div class="m4 s6 box">
+    <div class="m4 s6 box participation__box">
         <h3>{{ partial "fontawesome.html" "comments-solid" }}</h3>
-        <ul>
+        <ul class="left-aligned">
             <li><a href="https://qaul.zulipchat.com/" target="_blank">
                 {{ partial "fontawesome.html" "comments" }} 
                 {{ i18n "ZulipChat" }}</a></li>

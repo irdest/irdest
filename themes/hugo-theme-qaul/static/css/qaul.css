@@ -230,11 +230,17 @@ nav.main .languages ul a:hover {
 	}
 }
 
+ul.left-aligned > li {
+	text-align: left;
+}
+
 /* footer */
 footer {
 	background-color: var(--c-footer-bg);
 	color: var(--c-footer-txt);
 	box-shadow: 0 0 1rem 0 var(--c-footer-bg);
+	padding-top: 2rem;
+	padding-bottom: 4rem;
 }
 footer nav {
 	padding: 1rem;
@@ -289,17 +295,23 @@ footer h5 {
 	width: 100%;
 }
 #description h2 {
-	max-width: var(--s-pagewidth);
 	top: 40%;
 }
 
 #mesh {
 	text-align: initial;
+	padding-top: 4rem;
+	padding-bottom: 3rem;
 }
 #mesh .page {
 	display: flex;
 	flex-flow: row wrap;
 	justify-content: space-around;
+	align-items: center;
+}
+#mesh .page div {
+	padding-top: 1rem;
+	padding-bottom: 1rem;
 }
 
 #features .page {
@@ -309,6 +321,9 @@ footer h5 {
 }
 #features h1 {
 	width: 100%;
+}
+#features h3 {
+	margin-bottom: 0;
 }
 #features .feature {
 	font-size: 1.5rem;
@@ -477,3 +492,9 @@ h1.top {
 .preview .caption {
 	padding: 1rem 0;
 } 
+
+.participation__box {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
