@@ -98,6 +98,7 @@ nav li {
 /* tab navigation */
 header {
 	background-color: var(--c-blue-bg);
+	padding-top:1rem;
 }
 nav.main {
 	max-width: var(--s-pagewidth);
@@ -107,7 +108,6 @@ nav.main {
 	align-items: stretch;
 }
 nav.main div {
-	padding:0;
 	margin:0;
 }
 nav.main ul {
@@ -143,7 +143,7 @@ nav.main .languages ul {
 
 nav.main a {
 	color: var(--c-blue-txt);
-	font-weight: bold;
+	font-weight: 500;
 	display: block;
 	padding-left: 0.75rem;
 	padding-right: 0.75rem;
@@ -278,16 +278,32 @@ footer h5 {
 }
 
 #description {
-	padding: 0;
 	padding-top: 56.25%;
 	position: relative;
 	background-image: url('/img/qaul-logo-white.svg');
 	background-position: 25vw 0vw;
 	background-repeat: no-repeat;
+	z-index: -10;
 }
+
+@media only screen and (max-width: 600px) {
+	#description {padding-bottom: 12rem;}
+	#description h2, #description h1 {font-size: 2rem;}
+}
+
+@media only screen and (min-width: 600px) {
+	#description {height: calc(100vh - 4rem); padding-top: 0%;}
+	#description h2, #description h1 {font-size: 2rem;}
+}
+
+@media only screen and (min-width: 600px) {
+	#description {height: calc(100vh - 4rem); padding-top: 0%;}
+	#description h2, #description h1 {font-size: 4rem;}
+}
+
+
 #description h2, #description h1 {
 	position: absolute;
-	font-size: 5vw;
 }
 #description h1 {
 	font-weight: inherit;
@@ -296,6 +312,7 @@ footer h5 {
 }
 #description h2 {
 	top: 40%;
+	width: 100%;
 }
 
 #mesh {
