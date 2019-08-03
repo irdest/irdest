@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="693.62756"
+   height="125.74146"
+   viewBox="0 0 183.5223 33.269095"
+   version="1.1"
+   id="SVGRoot"
+   inkscape:version="0.92.4 (f8dce91, 2019-08-02)"
+   sodipodi:docname="freifunk-2.svg">
+  <defs
+     id="defs4544" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.22577778"
+     inkscape:cx="400.65875"
+     inkscape:cy="499.42887"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="2560"
+     inkscape:window-height="1367"
+     inkscape:window-x="0"
+     inkscape:window-y="36"
+     inkscape:window-maximized="1"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     units="px" />
+  <metadata
+     id="metadata4547">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-198.67987,-348.87146)">
+    <circle
+       style="fill:none;stroke:#dc0067;stroke-width:0.51213264px"
+       cx="210.20285"
+       cy="370.38104"
+       r="11.266918"
+       id="circle2" />
+    <circle
+       style="fill:none;stroke:#dc0067;stroke-width:0.51213264px"
+       cx="229.66394"
+       cy="365.2597"
+       r="11.266918"
+       id="circle4" />
+    <circle
+       style="fill:none;stroke:#dc0067;stroke-width:3.07279563px"
+       cx="229.66394"
+       cy="365.2597"
+       r="14.851848"
+       id="circle6" />
+    <polygon
+       transform="matrix(0.51213264,0,0,0.51213264,191.7661,342.72586)"
+       style="fill:#ffcb05"
+       points="37,50 31,44 26,44 30,48 22,48 22,52 30,52 26,56 31,56 "
+       id="polygon8" />
+    <polygon
+       transform="matrix(0.51213264,0,0,0.51213264,191.7661,342.72586)"
+       style="fill:#ffcb05"
+       points="88,47 75,47 81,41 73,41 64,50 73,59 81,59 75,53 88,53 "
+       id="polygon10" />
+    <text
+       x="316.89438"
+       y="381.81879"
+       style="font-weight:bold;font-size:22.72346878px;font-family:helvetica;text-anchor:middle;stroke-width:1.26241481"
+       id="text12">freifunk.net</text>
+  </g>
+</svg>
