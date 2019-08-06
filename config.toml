@@ -19,3 +19,7 @@ DefaultContentLanguage = "en"
     weight = 2
     LanguageName = "العربية"
 
+
+[blackfriday]
+  plainIDAnchors = true
+  hrefTargetBlank = true
