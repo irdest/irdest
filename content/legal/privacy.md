@@ -7,6 +7,6 @@ The web services under the domain 'qaul.net' run on different, community driven 
 
 A non exhaustive list of web services run by qaul.net:
 
-* [www.qaul.net](https://qaul.net) this web page
-* [docs.qaul.net](https://docs.qaul.net) hosts the qaul.net contributer guide
-* [api.qaul.net](https://api.qaul.net) hosts the rust software API documentation
+* [www.qaul.net](https://qaul.net) hosts this web page
+* [docs.qaul.net](https://docs.qaul.net) hosts the qaul.net documentations
+* [get.qaul.net](https://get.qaul.net) is the qaul.net download server
