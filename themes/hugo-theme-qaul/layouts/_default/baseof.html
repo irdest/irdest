@@ -2,9 +2,8 @@
 <html lang="{{ $.Site.LanguageCode | default "en" }}">
     {{- partial "head.html" . -}}
     <body>
-        {{- partial "header.html" . -}}
         {{- block "main" . }}{{- end }}
-        {{- partial "footer.html" . -}}
+        <!-- {{- partial "footer.html" . -}} -->
 
         {{ block "scripts" . }}{{ partialCached "scripts.html" . }}{{ end }}
     </body>

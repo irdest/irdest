@@ -1,6 +1,7 @@
 ---
-title: 'Download qaul.net App'
+Title: 'Download qaul.net'
+Sorry: |
+    We are currently rewriting qaul.net to support more features 
+    and a wider range of hardware. In the meantime, you can download
+    the current (legacy) app here.
 ---
-
-**We are rewriting qaul.net at the moment. 
-Until qaul.net 2.0 is ready, you can download the 1.0 legacy app.**

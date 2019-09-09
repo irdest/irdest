@@ -10,9 +10,9 @@ VoiceChat: "Voice Chat"
 VoiceChatDetails: "Have voice calls and broadcast live radio shows"
 UserDiscovery: "User Discovery"
 UserDiscoveryDetails: "Discover users and services around you, verify their identity when you meet"
-WifiP2P: "Ad-hoc Peer to Peer Network"
-WifiP2PDetails: "Don't rely on existing infrastructure - become part of new ad-hoc infrastructure wherever you are"
-MultilingualInterface: "Multilingual Interface"
-MultilingualInterfaceDetails: "Enjoy the application interface in your native language"
+DelTol: "Delay tolerant routing"
+DelTolDetails: "Don't rely on a stable connection between you and your friends, trust a network that stores data until it finds it's home"
+AccRecover: "Decentralised account recovery"
+AccRecoverDetails: "Encrypt and backup your identity into a network, in case you have to surrender your device"
 ---
 
