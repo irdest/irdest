@@ -31,10 +31,10 @@ other = "qaul.net Community"
 [AboutQaulNet]
 other = "About qaul.net"
 
-[QaulNetGithub]
+[QaulNetRepository]
 other = "qaul.net Repository"
 
-[WebSiteGithub]
+[WebSiteRepository]
 other = "Web Site Repository"
 
 [BugReport]

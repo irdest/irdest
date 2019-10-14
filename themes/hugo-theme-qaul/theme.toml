@@ -2,17 +2,17 @@
 # See https://github.com/gohugoio/hugoThemes#themetoml for an example
 
 name = "Qaul.Net"
-license = "MIT"
-licenselink = "https://github.com/yourname/yourtheme/blob/master/LICENSE"
+license = "CC-BY"
+licenselink = "https://git.open-communication.net/qaul/website/blob/master/LICENSE"
 description = ""
-homepage = "http://example.com/"
+homepage = "http://qaul.net/"
 tags = []
 features = []
 min_version = "0.41"
 
 [author]
-  name = ""
-  homepage = ""
+  name = "qaul.net Community"
+  homepage = "https://qaul.net"
 
 # If porting an existing theme
 [original]
