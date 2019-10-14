@@ -122,6 +122,9 @@ nav.main li {
 	padding: 0;
 	white-space: nowrap;
 }
+nav.main .inline-svg.git-square {
+	top: 0.1rem;
+}
 nav.main .inline-svg.language {
 	top: -0.02rem;
 	width: 2.3rem;
