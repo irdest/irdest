@@ -10,14 +10,14 @@ title: "qaul.net Documentation"
 
 ## {{< fontawesome "book" >}} Contributers Guide
 
-[Read the guide](https://docs.qaul.net/contributers)
+[Read the contributers guide](https://docs.qaul.net/contributers)
 
 
 ## {{< fontawesome "book" >}} Rust API Documentation
 
-[Read the documentation](https://docs.qaul.net/api)
+[Read the API documentation](https://docs.qaul.net/api)
 
 
 ## {{< fontawesome "book" >}} Rust HTTP-API
 
-[Read the documentation](https://docs.qaul.net/http-api)
+[Read the HTTP-API documentation](https://docs.qaul.net/http-api)
