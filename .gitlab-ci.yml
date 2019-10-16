@@ -1,0 +1,32 @@
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+# Build & deploy the web site in the master branch
+Deploy web site:
+  script:
+  - HUGO_DISABLELANGUAGES="ar" hugo
+  - rsync -azhe "ssh -p 2223 -i /root/.ssh/id_ed25519" ./public/ admin@qaul.net:/home/admin
+  artifacts:
+    paths:
+    - public
+    expire_in: 1 week
+  only:
+  - master
+  tags:
+  - qaul-web-deploy
+
+
+# Build web site for testing reasons in all 
+# branches except the master branch.
+Build web site:
+  script:
+  - HUGO_DISABLELANGUAGES="ar" hugo
+  artifacts:
+    paths:
+    - public
+    expire_in: 1 week
+  except:
+  - master
+  tags:
+  - hugo
+
