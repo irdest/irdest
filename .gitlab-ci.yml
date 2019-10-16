@@ -5,7 +5,7 @@ variables:
 Deploy web site:
   script:
   - HUGO_DISABLELANGUAGES="ar" hugo
-  - rsync -azhe "ssh -p 2223 -i /root/.ssh/id_ed25519" ./public/ admin@qaul.net:/home/admin
+  - rsync -azhe "ssh -p 2223 -i /home/gitlab-runner/.ssh/id_ed25519 -o StrictHostKeyChecking=no" ./public/ admin@qaul.net:/home/admin
   artifacts:
     paths:
     - public
