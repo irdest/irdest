@@ -13,7 +13,7 @@ title: "qaul.net Dokumentation"
 [Lies den Contributers Guide](https://docs.qaul.net/contributers)
 
 
-## {{< fontawesome "book" >}} Rust API Documentation
+## {{< fontawesome "book" >}} Rust API Dokumentation
 
 [Lies die API Dokumentation](https://docs.qaul.net/api)
 
