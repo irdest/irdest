@@ -8,9 +8,9 @@ title: "qaul.net Documentation"
 [Read the tutorials](/tutorials)
 
 
-## {{< fontawesome "book" >}} Contributers Guide
+## {{< fontawesome "book" >}} Contributors Guide
 
-[Read the contributers guide](https://docs.qaul.net/contributers)
+[Read the contributors guide](https://docs.qaul.net/contributors)
 
 
 ## {{< fontawesome "book" >}} Rust API Documentation
