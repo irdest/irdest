@@ -52,9 +52,6 @@ other = "Documentation"
 [QaulNetAPI]
 other = "qaul.net API Documentation"
 
-[ZulipChat]
-other = "Zulip Development & Social Chat"
-
 [IrcChat]
 other = "IRC: #qaul.net on freenode"
 
@@ -63,6 +60,9 @@ other = "Community Mailing List"
 
 [AnnouncementMailinglist]
 other = "Announcements Mailing List"
+
+[VoiceChatMeeting]
+other = "Open weekly voice chat meeting, Mondays, 17:00 UTC"
 
 [Privacy]
 other = "Privacy Statement"
