@@ -502,3 +502,81 @@ h1.top {
 	flex-direction: column;
 	align-items: center;
 }
+
+
+/* news */
+/* news index teasers */
+#news .headline {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin: 0;
+	padding: 0;
+}
+.headline .line {
+	flex: 1;
+	margin. 0;
+	padding: 0;
+}
+.headline .line hr {
+	border: 0;
+	border-bottom: 1px solid var(--c-bright-bg);
+}
+.headline h4 {
+	margin: 0;
+	padding: 1rem;
+	font-weight: normal;
+	font-size: 1rem;
+}
+.headline h4 a:hover {
+	text-decoration: none;
+}
+.teasers {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-evenly;
+	margin: 0;
+	padding: 0;
+}
+.teasers a.item {
+	max-width: 15rem;
+	min-width: 13rem;
+	margin: 0;
+	padding: 1rem;
+}
+.teasers a.item:hover {
+	background-color: var(--c-blue-bg-highlite);
+	text-decoration: none;
+}
+.teasers .title {
+	font-size: 1.1rem;
+	margin-bottom: 0.4rem;
+}
+.teasers .description {
+	font-size: 1.1rem;
+	color: var(--c-white-bg-highlite);
+}
+
+
+
+
+/* news pages */
+article.news h1 {
+	padding: 0 1rem;
+}
+a.newslist {
+	display:block;
+	padding: 1rem;
+	margin-bottom: 1rem;
+	color: inherit;
+}
+a.newslist:hover {
+	background-color: var(--c-white-bg-highlite);
+}
+.newslist h3, .newslist p {
+	margin: 0;
+}
+.newslist .date {
+	font-size: smaller;
+	color: var(--c-footer-txt);
+}

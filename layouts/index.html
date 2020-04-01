@@ -7,6 +7,23 @@
     <h2>{{ .Params.Title }}</h2>
 </section>
 {{ end }}
+{{ with .Site.GetPage "news" }}
+<section id="news" class="blue">
+    <div class="headline">
+        <div class="line"><hr/></div>
+        <h4><a href="{{ relLangURL "/news" }}">{{ i18n "News" }}</a></h4>
+        <div class="line"><hr/></div>
+    </div>
+    <div class="teasers">
+    {{ range first 3 ( where .Paginator.Pages ".Params.startpage" "eq" true) }}
+    <a href="{{ .Permalink }}" class="item">
+        <div class="title">{{ .Title }}</div>
+        <div class="description">{{ .Description }}</div>
+    </a>
+    {{ end }}
+    </div>
+</section>
+{{ end }}
 {{ with .Site.GetPage "home/mesh" }}
 <section id="mesh" class="dark">
 <div class="page">
