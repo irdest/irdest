@@ -201,7 +201,7 @@ nav.main .languages ul a:hover {
 		display: block;
 	}
 }
-  
+
 @media only screen and (max-width: 600px) {
 	nav.main ul {
 		flex-flow: column wrap;
@@ -209,7 +209,7 @@ nav.main .languages ul a:hover {
 
 	nav.main #nav-top a {
 		text-align: center;
-		border-top: 1px solid rgba(255,255,255,0.3); 
+		border-top: 1px solid rgba(255,255,255,0.3);
 		border-bottom: 1px solid rgba(0,0,0,0.1);
 	}
 	nav.main .languages ul {
@@ -223,7 +223,7 @@ nav.main .languages ul a:hover {
 	}
 	nav.main #nav-top .languages ul a {
 		padding-top:0.5rem;
-		padding-bottom: 0.5rem;	
+		padding-bottom: 0.5rem;
 	}
 	nav.main #nav-top .languages ul a:hover {
 		background-color: var(--c-dark-bg-highlite);
@@ -457,8 +457,12 @@ h1.top {
 	display: inline-block;
 	padding-right: 0.3rem;
 }
-
-
+.taxonomy a.is-active {
+  background-color: var(--c-blue-bg);
+  color: var(--c-blue-txt) !important;
+  padding: 6px;
+  border-radius: 3px;
+}
 
 
 /* tutorials */
@@ -495,7 +499,7 @@ h1.top {
 }
 .preview .caption {
 	padding: 1rem 0;
-} 
+}
 
 .participation__box {
 	display: flex;
