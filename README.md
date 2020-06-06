@@ -1,4 +1,4 @@
-# opus-rs [![](https://meritbadge.herokuapp.com/opus)](https://crates.io/crates/magnum-opus) [![](https://img.shields.io/badge/docs-online-2020ff.svg)](https://docs.rs/magnum-opus)
+# magnum-opus [![](https://meritbadge.herokuapp.com/magnum-opus)](https://crates.io/crates/magnum-opus) [![](https://img.shields.io/badge/docs-online-2020ff.svg)](https://docs.rs/magnum-opus)
 
 ### This is the fork of @SpaceManiac repo, which now is abandoned
 
