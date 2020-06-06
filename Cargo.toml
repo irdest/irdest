@@ -14,5 +14,5 @@ repository = "https://github.com/DuckerMan/magnum-opus"
 documentation = "https://docs.rs/magnum-opus"
 
 [dependencies]
-opusic-sys = "0.2.2"
+opusic-sys = "0.3"
 libc = "0.2"
