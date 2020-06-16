@@ -18,6 +18,6 @@ title: "qaul.net Dokumentation"
 [Lies die API Dokumentation](https://docs.qaul.net/api)
 
 
-## {{< fontawesome "book" >}} Rust HTTP-API
+## {{< fontawesome "book" >}} HTTP-API Dokumentation
 
 [Lies die HTTP-API Dokumentation](https://docs.qaul.net/http-api)
