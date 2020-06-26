@@ -26,27 +26,30 @@ fn generate_lib() {
 
     let out = PathBuf::new().join("src").join("lib.rs");
 
-    let bindings = bindgen::Builder::default().header("src/wrapper.h")
-                                              .raw_line(PREPEND_LIB)
-                                              .parse_callbacks(Box::new(ParseCallbacks))
-                                              .generate_comments(false)
-                                              .generate()
-                                              .expect("Unable to generate bindings");
+    let bindings = bindgen::Builder::default()
+        .header("src/wrapper.h")
+        .raw_line(PREPEND_LIB)
+        .parse_callbacks(Box::new(ParseCallbacks))
+        .generate_comments(false)
+        .generate()
+        .expect("Unable to generate bindings");
 
-    bindings.write_to_file(out).expect("Couldn't write bindings!");
-
+    bindings
+        .write_to_file(out)
+        .expect("Couldn't write bindings!");
 }
 
 #[cfg(not(feature = "build-bindgen"))]
-fn generate_lib() {
-}
+fn generate_lib() {}
 
 fn build() {
     const CURRENT_DIR: &'static str = "opus";
 
-    let out_dir = cmake::Config::new(CURRENT_DIR).define("OPUS_INSTALL_PKG_CONFIG_MODULE", "OFF")
-                                                 .define("OPUS_INSTALL_CMAKE_CONFIG_MODULE", "OFF")
-                                                 .build();
+    let out_dir = cmake::Config::new(CURRENT_DIR)
+        .define("OPUS_INSTALL_PKG_CONFIG_MODULE", "OFF")
+        .define("OPUS_INSTALL_CMAKE_CONFIG_MODULE", "OFF")
+        .define("CMAKE_INSTALL_LIBDIR", "lib")
+        .build();
 
     println!("cargo:rustc-link-lib=static=opus");
     println!("cargo:rustc-link-search=native={}/lib", out_dir.display());
