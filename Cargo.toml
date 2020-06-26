@@ -1,7 +1,7 @@
 [package]
 name = "opus-rs"
 version = "0.4.0"
-authors = ["The qaul.net deveolpers <contact@qaul.net>", "Katharina Fey <kookie@spacekookie.de>"
+authors = ["The qaul.net deveolpers <contact@qaul.net>", "Katharina Fey <kookie@spacekookie.de>"]
 edition = "2018"
 description = "Safe Rust bindings for libopus"
 readme = "README.md"
