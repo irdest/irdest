@@ -1,21 +1,18 @@
 [package]
-name = "opusic-sys"
-version = "0.3.0"
-authors = ["Douman <douman@gmx.se>"]
-description = "Bindings to libopus"
+name = "libopus-sys"
+version = "0.4.0"
+authors = ["The qaul.net developers <contact@qaul.net>", "Katharina Fey <kookie@spacekookie.de"]
+description = "Rust bindings to libopus"
 keywords = ["opus"]
 readme = "README.md"
-repository = "https://github.com/DoumanAsh/opusic-sys"
+repository = "https://git.open-communication.net/qaul/libopus-sys"
 license = "Apache-2.0"
 
 [dependencies]
 
 [build-dependencies]
 cmake = "0.1"
-
-[build-dependencies.bindgen]
-version = "0.54"
-optional = true
+bindgen = { version = "0.54", optional = true }
 
 [features]
 # Used internally to generate lib.rs
