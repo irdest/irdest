@@ -3,12 +3,20 @@ body {
     flex-direction: column;
     margin: 0;
     font-family: sans-serif;
+    background: #e0e2e2;
+    font-weight: 300;
+}
+
+.wrap {
+    max-width: 650px;
 }
 
 .header {
+    display: flex;
+    justify-content: center;
     padding: 2rem;
     background: black;
-    color: white;
+    color: #EFEFEF;
 }
 
 .logo {
@@ -23,13 +31,13 @@ body {
 
 .navbar-link {
     text-decoration: none;
-    border-bottom: 1px solid white;
-    color: white;
+    border-bottom: 1px solid #EFEFEF;
+    color: #EFEFEF;
     margin-left: 1em;
 }
 
 .navbar-link:visited {
-    color: white;
+    color: #EFEFEF;
 }
 
 .title hr {
@@ -45,28 +53,41 @@ body {
 }
 
 .intro-block {
-    padding: 2em 4em;
-    background: #05a5fc;
-    color: white;
+    display: flex;
+    justify-content: center;
+    padding: 2em;
+    background: #2f556b;
+    color: #EFEFEF;
 }
 
 .intro-item {
     display: flex;
     align-items: center;
+    margin-bottom: 1em;
 }
 
 .intro-item img {
     padding-right: 1em;
-    color: white;
-    height: 64px;
+    color: #EFEFEF;
+    height: 4em;
 }
 
 .intro-item a {
-    color: #F2F2F2;
+    color: white;
 }
 
+.intro-col h2 {
+    margin: 0.5em 0;
+    font-size: 1em;
+    font-weight: 800;
+}
+
+.intro-col p { margin: 0.5em 0; }
+
 .content {
-    margin: 3em;
+    margin: 2em;
+    display: flex;
+    justify-content: center;
 }
 
 .content h1 {
@@ -100,7 +121,7 @@ body {
 /* header {  */
 /*     font-family: serif;  */
 /*     background: black;  */
-/*     color: white;  */
+/*     color: #EFEFEF;  */
 /*     display: flex;  */
 /*     align-items: center;  */
 /*     justify-content: center;  */
@@ -129,9 +150,9 @@ body {
 
 /* header p a {  */
 /*     display: inline-block;  */
-/*     border: 0.25em solid white;  */
+/*     border: 0.25em solid #EFEFEF;  */
 /*     border-radius: 0.5em;  */
-/*     color: white;  */
+/*     color: #EFEFEF;  */
 /*     padding: 0.5em 1ch;  */
 /*     margin: 1em 0 0;  */
 /*     text-decoration: none;  */
@@ -139,7 +160,7 @@ body {
 /* } */
 
 /* header a:hover, header a:focus {  */
-/*     background: white;  */
+/*     background: #EFEFEF;  */
 /*     color: black;  */
 /* } */
 
@@ -191,7 +212,7 @@ body {
 
 /* footer {  */
 /*     background: black;  */
-/*     color: white;  */
+/*     color: #EFEFEF;  */
 /* } */
 
 /* footer > div {  */
