@@ -1,5 +1,0 @@
----
-Title: Community
-Contributions: |
-    
----

@@ -1,14 +1,14 @@
 ---
 Introduction_Title: What is qaul.net?
 Introduction: |
-    **qaul.net** allows devices like laptops and smartphones to create a
-    **wireless mesh network** overBluetooth and direct WiFi connections,
-    rather than relying on internet access via a mobile network.  This
-    **decentralised and open network** extends across any qaul.net-enabled
-    device, so that if two people aren't close enough to each other for
-    their devices to connect directly, data can be sent via other devices
-    in the middle, without those devices being able to read or change the
-    messages passing through it.
+    **qaul.net** is a set of tools, that allows devices like laptops 
+    and smartphones to create a **wireless mesh network** over Bluetooth 
+    and direct WiFi connections, rather than relying on internet access
+    via a mobile network.  This **decentralised and open network** extends
+    across any qaul.net-enabled device, so that if two people aren't close
+    enough to each other for their devices to connect directly, data can
+    be sent via other devices in the middle, without those devices being
+    able to read or change the messages passing through it.
 
     It supports instant messaging, voice calls, social media, radio
     broadcast, and file sharing — all in a single app.  Additionally it is
@@ -21,7 +21,7 @@ Meshing: |
     between you and the Internet: your Internet service provider (ISP).
     Whether you're using a  mobile network tower or a broadband connection,
     your access to the Internet is controlled by a central authority.  This
-    means that a entity can control or censor your internet traffic.
+    means that a entity can monitor or censor your internet traffic.
 
     In a mesh network there is no network owner. Instead, every user's devices
     link together directly to create a new network where data can flow

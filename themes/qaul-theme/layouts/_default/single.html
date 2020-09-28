@@ -1,12 +1,36 @@
-{{ define "main" }}
-<main id="main">
-<section class="white">
-    <h1 class="top">{{ .Title }}</h1>
-    <div class="page">
-    <article>
-        {{ .Content }}
-    </article>
+{{ define "head-override" }}
+
+{{ end }}
+
+{{ define "navigation" }}
+<div class="header">
+  <div class="wrap">
+    <!-- top logo & nav bar -->
+    <div class="navbar">
+      <span class="logo"><a href="/" class="title-link">قول</a></span>
+      <div>
+        {{ with .Site.GetPage "home/nav" }}
+        <a class="navbar-link" href="downloads">{{ .Params.Download }}</a>
+        <a class="navbar-link" href="community">{{ .Params.Community }}</a>
+        <a class="navbar-link" href="learn">{{ .Params.Learn }}</a>
+        {{ end }}
+      </div>
     </div>
-</section>
-</main>
+
+    <!-- Main title -->
+    <div class="title">
+      <h1>{{ .Title }}</h1>
+      <hr/>
+    </div>
+  </div>
+</div>
+{{ end }}
+
+{{ define "main" }}
+<div class="content">
+  <div class="wrap">
+    {{ .Content }}
+  </div>
+</div>
+
 {{ end }}
