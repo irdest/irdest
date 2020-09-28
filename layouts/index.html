@@ -1,168 +1,76 @@
-<!-- {{ define "main" }} -->
-<!-- {{ with .Site.GetPage "page" "home/main" }} -->
-<!-- <main id="main" class="home"> -->
-<!--   <header> -->
-<!--     <h1><span lang="arb">قول</span> qaul.net</h1> -->
-
-<!--     <div> -->
-<!--       <p>In 2018, governments in at least 25 countries shut down the -->
-<!--       internet at least 196 times.</p> -->
-<!--       <p><strong>Be prepared.</strong></p> -->
-<!--       <p><a href="#">Install qaul.net</a></p> -->
-<!--     </div> -->
-<!--   </header> -->
-
-<!--   {{ end }} -->
-
-<!--   {{ with .Site.GetPage "home/mesh" }} -->
-<!--   <section> -->
-<!--     <h2>What is qaul.net?</h2> -->
-
-<!--     <div> -->
-<!--       <p class="image"> -->
-<!-- 	<img src="/home/qaul-mesh.svg" alt="" width="400" height="178"> -->
-<!--       </p> -->
-
-<!--       <p> {{ .Params.Description | markdownify }} </p> -->
-<!--     </div> -->
-
-<!--     <br /> -->
-<!--     <h2>A decentralised world</h2> -->
-
-<!--     <p> {{ .Params.Decentralisation | markdownify }} </p> -->
-<!--   </section> -->
-<!--   {{ end }} -->
-
-<!--   {{ with .Site.GetPage "home/features" }} -->
-<!--   <section class="features boxed"> -->
-<!--     <h2>Features</h2> -->
-<!--     <div> -->
-<!--       <section> -->
-<!--         <h3>{{ .Params.TextMessaging }}</h3> -->
-<!--         <p>{{ .Params.TextMessagingDetails }}</p> -->
-<!--       </section> -->
-<!--       <section> -->
-<!--         <h3>{{ .Params.FileSharing }}</h3> -->
-<!--         <p>{{ .Params.FileSharingDetails }}</p> -->
-<!--       </section> -->
-<!--     </div> -->
-<!--     <div> -->
-<!--       <section> -->
-<!--         <h3>{{ .Params.VoiceChat }}</h3> -->
-<!--         <p>{{ .Params.VoiceChatDetails }}</p> -->
-<!--       </section> -->
-<!--       <section> -->
-<!--         <h3>{{ .Params.UserDiscovery }}</h3> -->
-<!--         <p>{{ .Params.UserDiscoveryDetails }}</p> -->
-<!--       </section> -->
-<!--     </div> -->
-<!--     <div> -->
-<!--       <section> -->
-<!--         <h3>{{ .Params.DelTol }}</h3> -->
-<!--         <p>{{ .Params.DelTolDetails }}</p> -->
-<!--       </section> -->
-<!--       <section> -->
-<!--         <h3>{{ .Params.AccRecover }}</h3> -->
-<!--         <p>{{ .Params.AccRecoverDetails }}</p> -->
-<!--       </section> -->
-<!--     </div> -->
-<!--   </section> -->
-<!--   {{ end }} -->
-
-<!--   {{ with .Site.GetPage "home/download" }} -->
-<!--   <section class="downloads boxed" id="download"> -->
-<!--     <h2>{{ .Title }}</h2> -->
-<!--     <p>{{ .Params.Sorry }}</p> -->
-<!--     <div> -->
-<!--       <section> -->
-        
-<!--       </section> -->
-<!--     </div> -->
-<!--   </section> -->
-<!--   {{ end }} -->
-  
-<!-- </main> -->
-<!-- {{ end }} -->
-
-<html>
-  <head>
-    <link rel="stylesheet" href="{{ "css/qaul.css" | relURL }}"  type="text/css">
-  </head>
-  <body>
-    <div class="header">
-      <div class="wrap">
-        <!-- top logo & nav bar -->
-        <div class="navbar">
-          <span class="logo">قول</span>
-          <div>
-            <a class="navbar-link" href="downloads">Download</a>
-            <a class="navbar-link" href="community">Community</a>
-            <a class="navbar-link" href="help">Help</a>
-          </div>
-        </div>
-
-        <!-- Main title -->
-        <div class="title">
-          <h1>Internet independent wireless mesh communication</h1>
-          <hr/>
-          <p><strong>qaul.net</strong> is building tools for the next revolution</p>
-        </div>
+{{ define "navigation" }}
+{{ with .Site.GetPage "home/nav" }}
+<div class="header">
+  <div class="wrap">
+    <!-- top logo & nav bar -->
+    <div class="navbar">
+      <span class="logo">قول</span>
+      <div>
+        <a class="navbar-link" href="downloads">{{ .Params.Download }}</a>
+        <a class="navbar-link" href="community">{{ .Params.Community }}</a>
+        <a class="navbar-link" href="learn">{{ .Params.Learn }}</a>
       </div>
     </div>
 
-    <div class="intro-block">
-      <div class="wrap">
-        <div class="intro-item">
-          <img src="{{ "img/placeholder.svg" | relURL }}" />
-          <div class="intro-col">
-            <h2>qaul.net is resilient</h2>
-            <p>This section is talking about how qaul.net can be used for
-              political action.  There will be a <a href="">link</a> here or
-              there, and it should tell people about political persecution.</p>
-          </div>
-        </div>
-        <div class="intro-item">
-          <img src="{{ "img/placeholder.svg" | relURL }}" />
-          <div class="intro-col">
-            <h2>An extensible architecture</h2>
-            
-            <p>This section talks about generally decentralised
-              infrastructure.  There are <a href="">links</a>
-              about <a href="">infrastructure</a> and whatever</p>
-          </div>
-        </div>
-        <div class="intro-item">
-          <img src="{{ "img/placeholder.svg" | relURL }}" />
-          <div class="intro-col">
-            <h2>Free and open-source software</h2>
+    <!-- Main title -->
+    <div class="title">
+      <h1>{{ .Title }}</h1>
+      <hr/>
+      <p>{{ .Params.Tagline | markdownify }}</p>
+    </div>
+  </div>
+</div>
+{{ end }}
+{{ end }}
 
-            <p>Did you know that qaul.net is free software, can be
-              modified and studied, and can be made to run on all sorts of
-              existing platforms.</p>
-          </div>
-        </div>
+{{ define "main" }}
+{{ with .Site.GetPage "home/intro" }}
+<div class="intro-block">
+  <div class="wrap">
+    <div class="intro-item">
+      <img src="{{ "img/cube.svg" | relURL }}" />
+      <div class="intro-col">
+        <h2>{{ .Params.Resilient_Title }}</h2>
+        {{ .Params.Resilient | markdownify }}
       </div>
     </div>
-
-    <div class="content">
-    <div class="wrap">
-      <h1>What is qaul.net?</h1>
-
-      <p>qaul.net is a free software suite, which enables everyday
-      devices, such as laptops and smartphones to create an internet
-      independent decentralised and open ad-hoc wireless mesh
-      network. It supports both public and private text messaging,
-      voice calls, audio broadcasts and file sharing — all in a single
-      app.</p>
-
-      <p>Independent of existing wireless and celular infrastructure,
-      it empowers users to share ideas and organise, circumventing
-      government censorship and corporate surveillance.</p>
-
-      <p>In addition to this, it provides a powerful service library,
-      which enables others to write applications that communicate and
-      interact with an existing qaul network.</p>
+    <div class="intro-item">
+      <img src="{{ "img/extension.svg" | relURL }}" />
+      <div class="intro-col">
+        <h2>{{ .Params.Extensible_Title }}</h2>
+        {{ .Params.Extensible | markdownify }}
+      </div>
     </div>
+    <div class="intro-item">
+      <img src="{{ "img/network.svg" | relURL }}" />
+      <div class="intro-col">
+        <h2>{{ .Params.FOSS_Title}}</h2>
+        {{ .Params.FOSS | markdownify }}
+      </div>
     </div>
-  </body>
-</html>
+  </div>
+</div>
+{{ end }}
+
+{{ with .Site.GetPage "home/about" }}
+<div class="content">
+  <div class="wrap">
+    <h1>{{ .Params.Introduction_Title }}</h1>
+
+    {{ .Params.Introduction | markdownify }}
+
+    <h1>{{ .Params.Meshing_Title }}</h1>
+    {{ .Params.Meshing | markdownify }}
+  </div>
+</div>
+{{ end }}
+
+{{ with .Site.GetPage "home/contribute" }}
+<div class="contribute-block">
+  <div class="wrap">
+    <h1>{{ .Params.Contribute_Title }}</h1>
+    {{ .Params.Contribute | markdownify }}
+  </div>
+</div>
+{{ end }}
+{{ end }}

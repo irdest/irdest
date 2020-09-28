@@ -1,0 +1,40 @@
+{{ define "navigation" }}
+{{ with .Site.GetPage "home/nav" }}
+<div class="header">
+  <div class="wrap">
+    <!-- top logo & nav bar -->
+    <div class="navbar">
+      <span class="logo">قول</span>
+      <div>
+        <a class="navbar-link" href="downloads">{{ .Params.Download }}</a>
+        <a class="navbar-link" href="community">{{ .Params.Community }}</a>
+        <a class="navbar-link" href="learn">{{ .Params.Learn }}</a>
+      </div>
+    </div>
+  </div>
+</div>
+{{ end }}
+{{ end }}
+
+{{ with .Site.GetPage "community/contributions" }}
+<div class="content">
+  <div class="wrap">
+    <h1>{{ .Params.Introduction_Title }}</h1>
+
+    {{ .Params.Introduction | markdownify }}
+
+    <h1>{{ .Params.Meshing_Title }}</h1>
+    {{ .Params.Meshing | markdownify }}
+  </div>
+</div>
+{{ end }}
+
+{{ with .Site.GetPage "home/contribute" }}
+<div class="contribute-block">
+  <div class="wrap">
+    <h1>{{ .Params.Contribute_Title }}</h1>
+    {{ .Params.Contribute | markdownify }}
+  </div>
+</div>
+{{ end }}
+{{ end }}
