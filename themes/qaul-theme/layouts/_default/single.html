@@ -1,5 +1,5 @@
 {{ define "head-override" }}
-
+    <link rel="stylesheet" href="{{ "css/single.css" | relURL }}"  type="text/css">
 {{ end }}
 
 {{ define "navigation" }}
@@ -16,12 +16,6 @@
         {{ end }}
       </div>
     </div>
-
-    <!-- Main title -->
-    <div class="title">
-      <h1>{{ .Title }}</h1>
-      <hr/>
-    </div>
   </div>
 </div>
 {{ end }}
@@ -29,6 +23,8 @@
 {{ define "main" }}
 <div class="content">
   <div class="wrap">
+    <h1>{{ .Title }}</h1>
+    
     {{ .Content }}
   </div>
 </div>
