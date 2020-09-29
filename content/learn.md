@@ -20,7 +20,8 @@ Devs: |
     The contributors guide gives a broad overview of concepts, 
     components, and protocols.
     
-    * [Rust docs](https://docs.qaul.net/rust)
+    * [Rust API docs](https://docs.qaul.net/api)
+    * [HTTP API docs](https://docs.qaul.net/http-api)
     * [Contributors Manual](https://docs.qaul.net/contributors)
 ---
 
