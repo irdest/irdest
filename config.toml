@@ -1,12 +1,10 @@
 baseURL = "/"
 title = "qaul.net – قول"
-theme = "hugo-theme-qaul"
+theme = "qaul-theme"
 DefaultContentLanguage = "en"
-
 
 [params]
   description = "Internet independent wireless mesh communication app"
-
 
 [languages]
   [languages.en]

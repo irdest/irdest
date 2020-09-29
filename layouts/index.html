@@ -1,183 +1,63 @@
+{{ define "header-title" }}
+{{ with .Site.GetPage "home/nav" }}
+<!-- Main title -->
+<div class="title">
+  <h1>{{ .Title }}</h1>
+  <hr/>
+  <p>{{ .Params.Tagline | markdownify }}</p>
+</div>
+{{ end }}
+{{ end }}
+
 
 {{ define "main" }}
-{{ with .Site.GetPage "page" "home/main" }}
-<main id="main" class="home">
-<section id="description" class="blue">
-    <h1>qaul.net – قول</h1>
-    <h2>{{ .Params.Title }}</h2>
-</section>
-{{ end }}
-{{ with .Site.GetPage "news" }}
-<section id="news" class="blue">
-    <div class="headline">
-        <div class="line"><hr/></div>
-        <h4><a href="{{ relLangURL "/news" }}">{{ i18n "News" }}</a></h4>
-        <div class="line"><hr/></div>
+{{ with .Site.GetPage "home/intro" }}
+<div class="intro-block">
+  <div class="wrap">
+    <div class="intro-item">
+      <img src="{{ "img/cube.svg" | relURL }}" />
+      <div class="intro-col">
+        <h2>{{ .Params.Resilient_Title }}</h2>
+        {{ .Params.Resilient | markdownify }}
+      </div>
     </div>
-    <div class="teasers">
-    {{ range first 3 ( where .Paginator.Pages ".Params.startpage" "eq" true) }}
-    <a href="{{ .Permalink }}" class="item">
-        <div class="title">{{ .Title }}</div>
-        <div class="description">{{ .Description }}</div>
-    </a>
-    {{ end }}
+    <div class="intro-item">
+      <img src="{{ "img/extension.svg" | relURL }}" />
+      <div class="intro-col">
+        <h2>{{ .Params.Extensible_Title }}</h2>
+        {{ .Params.Extensible | markdownify }}
+      </div>
     </div>
-</section>
-{{ end }}
-{{ with .Site.GetPage "home/mesh" }}
-<section id="mesh" class="dark">
-<div class="page">
-    <div class="xl6 s12 box">
-        <img src="/home/qaul-mesh.svg">
+    <div class="intro-item">
+      <img src="{{ "img/network.svg" | relURL }}" />
+      <div class="intro-col">
+        <h2>{{ .Params.FOSS_Title}}</h2>
+        {{ .Params.FOSS | markdownify }}
+      </div>
     </div>
-    <div class="xl5 s12 box">
-        <p>{{ .Params.Description | markdownify }}</p>
-    </div>
+  </div>
 </div>
-</section>
 {{ end }}
-{{ with .Site.GetPage "page" "home/features" }}
-<section id="features" class="blue">
-<div class="page">
-    <h1>{{ .Title }}</h1>
-    <div class="feature s6 m4 box">
-        {{ partial "fontawesome.html" "comments" }}
-        <h3>{{ .Params.TextMessaging }}</h3>
-        <p>{{ .Params.TextMessagingDetails }}</p>
-    </div>
-    <div class="feature s6 m4 box">
-        {{ partial "fontawesome.html" "copy" }}
-        <h3>{{ .Params.FileSharing }}</h3>
-        <p>{{ .Params.FileSharingDetails }}</p>
-    </div>
-    <div class="feature s6 m4 box">
-        {{ partial "fontawesome.html" "phone-volume" }}
-        <h3>{{ .Params.VoiceChat }}</h3>
-        <p>{{ .Params.VoiceChatDetails }}</p>
-    </div>
-    <div class="feature s6 m4 box">
-        {{ partial "fontawesome.html" "users" }}
-        <h3>{{ .Params.UserDiscovery }}</h3>
-        <p>{{ .Params.UserDiscoveryDetails }}</p>
-    </div>
-    <div class="feature s6 m4 box">
-        {{ partial "fontawesome.html" "wifi" }}
-        <h3>{{ .Params.WifiP2P }}</h3>
-        <p>{{ .Params.WifiP2PDetails }}</p>
-    </div>
-    <div class="feature s6 m4 box">
-        {{ partial "fontawesome.html" "language" }}
-        <h3>{{ .Params.MultilingualInterface }}</h3>
-        <p>{{ .Params.MultilingualInterfaceDetails }}</p>
-    </div>
-</section>
-{{ end }}
-{{ with .Site.GetPage "home/screenshots" }}
-<section id="screenshots" class="dark">
-<div class="page">
-        <h1>{{ .Title }}</h1>
-    {{ .Content }}
+
+{{ with .Site.GetPage "home/about" }}
+<div class="content">
+  <div class="wrap">
+    <h1>{{ .Params.Introduction_Title }}</h1>
+
+    {{ .Params.Introduction | markdownify }}
+
+    <h1>{{ .Params.Meshing_Title }}</h1>
+    {{ .Params.Meshing | markdownify }}
+  </div>
 </div>
-</section>
 {{ end }}
-{{ with .Site.GetPage "home/download" }}
-<section id="download" class="blue">
-<div class="page">
-    <h1>{{ .Title }}</h1>
-    <div class="s12">
-        {{ .Content }}
-    </div>
-    <div class="distro m3 s6 box">
-        <a href="https://get.qaul.net/legacy/qaul.net-fat_1.0.0-beta5_x86_64_05022016.deb">
-        {{ partial "fontawesome.html" "ubuntu" }}
-        Ubuntu 18.04 LTS
-        </a>
-    </div>
-    <div class="distro m3 s6 box">
-        <a href="https://get.qaul.net/legacy/qaul.net-fat_1.0.0-beta5_win32_05022016.exe">
-        {{ partial "fontawesome.html" "windows" }}
-        Windows 7-10
-        </a>
-    </div>
-    <div class="distro m3 s6 box">
-        <a href="https://get.qaul.net/legacy/qaul.net-fat_1.0.0-beta5_OSX_05022016.dmg">
-        {{ partial "fontawesome.html" "apple" }}
-        OSX
-        </a>
-    </div>
-    <div class="distro m3 s6 box">
-        <a href="https://get.qaul.net/legacy/qaul.net-fat_1.0.0-beta5_android_05022016.apk">
-        {{ partial "fontawesome.html" "android" }}
-        Android</a><br/> 
-        (<a href="https://git.open-communication.net/qaul/qaul.net/blob/release-1.0.0/doc/Android_Devices.md" target="_blank">{{ i18n "CompatibilityList" }}</a>)
-    </div>
+
+{{ with .Site.GetPage "home/contribute" }}
+<div class="contribute-block">
+  <div class="wrap">
+    <h1>{{ .Params.Contribute_Title }}</h1>
+    {{ .Params.Contribute | markdownify }}
+  </div>
 </div>
-</section>
 {{ end }}
-{{ with .Site.GetPage "home/participation" }}
-<section id="participation" class="dark">
-<div class="page">
-    <h1>{{ .Title }}</h1>
-    <nav>
-    <div class="m4 s6 box participation__box">
-        <h3>{{ partial "fontawesome.html" "book-reader" }}</h3>
-        <ul class="left-aligned">
-            <li><a href="{{ "tutorials" | relLangURL }}">
-                {{ partial "fontawesome.html" "chalkboard-teacher" }}
-                {{ i18n "Tutorials" }}</a></li>
-            <li><a href="https://docs.qaul.net/contributors" target="_blank">
-                {{ partial "fontawesome.html" "book" }}
-                {{ i18n "ContributorsGuide" }}</a></li>
-            <li><a href="https://docs.qaul.net/api" target="_blank">
-                {{ partial "fontawesome.html" "book" }}
-                {{ i18n "QaulNetAPI" }}</a></li>
-            <li><a href="{{ "documentation" | relLangURL }}">
-                {{ i18n "More" }}</a></li>
-            </ul>
-    </div>
-    <div class="m4 s6 box participation__box">
-        <h3>{{ partial "fontawesome.html" "laptop-code" }}</h3>
-        <ul class="left-aligned">
-            <li><a href="https://git.open-communication.net/qaul/qaul.net" target="_blank">
-                {{ partial "fontawesome.html" "git-square" }} 
-                {{i18n "QaulNetRepository"}}</a></li>
-            <li><a href="https://git.open-communication.net/qaul/website" target="_blank">
-                {{ partial "fontawesome.html" "git-square" }}
-                {{i18n "WebSiteRepository"}}</a></li>
-            <li><a href="https://git.open-communication.net/qaul/qaul.net/issues" target="_blank">
-                {{ partial "fontawesome.html" "bug" }}
-                {{i18n "BugReport"}}</a></li>
-        </ul>
-    </div>
-    <div class="m4 s6 box participation__box">
-        <h3>{{ partial "fontawesome.html" "comments-solid" }}</h3>
-        <ul class="left-aligned">
-            <li><a href="https://webchat.freenode.net/#qaul.net" target="_blank">
-                {{ partial "fontawesome.html" "comments" }} 
-                {{ i18n "IrcChat" }}</a></li>
-            <li><a href="https://lists.sr.ht/%7Eqaul/community" target="_blank">
-                {{ partial "fontawesome.html" "envelope-open-text" }}
-                {{ i18n "CommunityMailinglist" }}</a></li>
-            <li><a href="https://lists.sr.ht/%7Eqaul/announcements" target="_blank">
-                {{ partial "fontawesome.html" "bullhorn" }}
-                {{ i18n "AnnouncementMailinglist" }}</a></li>
-            <li><a href="https://meet.jit.si/qaul.net" target="_blank">
-                {{ partial "fontawesome.html" "headset" }} 
-                {{ i18n "VoiceChatMeeting" }}</a></li>
-            </ul>
-    </div>
-<!--
-    <div class="xl3 s6 box">
-        <h3>{{ partial "fontawesome.html" "globe" }}</h3>
-        <ul>
-            <li><a href="#">
-                Translate this web site</a></li>
-        </ul>
-    </div>
--->
-    </nav>
-</div>
-</section>
-{{ end }}
-</main>
 {{ end }}
