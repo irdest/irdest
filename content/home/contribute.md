@@ -1,18 +1,16 @@
 ---
-Contribute_Title: Want to contribute?
+Contribute_Title: Want to learn more?
 Contribute: |
+    **Do you have questions about the project or want to talk to us about
+    qaul.net?  Check out the [Community](/community) page to learn how.**
+
     The project is currently undergoing a rewrite.  Many of the core tools
     are already done, but user-facing applications are lacking.  The easiest
-    way to get into **qaul.net** is to download the Linux `hub` binary and
-    join the open-qaul.net test network. [Find out how!](/Learn#hubd)
+    way to get into **qaul.net** is to download the Linux `qaul-hubd` binary
+    and joining the open qaul.net test network.
+    [Find out how!](/downloads#qaul-hubd)
     
-    If you have trouble setting up the hub server, check out the 
-    [Learn](learn) page to find documentation on both
-    user configuration, as well as code-internal docs.
-    
-    Development happens on your 
-    own [gitlab](https://git.open-communication.net/qaul) instance, where
-    you can also find various open issues.  If you have more questions
-    about the project or just want to see how things are going, check out
-    the [Community](/community) page.
+    If you have trouble setting up the hubd server, check out the 
+    [Learn](/learn#manuals) page to find user manuals, and documentation
+    on both code-internals, and qaul.net protocol descriptions.
 ---

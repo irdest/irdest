@@ -1,27 +1,14 @@
-{{ define "navigation" }}
+{{ define "header-title" }}
 {{ with .Site.GetPage "home/nav" }}
-<div class="header">
-  <div class="wrap">
-    <!-- top logo & nav bar -->
-    <div class="navbar">
-      <span class="logo">قول</span>
-      <div>
-        <a class="navbar-link" href="downloads">{{ .Params.Download }}</a>
-        <a class="navbar-link" href="community">{{ .Params.Community }}</a>
-        <a class="navbar-link" href="learn">{{ .Params.Learn }}</a>
-      </div>
-    </div>
-
-    <!-- Main title -->
-    <div class="title">
-      <h1>{{ .Title }}</h1>
-      <hr/>
-      <p>{{ .Params.Tagline | markdownify }}</p>
-    </div>
-  </div>
+<!-- Main title -->
+<div class="title">
+  <h1>{{ .Title }}</h1>
+  <hr/>
+  <p>{{ .Params.Tagline | markdownify }}</p>
 </div>
 {{ end }}
 {{ end }}
+
 
 {{ define "main" }}
 {{ with .Site.GetPage "home/intro" }}

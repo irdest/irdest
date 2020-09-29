@@ -1,57 +1,23 @@
 ---
-title: A long title about communities that are just so cool
+title: Community
+layout: page
 ---
 
-Leverage agile frameworks to provide a robust synopsis for high level
-overviews. Iterative approaches to corporate strategy foster
-collaborative thinking to further the overall value
-proposition. Organically grow the holistic world view of disruptive
-innovation via workplace diversity and empowerment.
 
-Bring to the table win-win survival strategies to ensure proactive
-domination. At the end of the day, going forward, a new normal that
-has evolved from generation X is on the runway heading towards a
-streamlined cloud solution. User generated content in real-time will
-have multiple touchpoints for offshoring.
+Do you have questions about qaul.net?  Trouble setting up your client?
+Or do you want to help out with development?  We have an active
+community and development chat on matrix:  [#qaul.net:matrix.org][matrix].
 
-Capitalize on low hanging fruit to identify a ballpark value added
-activity to beta test. Override the digital divide with additional
-clickthroughs from DevOps. Nanotechnology immersion along the
-information highway will close the loop on focusing solely on the
-bottom line.
+For more long-form discussions, announcements, and work-logs there is
+also a mailing list, hosted on [lists.sr.ht/~qaul/community][mail].
+We would be happy to answer your questions on either of those
+platforms.
 
-Podcasting operational change management inside of workflows to
-establish a framework. Taking seamless key performance indicators
-offline to maximise the long tail. Keeping your eye on the ball while
-performing a deep dive on the start-up mentality to derive convergence
-on cross-platform integration.
+The main code repository lives on our own [gitlab
+instance](https://git.open-communication.net/qaul).  A mirror of the
+main repo is available at [github](https://github.com/qaul/qaul.net)
 
-Collaboratively administrate empowered markets via plug-and-play
-networks. Dynamically procrastinate B2C users after installed base
-benefits. Dramatically visualize customer directed convergence without
-revolutionary ROI.
 
-Efficiently unleash cross-media information without cross-media
-value. Quickly maximize timely deliverables for real-time
-schemas. Dramatically maintain clicks-and-mortar solutions without
-functional solutions.
+[matrix]: https://matrix.to/#/!ljaaylfsbkWFYNoNPT:fairydust.space?via=fairydust.space&via=matrix.org&via=public.cat
+[mail]: https://lists.sr.ht/~qaul/community
 
-Completely synergize resource taxing relationships via premier niche
-markets. Professionally cultivate one-to-one customer service with
-robust ideas. Dynamically innovate resource-leveling customer service
-for state of the art customer service.
-
-Objectively innovate empowered manufactured products whereas parallel
-platforms. Holisticly predominate extensible testing procedures for
-reliable supply chains. Dramatically engage top-line web services
-vis-a-vis cutting-edge deliverables.
-
-Proactively envisioned multimedia based expertise and cross-media
-growth strategies. Seamlessly visualize quality intellectual capital
-without superior collaboration and idea-sharing. Holistically
-pontificate installed base portals after maintainable products.
-
-Phosfluorescently engage worldwide methodologies with web-enabled
-technology. Interactively coordinate proactive e-commerce via
-process-centric "outside the box" thinking. Completely pursue scalable
-customer service through sustainable potentialities.
