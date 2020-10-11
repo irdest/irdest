@@ -1,19 +1,15 @@
 # qaul rpc-layer
 
-qaul.net (the application) is a set of services, that all communicate
-with a shared backend.  This creates an extensible architecture
+qaul (the application) is a set of services, that all communicate with
+a shared backend.  This creates an extensible architecture.  On Linux,
+for example, this is done by `qaul-hubd`, a simple server daemon which
+runs the routing code and lets external applications connect to it.
 
-qaul.net (the application) is a set of services, all communicating
-with a shared backend.  In the case of qaul-hubd, or the android app
-for example, this is all done in the same binary.
-
-However because qaul.net is an extensible architecture, it needs to be
+However because qaul is an extensible architecture, it needs to be
 possible for third-party developers to attach their services to an
-already running system.  After all, there's littel use in creating
-abstraction, if each third-party developer needs to host their own
-router and database backend.
+already running system.
 
-To accomplish this, the qaul.net rpc-layer contains several crates to
+To accomplish this, the qaul rpc system contains several crates to
 help out with this challenge.
 
 ## Overview
@@ -32,10 +28,10 @@ with via the client-libs for each channel.  Following is an example.
 ### Example: map service
 
 You are an [OSM] enthusiast and you want to create an app that can
-sync OSM data via qaul.net, and show dynamicly created points of
-interest.  You also want people to have chats associated with each POI
-that gets reported, but you don't want to have to handle group
-encryption, and other problems.
+sync OSM data via qaul, and show dynamicly created points of interest.
+You also want people to have chats associated with each POI that gets
+reported, but you don't want to have to handle group encryption, and
+other problems.
 
 [OSM]: https://openstreetmap.org
 
@@ -45,7 +41,7 @@ to the `qaul-hubd` rpc-broker running on a system, which gives you
 access to using the `qaul-chat` service to implement the POI chat.
 
 
-# qaul.net rpc-layer
+# qaul rpc-layer
 
 
 Because qaul aims to be an extensible architecture, the core of
