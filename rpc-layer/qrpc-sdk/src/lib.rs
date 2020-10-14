@@ -130,7 +130,7 @@ mod service;
 mod socket;
 
 pub mod builders;
-pub mod errors;
+pub mod error;
 pub mod io;
 
 pub use service::{Service, ServiceConnector};
