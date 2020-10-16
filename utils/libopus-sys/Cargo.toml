@@ -1,0 +1,19 @@
+[package]
+name = "libopus-sys"
+version = "0.4.0"
+authors = ["The qaul.net developers <contact@qaul.net>", "Katharina Fey <kookie@spacekookie.de"]
+description = "Rust bindings to libopus"
+keywords = ["opus"]
+readme = "README.md"
+repository = "https://git.open-communication.net/qaul/libopus-sys"
+license = "Apache-2.0"
+
+[dependencies]
+
+[build-dependencies]
+cmake = "0.1"
+bindgen = { version = "0.54", optional = true }
+
+[features]
+# Used internally to generate lib.rs
+build-bindgen = ["bindgen"]
