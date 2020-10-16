@@ -1,70 +1,110 @@
-![http://qaul.net/](https://git.open-communication.net/qaul/qaul.net/raw/release-1.0.0/doc/qaul-net.png)
+![](docs/banner.svg)
 
-# qaul.net [![pipeline status](https://git.open-communication.net/qaul/qaul.net/badges/master/pipeline.svg)](https://git.open-communication.net/qaul/qaul.net/commits/master)
+**qaul** is a decentralised networking project, aiming to create easy
+to use solutions to ad-hoc wireless communication.  It supports many
+common desktop operating systems (Linux, Windows, MacOS, BSD, ...),
+and Android mobile phones.  iOS support is on the roadmap.
 
-**qaul.net** is an Internet independent ad-hoc wireless mesh-network
-suite that harnesses the power of everyday devices such as computers
-and smartphones to create a **Non-Centralized**, **Mesh Network** on
-which users can share files, have voice chats and send each other
-messages, however the power of qaul.net allows endless services over
-the service API. qaul.net removes the dependence on the centralized
-services such as the Internet and cellular networks and creates a
-network that anyone can be part of and share freely with no censorship
-what so ever.
+**qaul.net** is both a cross-platform application, implementing
+**messaging**, **filesharing**, and **voice calls**, but also a
+**development toolkit** to create fully decentralised third-party
+applications.
 
+In order to be able to run on unpriviledged mobile platforms qaul.net
+implements **decentralised routing protocols** and utilities entirely
+in userspace.  The codebase is largely written in
+[Rust](https://rustlang.org), with only a few compatibility components
+being written in more platform specific languages.
 
-## Development status
+All parts of the project are contained in this repository.  Following
+is an overview of the available components.  Each component has
+additional information.
 
-The project is currently being re-written for a more modular and
-portable approach. The new Release will be qaul.net 2.0. Please check
-our [milestones] & [issues] to get an idea of the development plan and
-status. If you want to get involved, see how to [participate] and read 
-the [contributors-guide].
+| Component   | Description      |
+|-------------|------------------|
+| [clients]   | qaul.net end-user applications for various platforms |
+| [docs]      | Manuals (for both users and developers), and tools to build and deploy documentation |
+| [emberweb]  | Cross-platform web interface bundled in with various user clients |
+| [libqaul]   | Core library of the qaul.net ecosystem.  Provides networking abstractions, user management and discovery |
+| [licenses]  | Set of license texts that are in use in this repository |
+| [netmods]   | Platform-specific networking interface drivers |
+| [nix]       | [nix](https://nixos.org) related build utilities |
+| [ratman]    | A decentralised and modular userspace frame router |
+| [rpc-layer] | qaul.net specific rpc system (qrpc) to support third-party components |
+| [tests]     | Integrated test suite for various components.  Most of the code also has inline tests |
+| [utils]     | Set of utilities that are used in various places and don't fit anywhere else |
 
-For the latest stable release, check the [`release-1.0.0`][release]
-branch.
-
-[milestones]: https://git.open-communication.net/groups/qaul/-/milestones
-[issues]: https://git.open-communication.net/qaul/qaul.net/issues
-[participate]: https://qaul.net/#participation
-[contributors-guide]: https://docs.qaul.net/contributors/
-[release]: https://git.open-communication.net/qaul/qaul.net/tree/release-1.0.0
-
-
-## Build Instructions
-
-The qaul.net project has many libraries and clients, for different
-platforms.  Check the "clients" directory for instructions on how to
-build them.  Because some platforms require some bootstrapping you may
-have to build different parts in sequence: we don't currently have an
-overarching build system for this.
-
-To build the rust libraries for most platforms, simply run `cargo
-build --release` (for release mode).  To build android, check the
-[`build.sh`](./clients/android/build.sh) in that client.  The web UI
-is built with emberJS and con be found [here](webgui).
-
-To build the web stack on Linux, you can build the ember UI with
-`ember dist`, then move the output to `libqaul/http/ui`, so that they
-can be included in the web server, which will then serve them via
-`clients/linux-http-test` or `clients/android`.
-
-The repo has a `shell.nix` if you want to use nix to get dependencies,
-however this doesn't actually build the project.
+[clients]: ./clients
+[docs]: ./docs
+[emberweb]: ./emberweb
+[libqaul]: ./libqaul
+[licenses]: ./licenses
+[netmods]: ./netmods
+[nix]: ./nix
+[ratman]: ./ratman
+[rpc-layer]: ./rpc-layer
+[tests]: ./tests
+[utils]: ./utils
 
 
-## Documentation
+## Overview
 
-Documentation is available on [docs.qaul.net](https://docs.qaul.net).
+Most traditional networking infrastructure (both the transmission
+layer, as well as applications) operate in a very centralised way.
+Clients connect to servers, and devices to towers.  This makes it very
+vulnerable to attacks.  Natural disasters or opressive governments can
+easily shut down communication for millions of people, potentially
+putting people at risk, and slowing down any activist movement.
 
+qaul.net aims to solve this issue by creating decentralised circuits
+between devices directly.  Additionally, it's routing approach takes
+into account that connections are imperfect, and that a stable link
+between two devices might not be possible.  For this scenario the
+network caches undelivered messages, carrying them towards their
+destination until the recipient comes back online.
+
+Routing in a qaul network is done via a users public keys, creating a
+32 byte large address space.  Connecting devices together happens via
+channel-specific drivers.  When creating a circuit, roaming between
+different connection modes is common.
+
+To learn more about the technical side of qaul.net, check out the
+[contributor manual].
+
+## How to use
+
+There's no single way to use qaul.net.  Various platforms support
+different clients, and a qaul network can consist of many different
+components interacting with each other.  To get started, check out the
+[user manual]!
+
+[user manual]: https://docs.qaul.net/users
+
+
+## Contributing
+
+Social processes, code, and design guidelines are outlined in the
+[contributor manual].  We have a developer chat hosted on [matrix]
+where we would be happy to answer any questions you have.  For more
+long-form posting we have a [mailing list].  We also accept patches
+via e-mail!
+
+If you want some inspiration for what you can do with qaul.net, check
+out the [services] section.
+
+[contributor manual]: https://docs.qaul.net/contributors
+[matrix]: https://matrix.to/#/!ljaaylfsbkWFYNoNPT:fairydust.space?via=fairydust.space&via=matrix.org&via=public.cat
+[mailing list]: https://lists.sr.ht/~qaul/community
+[services]: ./services
 
 ## License
 
-qaul.net is free and open source software licensed under the [GNU
-Affero General Public License version 3 or
-later](licenses/agpl-3.0.md).
+qaul.net is free software licensed under the
+[GNU Affero General Public License version 3](licenses/agpl-3.0.md) or
+later.
 
 **Additional Permissions:** For Submission to the Apple App Store:
+
 Provided that you are otherwise in compliance with the AGPLv3 for each
 covered work you convey (including without limitation making the
 Corresponding Source available in compliance with Section 6 of the
