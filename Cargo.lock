@@ -1144,14 +1144,6 @@ dependencies = [
 [[package]]
 name = "libopus-sys"
 version = "0.4.0"
-source = "git+https://git.open-communication.net/qaul/libopus-sys?rev=develop#c57b98cbc4cd1ffc3c8e26465f55a868ee289c48"
-dependencies = [
- "cmake",
-]
-
-[[package]]
-name = "libopus-sys"
-version = "0.4.0"
 dependencies = [
  "bindgen",
  "cmake",
@@ -1467,10 +1459,9 @@ checksum = "2839e79665f131bdb5782e51f2c6c9599c133c6098982a54c794358bf432529c"
 [[package]]
 name = "opus-rs"
 version = "0.4.0"
-source = "git+https://git.open-communication.net/qaul/opus-rs?rev=develop#827d70c632be2d33c16274502b7b2439f8c655f2"
 dependencies = [
  "libc",
- "libopus-sys 0.4.0 (git+https://git.open-communication.net/qaul/libopus-sys?rev=develop)",
+ "libopus-sys",
 ]
 
 [[package]]

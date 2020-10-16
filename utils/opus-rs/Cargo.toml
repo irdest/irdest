@@ -13,5 +13,5 @@ categories = ["api-bindings", "encoding", "compression",
 repository = "https://git.open-communication.net/qaul/opus-rs"
 
 [dependencies]
-libopus-sys = { git = "https://git.open-communication.net/qaul/libopus-sys", rev = "develop" }
+libopus-sys = { path = "../libopus-sys" }
 libc = "0.2"
