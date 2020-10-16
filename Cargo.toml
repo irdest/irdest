@@ -34,9 +34,11 @@ members = [
     # various utility crates
     "utils/async-notify",
     "utils/clockctrl",
+    "utils/libopus-sys",
+    "utils/opus-rs",
     "utils/permute",
     "utils/visn",
-    
+
     # available netmod drivers
     "netmods/netmod-mem",
     "netmods/netmod-tcp",
