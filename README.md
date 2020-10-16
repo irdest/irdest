@@ -5,7 +5,7 @@
 [![built with nix](https://builtwithnix.org/badge.svg)](https://builtwithnix.org)
 
 **qaul** is a decentralised networking project, aiming to create easy
-to use solutions to ad-hoc wireless communication.  It supports many
+to use solutions for ad-hoc wireless communication.  It supports many
 common desktop operating systems (Linux, Windows, MacOS, BSD, ...),
 and Android mobile phones.  iOS support is on the roadmap.
 
