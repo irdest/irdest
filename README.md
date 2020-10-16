@@ -1,6 +1,8 @@
 ![](docs/banner.svg)
 
-[![pipeline status](https://git.open-communication.net/qaul/qaul.net/badges/develop/pipeline.svg)](https://git.open-communication.net/qaul/qaul.net/-/commits/develop) [![built with nix](https://builtwithnix.org/badge.svg)](https://builtwithnix.org)
+---
+
+[![built with nix](https://builtwithnix.org/badge.svg)](https://builtwithnix.org)
 
 **qaul** is a decentralised networking project, aiming to create easy
 to use solutions to ad-hoc wireless communication.  It supports many
