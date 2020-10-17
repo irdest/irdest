@@ -5,6 +5,7 @@ use std::collections::BTreeMap;
 use std::{env, fs::File, io::Read, path::PathBuf, sync::Arc};
 
 /// The hub configuration
+#[derive(Debug, Clone)]
 pub(crate) struct Config {
     /// Path to initial peer set
     pub(crate) peers: PathBuf,

@@ -28,9 +28,13 @@ async fn main() {
 
     // !no_upnp means upnp has _not_ been disabled
     if !cfg.no_upnp {
-        if upnp::open_port(cfg.port).is_none() {
-            error!("Failed to open UPNP port; your router probably doesn't support it...");
-        }
+        let cfg = cfg.clone();
+        // the upnp crate does synchronous i/o and we don't want to block this async worker
+        std::thread::spawn(move || {
+            if upnp::open_port(cfg.port).is_none() {
+                error!("Failed to open UPNP port; your router probably doesn't support it...");
+            }
+        });
     }
 
     let _ = future::timeout(Duration::from_secs(10), async {
