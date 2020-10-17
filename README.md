@@ -25,19 +25,20 @@ project are contained in this repository.
 Following is an overview of the available components.  Components have
 additional information in their respective README files.
 
-| Component   | Description      |
-|-------------|------------------|
-| [clients]   | qaul end-user applications for various platforms |
-| [docs]      | Manuals (for both users and developers), and tools to build and deploy documentation |
-| [emberweb]  | Cross-platform web interface bundled in with various user clients |
-| [libqaul]   | Core library of the qaul ecosystem.  Provides networking abstractions, user management and discovery |
-| [licenses]  | Set of license texts that are in use in this repository |
-| [netmods]   | Platform-specific networking interface drivers |
-| [nix]       | [Nix](https://nixos.org) related build utilities |
-| [ratman]    | A decentralised and modular userspace frame router |
-| [rpc-layer] | qaul specific rpc system (qrpc) to support third-party components |
-| [tests]     | Integrated test suite for various components.  Most of the code also has inline tests |
-| [utils]     | Set of utilities that are used in various places and don't fit anywhere else |
+| Component   | Description                                                                                                                  |
+|-------------|------------------------------------------------------------------------------------------------------------------------------|
+| [clients]   | qaul end-user applications for various platforms                                                                             |
+| [docs]      | Manuals (for both users and developers), and tools to build and deploy documentation                                         |
+| [emberweb]  | Cross-platform web interface bundled in with various user clients                                                            |
+| [libqaul]   | Core library of the qaul ecosystem.  Provides networking abstractions, user management and discovery                         |
+| [licenses]  | Set of license texts that are in use in this repository                                                                      |
+| [netmods]   | Platform-specific networking interface drivers                                                                               |
+| [nix]       | [Nix](https://nixos.org) related build utilities                                                                             |
+| [ratman]    | A decentralised and modular userspace frame router                                                                           |
+| [rpc-layer] | qaul specific rpc system (qrpc) to support third-party components                                                            |
+| [services]  | A collection of services that use qaul as their network backend.  Some are part of qaul.net, others are development examples |
+| [tests]     | Integrated test suite for various components.  Most of the code also has inline tests                                        |
+| [utils]     | Various utilities in use all over the repository that don't fit in anywhere else                                             |
 
 [clients]: ./clients
 [docs]: ./docs
