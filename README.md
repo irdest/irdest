@@ -70,9 +70,9 @@ towards their destination until the receipient comes back online.
 
 Routing in a qaul.net network is done via a user's ed255120 public keys,
 creating a 32 byte large address space.  Connecting devices together happens
-via channel-specific drivers (for example the tcp overlay internet overlay).
-Therefore when creating a circuit, roaming between different connection types
-is normal, and no single technology has to work on all possible devices.
+via channel-specific drivers (for example the tcp internet overlay). Therefore
+when creating a circuit, roaming between different connection types is normal,
+and no single technology has to work on all possible devices.
 
 To learn more about the technical side of qaul.net, check out the
 [contributor manual].
