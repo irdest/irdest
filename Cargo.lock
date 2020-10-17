@@ -1247,6 +1247,7 @@ name = "libqaul-types"
 version = "0.1.0"
 dependencies = [
  "alexandria-tags",
+ "capnpc",
  "ratman-identity",
  "serde",
 ]
