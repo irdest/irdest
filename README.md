@@ -4,10 +4,11 @@
 
 [![built with nix](https://builtwithnix.org/badge.svg)](https://builtwithnix.org)
 
-**qaul** is a decentralised networking project, aiming to create easy
-to use solutions for ad-hoc wireless communication.  It supports many
-common desktop operating systems (Linux, Windows, MacOS, BSD, ...),
-and Android mobile phones.  iOS support is on the roadmap.
+**qaul** is a decentralised networking project, aiming to create 
+easy-to-use solutions for ad-hoc wireless communication.  It
+supports many common desktop operating systems (Linux, Windows,
+MacOS, BSD, ...), and Android mobile phones.  iOS support is on
+the roadmap.
 
 **qaul.net** is both a cross-platform application, implementing
 **messaging**, **filesharing**, and **voice calls**, but also a
@@ -18,11 +19,11 @@ In order to be able to run on unpriviledged mobile platforms qaul.net
 implements **decentralised routing protocols** and utilities entirely
 in userspace.  The codebase is largely written in
 [Rust](https://rustlang.org), with only a few compatibility components
-being written in more platform specific languages.
+being written in more platform specific languages.  All parts of the
+project are contained in this repository.
 
-All parts of the project are contained in this repository.  Following
-is an overview of the available components.  Each component has
-additional information.
+Following is an overview of the available components.  Components have
+additional information in their respective README files.
 
 | Component   | Description      |
 |-------------|------------------|
@@ -54,20 +55,20 @@ additional information.
 ## Overview
 
 Most traditional networking infrastructure (both the transmission
-layer, as well as applications) operate in a very centralised way.
-Clients connect to servers, and devices to towers.  This makes it very
-vulnerable to attacks.  Natural disasters or opressive governments can
-easily shut down communication for millions of people, potentially
-putting people at risk, and slowing down any activist movement.
+layer, as well as applications) operate in a centralised way.
+Clients connect to servers, and devices to towers.  This makes the
+infrastructure vulnerable to attacks.  Natural disasters or opressive
+governments can easily shut down communication for millions of people,
+potentially putting them at risk, and slowing down or disrupting any
+organisation or activist movement.
 
 qaul.net aims to solve this issue by creating decentralised circuits
-between devices directly.  Additionally, it's routing approach takes
-into account that connections are imperfect, and that a stable link
-between two devices might not be possible.  For this scenario the
-network caches undelivered messages, carrying them towards their
-destination until the recipient comes back online.
+between devices directly.  These direct device-to-device connections can
+be imperfect and unstable.  qaul.net's routing approach takes these
+issues into account by caching undelivered messages, and carrying them
+towards their destination until the receipient comes back online.
 
-Routing in a qaul network is done via a users public keys, creating a
+Routing in a qaul.net network is done via a user's public keys, creating a
 32 byte large address space.  Connecting devices together happens via
 channel-specific drivers.  When creating a circuit, roaming between
 different connection modes is common.
