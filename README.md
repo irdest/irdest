@@ -2,12 +2,12 @@
 
 ---
 
-[![built with nix](https://builtwithnix.org/badge.svg)](https://builtwithnix.org)
+[![Built with Nix](https://builtwithnix.org/badge.svg)](https://builtwithnix.org)
 
 **qaul** is a decentralised networking project, aiming to create 
 easy-to-use solutions for ad-hoc wireless communication.  It
 supports many common desktop operating systems (Linux, Windows,
-MacOS, BSD, ...), and Android mobile phones.  iOS support is on
+MacOS, BSD, …), and Android mobile phones.  iOS support is on
 the roadmap.
 
 **qaul.net** is both a cross-platform application, implementing
@@ -33,7 +33,7 @@ additional information in their respective README files.
 | [libqaul]   | Core library of the qaul.net ecosystem.  Provides networking abstractions, user management and discovery |
 | [licenses]  | Set of license texts that are in use in this repository |
 | [netmods]   | Platform-specific networking interface drivers |
-| [nix]       | [nix](https://nixos.org) related build utilities |
+| [nix]       | [Nix](https://nixos.org) related build utilities |
 | [ratman]    | A decentralised and modular userspace frame router |
 | [rpc-layer] | qaul.net specific rpc system (qrpc) to support third-party components |
 | [tests]     | Integrated test suite for various components.  Most of the code also has inline tests |
@@ -68,7 +68,7 @@ be imperfect and unstable.  qaul.net's routing approach takes these
 issues into account by caching undelivered messages, and carrying them
 towards their destination until the receipient comes back online.
 
-Routing in a qaul.net network is done via a user's ed255120 public keys,
+Routing in a qaul.net network is done via a user's ed25519 public keys,
 creating a 32 byte large address space.  Connecting devices together happens
 via channel-specific drivers (for example the tcp internet overlay). Therefore
 when creating a circuit, roaming between different connection types is normal,
@@ -90,7 +90,7 @@ components interacting with each other.  To get started, check out the
 ## Contributing
 
 Social processes, code, and design guidelines are outlined in the
-[contributor manual].  We have a developer chat hosted on [matrix]
+[contributor manual].  We have a developer chat hosted on [Matrix]
 where we would be happy to answer any questions you have.  For more
 long-form posting we have a [mailing list].  We also accept patches
 via e-mail!
@@ -99,7 +99,7 @@ If you want some inspiration for what you can do with qaul.net, check
 out the [services] section.
 
 [contributor manual]: https://docs.qaul.net/contributors
-[matrix]: https://matrix.to/#/!ljaaylfsbkWFYNoNPT:fairydust.space?via=fairydust.space&via=matrix.org&via=public.cat
+[Matrix]: https://matrix.to/#/!ljaaylfsbkWFYNoNPT:fairydust.space?via=fairydust.space&via=matrix.org&via=public.cat
 [mailing list]: https://lists.sr.ht/~qaul/community
 [services]: ./services
 
