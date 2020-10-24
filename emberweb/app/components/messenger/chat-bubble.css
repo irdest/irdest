@@ -20,6 +20,13 @@
   border-radius: 1rem 1rem 1rem 0;
   font-size: 1.25rem;
 }
+
+.bubble.create {
+  margin-left: 3rem;
+  background-color: transparent;
+  align-self: center;
+}
+
 .my .bubble {
   background-color: var(--q-nav-hover);
   border-radius: 1rem 0 1rem 1rem;
@@ -27,4 +34,8 @@
 
 .time {
   font-size: 1rem;
+}
+
+.sender {
+  font-weight: bold;
 }

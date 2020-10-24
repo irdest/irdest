@@ -11,7 +11,7 @@ export default class ApplicationSerializer extends JSONSerializer {
     return super.normalizeSingleResponse(store, primaryModelClass, payload[underscore(primaryModelClass.modelName)], id, requestType);
   }
   normalizeArrayResponse(store, primaryModelClass, payload, id, requestType) {
-    const primary = payload[underscore(primaryModelClass.modelName)] || payload[underscore(pluralize(primaryModelClass.modelName))] || payload[Object.keys(payload)[0]];
+    const primary = payload[underscore(pluralize(primaryModelClass.modelName))];
 
     return super.normalizeArrayResponse(store, primaryModelClass, primary, id, requestType);
   }
@@ -29,7 +29,7 @@ export default class ApplicationSerializer extends JSONSerializer {
     const changedAttributes = Object.keys(snapshot.changedAttributes());
     snapshot.eachAttribute((key, attribute) => {
       if(changedAttributes.includes(key)) {
-        this.serializeAttribute(snapshot, json, key, attribute);
+        this.serializeAttribute(snapshot, json, key, attribute, options);
       }
     });
 
@@ -41,7 +41,16 @@ export default class ApplicationSerializer extends JSONSerializer {
       }
     });
 
-    console.log(json);
     return json;
+  }
+
+  serializeAttribute(snapshot, json, key, attribute, options) {
+    super.serializeAttribute(...arguments);
+
+    // we need to wrap out data in a { set: }
+    if(options.isUpdate) {
+      const serializedKey = this.keyForAttribute(key);
+      json[serializedKey] = { set: json[serializedKey] };
+    }
   }
 }

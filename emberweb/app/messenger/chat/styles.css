@@ -8,6 +8,7 @@
 
 .chat {
   padding: 1rem;
-  /*align-self: end;*/ /* TODO: this leads to now scrollbars at all */
+  display: flex;
+  flex-direction: column;
   overflow-y: scroll;
 }

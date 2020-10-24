@@ -7,7 +7,7 @@ export default class QaulAuthenticator extends Base {
         Authorization: JSON.stringify(data),
       }
     });
-    if(validateTokenResponse.status !== 200) {
+    if(validateTokenResponse.status < 200 || validateTokenResponse.status >= 300) {
       throw "login not valid"
     }
 
