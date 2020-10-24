@@ -22,7 +22,7 @@ yarn
 To build the ember WebGUI run the following command:
 
 ```sh
-./ember build
+yarn ember build
 ```
 
 
@@ -31,7 +31,7 @@ To build the ember WebGUI run the following command:
 To start the local ember test server run the following command:
 
 ```sh
-./ember serve
+yarn ember serve
 ```
 
 Now you can open the WebGUI in your web browser: http://localhost:4200/ 
