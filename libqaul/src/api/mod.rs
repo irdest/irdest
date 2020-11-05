@@ -5,7 +5,7 @@
 //! separate scopes, to make reasoning about association easier.
 //!
 //! All scopes can be constructed via the main
-//! [`Qaul`][../struct.Qaul.html] type access functions.
+//! [`Qaul`](../struct.Qaul.html) type access functions.
 //!
 //! ```
 //! # let qaul = libqaul::Qaul::dummy();
