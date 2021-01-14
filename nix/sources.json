@@ -3,12 +3,12 @@
         "branch": "master",
         "description": "Build rust crates in Nix. No configuration, no code generation, no IFD. Sandbox friendly.",
         "homepage": "",
-        "owner": "nmattia",
+        "owner": "petabyteboy",
         "repo": "naersk",
-        "rev": "22b96210b2433228d42bce460f3befbdcfde7520",
-        "sha256": "0qa8jnw71qk1i1fgpydx1nv17cnvlydb9jhd6f7gvhglagm19b4v",
+        "rev": "14c21ea7e9234f0a33bc45e9c6c8789278ad6b6c",
+        "sha256": "1qak0ij1r05zc2mmhma4byxiii73mn9zihdw3q3zqysxqg1pklq3",
         "type": "tarball",
-        "url": "https://github.com/nmattia/naersk/archive/22b96210b2433228d42bce460f3befbdcfde7520.tar.gz",
+        "url": "https://github.com/petabyteboy/naersk/archive/14c21ea7e9234f0a33bc45e9c6c8789278ad6b6c.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "niv": {
@@ -24,15 +24,15 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
-        "branch": "release-20.09",
+        "branch": "master",
         "description": "Nix Packages collection",
         "homepage": "",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "848f952b4932591792ab932420705db5889cd0da",
-        "sha256": "0czrrdp84xiqbnidy8g3cylkhrnp3b8fjvgyg72v8ybj9zmlv7b8",
+        "rev": "57d324877f91f0d9db7d3deee838581156ecbdcf",
+        "sha256": "1w5jnscq6967sl9f4l0pn6pbppwfcwb9p7xr91sqw7r7arx6lafj",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/848f952b4932591792ab932420705db5889cd0da.tar.gz",
+        "url": "https://github.com/NixOS/nixpkgs/archive/57d324877f91f0d9db7d3deee838581156ecbdcf.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }

@@ -1,13 +1,14 @@
 let
-  pkgs = import <nixpkgs> { };
-  lib = pkgs.lib;
   sources = import ./sources.nix;
-  naersk = pkgs.callPackage sources.naersk { };
 
-in {
-  qaul-rust = naersk.buildPackage {
-    src = lib.cleanSource ../.;
-    singleStep = true;
-    nativeBuildInputs = with pkgs; [ cmake ];
+  overlay = self: super: {
+    naersk = self.callPackage sources.naersk {};
+    qaul-rust = self.callPackage ./qaul-rust {};
+    qaul-web = self.callPackage ./qaul-web {};
+    qaul-website = self.callPackage ./qaul-website {};
   };
-}
+
+in
+  import sources.nixpkgs {
+    overlays = [ overlay ];
+  }
