@@ -1,7 +1,7 @@
 use super::Locked;
 use crate::Message;
 
-use async_notify::Notify;
+use task_notify::Notify;
 use async_std::{
     future::{self, Future},
     pin::Pin,
