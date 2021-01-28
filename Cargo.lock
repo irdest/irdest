@@ -110,10 +110,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "async-notify"
-version = "0.1.0"
-
-[[package]]
 name = "async-std"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1391,13 +1387,13 @@ dependencies = [
 name = "netmod-udp"
 version = "0.1.0"
 dependencies = [
- "async-notify",
  "async-std",
  "async-trait",
  "bincode",
  "ratman-identity",
  "ratman-netmod",
  "serde",
+ "task-notify",
  "tracing",
  "tracing-futures",
 ]
@@ -1924,7 +1920,6 @@ dependencies = [
 name = "ratman"
 version = "0.1.1"
 dependencies = [
- "async-notify",
  "async-std",
  "bincode",
  "chrono",
@@ -1934,6 +1929,7 @@ dependencies = [
  "ratman-identity",
  "ratman-netmod",
  "serde",
+ "task-notify",
  "tracing",
  "tracing-futures",
  "twox-hash",
@@ -2333,6 +2329,10 @@ dependencies = [
  "term",
  "unicode-xid 0.0.3",
 ]
+
+[[package]]
+name = "task-notify"
+version = "0.1.0"
 
 [[package]]
 name = "tempfile"

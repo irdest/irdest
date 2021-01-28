@@ -32,7 +32,7 @@ members = [
     "ratman/configure",
 
     # various utility crates
-    "utils/async-notify",
+    "utils/task-notify",
     "utils/clockctrl",
     "utils/libopus-sys",
     "utils/opus-rs",
