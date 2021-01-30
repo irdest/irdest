@@ -1,9 +1,9 @@
 # Technical Documentation
 
-This is an introductory chapter into the technical layers of qaul.net!
+This is an introductory chapter into the technical layers of qaul!
 It is aimed at two different types of people:
 
-1. People wanting to contribute to the qaul.net core
+1. People wanting to contribute to the qaul core
 2. People wanting to write apps for a qaul network
 
 Before getting started, we need to cover a few basics in project
@@ -13,10 +13,10 @@ that will go into more details.
 
 ## Introduction
 
-Fundamentally, qaul.net is a highly distributed system.  It is not
+Fundamentally, qaul is a highly distributed system.  It is not
 accountable to a single set of rules across all devices that are part
 of this system.  It is important to make the distinction between
-"qaul.net", the application, "qaul network", the distributed network
+"qaul", the application, "qaul network", the distributed network
 of devices, and other components provided by the project that can be
 used to write decentralised applications.
 
@@ -33,7 +33,7 @@ send rich-payload messages, that operates on a higher level than the
 libqaul service API.  Other services can then depend on this
 high-level API.
 
-qaul.net (the app bundle) is primarily a GUI for a collection of
+qaul (the app bundle) is primarily a GUI for a collection of
 services, that all run on the same libqaul instance under the hood.
 
 Unless otherwise stated, all code is written in Rust.
@@ -41,7 +41,7 @@ Unless otherwise stated, all code is written in Rust.
 
 ## Layers
 
-The qaul.net stack is heavily abstracted into layers to keep logic
+The qaul stack is heavily abstracted into layers to keep logic
 simple on each layer.  No layer should have to care about data that is
 not meant to be consumed by it.
 
@@ -63,7 +63,7 @@ not meant to be consumed by it.
 
 A service (app) provides it's own API to clients, either via native
 bindings, or via the common rpc-broker system.  Following is a list of
-all the services that come bundled in qaul.net by default (more
+all the services that come bundled in qaul by default (more
 details [here][services]).
 
 - feed
@@ -72,7 +72,7 @@ details [here][services]).
 - voices
 - radio
 
-[services]: ./qaul.net/services.html
+[services]: ./qaul/services.html
 
 When connecting your own apps to a `libqaul` instance you can check
 for the existence of other services, meaning that your application can
@@ -82,7 +82,7 @@ kept small and focussed.
 
 ### RPC broker
 
-To allow external applications to integrate with an existing qaul.net/
+To allow external applications to integrate with an existing qaul/
 `libqaul` stack, the RPC message broker provides various interfaces to
 integrate with.
 
@@ -90,7 +90,7 @@ integrate with.
 - **[socket-ipc]** - unix ipc socket interface with binary payloads
 - **[android-ipc]** - a specific ipc implementation for Android
 
-[http/json:api]: https://docs.qaul.net/http-api/
+[http/json:api]: https://docs.qaul.org/http-api/
 [socket-ipc]: ./libqaul/ipc/socket.html
 [android-ipc]: ./libqaul/ipc/android.html
 
@@ -114,7 +114,7 @@ provides an API that takes messages to send to peers on the network,
 and returns messages received from the network.  It handles network
 announcements, network segmentation, message journaling, route
 updates, and networked archive storage.  It's the main driver behind
-qaul.net, and flexible enough to embed into various other use-cases.
+qaul, and flexible enough to embed into various other use-cases.
 
 Addresses on a ratman network are 32-byte ed25516 public keys, meaning
 that all messages are automatically encrypted.  Additionally this

@@ -48,7 +48,7 @@ async fn stream_bytes(root: PathBuf, actual_path: &str) -> io::Result<Response> 
         // If the file doesn't exist, then bail out.
         if meta.is_none() {
             // ---------------------------------------------
-            // changed for qaul.net
+            // changed for qaul
             // ---------------------------------------------
             // deliver /index.html file for EmberJS WebGUI routing paths
             

@@ -1,6 +1,6 @@
 # Authentication HTTP-API Interface
 
-Each client needs to authenticate a session in order to be able to interact with the qaul.net daemon and send the session authentication in the http `Authorization` header.
+Each client needs to authenticate a session in order to be able to interact with the qaul daemon and send the session authentication in the http `Authorization` header.
 
 ## Http Authorization Header
 

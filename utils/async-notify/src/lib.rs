@@ -1,7 +1,7 @@
 //! A utility wrapper type for notifying async tasks about mutation of data they're interested in.
 
-#![doc(html_favicon_url = "https://qaul.net/favicon.ico")]
-#![doc(html_logo_url = "https://qaul.net/img/qaul_icon-128.png")]
+#![doc(html_favicon_url = "https://qaul.org/favicon.ico")]
+#![doc(html_logo_url = "https://qaul.org/img/qaul_icon-128.png")]
 
 use std::ops::{Deref, DerefMut};
 use std::task::Waker;

@@ -7,7 +7,7 @@ have phones, and that creating small scale networks with phones around
 you, without having to rely to SIM cards, cell towers or pre-setup
 WiFi networks can enable people to avoid censorship and surveillance.
 
-At the moment the qaul.net android client is a prototype!
+At the moment the qaul android client is a prototype!
 
 
 ## Things to do
@@ -26,7 +26,7 @@ really work. It crashes when trying to open one of the custom views.
 
 ### Chat view and chat list view
 
-One of the main abilities of the qaul.net app is a chat.  There are
+One of the main abilities of the qaul app is a chat.  There are
 already fragment layout XML files for the actual chat view, and the
 chat list view, but none of that is working.
 
@@ -51,7 +51,7 @@ maybe with sliding side tabs?  Maybe something else works better.
 ### Filesharing view
 
 The filesharing view shows all advertised and local files that are known by
-qaul.net.  Files that are only advertised should have a "get" button,
+qaul.  Files that are only advertised should have a "get" button,
 and files that are local should be able to be swiped away.
 
 The list should be filterable by "files by friends"

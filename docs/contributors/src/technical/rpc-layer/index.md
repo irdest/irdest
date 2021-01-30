@@ -1,13 +1,13 @@
-# qaul.net rpc-layer
+# qaul rpc-layer
 
 
-Because qaul.net aims to be an extensible architecture, the core of
+Because qaul aims to be an extensible architecture, the core of
 how services (apps) interact with each other is an RPC (remote
 procedure call) layer.  This means that each service could be running
 in a different process, and communicate with the core (the rpc-broker,
 and libqaul instance) via sockets.
 
-In actuality the main qaul.net services are all bundled into a single
+In actuality the main qaul services are all bundled into a single
 binary (`qaul-hubd`) that communicate in memory to be more efficient.
 But this doesn't have to be the case for others.
 

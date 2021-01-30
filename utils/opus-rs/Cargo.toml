@@ -1,7 +1,7 @@
 [package]
 name = "opus-rs"
 version = "0.4.0"
-authors = ["The qaul.net deveolpers <contact@qaul.net>", "Katharina Fey <kookie@spacekookie.de>"]
+authors = ["The qaul deveolpers <contact@qaul.org>", "Katharina Fey <kookie@spacekookie.de>"]
 edition = "2018"
 description = "Safe Rust bindings for libopus"
 readme = "README.md"
@@ -10,7 +10,7 @@ keywords = ["opus", "codec", "voice", "sound", "audio"]
 categories = ["api-bindings", "encoding", "compression",
 	"multimedia::audio", "multimedia::encoding"]
 
-repository = "https://git.open-communication.net/qaul/opus-rs"
+repository = "https://git.qaul.org/qaul/qaul"
 
 [dependencies]
 libopus-sys = { path = "../libopus-sys" }

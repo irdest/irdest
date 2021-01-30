@@ -2,7 +2,7 @@
 
 While it is possible to install dependencies with platform specific
 tools (such as `apt` on Debian, etc), it is far more recommended to
-use [nix](https://nixos.org) to build qaul.net instead.
+use [nix](https://nixos.org) to build qaul instead.
 
 While the actual build isn't handled by nix (yet), it makes aquiring
 the dependencies a lot easier.  Follow the instructions on how to
@@ -13,7 +13,7 @@ install nix on your platform [here][nix-instructions]
 
 ## Fetch dependencies
 
-The `shell.nix` in the qaul.net repo root defines dependencies.  Fetch
+The `shell.nix` in the qaul repo root defines dependencies.  Fetch
 them into your environment by running `nix-shell` in the repo root
 (this might take a while).
 
@@ -26,16 +26,16 @@ The output artefact will be written to `./target/release/qaul-hubd`.
 ## Lorri & direnv
 
 You can enable automatic environment loading when you enter the
-qaul.net repository, by configuring [lorri] and [direnv] on your system.
+qaul repository, by configuring [lorri] and [direnv] on your system.
 
 [lorri]: https://github.com/target/lorri
 [direnv]: https://direnv.net/
 
 ```console
- ❤ (uwu) ~/p/code> cd qaul.net
-direnv: loading ~/projects/code/qaul.net/.envrc
+ ❤ (uwu) ~/p/code> cd qaul
+direnv: loading ~/projects/code/qaul/.envrc
 direnv: export +AR +AR_FOR_TARGET +AS +AS_FOR_TARGET +CC
         // ... snip ...
- ❤ (uwu) ~/p/c/qaul.net> cargo build                           lorri-keep-env-hack-qaul
+ ❤ (uwu) ~/p/c/qaul> cargo build                           lorri-keep-env-hack-qaul
  ...
 ```

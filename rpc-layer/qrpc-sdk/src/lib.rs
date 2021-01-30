@@ -5,7 +5,7 @@
 //! usage and concrete types.  For an overview of concepts, consult
 //! the [contributors manual][manual]
 //!
-//! [manual]: https://docs.qaul.net/contributors/technical/rpc-layer
+//! [manual]: https://docs.qaul.org/contributors/technical/rpc-layer
 //!
 //! ## Using this sdk
 //!

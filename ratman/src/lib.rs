@@ -20,7 +20,7 @@
 //! The interface that binds the Ratman router to underlying drivers
 //! is called `netmod`, which handles sending and receiving frames.  A
 //! frame is a piece of data, with a checksum, which may be part of a
-//! larger mesage.  In the qaul.net repository, you can find several
+//! larger mesage.  In the qaul repository, you can find several
 //! driver implementations for various platforms.  If you need to
 //! write your own, don't hesitate to ask for help.
 //!
@@ -58,7 +58,7 @@
 //! Following is a small example.  Check out the [`tests`] directory
 //! for more!
 //!
-//! [`tests`]: https://git.open-communication.net/qaul/qaul.net/blob/master/ratman/tests
+//! [`tests`]: https://git.qaul.org/qaul/qaul/blob/develop/ratman/tests
 //!
 //! ```rust
 //! # use async_std::task;
@@ -126,11 +126,11 @@
 //!
 //! ## License
 //!
-//! Ratman is part of the qaul.net project, and licensed under the
+//! Ratman is part of the qaul project, and licensed under the
 //! [GNU Affero General Public License version 3 or
 //! later](../licenses/agpl-3.0.md).
 //!
-//! See the main qaul.net repository README for additional permissions
+//! See the main qaul repository README for additional permissions
 //! granted by the authors for this code.
 
 #[macro_use]

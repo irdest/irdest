@@ -1,7 +1,7 @@
-# qaul.net Documentation
+# qaul Documentation
 
-**This folder contains the qaul.net documentation. You can find them
-online under [https://docs.qaul.net](https://docs.qaul.net)**
+**This folder contains the qaul documentation. You can find them
+online under [https://docs.qaul.org](https://docs.qaul.org)**
 
 **Your welcome to contribute to them!**
 
@@ -9,9 +9,9 @@ online under [https://docs.qaul.net](https://docs.qaul.net)**
 ## Guides
 
 * `contributors`: the contributors' guide introduces and explains the
-  structure of qaul.net and should guide you through the steps of how
+  structure of qaul and should guide you through the steps of how
   to the project.
-* `http-api`: contains the documentation of the qaul.net http-api.
+* `http-api`: contains the documentation of the qaul http-api.
 * `index`: this folder contains the overview page.
 
 

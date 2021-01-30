@@ -1,7 +1,7 @@
 package net.qaul.app.ffi.models;
 
 /**
- * Represents a user ID in qaul.net
+ * Represents a user ID in qaul
  */
 public class Id {
     public String inner;

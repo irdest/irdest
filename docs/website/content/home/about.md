@@ -1,11 +1,11 @@
 ---
-Introduction_Title: What is qaul.net?
+Introduction_Title: What is qaul?
 Introduction: |
-    **qaul.net** is a set of tools, that allows devices like laptops 
+    **qaul** is a set of tools, that allows devices like laptops 
     and smartphones to create a **wireless mesh network** over Bluetooth 
     and direct WiFi connections, rather than relying on internet access
     via a mobile network.  This **decentralised and open network** extends
-    across any qaul.net-enabled device, so that if two people aren't close
+    across any qaul-enabled device, so that if two people aren't close
     enough to each other for their devices to connect directly, data can
     be sent via other devices in the middle, without those devices being
     able to read or change the messages passing through it.
@@ -29,9 +29,9 @@ Meshing: |
 
     To create these connections, devices can use a variety of methods,
     such as WiFi and Bluetooth, or plain network cables to create links
-    with other qaul.net users around them.
+    with other qaul users around them.
 
-    The network that is created by qaul.net can serve two purposes:
+    The network that is created by qaul can serve two purposes:
     to connect you with people around you to run applications specifically
-    made for qaul.net, or to act as a tunnel to the traditional Internet.
+    made for qaul, or to act as a tunnel to the traditional Internet.
 ---

@@ -1,6 +1,6 @@
-# qaul.net services
+# qaul services
 
-Following is a list of services that are bundled with qaul.net, and
+Following is a list of services that are bundled with qaul, and
 what they can do for you.
 
 Services have an internal ID that is used to identify them in
@@ -33,7 +33,7 @@ it.  That's what this fundamental service is for!
 This service provides a group management abstraction.  While many app
 services might want to manage groups, doing so in an encrypted system,
 with no direct group leader can be tricky.  To avoid having to
-re-implement this more than once, all qaul.net bundled app services
+re-implement this more than once, all qaul bundled app services
 use this fundamental service, and it is recommended that your app
 services do too!
 
@@ -45,7 +45,7 @@ services do too!
 
 These are services that provide some user-facing functionality.  Some
 will ship with their own UI, while others will use a UI bundle (such
-as the main qaul.net services).
+as the main qaul services).
 
 
 ### Feed
@@ -91,7 +91,7 @@ if the original source of a file disappears.
 * Crate name: `qaul-voices`
 
 Integrates with various platform features to allow voice call
-streaming over the qaul.net, as well as preparing audio messages that
+streaming over the qaul, as well as preparing audio messages that
 can be inlined into messages, or sent to many people via announce
 links.
 

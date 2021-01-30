@@ -1,7 +1,7 @@
 //! Encrypted record-oriented database
 //!
 //! **Experimental:** please note that this database was writted for
-//! [qaul.net](git.open-communication.net/qaul/qaul.net), which itself
+//! [qaul](https://git.qaul.org/qaul/qaul), which itself
 //! is a very experimental platform.  There will be data retention
 //! bugs, and you shouldn't use Alexandria unless you're okay with
 //! losing the data you're storing!

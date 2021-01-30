@@ -11,7 +11,7 @@ possible.
 
 Code and function docs for libqaul can be found [here][libqaul]!
 
-[libqaul]: https://docs.qaul.net/api/libqaul/index.html
+[libqaul]: https://docs.qaul.org/api/libqaul/index.html
 
 ## Users
 

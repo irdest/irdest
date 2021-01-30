@@ -26,7 +26,7 @@ use libqaul::Qaul;
 
 /// Apply an RPC structure to a libqaul instance
 ///
-/// This trait is used to attach a new function to the qaul.net state
+/// This trait is used to attach a new function to the qaul state
 /// holder, without having to rely on feature flags to libqaul.
 #[async_trait]
 pub trait QaulExt {

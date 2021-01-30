@@ -1,6 +1,6 @@
 # Available clients
 
-While a lot of the core tools in qaul.net already exist, the
+While a lot of the core tools in qaul already exist, the
 user-facing applications are mostly still prototypes.  Following is a
 list of supported clients/ platforms with instructions on how to
 build, and configure them.

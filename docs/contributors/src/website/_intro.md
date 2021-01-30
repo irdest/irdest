@@ -1,8 +1,8 @@
-# qaul.net Web Site
+# qaul Web Site
 
-**This document is about the editing, translating and building the qaul.net public web site which is availabe under [https://qaul.net]**
+**This document is about the editing, translating and building the qaul public web site which is availabe under [https://qaul.org]**
 
-The [qaul.net] web site is built via the static site generator [HUGO]. Its content and sources are hosted in a [github repository] and are community editable.
+The qaul web site is built via the static site generator [HUGO]. Its content and sources are hosted in a [gitrepository] and are community editable.
 
 Your welcome to update, translate, [open a PR] or [send us a patch]!
 
@@ -24,10 +24,10 @@ hugo version
 
 ### Get the Web Site Sources 
 
-Clone or download the [github repository] of the web site. All needed files (templates, content, images) are in this repository.
+Clone or download the [git repository](https://git.qaul.org/qaul/qaul). All needed files (templates, content, images) are in the subdirectory `docs/website` of this repository.
 
 ```bash
-git clone https://git.open-communication.net/qaul/website.git
+git clone https://git.qaul.org/qaul/qaul
 ```
 
 
@@ -35,7 +35,7 @@ git clone https://git.open-communication.net/qaul/website.git
 
 ```bash
 # move into your 
-cd qaul-website
+cd qaul/doc/website
 
 # start test server
 hugo serve
@@ -53,19 +53,18 @@ If you're geting an error without changing anything, check your installed HUGO v
 Here a quick overview of the web sites file structure:
 
 * HTML, CSS & JS Templates
-  * qaul.net theme folder contains all the HTML, CSS and javascript templates `themes/hugo-theme-qaul`. The only exception is the HTML template of the start page.
+  * qaul theme folder contains all the HTML, CSS and javascript templates `themes/hugo-theme-qaul`. The only exception is the HTML template of the start page.
   * The HTML template of the start page is in `layouts/index.html`
 * Web site content
   * The markdown content files and the images are all residing in the `content` folder.
   * The start page content can be found in the `content/index.md` file and in the `content/home` folder. There is a file for each section of the start page.
-  * All the tutorials are in sub folders of `content/tutorials`. Please see the chapter [Write a qaul.net Tutorial](/website/tutorials.md).
+  * All the tutorials are in sub folders of `content/tutorials`. Please see the chapter [Write a qaul Tutorial](/website/tutorials.md).
 
-For translating the web site see the chapter [Translate the qaul.net Web Site](/website/translate.md).
+For translating the web site see the chapter [Translate the qaul Web Site](/website/translate.md).
 
 
-[https://qaul.net]: https://qaul.net
-[qaul.net]: https://qaul.net
+[https://qaul.org]: https://qaul.org
 [HUGO]: https://gohugo.io/
-[github repository]: https://git.open-communication.net/qaul/website
+[git repository]: https://git.qaul.org/qaul/qaul/
 [open a PR]: /social/contributions.html#submitting-a-pr
 [send us a patch]: /social/contributions.html#submitting-an-e-mail-patch

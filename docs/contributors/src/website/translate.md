@@ -1,6 +1,6 @@
-# Translate the qaul.net Web Site
+# Translate the qaul Web Site
 
-**The [qaul.net] web site is multilingual and can be translated into any language.**
+**The qaul web site is multilingual and can be translated into any language.**
 
 
 ## Translating a Content Page
@@ -41,6 +41,3 @@ To add a new language there are only a few things to do:
         * `content/_index.md`
         * all files in the folder `content/home`
     * Read the section [Translating a Content Page](#Translating-a-Content-Page) for how to translate a content page.
-
-
-[qaul.net]: https://qaul.net

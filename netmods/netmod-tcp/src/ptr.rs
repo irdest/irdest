@@ -1,6 +1,6 @@
 //! Atomic pointer abstraction
 //!
-//! This interface is far too useful for qaul.net as a whole to stay
+//! This interface is far too useful for qaul as a whole to stay
 //! in this file, so we should pull it out into it's own crate at some
 //! point.  But for now...
 

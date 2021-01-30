@@ -40,8 +40,8 @@ following tools available.
 Clone the main code repo:
 
 ```console
-$ git clone https://git.open-communication.net/qaul/qaul.net
-$ cd qaul.net/
+$ git clone https://git.qaul.org/qaul/qaul
+$ cd qaul/
 ```
 
 Then simply run `cargo build --bin qaul-hubd --release` to build the

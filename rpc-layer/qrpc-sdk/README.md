@@ -21,4 +21,4 @@ You can find more information about this layer in the [contributors
 guide][guide].
 
 
-[guide]: https://docs.qaul.net/contributors/technical
+[guide]: https://docs.qaul.org/contributors/technical

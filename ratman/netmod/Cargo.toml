@@ -7,7 +7,7 @@ authors = [
   "Leonora Tindall <nora@nora.codes>"
 ]
 edition = "2018"
-homepage = "https://qaul.net"
+homepage = "https://qaul.org"
 license = "AGPL-3.0"
 
 [dependencies]

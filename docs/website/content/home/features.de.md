@@ -1,5 +1,5 @@
 ---
-title: 'Funktionen von qaul.net'
+title: 'Funktionen von qaul'
 
 # Feature Text Translations
 TextMessaging: 'Text Mitteilungen'

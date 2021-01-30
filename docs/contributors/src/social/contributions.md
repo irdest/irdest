@@ -2,8 +2,8 @@
 
 First of all: thank you for wanting to help out :)
 
-Day-to-day development of qaul.net happens on [our own gitlab
-instance](https://git.open-communication.net/qaul).
+Day-to-day development of qaul happens on [our own gitlab
+instance](https://git.qaul.org/qaul).
 
 
 ## Submitting an MR

@@ -90,7 +90,7 @@ where
     }
 }
 
-/// A simple wrapper around a common subscription in qaul.net
+/// A simple wrapper around a common subscription in qaul
 #[async_trait]
 pub(crate) trait Subscriber {
     async fn next(&self) -> Option<Response>;

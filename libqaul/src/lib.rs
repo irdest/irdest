@@ -1,5 +1,5 @@
 //! This is the library that sits at the heart of
-//! [qaul.net](https://qaul.net).
+//! [qaul](https://qaul.org).
 //!
 //! Fundamentally, it handles three types of interactions:
 //!
@@ -22,7 +22,7 @@
 //!    user stores
 //! 5. API shims such as the `http-api` which exposes the service
 //!    API on a json:api schema
-//! 6. UI threads: either initialise the qaul.net web-frontend or
+//! 6. UI threads: either initialise the qaul web-frontend or
 //!    your own application stack
 //!
 //! `libqaul` handles user registration, sign-in and out, messaging,
@@ -38,8 +38,8 @@
 //! point. This initialisation option is available before starting
 //! network bindings.
 
-#![doc(html_favicon_url = "https://qaul.net/favicon.ico")]
-#![doc(html_logo_url = "https://qaul.net/img/qaul_icon-128.png")]
+#![doc(html_favicon_url = "https://qaul.org/favicon.ico")]
+#![doc(html_logo_url = "https://qaul.org/img/qaul_icon-128.png")]
 
 // Internal modules
 mod auth;

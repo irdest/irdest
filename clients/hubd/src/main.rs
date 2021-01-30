@@ -1,6 +1,6 @@
 //! # qaul-hubd server
 //!
-//! A modular and configurable internet overlay server for qaul.net.
+//! A modular and configurable internet overlay server for qaul.
 
 mod cfg;
 mod log;

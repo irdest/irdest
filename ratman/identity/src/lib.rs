@@ -13,12 +13,12 @@
 //! 1. There are no identity collisions
 //! 2. Identities don't change mid-route
 //!
-//! This crate is part of the qaul.net project.  The docs for this
+//! This crate is part of the qaul project.  The docs for this
 //! crate are propably lacking because currently Ratman/ libqaul are
 //! the only users of it.  If you have questions, don't hesitate to
 //! [contact us]!
 //!
-//! [contact us]: https://docs.qaul.net/contributors/social/_intro.html
+//! [contact us]: https://docs.qaul.org/contributors/social/_intro.html
 
 use cfg_if;
 use serde::{
