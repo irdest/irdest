@@ -3,7 +3,7 @@ members = [
     # Main storage database
     "utils/alexandria",
 
-    # main qaul.net service library
+    # main qaul service library
     "libqaul",
 
     # libqaul additions
@@ -19,7 +19,7 @@ members = [
     "rpc-layer/ratman-rpc",
     "rpc-layer/service-rpc",
 
-    # qaul.net main services
+    # qaul main services
     "libqaul/service/chat",
     "libqaul/service/files",
     "libqaul/service/voice",

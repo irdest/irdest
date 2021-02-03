@@ -2,22 +2,17 @@
 # See https://github.com/gohugoio/hugoThemes#themetoml for an example
 
 name = "Qaul.Net"
-<<<<<<< HEAD:themes/hugo-theme-qaul/theme.toml
 license = "CC-BY"
-licenselink = "https://git.open-communication.net/qaul/website/blob/master/LICENSE"
-=======
-license = "GPL-3.0"
-licenselink = "https://github.com/yourname/yourtheme/blob/master/LICENSE"
->>>>>>> redesign:themes/qaul-theme/theme.toml
+licenselink = "https://git.qaul.org/qaul/qaul/blob/develop/docs/website/LICENSE"
 description = ""
-homepage = "http://qaul.net/"
+homepage = "http://qaul.org/"
 tags = []
 features = []
 min_version = "0.41"
 
 [author]
-  name = "qaul.net Community"
-  homepage = "https://qaul.net"
+  name = "qaul Community"
+  homepage = "https://qaul.org"
 
 # If porting an existing theme
 [original]

@@ -1,6 +1,6 @@
-# Test qaul.net on Linux with *linux-http-test* Executable
+# Test qaul on Linux with *linux-http-test* Executable
 
-**Executable to test the qaul.net application with it's WebGui on linux.**
+**Executable to test the qaul application with it's WebGui on linux.**
 
 ## Prerequisites
 
@@ -12,7 +12,7 @@ To be able to run the test you need to build the following:
 
 ## Test
 
-From the qaul.net project folder you can invoke the following command to start the test
+From the qaul project folder you can invoke the following command to start the test
 
 ```bash
 # start linux-http-test with the path to the built webui content as parameter.

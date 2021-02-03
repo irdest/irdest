@@ -6,7 +6,7 @@ recommended to launch it via a user systemd unit.
 
 ```systemd
 [Unit]
-Description=qaul.net hub daemon
+Description=qaul hub daemon
 After=network.target
 
 [Service]

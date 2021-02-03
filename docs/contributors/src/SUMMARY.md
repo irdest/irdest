@@ -7,7 +7,7 @@
   - [Code of Conduct](./social/code-of-conduct.md)
 - [Manuals & websites](./manuals/_intro.md)
 - [Technical](./technical/index.md)
-  - [qaul.net Services](./technical/services.md)
+  - [qaul Services](./technical/services.md)
   - [RPC layer](./technical/rpc-layer/index.md)
     - [qrpc-sdk](./technical/rpc-layer/sdk.md)
   
@@ -30,7 +30,7 @@
   - [linux-http-test](./test/linux-http-test.md)
 - [Translations](./translations/_intro.md)
 - [Design Guides](./design/_intro.md)
-- [qaul.net website](./website/_intro.md)
+- [qaul website](./website/_intro.md)
     - [How to Create a Tutorial](./website/tutorials.md)
     - [Translate the Web Site](./website/translate.md)
 - [Licenses](./legal/README.md)

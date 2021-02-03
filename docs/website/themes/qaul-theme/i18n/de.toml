@@ -28,14 +28,14 @@ other = "Mitmachen"
 [Pages]
 other = "Seiten"
 
-[QaulNetCommunity]
-other = "qaul.net Community"
+[QaulCommunity]
+other = "qaul Community"
 
-[AboutQaulNet]
-other = "Über qaul.net"
+[AboutQaul]
+other = "Über qaul"
 
-[QaulNetRepository]
-other = "qaul.net Quelltext"
+[QaulRepository]
+other = "qaul Quelltext"
 
 [WebSiteRepository]
 other = "Web Seiten Quelltext"
@@ -52,11 +52,11 @@ other = "Entwickler-Dokumentation"
 [Documentation]
 other = "Dokumentation"
 
-[QaulNetAPI]
-other = "qaul.net API Dokumentation"
+[QaulAPI]
+other = "qaul API Dokumentation"
 
 [IrcChat]
-other = "IRC: #qaul.net auf freenode"
+other = "IRC: #qaul auf freenode"
 
 [CommunityMailinglist]
 other = "Community-Mailing-Liste"

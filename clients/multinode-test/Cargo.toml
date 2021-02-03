@@ -2,7 +2,7 @@
 name = "multinode-test"
 description = "Local 3-Node test binary"
 version = "0.1.0"
-authors = ["qaul.net community"]
+authors = ["qaul community"]
 edition = "2018"
 
 [dependencies]

@@ -1,6 +1,6 @@
 [package]
 name = "qaul-hubd"
-description = "A modular and easy to use internet overlay router for qaul.net"
+description = "A modular and easy to use internet overlay router for qaul"
 version = "0.2.0"
 authors = ["Katharina Fey <kookie@spacekookie>", "Leonora Tindall <nora@nora.codes>"]
 license = "AGPL-3.0-or-later"

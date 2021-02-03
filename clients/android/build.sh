@@ -10,10 +10,10 @@ if [ $1 = "dev" ]; then
     echo "Attaching shell for repeated builds."
     echo "Don't invoke gradle yourself! Use 'client/android/.build_nested.sh' instead!"
     echo "Don't forget to run 'export USER=$USER GROUP=$GROUP'!"
-    docker run --rm -it -v $BASEDIR/../../:/qaul.net qaulnet/android-build-env /bin/bash
+    docker run --rm -it -v $BASEDIR/../../:/qaul qaulnet/android-build-env /bin/bash
   
 else
     echo "Running one-shot-build"
-    docker run --rm -it -v $BASEDIR/../../:/qaul.net qaulnet/android-build-env \
-           /qaul.net/clients/android/.build_nested.sh $USER $GROUP
+    docker run --rm -it -v $BASEDIR/../../:/qaul qaulnet/android-build-env \
+           /qaul/clients/android/.build_nested.sh $USER $GROUP
 fi

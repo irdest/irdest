@@ -3,12 +3,12 @@ Title: Downloads
 layout: page
 ---
 
-Most user-facing qaul.net applications and tools are still very
+Most user-facing qaul applications and tools are still very
 work-in-progress.  Target platforms include Linux, MacOS, Windows,
 Android, and iOS.  However currently only Linux and Android are
 supported!
 
-Following are instructions on how to build the main qaul.net router
+Following are instructions on how to build the main qaul router
 daemon on Linux, which enables you to join a qaul network over the
 internet.
 
@@ -16,11 +16,11 @@ internet.
 ## qaul-hubd
 
 
-1. Clone https://git.open-communication.net/qaul/qaul.net with git
+1. Clone https://git.qaul.org/qaul/qaul with git
    
    ```console
-   $ git clone https://git.open-communication.net/qaul/qaul.net
-   $ cd qaul.net
+   $ git clone https://git.qaul.org/qaul/qaul
+   $ cd qaul
    ```
 
 2. If you have [nix](https://nixos.org/) installed on your system you
@@ -46,7 +46,7 @@ how to configure the daemon!
 
 ## qauldroid
 
-The qaul.net Android app is currently still a prototype and not
+The qaul Android app is currently still a prototype and not
 intended for end-users.  Building it requires a full Android
 development setup installed on your system.  To make the Rust
 cross-compilation easier, we created a [docker build
@@ -55,11 +55,11 @@ environment][docker]!
 [docker]: https://hub.docker.com/r/qaulnet/android-build-env
 
 
-1. Clone the main qaul.net repo as before:
+1. Clone the main qaul repo as before:
 
    ```console
-   $ git clone https://git.open-communication.net/qaul/qaul.net
-   $ cd qaul.net/clientsl/android
+   $ git clone https://git.qaul.org/qaul/qaul
+   $ cd qaul/clientsl/android
    ```
    
 2. Cross-compile the Rust libraries via docker:

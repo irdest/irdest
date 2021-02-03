@@ -1,4 +1,4 @@
-//! `qaul.net` voice service
+//! `qaul` voice service
 
 #[macro_use]
 extern crate tracing;

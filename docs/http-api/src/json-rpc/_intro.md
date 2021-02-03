@@ -1,6 +1,6 @@
 # JSON-RPC API
 
-**The JSON-RPC API consists of a single http endpoint. Over which all RPC interaction with the qaul.net daemon happens.**
+**The JSON-RPC API consists of a single http endpoint. Over which all RPC interaction with the qaul daemon happens.**
 
 
 ## General Concept

@@ -1,6 +1,6 @@
 # Local Multinode Test
 
-This test set's up a local 3-node qaul.net test network with two 
+This test set's up a local 3-node qaul test network with two 
 WebGUI interface servers.
 
 The network looks as follows: 

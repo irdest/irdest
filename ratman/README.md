@@ -29,7 +29,7 @@ crate.
 The interface that binds the Ratman router to underlying drivers is
 called `netmod`, which handles sending and receiving frames.  A frame
 is a piece of data, whith a checksum, which may be part of a larger
-message.  In the qaul.net repository, you can find several driver
+message.  In the qaul repository, you can find several driver
 implementations for various platforms.  If you need to write your own,
 don't hesitate to ask for help.
 
@@ -55,9 +55,9 @@ without having to teach Ratman about your platform specifics.
 
 ## License
 
-Ratman is part of the qaul.net project, and licensed under the [GNU
+Ratman is part of the qaul project, and licensed under the [GNU
 Affero General Public License version 3 or
 later](../licenses/agpl-3.0.md).
 
-See the main qaul.net repository README for additional permissions
+See the main qaul repository README for additional permissions
 granted by the authors for this code.

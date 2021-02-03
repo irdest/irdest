@@ -1,4 +1,4 @@
-//! qaul.net android interop library
+//! qaul android interop library
 
 #![cfg(target_os = "android")]
 #![allow(warnings)]

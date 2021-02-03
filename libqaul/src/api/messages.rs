@@ -238,7 +238,7 @@ impl<'qaul> Messages<'qaul> {
     /// with it.
     ///
     /// However when users write text-messages to each other in
-    /// qaul.net, these are being sent via the `messaging` service,
+    /// qaul, these are being sent via the `messaging` service,
     /// which implements it's own `Message`, on top of `libqaul`. In
     /// that case a message is plain text and can have binary
     /// attachments.

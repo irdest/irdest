@@ -1,6 +1,6 @@
-# Write a qaul.net Tutorial
+# Write a qaul Tutorial
 
-**The qaul.net [tutorials] can be easily created. This guide explains how.**
+**The qaul [tutorials] can be easily created. This guide explains how.**
 
 Each tutorial is an own folder in the `/content/tutorials` folder in the [web site repository]. Please have a look at the existing tutorials to get an idea how this is done.
 
@@ -40,9 +40,9 @@ Below will be shown the first image in my tutorial:
 
 
 
-[tutorials]: https://qaul.net/tutorials/
-[web site repository]: https://git.open-communication.net/qaul/website/tree/master/content/tutorials
+[tutorials]: https://qaul.org/tutorials/
+[web site repository]: https://git.qaul.org/qaul/qaul/tree/develop/docs/website/content/tutorials
 [markdown]: https://www.markdownguide.org/getting-started
-[tutorial overview]: https://qaul.net/tutorials/
+[tutorial overview]: https://qaul.org/tutorials/
 [pull request]: /social/contributions.html#submitting-a-pr
 [mailing list]: https://lists.sr.ht/%7Eqaul/community

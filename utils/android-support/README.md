@@ -1,6 +1,6 @@
-# qaul.net android support
+# qaul android support
 
-This library provides android specific bindings for the qaul.net
+This library provides android specific bindings for the qaul
 ecosystem (`libqaul`, `ratman`, `ratman-configure`, `netmod-wd`,
 `netmod-tcp`, and the primary services)
 

@@ -1,6 +1,6 @@
 # qaul-hubd
 
-This is a multi purpose router and database daemon for qaul.net.  It
+This is a multi purpose router and database daemon for qaul.  It
 handles network driver and user state as a detached process, and
 allows both http and unix ipc clients to connect to it.
 

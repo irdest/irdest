@@ -3,7 +3,7 @@
 The scripts in this folder can be used to test all the functions of the JSON RPC interface.
 
 The JSON RPC interface is documented in the http-api guide: 
-https://docs.qaul.net/http-api/json-rpc/_intro.html
+https://docs.qaul.org/http-api/json-rpc/_intro.html
 
 
 ## Structure of the Tests
@@ -23,12 +23,12 @@ To be able to run the test scripts you need to have the following programs insta
 
 ## Usage
 
-The scripts expect a locally running qaul.net daemon. In order to be able to test the sending as well as the receiving of messages, we use the `multinode-test` binary. 
-The `multinode-test` set's up several qaul.net instances locally that communicate directly with each other. In this set up the sending as well as the receiving of messages can be tested. The instances can be accessed via different port numbers.
+The scripts expect a locally running qaul daemon. In order to be able to test the sending as well as the receiving of messages, we use the `multinode-test` binary. 
+The `multinode-test` set's up several qaul instances locally that communicate directly with each other. In this set up the sending as well as the receiving of messages can be tested. The instances can be accessed via different port numbers.
 Instance **A** listens on port `9900` on localhost. Instance **B** listens on port `9901`.
 
 
-First you need to start the qaul.net daemon:
+First you need to start the qaul daemon:
 
 ```bash
 cargo run --bin multinode-test webgui/dist

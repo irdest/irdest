@@ -1,6 +1,6 @@
-# Test qaul.net Application
+# Test qaul Application
 
-**This Chapter expains how to test the qaul.net application. It will change rapidly until alpha.**
+**This Chapter expains how to test the qaul application. It will change rapidly until alpha.**
 
 ## Tests
 

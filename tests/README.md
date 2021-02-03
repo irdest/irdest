@@ -1,6 +1,6 @@
-# qaul.net tests
+# qaul tests
 
-qaul.net is quite a large application, and it's testing surface is
+qaul is quite a large application, and it's testing surface is
 equally large.  While the individual crates have their own tests to
 verify that things generally work, integration of different components
 can cause other issues as well.

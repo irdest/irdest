@@ -45,15 +45,15 @@ service handler was found.
 The presistence module is implemented mostly by wrapping internal
 libqaul types with [alexandria] storage callbacks, which is the
 library which implements all of the persistence logic and at-rest
-encryption.  It is developed as part of qaul.net, but pulled out of
+encryption.  It is developed as part of qaul, but pulled out of
 the main tree to make it easier to use in other projects.
 
-[alexandria]: https://git.open-communication.net/qaul/alexandria
+[alexandria]: https://git.qaul.org/qaul/qaul/blob/develop/utils/alexandria
 
 ## Routing
 
 All calls to actually send data into a qaul network are implemented by
 Ratman, the delay tolerant, distance vector based routing protocol
-built specifically for qaul.net.  You can find documentation
+built specifically for qaul.  You can find documentation
 specifically for it in later sections of this manual.
 
