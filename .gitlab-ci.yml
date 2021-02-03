@@ -1,41 +1,30 @@
 stages:
   - test
   - build
-  - publish
 
-# Build the Rust root on a pinned stable
-build:
-  image: rust:1.42.0-buster
-  script:
-    - cargo test --jobs 1
-    - cargo build
-
-# Run test suite
-test_emberweb:
-  stage: test
-  image: circleci/node:12-browsers
-  cache:
-    key: yarn
-    paths:
-      - emberweb/.yarn
-  script:
-    - cd emberweb
-    - yarn install --pure-lockfile --cache-folder .yarn
-    - yarn run test
-    - yarn run lint:hbs
-    - yarn run lint:js
-
-build_emberweb:
+build-rust:
+  needs: []
+  tags: [ qaul-nix ]
   stage: build
-  image: node:12
-  cache:
-    key: yarn
-    paths:
-      - emberweb/.yarn
   script:
-    - cd emberweb
-    - yarn install --pure-lockfile --cache-folder .yarn
-    - yarn run build --prod
+    - nix-build nix -A qaul-rust
+
+build-web:
+  needs: []
+  tags: [ qaul-nix ]
+  stage: build
+  script:
+    - nix-build nix -A qaul-web
   artifacts:
     paths:
-      - webgui/dist/
+      - result/*
+
+build-website:
+  needs: []
+  tags: [ qaul-nix ]
+  stage: build
+  script:
+    - nix-build nix -A qaul-website
+  artifacts:
+    paths:
+      - result/*
