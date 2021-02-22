@@ -1,6 +1,7 @@
 { lib
 , stdenv
 , naersk
+, capnproto
 , cmake
 , pkg-config
 , libsodium
@@ -10,6 +11,7 @@
 naersk.buildPackage {
   src = lib.cleanSource ../../.;
   nativeBuildInputs = [
+    capnproto
     cmake
     pkg-config
   ];
