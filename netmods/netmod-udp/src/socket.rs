@@ -1,7 +1,7 @@
 //! Socket handler module
 
 use crate::{AddrTable, Envelope, FrameExt, Peer};
-use async_notify::Notify;
+use task_notify::Notify;
 use async_std::{
     future::{self, Future},
     net::{IpAddr, Ipv4Addr, SocketAddr, UdpSocket},
