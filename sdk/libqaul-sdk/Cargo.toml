@@ -1,9 +1,9 @@
 [package]
-name = "libqaul-rpc2"
+name = "libqaul-sdk"
 version = "0.1.0"
 authors = ["Katharina Fey <kookie@spacekookie.de>"]
 edition = "2018"
 
 [dependencies]
 libqaul = { path = "../../libqaul" }
-qrpc-sdk = { path = "../qrpc-sdk" }
+qrpc-sdk = { path = "../../rpc-core/qrpc-sdk" }

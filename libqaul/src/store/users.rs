@@ -114,39 +114,41 @@ impl UserProfileExt for UserProfile {
 
     /// Diff based on how a `UserUpdate` applies to a `UserProfile`
     fn gen_diff(&self, update: UserUpdate) -> Diff {
-        use UserUpdate::*;
+        // use UserUpdate::*;
 
-        match update {
-            // Update data if it was previously set
-            DisplayName(Some(name)) if self.display_name.is_some() => {
-                Diff::map().update(D_NAME, name)
-            }
-            RealName(Some(name)) if self.real_name.is_some() => Diff::map().update(R_NAME, name),
-            SetBioLine(key, val) if self.bio.contains_key(&key) => {
-                Diff::map().nested(D_NAME, Diff::map().update(key, val))
-            }
-            RemoveBioLine(key) if self.display_name.is_some() => {
-                Diff::map().nested(D_NAME, Diff::map().delete(key))
-            }
-            AddService(service) if self.services.contains(&service) => unimplemented!(),
-            RemoveService(service) if self.services.contains(&service) => unimplemented!(),
+        // match update {
+        //     // Update data if it was previously set
+        //     DisplayName(Some(name)) if self.display_name.is_some() => {
+        //         Diff::map().update(D_NAME, name)
+        //     }
+        //     RealName(Some(name)) if self.real_name.is_some() => Diff::map().update(R_NAME, name),
+        //     SetBioLine(key, val) if self.bio.contains_key(&key) => {
+        //         Diff::map().nested(D_NAME, Diff::map().update(key, val))
+        //     }
+        //     RemoveBioLine(key) if self.display_name.is_some() => {
+        //         Diff::map().nested(D_NAME, Diff::map().delete(key))
+        //     }
+        //     AddService(service) if self.services.contains(&service) => unimplemented!(),
+        //     RemoveService(service) if self.services.contains(&service) => unimplemented!(),
 
-            // Insert if it wasn't
-            DisplayName(Some(name)) => Diff::map().insert(D_NAME, name),
-            RealName(Some(name)) => Diff::map().insert(R_NAME, name),
-            SetBioLine(key, val) => Diff::map().nested(BIO, Diff::map().insert(key, val)),
-            RemoveBioLine(key) => Diff::map().nested(BIO, Diff::map().delete(key)),
-            AddService(_) => unimplemented!(),
-            RemoveService(_) => unimplemented!(),
+        //     // Insert if it wasn't
+        //     DisplayName(Some(name)) => Diff::map().insert(D_NAME, name),
+        //     RealName(Some(name)) => Diff::map().insert(R_NAME, name),
+        //     SetBioLine(key, val) => Diff::map().nested(BIO, Diff::map().insert(key, val)),
+        //     RemoveBioLine(key) => Diff::map().nested(BIO, Diff::map().delete(key)),
+        //     AddService(_) => unimplemented!(),
+        //     RemoveService(_) => unimplemented!(),
 
-            // Delete if set to None
-            DisplayName(None) => Diff::map().delete(D_NAME),
-            RealName(None) => Diff::map().delete(R_NAME),
+        //     // Delete if set to None
+        //     DisplayName(None) => Diff::map().delete(D_NAME),
+        //     RealName(None) => Diff::map().delete(R_NAME),
 
-            // Avatars are a little special
-            AvatarData(Some(data)) => Diff::map().delete(AVI).insert(AVI, data),
-            AvatarData(None) => Diff::map().delete(BIO),
-        }
+        //     // Avatars are a little special
+        //     AvatarData(Some(data)) => Diff::map().delete(AVI).insert(AVI, data),
+        //     AvatarData(None) => Diff::map().delete(BIO),
+        // }
+
+        todo!()
     }
 }
 

@@ -63,3 +63,20 @@ working on a new feature for the RPC system.
 
 The rpc-broker keeps track of services that have registered themselves
 on the system, and the capabilities they provide.
+
+Following are a few design documents that guide you through creating
+your first qrpc service.
+
+
+```
+ Your app logic    Serialise types      Pass data along
++--------------+   +--------------+     +--------------+
+| Your service | - |   qrpc-sdk   | <-> |  qrpc-broker |
++--------------+   +--------------+     +--------------+
+                                              |
+                     +--------------+   +--------------+   +--------------+
+                     | Your UI app  | - |   qrpc-sdk   | - |    libqaul   | 
+                     +--------------+   +--------------+   +--------------+
+                       Your app UI      Deserialise types    Main db/ router
+```
+

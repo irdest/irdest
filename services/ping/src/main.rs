@@ -9,6 +9,7 @@
 use qrpc_sdk::{default_socket_path, RpcSocket, Service};
 use tracing::{error, info};
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
+// use libqaul_rpc::{QaulRpc, types::UserAuth};
 
 struct Ping {
     inner: Service,
@@ -48,6 +49,10 @@ async fn main() {
         .await
         .unwrap();
 
+    // let libqaul = QaulRpc::connect(&serv).unwrap();
+    // let u: UserAuth = libqaul.create_user("foo", "bar").await.unwrap();
+    
+    
     info!("Received service ID '{}' from qrpc-broker", id);
 
     async_std::task::sleep(std::time::Duration::from_secs(60)).await;

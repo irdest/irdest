@@ -10,11 +10,22 @@
 //! allow them to be re-used for higher-layer RPC protocols, such as
 //! the HTTP server used for the `emberweb` UI client.
 
+/// Re-export the core Identity from ratman
+pub use ratman_identity::Identity;
+
 pub mod contacts;
 pub mod error;
 pub mod messages;
 pub mod services;
 pub mod users;
+pub mod diff;
 
-#[cfg(feature = "rpc")]
+// #[cfg(feature = "rpc")]
 pub mod rpc;
+
+// TODO: rpc feature gate
+pub(crate) mod types_capnp {
+    #![allow(unused)] // don't bother me pls
+    include!(concat!(env!("OUT_DIR"), "/schema/types_capnp.rs"));
+}
+

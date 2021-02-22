@@ -1235,7 +1235,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "libqaul-rpc2"
+name = "libqaul-sdk"
 version = "0.1.0"
 dependencies = [
  "libqaul",
@@ -1247,7 +1247,9 @@ name = "libqaul-types"
 version = "0.1.0"
 dependencies = [
  "alexandria-tags",
+ "capnp",
  "capnpc",
+ "qrpc-sdk",
  "ratman-identity",
  "serde",
 ]

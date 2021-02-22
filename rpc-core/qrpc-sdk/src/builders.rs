@@ -62,11 +62,10 @@ pub fn parse_rpc_msg(buffer: Vec<u8>) -> Result<MsgReader<'static, cap::Reader<'
 }
 
 /// This module is only included for debugging reasons.  There's
-/// basically no reason to call this function directly.
+/// basically no reason to call these function directly.
 #[cfg_attr(not(feature = "internals"), doc(hidden))]
 pub mod _internal {
     use crate::{error::RpcResult, io::Message, parser::MsgReader, types::rpc_message, Identity};
-    use byteorder::{BigEndian, ByteOrder};
     use capnp::{message::Builder as Bld, serialize_packed};
 
     /// Create a carrier frame with address and a unique ID

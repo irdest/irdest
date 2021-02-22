@@ -9,12 +9,12 @@ members = [
     "libqaul/types",
 
     # RPC libraries
-    "rpc-layer/qrpc-sdk",
-    "rpc-layer/qrpc-broker",
+    "rpc-core/qrpc-sdk",
+    "rpc-core/qrpc-broker",
     
-    "rpc-layer/libqaul-rpc",
-    # "rpc-layer/ratman-rpc",
-    # "rpc-layer/service-rpc",
+    "sdk/libqaul-sdk",
+    # "sdk/ratman-rpc",
+    # "sdk/service-rpc",
 
     # decentralised routing protocol
     "ratman",

@@ -39,3 +39,16 @@ pub async fn send(s: &mut TcpStream, msg: Message) -> RpcResult<()> {
     trace!("Writing {} (+8) bytes to stream", msg_buf.len());
     Ok(s.write_all(&buffer).await?)
 }
+
+/// Allow any type to be written to a Capnproto message buffer
+///
+/// On a qrpc bus, a service exposes its API via an `-sdk` crate (for
+/// example `libqaul-sdk`), paired with a `-type` crate (such as
+/// `libqaul-types`).  In order to cut down on potential boilerplate
+/// in converting between the networking types and the internal
+/// library types this trait is meant to facilitate the
+/// transformation.
+pub trait WriteToBuf {
+    /// Take an instance object and turn it into a packed byte buffer
+    fn to_vec(&self) -> RpcResult<Vec<u8>>;
+}

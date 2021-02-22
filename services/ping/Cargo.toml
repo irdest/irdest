@@ -6,7 +6,9 @@ authors = ["Katharina Fey <kookie@spacekookie.de>"]
 edition = "2018"
 
 [dependencies]
-qrpc-sdk = { path = "../../rpc-layer/qrpc-sdk", version = "0.1" }
+qrpc-sdk = { path = "../../rpc-core/qrpc-sdk", version = "0.1" }
+# libqaul-rpc = { path = "../../rpc-core/libqaul-rpc" }
+
 async-std = { version = "=1.5", features = ["attributes"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.2", features = ["fmt", "env-filter"] }

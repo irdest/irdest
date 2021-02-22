@@ -10,7 +10,7 @@ edition = "2018"
 alexandria = { version = "0.2", path = "../utils/alexandria" }
 libqaul-types = { path = "types" }
 netmod-mem = { path = "../netmods/netmod-mem", optional = true }
-qrpc-sdk = { path = "../rpc-layer/qrpc-sdk", optional = true }
+qrpc-sdk = { path = "../rpc-core/qrpc-sdk", optional = true }
 ratman = { path = "../ratman" }
 
 async-std = { version = "=1.5", features = ["attributes", "unstable"] }
