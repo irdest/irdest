@@ -48,7 +48,8 @@ additional information in their respective README files.
 [netmods]: ./netmods
 [nix]: ./nix
 [ratman]: ./ratman
-[rpc-layer]: ./rpc-layer
+[rpc-core]: ./rpc-core
+[sdk]: ./sdk
 [tests]: ./tests
 [utils]: ./utils
 
