@@ -37,7 +37,7 @@ dependencies = [
  "hex",
  "keybob",
  "rand 0.7.3",
- "ratman-identity",
+ "ratman-identity 0.6.0",
  "serde",
  "serde_json",
  "sodiumoxide",
@@ -1221,7 +1221,7 @@ dependencies = [
  "libqaul-types",
  "log 0.4.14",
  "mime",
- "netmod-mem",
+ "netmod-mem 0.2.0",
  "qrpc-sdk",
  "rand 0.7.3",
  "ratman",
@@ -1250,7 +1250,7 @@ dependencies = [
  "capnp",
  "capnpc",
  "qrpc-sdk",
- "ratman-identity",
+ "ratman-identity 0.6.0",
  "serde",
 ]
 
@@ -1411,13 +1411,26 @@ dependencies = [
 
 [[package]]
 name = "netmod-mem"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f69ebb700154b418c574cccdfc3b9b94badee8f8e0a456106af13d3b41ffb867"
+dependencies = [
+ "async-std",
+ "async-trait",
+ "crossbeam-channel",
+ "ratman-identity 0.4.0",
+ "ratman-netmod 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "netmod-mem"
 version = "0.2.0"
 dependencies = [
  "async-std",
  "async-trait",
  "crossbeam-channel",
- "ratman-identity",
- "ratman-netmod",
+ "ratman-identity 0.6.0",
+ "ratman-netmod 0.3.0",
 ]
 
 [[package]]
@@ -1429,8 +1442,8 @@ dependencies = [
  "bincode",
  "byteorder",
  "failure",
- "ratman-identity",
- "ratman-netmod",
+ "ratman-identity 0.6.0",
+ "ratman-netmod 0.3.0",
  "serde",
  "tracing",
  "tracing-futures",
@@ -1443,8 +1456,8 @@ dependencies = [
  "async-std",
  "async-trait",
  "bincode",
- "ratman-identity",
- "ratman-netmod",
+ "ratman-identity 0.6.0",
+ "ratman-netmod 0.3.0",
  "serde",
  "task-notify",
  "tracing",
@@ -1459,7 +1472,7 @@ dependencies = [
  "async-trait",
  "bincode",
  "jni",
- "ratman-netmod",
+ "ratman-netmod 0.3.0",
 ]
 
 [[package]]
@@ -1806,7 +1819,7 @@ dependencies = [
  "capnp",
  "lazy_static",
  "qrpc-sdk",
- "ratman-identity",
+ "ratman-identity 0.6.0",
  "signal-hook",
  "socket2",
  "tracing",
@@ -1821,7 +1834,7 @@ dependencies = [
  "byteorder",
  "capnp",
  "capnpc",
- "ratman-identity",
+ "ratman-identity 0.6.0",
  "tracing",
 ]
 
@@ -1958,9 +1971,9 @@ dependencies = [
  "chrono",
  "clockctrl",
  "futures",
- "netmod-mem",
- "ratman-identity",
- "ratman-netmod",
+ "netmod-mem 0.2.0",
+ "ratman-identity 0.6.0",
+ "ratman-netmod 0.3.0",
  "serde",
  "task-notify",
  "tracing",
@@ -1973,7 +1986,7 @@ name = "ratman-configure"
 version = "0.1.0"
 dependencies = [
  "async-std",
- "netmod-mem",
+ "netmod-mem 0.1.0",
  "netmod-tcp",
  "netmod-udp",
  "ratman",
@@ -1986,9 +1999,33 @@ name = "ratman-harness"
 version = "0.1.0"
 dependencies = [
  "arbitrary",
- "netmod-mem",
+ "netmod-mem 0.2.0",
  "ratman",
  "tempfile",
+]
+
+[[package]]
+name = "ratman-identity"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d6e396d9351440014492c178d86a24adb7ab831b429205c43ca4521cbeb35bc3"
+dependencies = [
+ "blake2 0.8.1",
+ "hex",
+ "rand 0.7.3",
+ "serde",
+]
+
+[[package]]
+name = "ratman-identity"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3e94cc012804fd49daa7e0eecb6e3831f58b517dd0152c9533912c09bc5b8972"
+dependencies = [
+ "blake2 0.8.1",
+ "cfg-if 0.1.10",
+ "hex",
+ "serde",
 ]
 
 [[package]]
@@ -2010,7 +2047,20 @@ version = "0.3.0"
 dependencies = [
  "async-trait",
  "conjoiner-engine",
- "ratman-identity",
+ "ratman-identity 0.6.0",
+ "serde",
+ "twox-hash",
+]
+
+[[package]]
+name = "ratman-netmod"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e04e347dd4b001090e535f966d62c6abf60f8de29b01daf68689d3c832c1c8f"
+dependencies = [
+ "async-trait",
+ "conjoiner-engine",
+ "ratman-identity 0.3.0",
  "serde",
  "twox-hash",
 ]
