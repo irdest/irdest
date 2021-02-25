@@ -26,6 +26,9 @@ You can find much more detailed instructions on how to develop a qaul
 service in the [developer manual]().  Following is a very simple
 "hello world".
 
+A small, but real-world example of a service can be found
+[here](../services/ping).
+
 ```rust
 // Requirue the RPC protocol core
 use qrpc_sdk::{default_socket_path, RpcSocket, Service};
