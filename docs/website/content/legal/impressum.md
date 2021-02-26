@@ -6,26 +6,13 @@ layout: page
 Angaben gemäß § 5 TMG
 
 <address>
-Max Muster<br>
-Musterweg<br>
-12345 Musterstadt
+Katharina Fey c/o Abteilung für Redundanz Abteilung<br>
+Margaretenstraße 30<br>
+10317 Berlin
 </address>
 
-Vertreten durch
-: Max Muster
-
 E-Mail
-: <max@muster.de>
-
-Umsatzsteuer-ID
-: Umsatzsteuer-Identifikationsnummer gemäß §27a Umsatzsteuergesetz:
-  Musterustid.
-
-Wirtschafts-ID
-: Musterwirtschaftsid
-
-Aufsichtsbehörde
-: Musteraufsicht Musterstadt
+: <contact@qaul.org>
 
 ## Haftungsausschluss
 
