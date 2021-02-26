@@ -37,7 +37,7 @@ naersk.buildPackage rec {
   passthru.testBinaries = naersk.buildPackage {
     inherit src nativeBuildInputs buildInputs SODIUM_USE_PKG_CONFIG;
 
-    cargoBuildOptions = (x: x ++ [ "--tests" ]);
+    cargoBuildOptions = (x: x ++ [ "--tests" "-p alexandria" ]);
 
     release = false;
 
