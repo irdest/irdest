@@ -3,7 +3,7 @@
   {{- partial "head.html" . -}}
   {{- block "head-override" .}}{{- end }}
   <body>
-    <div class="header">
+    <header>
       <div class="wrap">
         <!-- top logo & nav bar -->
         <div class="navbar">
@@ -19,7 +19,7 @@
 
         {{- block "header-title" . }}{{- end }}
       </div>
-    </div>
+    </header>
     
     {{- block "main" . }}{{- end }}
 
