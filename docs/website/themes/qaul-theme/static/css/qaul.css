@@ -28,11 +28,14 @@ p,li {
 
 .block {
     display: flex;
+    flex-grow: 1;
     justify-content: center;
+    align-items: center;
     padding: 2em;
 }
 
 header.block, footer.block {
+    flex-grow: 0;
     background: black;
     color: #EFEFEF;
 }
