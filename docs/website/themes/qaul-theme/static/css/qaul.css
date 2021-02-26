@@ -25,7 +25,7 @@ p,li {
     max-width: 100%;
 }
 
-.header {
+.header, .footer {
     display: flex;
     justify-content: center;
     padding: 2rem;
