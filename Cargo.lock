@@ -1247,11 +1247,13 @@ name = "libqaul-types"
 version = "0.1.0"
 dependencies = [
  "alexandria-tags",
+ "bincode",
  "capnp",
  "capnpc",
  "qrpc-sdk",
  "ratman-identity 0.6.0",
  "serde",
+ "serde_json",
 ]
 
 [[package]]

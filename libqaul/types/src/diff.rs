@@ -141,7 +141,6 @@ impl<K: Ord, V> MapDiffExt<K, V> for BTreeMap<K, V> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use serde_json;
 
     #[test]
     fn json_serde() {
