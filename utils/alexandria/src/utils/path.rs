@@ -37,7 +37,7 @@ use std::fmt::{self, Display, Formatter};
 /// if you want to avoid stringly typed paths, you can also use the
 /// `mkPath!` macro in the same module.
 ///
-/// ```norun
+/// ```rust,ignore
 /// # use alexandria::path::mkPath;
 /// let _: Path = mkPath!("imgs", "bob", "cool");
 /// ```

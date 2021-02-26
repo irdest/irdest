@@ -57,7 +57,7 @@ where
 
 #[test]
 fn sign_and_encrypt() {
-    use ed25519_dalek::Keypair as DKP;
+    use ed25519_dalek::{Keypair as DKP, Signer};
     use rand::rngs::OsRng;
     let mut rng = OsRng {};
 
