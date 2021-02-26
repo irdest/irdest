@@ -147,7 +147,7 @@ impl UserProfileExt for UserProfile {
             (ItemDiff::Unset, Some(_)) => vec.push(Diff::map().delete(AVI)),
             _ => {}
         }
-        vecc
+        vec
     }
 }
 
