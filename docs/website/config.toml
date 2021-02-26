@@ -22,4 +22,3 @@ DefaultContentLanguage = "en"
 
 [blackfriday]
   plainIDAnchors = true
-  hrefTargetBlank = true
