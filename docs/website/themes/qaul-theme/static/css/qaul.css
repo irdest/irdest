@@ -51,6 +51,7 @@ p,li {
 .navbar-links {
     text-align: right;
     line-height: 1.5em;
+    margin-left: auto;
 }
 
 .navbar-link {
