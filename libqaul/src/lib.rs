@@ -40,6 +40,10 @@
 
 #![doc(html_favicon_url = "https://qaul.org/favicon.ico")]
 #![doc(html_logo_url = "https://qaul.org/img/qaul_icon-128.png")]
+#![allow(warnings)]
+
+// Internally re-export types library
+pub(crate) use libqaul_types as types;
 
 // Internal modules
 mod auth;

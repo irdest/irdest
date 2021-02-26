@@ -67,8 +67,8 @@ impl<'s> TryFrom<UserProfileReader<'s>> for UserProfile {
 
         let id = try_read(&mut missing, rpc.get_id(), "id")
             .map(|id| Identity::from_string(&id.to_string()));
-        let display_name = try_read(&mut missing, rpc.get_handle(), "handle");
-        let real_name = try_read(&mut missing, rpc.get_display_name(), "display_name");
+        let handle = try_read(&mut missing, rpc.get_handle(), "handle");
+        let display_name = try_read(&mut missing, rpc.get_display_name(), "display_name");
         let bio = try_read(&mut missing, rpc.get_bio(), "bio");
         let services = try_read(&mut missing, rpc.get_services(), "services");
         let avatar = try_read(&mut missing, rpc.get_avatar(), "avatar");
@@ -79,8 +79,8 @@ impl<'s> TryFrom<UserProfileReader<'s>> for UserProfile {
 
         Ok(Self {
             id: id.unwrap().into(),
+            handle: Some(handle.unwrap().into()),
             display_name: Some(display_name.unwrap().into()),
-            real_name: Some(real_name.unwrap().into()),
             bio: util::map_from_capnp(bio.unwrap())?,
             services: util::set_from_capnp(services.unwrap())?,
             avatar: Some(avatar.unwrap().into()),

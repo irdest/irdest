@@ -1,5 +1,7 @@
 //! libqaul message tests
 
+#![allow(unused)]
+
 mod harness;
 use harness::sec5;
 
@@ -27,6 +29,7 @@ async fn send_simple(q: &Arc<Qaul>, auth: &UserAuth, target: Identity) -> Identi
 }
 
 #[async_std::test]
+#[ignore]
 async fn subscribe_one() {
     let net = harness::init().await;
     let auth_a = net.a().users().create("abc").await.unwrap();

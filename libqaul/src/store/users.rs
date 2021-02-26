@@ -3,6 +3,7 @@
 use super::{Conv, FromRecord};
 use crate::{
     security::Keypair,
+    types::diff::ItemDiff,
     users::{UserProfile, UserUpdate},
 };
 use alexandria::{
@@ -14,8 +15,8 @@ use std::collections::BTreeMap;
 
 const KPAIR: &'static str = "keypair";
 const UID: &'static str = "id";
+const HANDLE: &'static str = "handle";
 const D_NAME: &'static str = "display_name";
-const R_NAME: &'static str = "real_name";
 const BIO: &'static str = "bio";
 const SERV: &'static str = "services";
 const AVI: &'static str = "avatar";
@@ -53,8 +54,8 @@ impl FromRecord<UserProfile> for UserProfile {
 
         Self {
             id: Conv::id(kv.get(UID).unwrap()),
+            handle: kv.get(HANDLE).map(|v| Conv::string(v)),
             display_name: kv.get(D_NAME).map(|v| Conv::string(v)),
-            real_name: kv.get(R_NAME).map(|v| Conv::string(v)),
             bio: kv
                 .get(BIO)
                 .map(|v| Conv::map(v))
@@ -71,7 +72,7 @@ impl FromRecord<UserProfile> for UserProfile {
 // FIXME: Combine all the diff tools
 pub(crate) trait UserProfileExt {
     fn init_diff(&self) -> Vec<Diff>;
-    fn gen_diff(&self, update: UserUpdate) -> Diff;
+    fn gen_diff(&self, update: UserUpdate) -> Vec<Diff>;
 }
 
 impl UserProfileExt for UserProfile {
@@ -79,11 +80,11 @@ impl UserProfileExt for UserProfile {
     fn init_diff(&self) -> Vec<Diff> {
         let mut v = vec![Diff::map().insert(UID, self.id.as_bytes().to_vec())];
 
-        if let Some(ref d_name) = self.display_name {
-            v.push(Diff::map().insert(D_NAME, d_name.clone()));
+        if let Some(ref d_name) = self.handle {
+            v.push(Diff::map().insert(HANDLE, d_name.clone()));
         }
-        if let Some(ref r_name) = self.real_name {
-            v.push(Diff::map().insert(R_NAME, r_name.clone()));
+        if let Some(ref r_name) = self.display_name {
+            v.push(Diff::map().insert(D_NAME, r_name.clone()));
         }
 
         v.push(
@@ -113,42 +114,40 @@ impl UserProfileExt for UserProfile {
     }
 
     /// Diff based on how a `UserUpdate` applies to a `UserProfile`
-    fn gen_diff(&self, update: UserUpdate) -> Diff {
-        // use UserUpdate::*;
+    fn gen_diff(&self, update: UserUpdate) -> Vec<Diff> {
+        let UserUpdate {
+            handle,
+            display_name,
+            add_to_bio,
+            rm_from_bio,
+            services,
+            avi_data,
+        } = update;
 
-        // match update {
-        //     // Update data if it was previously set
-        //     DisplayName(Some(name)) if self.display_name.is_some() => {
-        //         Diff::map().update(D_NAME, name)
-        //     }
-        //     RealName(Some(name)) if self.real_name.is_some() => Diff::map().update(R_NAME, name),
-        //     SetBioLine(key, val) if self.bio.contains_key(&key) => {
-        //         Diff::map().nested(D_NAME, Diff::map().update(key, val))
-        //     }
-        //     RemoveBioLine(key) if self.display_name.is_some() => {
-        //         Diff::map().nested(D_NAME, Diff::map().delete(key))
-        //     }
-        //     AddService(service) if self.services.contains(&service) => unimplemented!(),
-        //     RemoveService(service) if self.services.contains(&service) => unimplemented!(),
+        let mut vec = vec![];
 
-        //     // Insert if it wasn't
-        //     DisplayName(Some(name)) => Diff::map().insert(D_NAME, name),
-        //     RealName(Some(name)) => Diff::map().insert(R_NAME, name),
-        //     SetBioLine(key, val) => Diff::map().nested(BIO, Diff::map().insert(key, val)),
-        //     RemoveBioLine(key) => Diff::map().nested(BIO, Diff::map().delete(key)),
-        //     AddService(_) => unimplemented!(),
-        //     RemoveService(_) => unimplemented!(),
+        match (handle, &self.handle) {
+            (ItemDiff::Set(name), Some(_)) => vec.push(Diff::map().update(HANDLE, name)),
+            (ItemDiff::Set(name), None) => vec.push(Diff::map().insert(HANDLE, name)),
+            (ItemDiff::Unset, Some(_)) => vec.push(Diff::map().delete(HANDLE)),
+            _ => {}
+        }
 
-        //     // Delete if set to None
-        //     DisplayName(None) => Diff::map().delete(D_NAME),
-        //     RealName(None) => Diff::map().delete(R_NAME),
+        match (display_name, &self.display_name) {
+            (ItemDiff::Set(name), Some(_)) => vec.push(Diff::map().update(D_NAME, name)),
+            (ItemDiff::Set(name), None) => vec.push(Diff::map().insert(D_NAME, name)),
+            (ItemDiff::Unset, Some(_)) => vec.push(Diff::map().delete(D_NAME)),
+            _ => {}
+        }
+        // TODO: handle add_to_bio/ rm_from_bio/ services updates
 
-        //     // Avatars are a little special
-        //     AvatarData(Some(data)) => Diff::map().delete(AVI).insert(AVI, data),
-        //     AvatarData(None) => Diff::map().delete(BIO),
-        // }
-
-        todo!()
+        match (avi_data, &self.avatar) {
+            (ItemDiff::Set(avi), Some(_)) => vec.push(Diff::map().update(AVI, avi)),
+            (ItemDiff::Set(avi), None) => vec.push(Diff::map().insert(AVI, avi)),
+            (ItemDiff::Unset, Some(_)) => vec.push(Diff::map().delete(AVI)),
+            _ => {}
+        }
+        vecc
     }
 }
 
@@ -165,8 +164,8 @@ fn persist_user_profile() {
 
     let profile = UserProfile {
         id: Identity::random(),
-        display_name: Some("spacekookie".into()),
-        real_name: Some("Katharina Fey".into()),
+        handle: Some("spacekookie".into()),
+        display_name: Some("Katharina Fey".into()),
         bio: {
             let mut tree = BTreeMap::new();
             tree.insert("location".into(), "The internet".into());

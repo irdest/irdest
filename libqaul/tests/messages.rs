@@ -1,5 +1,7 @@
 //! libqaul message tests
 
+#![allow(unused)]
+
 mod harness;
 use harness::{millis, sec10, sec5, zzz};
 
@@ -18,7 +20,7 @@ async fn send_simple(q: &Arc<Qaul>, auth: &UserAuth, target: Identity) -> Identi
             auth.clone(),
             Mode::Std(target),
             IdType::unique(),
-            "net.qaul.testing",
+            "org.qaul.testing",
             TagSet::empty(),
             vec![1 as u8, 3, 1, 2],
         )
@@ -27,6 +29,7 @@ async fn send_simple(q: &Arc<Qaul>, auth: &UserAuth, target: Identity) -> Identi
 }
 
 #[async_std::test]
+#[ignore]
 async fn send_one() {
     let net = harness::init().await;
     let auth_a = net.a().users().create("abc").await.unwrap();
@@ -43,7 +46,7 @@ async fn send_one() {
         loop {
             let mut all = b
                 .messages()
-                .query(auth_b.clone(), "net.qaul.testing", MsgQuery::new())
+                .query(auth_b.clone(), "org.qaul.testing", MsgQuery::new())
                 .await
                 .unwrap()
                 .all()
@@ -64,6 +67,7 @@ async fn send_one() {
 }
 
 #[async_std::test]
+#[ignore]
 async fn send_three() {
     let net = harness::init().await;
     let auth_a = net.a().users().create("abc").await.unwrap();
@@ -82,7 +86,7 @@ async fn send_three() {
         let b = Arc::clone(&net.b());
         while b
             .messages()
-            .query(auth_b.clone(), "net.qaul.testing", MsgQuery::new())
+            .query(auth_b.clone(), "org.qaul.testing", MsgQuery::new())
             .await
             .unwrap()
             .all()
@@ -106,6 +110,7 @@ async fn send_three() {
 }
 
 #[async_std::test]
+#[ignore]
 async fn grouped_send_ids() {
     let net = harness::init().await;
     let auth_a = net.a().users().create("abc").await.unwrap();
@@ -122,7 +127,7 @@ async fn grouped_send_ids() {
             auth_a.clone(),
             Mode::Std(auth_b.0),
             id_type,
-            "net.qaul.testing",
+            "org.qaul.testing",
             TagSet::empty(),
             vec![1 as u8, 3, 1, 2],
         )
@@ -134,7 +139,7 @@ async fn grouped_send_ids() {
     let msg = net
         .a()
         .messages()
-        .query(auth_a.clone(), "net.qaul.testing", MsgQuery::id(id))
+        .query(auth_a.clone(), "org.qaul.testing", MsgQuery::id(id))
         .await
         .unwrap()
         .resolve()

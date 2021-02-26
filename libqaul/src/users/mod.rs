@@ -7,4 +7,4 @@ pub(crate) use announcer::Announcer;
 pub(crate) use store::{UserStore, TAG_PROFILE};
 
 // public exports
-pub use libqaul_types::users::{Token, UserAuth, UserProfile, UserUpdate};
+pub use crate::types::users::{Token, UserAuth, UserProfile, UserUpdate};

@@ -7,8 +7,8 @@
 
 use crate::diff::{ItemDiff, SetDiff};
 use ratman_identity::Identity;
+use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
-use serde::{Serialize, Deserialize};
 
 /// A random authentication token
 pub type Token = String;
@@ -35,9 +35,9 @@ pub struct UserProfile {
     /// A user's network (node) ID
     pub id: Identity,
     /// A human readable display-name (like @foobar)
-    pub display_name: Option<String>,
+    pub handle: Option<String>,
     /// A human's preferred call-sign ("Friends call me foo")
-    pub real_name: Option<String>,
+    pub display_name: Option<String>,
     /// A key-value list of things the user deems interesting about
     /// themselves. This could be stuff like "gender", "preferred
     /// languages" or whatever.
@@ -53,8 +53,8 @@ impl UserProfile {
     pub fn new(id: Identity) -> Self {
         Self {
             id,
+            handle: None,
             display_name: None,
-            real_name: None,
             bio: BTreeMap::new(),
             services: BTreeSet::new(),
             avatar: None,
@@ -77,7 +77,7 @@ impl UserProfile {
         (match &self.display_name {
             None => false,
             Some(v) => v.contains(query),
-        }) || (match &self.real_name {
+        }) || (match &self.display_name {
             None => false,
             Some(v) => v.contains(query),
         })
@@ -116,7 +116,7 @@ impl UserProfile {
 }
 
 /// All the ways a UserData can change, as individual events.
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(Default, PartialEq, Eq, Debug, Clone)]
 pub struct UserUpdate {
     /// Set or blank the User's handle
     pub handle: ItemDiff<String>,

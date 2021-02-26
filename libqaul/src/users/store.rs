@@ -1,12 +1,16 @@
 //! Store for user profiles
 
+use crate::types::{
+    diff::ItemDiff,
+    users::{UserProfile, UserUpdate},
+};
 use crate::{
     error::{Error, Result},
     qaul::Identity,
     security::{KeyId, Keypair},
     store::{FromRecord, KeyWrap, UserProfileExt},
-    users::{UserProfile, UserUpdate},
 };
+
 use alexandria::{
     query::{Query, QueryResult},
     utils::{Id, Path, Tag, TagSet},
@@ -84,11 +88,13 @@ impl UserStore {
     /// Modify a single user inside the store in-place
     pub(crate) async fn modify(&self, id: Identity, modifier: UserUpdate) -> Result<()> {
         let curr = self.get(id).await?;
-        let diff = curr.gen_diff(modifier);
-        self.inner
-            .update(GLOBAL, profile_path(id), diff)
-            .await
-            .unwrap();
+        let diffs = curr.gen_diff(modifier);
+        for diff in diffs {
+            self.inner
+                .update(GLOBAL, profile_path(id), diff)
+                .await
+                .expect("Failed to insert data into database!");
+        }
         Ok(())
     }
 
@@ -128,7 +134,10 @@ impl UserStore {
             .await
             .unwrap()
         {
-            QueryResult::Many(vec) => vec.into_iter().map(|rec| UserProfile::from_rec(rec)).collect(),
+            QueryResult::Many(vec) => vec
+                .into_iter()
+                .map(|rec| UserProfile::from_rec(rec))
+                .collect(),
             _ => unreachable!(),
         }
     }
@@ -146,7 +155,10 @@ impl UserStore {
             .await
             .unwrap()
         {
-            QueryResult::Many(vec) => vec.into_iter().map(|rec| UserProfile::from_rec(rec)).collect(),
+            QueryResult::Many(vec) => vec
+                .into_iter()
+                .map(|rec| UserProfile::from_rec(rec))
+                .collect(),
             _ => unreachable!(),
         }
     }
@@ -212,7 +224,11 @@ async fn update_user() {
     let store = harness::setup();
     let id = harness::insert_random(&store);
 
-    let update = UserUpdate::DisplayName(Some("spacekookie".into()));
+    let update = UserUpdate {
+        display_name: ItemDiff::Set("spacekookie".into()),
+        ..Default::default()
+    };
+
     store.modify(id, update).await.unwrap();
 
     let after = store.get(id).await.unwrap();
