@@ -11,6 +11,11 @@ strong {
     font-weight: 600;
 }
 
+dt {
+    margin-top: 1em;
+    font-weight: bold;
+}
+
 p,li {
     line-height: 1.25em;
 }
