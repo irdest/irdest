@@ -26,10 +26,13 @@ p,li {
     max-width: 100%;
 }
 
-body > header, body > footer {
+.block {
     display: flex;
     justify-content: center;
-    padding: 2rem;
+    padding: 2em;
+}
+
+header.block, footer.block {
     background: black;
     color: #EFEFEF;
 }
@@ -78,10 +81,7 @@ body > header, body > footer {
     margin-bottom: 0;
 }
 
-.intro-block {
-    display: flex;
-    justify-content: center;
-    padding: 2em;
+.block-intro {
     background: #2f556b;
     color: #EFEFEF;
 }
@@ -111,27 +111,22 @@ body > header, body > footer {
 
 .intro-col p { margin: 0.5em 0; }
 
-.content {
-    display: flex;
-    justify-content: center;
+.block-content {
     margin: 0em 5% 2.5em;
     flex-grow: 1;
 }
 
-.content h1 {
+.block-content h1 {
     margin-top: 2em;
     font-size: 1.75em;
 }
 
-.contribute-block {
-    display: flex;
-    justify-content: center;
-    padding: 2em;
+.block-contribute {
     background: #582f6b;
     color: #EFEFEF;
 }
 
-.contribute-block a {
+.block-contribute a {
     color: #FFFFFF;
 }
 
