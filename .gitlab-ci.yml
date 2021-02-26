@@ -1,6 +1,6 @@
 stages:
-  - test
   - build
+  - test
 
 build-rust:
   needs: []
@@ -28,3 +28,23 @@ build-website:
   artifacts:
     paths:
       - result/*
+
+unittests-pipeline:
+  needs: []
+  tags: [ qaul-nix ]
+  stage: build
+  script:
+    - nix-build nix/ci/rust.nix -A pipeline
+    - cp result rust-gitlab-ci.yml
+  artifacts:
+    paths:
+      - rust-gitlab-ci.yml
+
+unittests:
+  needs: [ unittests-pipeline ]
+  stage: test
+  trigger:
+    include:
+      - artifact: rust-gitlab-ci.yml
+        job: unittests-pipeline
+    strategy: depend
