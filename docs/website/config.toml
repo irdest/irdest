@@ -19,6 +19,3 @@ DefaultContentLanguage = "en"
 
 [markup.goldmark.renderer]
   unsafe = true
-
-[blackfriday]
-  plainIDAnchors = true
