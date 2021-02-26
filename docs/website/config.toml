@@ -17,6 +17,8 @@ DefaultContentLanguage = "en"
     weight = 2
     LanguageName = "العربية"
 
+[markup.goldmark.renderer]
+  unsafe = true
 
 [blackfriday]
   plainIDAnchors = true
