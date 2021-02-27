@@ -1043,6 +1043,7 @@ version = "0.1.0"
 dependencies = [
  "alexandria",
  "async-std",
+ "async-trait",
  "base64 0.10.1",
  "bincode",
  "blake2 0.8.1",
@@ -1070,7 +1071,7 @@ dependencies = [
 name = "libqaul-sdk"
 version = "0.1.0"
 dependencies = [
- "libqaul",
+ "libqaul-types",
  "qrpc-sdk",
 ]
 
@@ -1079,9 +1080,8 @@ name = "libqaul-types"
 version = "0.1.0"
 dependencies = [
  "alexandria-tags",
+ "async-trait",
  "bincode",
- "capnp",
- "capnpc",
  "qrpc-sdk",
  "ratman-identity 0.6.0",
  "serde",

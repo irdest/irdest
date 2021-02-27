@@ -6,6 +6,8 @@
 //!
 //! Check the qrpc-sdk documentation to learn how to use this crate.
 
+pub use libqaul_types::*;
+
 /// A qrpc wrapper for libqaul
 ///
 /// This component exposes a public API surface to mirror the libqaul

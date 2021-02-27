@@ -1,21 +1,17 @@
 use crate::{
     diff::{ItemDiff, SetDiff},
     rpc::ConvertError,
-    types_capnp::{
-        item_diff,
-        map::{self, entry},
-        set_diff, tag, tag_set,
-        user_update::bio_line,
-    },
+    types_capnp::{item_diff, map, set_diff, tag_set, user_update::bio_line},
 };
 use alexandria_tags::{Tag, TagSet};
 use capnp::{data, struct_list, text, text_list};
 use qrpc_sdk::parser::MsgReader;
 use std::collections::{BTreeMap, BTreeSet};
 
-type TagsetReader<'s> = MsgReader<'s, tag_set::Reader<'s>>;
-type TagReader<'s> = MsgReader<'s, tag::Reader<'s>>;
+pub(crate) type TagsetReader<'s> = MsgReader<'s, tag_set::Reader<'s>>;
+// pub(crate) type TagReader<'s> = MsgReader<'s, tag::Reader<'s>>;
 
+#[allow(unused)]
 pub(crate) fn tagset_from_capnp<'s>(r: TagsetReader<'s>) -> Result<TagSet, ConvertError> {
     let rpc: tag_set::Reader = r.get_root().unwrap();
     let list = rpc.get_tags().unwrap();

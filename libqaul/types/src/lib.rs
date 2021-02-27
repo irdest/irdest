@@ -1,7 +1,7 @@
 //! A type fascade for `libqaul`
 //!
 //! Using this crate directly is usually not neccessary, instead you
-//! should use `libqaul-rpc` to pull in the RPC adapter for the API.
+//! should use `libqaul-sdk` to pull in the RPC adapter for the API.
 //!
 //! To learn more about how to write components for the qaul.net rpc
 //! system (qrpc), check out the `qrpc-sdk` crate documentation.
@@ -20,12 +20,11 @@ pub mod services;
 pub mod users;
 pub mod diff;
 
-// #[cfg(feature = "rpc")]
 pub mod rpc;
 
-// TODO: rpc feature gate
-pub(crate) mod types_capnp {
-    #![allow(unused)] // don't bother me pls
-    include!(concat!(env!("OUT_DIR"), "/schema/types_capnp.rs"));
-}
+// // TODO: rpc feature gate
+// pub(crate) mod types_capnp {
+//     #![allow(unused)] // don't bother me pls
+//     include!(concat!(env!("OUT_DIR"), "/schema/types_capnp.rs"));
+// }
 

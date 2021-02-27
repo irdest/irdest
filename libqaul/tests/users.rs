@@ -5,7 +5,7 @@
 mod harness;
 use harness::{sec10, sec5};
 
-use libqaul::users::UserUpdate;
+use libqaul::{UserApi, users::UserUpdate};
 use libqaul_types::diff::ItemDiff;
 
 #[async_std::test]

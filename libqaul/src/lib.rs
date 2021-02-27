@@ -115,3 +115,4 @@ pub mod rpc;
 // Core state should be in the root
 mod qaul;
 pub use qaul::{Identity, Qaul, QaulRef};
+pub use types::rpc::api::UserApi;

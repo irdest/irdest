@@ -6,5 +6,5 @@ edition = "2018"
 license = "AGPL-3.0-or-later"
 
 [dependencies]
-libqaul = { path = "../../libqaul" }
+libqaul-types = { path = "../../libqaul/types" }
 qrpc-sdk = { path = "../../rpc-core/qrpc-sdk" }

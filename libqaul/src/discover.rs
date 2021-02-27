@@ -69,11 +69,8 @@ impl Discovery {
                 if let Some(profile) = Announcer::check_message(&msg) {
                     // If we had a previous version, generate diffs for update
                     if let Some(old) = qaul.users.get(msg.sender).await.ok() {
-                        let diffs = old.generate_updates(profile);
-
-                        for update in diffs.into_iter() {
-                            qaul.users.modify(msg.sender, update).await.unwrap();
-                        }
+                        let diff = old.generate_updates(profile);
+                        qaul.users.modify(msg.sender, diff).await.unwrap();
                     }
 
                     continue;

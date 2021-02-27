@@ -1,10 +1,10 @@
 use crate::{
     error::{ratman, Result},
+    types::rpc::api::UserApi,
     users::{Token, UserAuth, UserProfile, UserUpdate},
     Identity, Qaul,
 };
 use serde::{Deserialize, Serialize};
-
 
 /// Local user data and session management
 ///
@@ -19,22 +19,25 @@ impl<'qaul> Users<'qaul> {
     pub fn drop(&'qaul self) -> &'qaul Qaul {
         self.q
     }
+}
 
+#[async_trait::async_trait]
+impl<'qaul> UserApi for Users<'qaul> {
     /// Enumerate all users available
     ///
     /// No information about sessions or existing login state is
     /// stored or accessible via this API.
-    pub async fn list(&self) -> Vec<UserProfile> {
+    async fn list(&self) -> Vec<UserProfile> {
         self.q.users.all_local().await
     }
 
     /// Enumerate remote stored users available
-    pub async fn list_remote(&self) -> Vec<UserProfile> {
+    async fn list_remote(&self) -> Vec<UserProfile> {
         self.q.users.all_remote().await
     }
 
     /// Check if a user ID and token combination is valid
-    pub async fn is_authenticated(&self, user: UserAuth) -> Result<()> {
+    async fn is_authenticated(&self, user: UserAuth) -> Result<()> {
         self.q.auth.trusted(user).map(|_| ())
     }
 
@@ -49,7 +52,7 @@ impl<'qaul> Users<'qaul> {
     /// user, instead of leaving files completely unencrypted. In this
     /// case, there's no real security, but a drive-by will still only
     /// grab encrypted files.
-    pub async fn create(&self, pw: &str) -> Result<UserAuth> {
+    async fn create(&self, pw: &str) -> Result<UserAuth> {
         let keyd = self.q.sec.generate().await;
         let id = keyd.id;
 
@@ -76,26 +79,30 @@ impl<'qaul> Users<'qaul> {
     /// This function requires a valid login for the user that's being
     /// deleted.  This does not delete any data associated with this
     /// user, or messages from the node (or other device nodes).
-    pub async fn delete(&self, user: UserAuth) -> Result<()> {
+    async fn delete(&self, user: UserAuth) -> Result<()> {
         let id = user.0;
 
         // If logout succeeds, we can delete the user
         self.q.announcer.offline(id).await;
         self.logout(user).await?;
-        self.q.router.del_user(id, true).await.map_err(|e| ratman(e))?;
+        self.q
+            .router
+            .del_user(id, true)
+            .await
+            .map_err(|e| ratman(e))?;
         self.q.users.delete_local(id).await;
         Ok(())
     }
 
     /// Change the passphrase for an authenticated user
-    pub fn change_pw(&self, user: UserAuth, newpw: &str) -> Result<()> {
+    fn change_pw(&self, user: UserAuth, newpw: &str) -> Result<()> {
         let (id, _) = self.q.auth.trusted(user)?;
         self.q.auth.set_pw(id, newpw);
         Ok(())
     }
 
     /// Create a new session login for a local User
-    pub async fn login(&self, user: Identity, pw: &str) -> Result<UserAuth> {
+    async fn login(&self, user: Identity, pw: &str) -> Result<UserAuth> {
         let token = self.q.auth.new_login(user, pw)?;
         self.q.router.online(user).await.map_err(|e| ratman(e))?;
         let auth = UserAuth(user, token);
@@ -110,7 +117,7 @@ impl<'qaul> Users<'qaul> {
     }
 
     /// Drop the current session Token, invalidating it
-    pub async fn logout(&self, user: UserAuth) -> Result<()> {
+    async fn logout(&self, user: UserAuth) -> Result<()> {
         let (ref id, ref token) = self.q.auth.trusted(user.clone())?;
         self.q.services.close_user(&user).await;
         self.q.announcer.offline(*id).await;
@@ -124,12 +131,12 @@ impl<'qaul> Users<'qaul> {
     /// No athentication is required for this endpoint, seeing as only
     /// public information is exposed via the `UserProfile`
     /// abstraction anyway.
-    pub async fn get(&self, user: Identity) -> Result<UserProfile> {
+    async fn get(&self, user: Identity) -> Result<UserProfile> {
         self.q.users.get(user).await
     }
 
     /// Update a `UserProfile` with a lambda, if authentication passes
-    pub async fn update(&self, user: UserAuth, update: UserUpdate) -> Result<()> {
+    async fn update(&self, user: UserAuth, update: UserUpdate) -> Result<()> {
         let (id, _) = self.q.auth.trusted(user)?;
         self.q.users.modify(id, update).await
     }

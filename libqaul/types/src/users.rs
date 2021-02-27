@@ -89,29 +89,24 @@ impl UserProfile {
     }
 
     #[doc(hidden)]
-    pub fn generate_updates(&self, new: Self) -> Vec<UserUpdate> {
-        //     let mut updates = vec![];
-        //     use UserUpdate::*;
+    pub fn generate_updates(&self, new: Self) -> UserUpdate {
+        let mut update = UserUpdate::default();
 
-        //     // Update the display name
-        //     match (self.real_name.clone(), new.real_name.clone()) {
-        //         (Some(n), Some(m)) if n == m => {}
-        //         (_, Some(m)) => updates.push(RealName(Some(m))),
-        //         (Some(_), None) => updates.push(RealName(None)),
-        //         (_, _) => {}
-        //     }
+        match (&self.handle, new.handle) {
+            (None, Some(name)) => update.handle = ItemDiff::Set(name),
+            (Some(_), None) => update.handle = ItemDiff::Unset,
+            (_, _) => {} // Ignore is the default
+        }
 
-        //     // Update the real name
-        //     match (self.display_name.clone(), new.display_name.clone()) {
-        //         (Some(n), Some(m)) if n == m => {}
-        //         (_, Some(m)) => updates.push(DisplayName(Some(m))),
-        //         (Some(_), None) => updates.push(DisplayName(None)),
-        //         (_, _) => {}
-        //     }
+        match (&self.display_name, new.display_name) {
+            (None, Some(name)) => update.display_name = ItemDiff::Set(name),
+            (Some(_), None) => update.display_name = ItemDiff::Unset,
+            (_, _) => {} // Ignore is the default
+        }
 
-        //     updates
+        // TODO: implement other user updates
 
-        todo!()
+        update
     }
 }
 
