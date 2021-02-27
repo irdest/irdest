@@ -1,5 +1,7 @@
 # Writing a wire schema
 
+**This page is outdated!**
+
 The qrpc bus is backed by the [capn proto] wire format.  It's similar
 to Google's Protocol Buffers, since it was created by the primary
 author of v2.  It improves in a few key ways, and while qrpc doesn't

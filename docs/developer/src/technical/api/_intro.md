@@ -1,5 +1,7 @@
 # Development Interfaces
 
+**This page is outdated!**
+
 This document will change quite a lot during the development,
 especially because there are several layers of interfaces that need to
 be documented.  In the future we might want to move some of them into

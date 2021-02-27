@@ -1,5 +1,7 @@
 # Ratman API
 
+**This page is outdated!**
+
 There's multiple scopes in the API that are responsible for doing
 vastly different things.  This is due to how ratman can be used.
 Within libqaul we use all three scopes throughout the application

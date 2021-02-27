@@ -1,5 +1,7 @@
 # libqaul IPC Interfaces
 
+**This page is outdated!**
+
 While libqaul and all of the qaul services are written in Rust,
 that doens't mean that you need to write your application in Rust.
 Especially considering that your application might want to connect to

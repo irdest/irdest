@@ -72,7 +72,7 @@ details [here][services]).
 - voices
 - radio
 
-[services]: ./qaul/services.html
+[services]: ./services.html
 
 When connecting your own apps to a `libqaul` instance you can check
 for the existence of other services, meaning that your application can

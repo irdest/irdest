@@ -1,5 +1,7 @@
 # Cap'n proto sockets
 
+**This page is outdated!**
+
 One way to inteact with libqaul is via the `libqaul-ipc` crate which
 implements the same API as libqaul, while tunneling all calls through
 a previously negotiated unix socket, using the cap'n proto IPC

@@ -1,9 +1,10 @@
 # qaul rpc-layer
 
-qaul (the application) is a set of services, that all communicate with
-a shared backend.  This creates an extensible architecture.  On Linux,
-for example, this is done by `qaul-hubd`, a simple server daemon which
-runs the routing code and lets external applications connect to it.
+End-user qaul applications are fundamentally just a set of services,
+that all communicate with a shared backend.  This creates an
+extensible architecture.  On Linux, for example, this is done by
+`qaul-hubd`, a simple server daemon which runs the routing code and
+lets external applications connect to it.
 
 However because qaul is an extensible architecture, it needs to be
 possible for third-party developers to attach their services to an

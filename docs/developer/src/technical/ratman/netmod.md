@@ -1,5 +1,7 @@
 # Netmod
 
+**This page is outdated!**
+
 This library is an abstraction that provides an interface and packet
 specification that's used to communicate between Ratman and the
 network drivers (also called "netmods").

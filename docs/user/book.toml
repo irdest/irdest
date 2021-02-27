@@ -9,6 +9,6 @@ title = "qaul user manual"
 create-missing = false
 
 [output.html]
-preferred-dark-theme = "navy"
+preferred-dark-theme = "rust"
 git-repository-url = "https://git.qaul.org/qaul/qaul/-/tree/develop/docs/user"
 git-repository-icon = "fa-git"
