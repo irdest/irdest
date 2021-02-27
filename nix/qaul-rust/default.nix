@@ -34,6 +34,9 @@ naersk.buildPackage rec {
 
   SODIUM_USE_PKG_CONFIG = 1;
 
+  doDoc = true;
+  doDocFail = true;
+  
   passthru.testBinaries = naersk.buildPackage {
     inherit src nativeBuildInputs buildInputs SODIUM_USE_PKG_CONFIG;
 

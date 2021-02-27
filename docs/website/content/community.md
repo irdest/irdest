@@ -14,8 +14,7 @@ We would be happy to answer your questions on either of those
 platforms.
 
 The main code repository lives on our own [gitlab
-instance](https://git.qaul.org/qaul).  A mirror of the
-main repo is available at [github](https://github.com/qaul/qaul)
+instance](https://git.qaul.org/qaul).
 
 
 [matrix]: https://matrix.to/#/!qaul.net:fairydust.space?via=fairydust.space&via=matrix.org&via=public.cat
