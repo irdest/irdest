@@ -11,24 +11,23 @@ Users: |
     If you come across an issue not covered by the manual, feel free to join
     one of our [community](/community) channels to ask for help!
     
-    * [Users Manual](https://docs.qaul.org/users)
+    * [User Manual](https://docs.qaul.org/user/)
 Devs: |
     This [technical overview][overview] of qaul explains some of the
     core concepts behind the router and network layout.
     
     [overview]: /learn/overview
 
-    If you want to contribute to qaul, the following
+    If you want to contribute to the qaul ecosystem, the following
     resources contain information on where to start.  The Rust docs
     outline the main library APIs and how to use various components
     together.
     
-    The contributors manual gives a broad overview of concepts, 
-    components, and protocols.
+    The developer manual gives a broad overview of concepts, 
+    components, and protocols in use by qaul internals.
     
-    * [Rust API docs](https://docs.qaul.org/api)
-    * [HTTP API docs](https://docs.qaul.org/http-api)
-    * [Contributors Manual](https://docs.qaul.org/contributors)
+    * [Rust API docs](https://docs.qaul.org/api/)
+    * [Developer Manual](https://docs.qaul.org/developer/)
 ---
 
 
