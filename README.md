@@ -37,7 +37,6 @@ additional information in their respective README files.
 | [rpc-core] | Core components of the qrpc development system                                                                               |
 | [sdk]      | Software Development Kit libraries for third-party developers                                                                |
 | [services] | A collection of services that use qaul as their network backend.  Some are part of qaul.net, others are development examples |
-| [tests]    | Integrated test suite for various components.  Most of the code also has inline tests                                        |
 | [utils]    | Various utilities in use all over the repository that don't fit in anywhere else                                             |
 
 [clients]: ./clients

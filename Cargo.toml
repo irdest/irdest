@@ -5,26 +5,25 @@ members = [
     "utils/alexandria-api",
     "utils/alexandria-tags",
 
-    # main qaul service library
+    # Main qaul identity & storage library
     "libqaul",
     "libqaul/types",
 
-    # RPC libraries
+    # RPC core utilities
     "rpc-core/qrpc-sdk",
     "rpc-core/qrpc-broker",
-    
-    "sdk/libqaul-sdk",
-    # "sdk/ratman-rpc",
-    # "sdk/service-rpc",
 
-    # decentralised routing protocol
+    # qaul developer SDKs
+    "sdk/libqaul-sdk",
+
+    # The decentralised router
     "ratman",
     "ratman/harness",
     "ratman/identity",
     "ratman/netmod",
     "ratman/configure",
 
-    # various utility crates
+    # Various utility crates
     "utils/task-notify",
     "utils/clockctrl",
     "utils/libopus-sys",
@@ -32,16 +31,16 @@ members = [
     "utils/permute",
     "utils/visn",
 
-    # available netmod drivers
+    # Available netmod drivers
     "netmods/netmod-mem",
     "netmods/netmod-tcp",
     "netmods/netmod-udp",
     "netmods/netmod-wd",
 
-    # Set of services in qaul.net
+    # Set of services in qaul
     "services/ping",
 
-    # Actual target binaries
-    "clients/hubdctl",
+    # End-user applications
     "clients/hubd",
+    "clients/qrpc-client",
 ]
