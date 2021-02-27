@@ -36,7 +36,8 @@ naersk.buildPackage rec {
 
   doDoc = true;
   doDocFail = true;
-  
+  cargoDocOptions = (x: x ++ [ "--no-deps" ]);
+
   passthru.testBinaries = naersk.buildPackage {
     inherit src nativeBuildInputs buildInputs SODIUM_USE_PKG_CONFIG;
 
