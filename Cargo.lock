@@ -875,17 +875,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "hubdctl"
-version = "0.1.0"
-dependencies = [
- "async-std",
- "futures",
- "libqaul",
- "ratman",
- "tempfile",
-]
-
-[[package]]
 name = "humantime"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1632,6 +1621,18 @@ dependencies = [
  "signal-hook",
  "socket2",
  "tracing",
+]
+
+[[package]]
+name = "qrpc-client"
+version = "0.1.0"
+dependencies = [
+ "async-std",
+ "clap",
+ "qrpc-sdk",
+ "serde_json",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

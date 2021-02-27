@@ -9,7 +9,7 @@ use libqaul::{
     helpers::TagSet,
     messages::{IdType, Mode},
     users::UserAuth,
-    Identity, Qaul, UserApi,
+    Identity, Qaul,
 };
 use std::sync::Arc;
 
