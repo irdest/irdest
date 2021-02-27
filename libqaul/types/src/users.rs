@@ -18,7 +18,7 @@ pub type Token = String;
 /// This structure can be aquired by challenging an authentication
 /// endpoint, such as `User::login` to yield a token. If a session for
 /// this `Identity` already exists, it will be re-used.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UserAuth(pub Identity, pub Token);
 
 /// A complete user profile with ID and metadata
@@ -111,7 +111,7 @@ impl UserProfile {
 }
 
 /// All the ways a UserData can change, as individual events.
-#[derive(Default, PartialEq, Eq, Debug, Clone)]
+#[derive(Serialize, Deserialize, Default, PartialEq, Eq, Debug, Clone)]
 pub struct UserUpdate {
     /// Set or blank the User's handle
     pub handle: ItemDiff<String>,
@@ -126,27 +126,3 @@ pub struct UserUpdate {
     /// Set or blank the User's avatar.
     pub avi_data: ItemDiff<Vec<u8>>,
 }
-
-// impl UserUpdate {
-//     /// Change the given UserProfile based on the instruction given by this UserUpdate.
-//     pub fn apply_to(self, data: &mut UserProfile) {
-//         use UserUpdate::*;
-//         match self {
-//             DisplayName(v) => data.display_name = v,
-//             RealName(v) => data.real_name = v,
-//             SetBioLine(k, v) => {
-//                 data.bio.insert(k, v);
-//             }
-//             RemoveBioLine(k) => {
-//                 data.services.remove(&k);
-//             }
-//             AddService(k) => {
-//                 data.services.insert(k);
-//             }
-//             RemoveService(k) => {
-//                 data.services.remove(&k);
-//             }
-//             AvatarData(v) => data.avatar = v,
-//         }
-//     }
-// }

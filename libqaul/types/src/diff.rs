@@ -62,7 +62,7 @@ impl<T: Default> ItemDiffExt<T> for ItemDiff<T> {
 }
 
 /// Represents a generic change made to an unordered set of items
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Ord, PartialOrd)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Debug, Ord, PartialOrd)]
 pub enum SetDiff<T> {
     /// Add an item to the set
     Add(T),

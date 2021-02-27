@@ -20,8 +20,10 @@ use crate::{
     Identity,
 };
 use alexandria_tags::TagSet;
+use serde::{Deserialize, Serialize};
 
 /// Capabilities are functions that can be executed on a remote
+#[derive(Serialize, Deserialize)]
 pub enum Capabilities {
     Users(UserCapabilities),
     Services(ServiceCapabilities),
@@ -30,6 +32,7 @@ pub enum Capabilities {
 }
 
 /// User scope libqaul functions
+#[derive(Serialize, Deserialize)]
 pub enum UserCapabilities {
     List,
     ListRemote,
@@ -43,8 +46,10 @@ pub enum UserCapabilities {
     Update { auth: UserAuth, update: UserUpdate },
 }
 
+#[derive(Serialize, Deserialize)]
 pub enum ServiceCapabilities {}
 
+#[derive(Serialize, Deserialize)]
 pub enum MessageCapabilities {
     Send {
         auth: UserAuth,
@@ -66,4 +71,5 @@ pub enum MessageCapabilities {
     },
 }
 
+#[derive(Serialize, Deserialize)]
 pub enum ContactCapabilities {}
