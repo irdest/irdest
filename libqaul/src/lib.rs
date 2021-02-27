@@ -86,6 +86,9 @@
 #![doc(html_logo_url = "https://qaul.org/img/qaul_icon-128.png")]
 #![allow(warnings)]
 
+#[macro_use]
+extern crate tracing;
+
 // Internally re-export types library
 pub(crate) use libqaul_types as types;
 
@@ -115,4 +118,3 @@ pub mod rpc;
 // Core state should be in the root
 mod qaul;
 pub use qaul::{Identity, Qaul, QaulRef};
-pub use types::rpc::api::UserApi;

@@ -2,6 +2,7 @@
 members = [
     # Encrypted & async database engine
     "utils/alexandria",
+    "utils/alexandria-api",
     "utils/alexandria-tags",
 
     # main qaul service library

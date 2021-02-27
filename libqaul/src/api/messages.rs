@@ -84,8 +84,8 @@ impl<'qaul> Messages<'qaul> {
             tags: tags.iter().cloned().collect(),
         };
 
-        println!("Sending message with ID `{:?}`", id);
-        println!("Sending message to {:?}", recipient);
+        debug!("Sending message with ID `{:?}`", id);
+        debug!("Sending message to {:?}", recipient);
 
         // Only insert the message into the store if the Id is unique!
         if !self.q.messages.probe_id(sender, id).await {

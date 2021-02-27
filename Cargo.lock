@@ -32,6 +32,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "alexandria-api"
+version = "0.1.0"
+
+[[package]]
 name = "alexandria-tags"
 version = "0.1.0"
 dependencies = [
