@@ -1,20 +1,22 @@
-# qaul Documentation
+# qaul documentation
 
-**This folder contains the qaul documentation. You can find them
-online under [https://docs.qaul.org](https://docs.qaul.org)**
+This folder contains the qaul documentation. You can find them online
+under [https://docs.qaul.org](https://docs.qaul.org)
 
-**Your welcome to contribute to them!**
+You're welcome to contribute to them!
 
 
 ## Guides
 
-* `contributors`: the contributors' guide introduces and explains the
-  structure of qaul and should guide you through the steps of how
-  to the project.
-* `http-api`: contains the documentation of the qaul http-api.
-* `index`: this folder contains the overview page.
+* `developer`: a manual aimed at potential qaul developers, and
+  hackers who want to understand the internals of various components.
+* `user`: a manual aimed at end-users of qaul applications.  Contains
+  setup guides and available configuration options
 
 
-## Build and Deploy
+## How to build
 
-To build and deploy, look into the `deploy.sh` script.
+The manuals are built with `mdbook`.  You can use the corresponding
+`build.sh` scripts to build the books.  You can also use the
+[`nix`](../nix) build files to build the `qaul-manual-developer` and
+`qaul-manual-user` targets.

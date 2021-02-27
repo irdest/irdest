@@ -1,13 +1,14 @@
 [book]
 authors = ["The qaul developers"]
+language = "en"
 multilingual = false
 src = "src"
-title = "qaul developer manual"
+title = "qaul user manual"
 
 [build]
 create-missing = false
 
 [output.html]
 preferred-dark-theme = "navy"
-git-repository-url = "https://git.qaul.org/qaul/qaul/-/tree/develop/docs/developer"
+git-repository-url = "https://git.qaul.org/qaul/qaul/-/tree/develop/docs/user"
 git-repository-icon = "fa-git"

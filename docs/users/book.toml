@@ -1,6 +1,0 @@
-[book]
-authors = ["The qaul developers"]
-language = "en"
-multilingual = false
-src = "src"
-title = "qaul users manual"
