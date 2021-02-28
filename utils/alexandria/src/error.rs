@@ -11,59 +11,59 @@
 //! on `Error`.  These can be bugs in Alexandria itself, or some
 //! runtime constraint like having run out of memory or disk space.
 
-use failure::Fail;
 use std::fmt::{self, Display, Formatter};
 
 /// Common alexandria error fascade
-#[derive(Debug, Fail)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[fail(display = "failed to add a user that already exits")]
+    #[error("failed to add a user that already exits")]
     UserAlreadyExists,
 
-    #[fail(display = "operation failed because user `{}` doesn't exist", id)]
+    #[error("operation failed because user `{}` doesn't exist", id)]
     NoSuchUser { id: String },
 
-    #[fail(display = "failed to initialise library at offset `{}`", offset)]
+    #[error("failed to initialise library at offset `{}`", offset)]
     InitFailed { offset: String },
 
-    #[fail(display = "failed to perform action because user `{}` is locked", id)]
+    #[error("failed to perform action because user `{}` is locked", id)]
     UserNotOpen { id: String },
 
-    #[fail(display = "bad unlock token (password?) for id `{}`", id)]
+    #[error("bad unlock token (password?) for id `{}`", id)]
     UnlockFailed { id: String },
 
-    #[fail(display = "tried to operate on locked encrypted state: {}", msg)]
+    #[error("tried to operate on locked encrypted state: {}", msg)]
     LockedState { msg: String },
 
-    #[fail(display = "tried to unlock user Id `{}` twice", id)]
+    #[error("tried to unlock user Id `{}` twice", id)]
     AlreadyUnlocked { id: String },
 
-    #[fail(display = "no such path: `{}`", path)]
+    #[error("no such path: `{}`", path)]
     NoSuchPath { path: String },
 
-    #[fail(display = "path exists already: {}", path)]
+    #[error("path exists already: {}", path)]
     PathExists { path: String },
 
-    #[fail(display = "failed to load data: `{}`", msg)]
+    #[error("failed to load data: `{}`", msg)]
     LoadFailed { msg: String },
 
-    #[fail(display = "failed to sync data: `{}`", msg)]
+    #[error("failed to sync data: `{}`", msg)]
     SyncFailed { msg: String },
 
-    #[fail(display = "tried to apply Diff of incompatible type")]
+    #[error("tried to apply Diff of incompatible type")]
     BadDiffType,
 
-    #[fail(display = "a Diff failed to apply: \n{}", msgs)]
+    #[error("a Diff failed to apply: \n{}", msgs)]
     BadDiff { msgs: DiffErrors },
 
-    #[fail(
-        display = "can't merge two iterators with different underlying queries: a: '{}', b: '{}'",
-        q1, q2
+    #[error(
+        "can't merge two iterators with different underlying queries: a: '{}', b: '{}'",
+        q1,
+        q2
     )]
     IncompatibleQuery { q1: String, q2: String },
 
     #[doc(hidden)]
-    #[fail(display = "An alexandria internal error occured: `{}`", msg)]
+    #[error("An alexandria internal error occured: `{}`", msg)]
     InternalError { msg: String },
 }
 

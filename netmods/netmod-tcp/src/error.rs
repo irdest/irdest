@@ -1,17 +1,15 @@
 //! TCP ovelay specific error handling
 
-use failure::Fail;
-
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// A generic initialisation error
-#[derive(Debug, Fail)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[fail(display = "the selected mode does not allow for this operation")]
+    #[error("the selected mode does not allow for this operation")]
     InvalidMode,
-    #[fail(display = "failed to initialise socket: invalid address")]
+    #[error("failed to initialise socket: invalid address")]
     InvalidAddr,
-    #[fail(display = "failed to send packet!")]
+    #[error("failed to send packet!")]
     FailedToSend
 }
 
