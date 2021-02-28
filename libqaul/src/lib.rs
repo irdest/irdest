@@ -1,42 +1,85 @@
-//! This is the library that sits at the heart of
-//! [qaul](https://qaul.org).
+//! This library sits at the core of [qaul], providing user
+//! identities, peer trust management, message sending abstractions,
+//! and high-level peer discovery mechanisms.
 //!
-//! Fundamentally, it handles three types of interactions:
+//! Its API (in documentation also called the "service API") enables
+//! applications to run on decentralised networks, without relying on
+//! servers to facilitate data exchange.
 //!
-//! - Initialised hardware messaging
-//! - Service messaging and service hosting
-//! - Internal storage, parsing and encryption
+//! You can use the libqaul API in two ways:
 //!
-//! The two things provided by libqaul, that make it useful to other
-//! applications are `Qaul`, the primary data struct and API holder,
-//! plus the "service API" (implemented on `Qaul`) which gives a
-//! developer access to a qaul network.
+//! 1. Require the `libqaul` crate as a dependency, and use the Rust
+//!    API natively.  This will result in your application running a
+//!    decentralised router (See `ratman` crate).
 //!
-//! The initilisation order for the libqaul stack is reverted.
+//! 2. Include the `libqaul-sdk` crate as a dependency, which exposes
+//!    the same API as libqaul, but connects to a running daemon via the
+//!    QRPC protocol.
 //!
-//! 1. Hardware modules (`netmod`) for the appropriate platform
-//! 2. `RATMAN` routing core, binding against available network
-//!    interfaces
-//! 3. (Optional) Platform specific storage shims for `Alexandria`
-//! 4. `Qaul` internals, which sets up storage, encryption and
-//!    user stores
-//! 5. API shims such as the `http-api` which exposes the service
-//!    API on a json:api schema
-//! 6. UI threads: either initialise the qaul web-frontend or
-//!    your own application stack
+//! The second method is recommended for most users, as it will allow
+//! many different applications to use the same routing daemon for
+//! their tasks.
 //!
-//! `libqaul` handles user registration, sign-in and out, messaging,
-//! file-sharing, both encrypted and public communication, voice
-//! calls, as well as service hooks that mean that your applications
-//! can communicate with the existing services, and other instances
-//! running across a qaul network.
 //!
-//! Additionally to providing the entire application stack, `libqaul`
-//! can also tunnel to other `libqaul` instances, depending on the
-//! platform.  This means that your application might be shipping an
-//! entire copy of `libqaul`, but doesn't have to be the network entry
-//! point. This initialisation option is available before starting
-//! network bindings.
+//! ## Basic architecture
+//!
+//! In qaul we make the distinction between a **client** (a
+//! user-facing entity with some kind of UI), and a **service** (a
+//! micro-application, exposing an API to clients, and other
+//! services).
+//!
+//! Following is a short overview of a full qaul application stack.
+//! You can find a more detailed description in the [developer
+//! manual](https://docs.qaul.org/developer/).
+//!
+//! |----------------------|------------------------------------------------------------------------------------------------------------|
+//! | End-user Application | A UI for users to interact with (either graphical, or textual)                                             |
+//! | Services             | Micro-applications providing very specificy and re-usable functionality to other services and applications |
+//! | RPC System           | (Optional) The QRPC broker and SDK system to connect to an external qaul daemon                            |
+//! | libqaul              | Core identity, data, and peer management library                                                           |
+//! | Ratman               | A decentralised, delay-tolerant, userspace router                                                          |
+//! | Network drivers      | Platform-specific network driver plugins for Ratman                                                        |
+//!
+//! When initialising an instance of libqaul, components need to be
+//! initialised in reverse-order (network drivers first, user
+//! application state last).
+//!
+//! ## Example
+//!
+//! Following is a short example of how to use libqaul directly.  For
+//! examples on how to use the SDK, check out the
+//! [libqaul-sdk](libqaul_sdk) documentation!
+//!
+//! ```rust,no_run
+//! # async fn main() -> libqaul::error::Result<()> {
+//! # let router = todo!();
+//! use libqaul::Qaul;
+//! let q = Qaul::new(router);
+//!
+//! // Create an anonymous user with a password
+//! let alice = q.users().create("password alice secret keeps").await?;
+//!
+//! // Alice decides she wants to publish her handle
+//! let update = UserUpdate { handle: ItemDiff::Set("Alice".into()), ..Default::default() };
+//! q.users().update(alice, update).await?;
+//!
+//! // libqaul will now advertise Alice as `@alice` along side with
+//! // her cryptographic public key!
+//! 
+//! # Ok(())
+//! #}
+//! ```
+//!
+//! ## Functionality
+//!
+//! libqaul handles user registration, sign-in, authentication, binary
+//! payload messaging, peer discovery, and management.  Some concepts
+//! are not implemented in libqaul directly (such as message groups,
+//! or text-payload messages), but instead require a service.
+//!
+//! For an overview of services written by the qaul project, check
+//! this page in the [developer
+//! manual](https://docs.qaul.org/developer/technical/services.html)!
 
 #![doc(html_favicon_url = "https://qaul.org/favicon.ico")]
 #![doc(html_logo_url = "https://qaul.org/img/qaul_icon-128.png")]
