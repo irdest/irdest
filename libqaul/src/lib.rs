@@ -32,6 +32,7 @@
 //! You can find a more detailed description in the [developer
 //! manual](https://docs.qaul.org/developer/).
 //!
+//! | Component            | Description                                                                                                |
 //! |----------------------|------------------------------------------------------------------------------------------------------------|
 //! | End-user Application | A UI for users to interact with (either graphical, or textual)                                             |
 //! | Services             | Micro-applications providing very specificy and re-usable functionality to other services and applications |
