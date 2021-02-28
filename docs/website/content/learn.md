@@ -26,7 +26,7 @@ Devs: |
     The developer manual gives a broad overview of concepts, 
     components, and protocols in use by qaul internals.
     
-    * [Rust API docs](https://docs.qaul.org/api/)
+    * [Rust API docs](https://docs.qaul.org/api/libqaul/)
     * [Developer Manual](https://docs.qaul.org/developer/)
 ---
 
