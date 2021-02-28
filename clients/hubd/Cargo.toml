@@ -20,5 +20,5 @@ directories = "2.0"
 igd = "0.11"
 tracing = "0.1"
 tracing-subscriber = { version = "0.2", features = ["fmt", "env-filter"] }
-pnet = "0.26"
+pnet = "0.27"
 ipnetwork = "0.16"
