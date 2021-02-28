@@ -3,8 +3,7 @@
 mod subs;
 pub use subs::{SubId, Subscription};
 
-mod diff;
-pub use diff::{ItemDiff, ItemDiffExt, MapDiff, MapDiffExt, SetDiff, SetDiffExt};
+pub use libqaul_types::diff::{ItemDiff, ItemDiffExt, MapDiff, MapDiffExt, SetDiff, SetDiffExt};
 
 mod query;
 pub use query::QueryResult;

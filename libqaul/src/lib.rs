@@ -54,7 +54,8 @@
 //! [libqaul-sdk](../libqaul_sdk) documentation!
 //!
 //! ```rust,no_run
-//! # async fn main() -> libqaul::error::Result<()> {
+//! # async fn foo() -> libqaul::error::Result<()> {
+//! # use libqaul::{helpers::ItemDiff, users::UserUpdate};
 //! # let router = todo!();
 //! use libqaul::Qaul;
 //! let q = Qaul::new(router);
@@ -63,14 +64,14 @@
 //! let alice = q.users().create("password alice secret keeps").await?;
 //!
 //! // Alice decides she wants to publish her handle
-//! let update = UserUpdate { handle: ItemDiff::Set("Alice".into()), ..Default::default() };
+//! let update = UserUpdate { handle: ItemDiff::set("@alice"), ..Default::default() };
 //! q.users().update(alice, update).await?;
 //!
 //! // libqaul will now advertise Alice as `@alice` along side with
 //! // her cryptographic public key!
 //! 
 //! # Ok(())
-//! #}
+//! # }
 //! ```
 //!
 //! ## Functionality

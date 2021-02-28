@@ -2,22 +2,16 @@
 //!
 //! A modular and configurable internet overlay server for qaul.
 
-#[macro_use]
-extern crate tracing;
+// #[macro_use]
+// extern crate tracing;
 
 mod cfg;
 mod log;
 mod state;
-// mod upnp;
 
 use async_std::{future, task::Poll};
 use qrpc_broker::Broker;
 use state::State;
-
-pub(crate) fn elog<S: Into<String>>(msg: S, code: u16) -> ! {
-    tracing::error!("{}", msg.into());
-    std::process::exit(code.into());
-}
 
 #[async_std::main]
 async fn main() {

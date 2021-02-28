@@ -2,12 +2,11 @@
 
 use async_std::{
     channel::{bounded, Receiver, Sender},
-    sync::{Arc, Mutex},
+    sync::Arc,
     task,
 };
 use async_trait::async_trait;
-use netmod::{Endpoint, Error, Frame, Result, Target};
-use std::{collections::VecDeque, ffi::c_void};
+use netmod::{Endpoint, Frame, Result, Target};
 
 pub struct WdMod {
     recv_queue: (Sender<(Frame, Target)>, Receiver<(Frame, Target)>),

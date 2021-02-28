@@ -15,6 +15,13 @@ pub enum ItemDiff<T> {
     Unset,
 }
 
+impl<T> ItemDiff<T> {
+    /// Create a `Set(...)` variant ItemDiff
+    pub fn set<I: Into<T>>(t: I) -> ItemDiff<T> {
+        Self::Set(t.into())
+    }
+}
+
 impl<T> Default for ItemDiff<T> {
     fn default() -> Self {
         ItemDiff::Ignore
