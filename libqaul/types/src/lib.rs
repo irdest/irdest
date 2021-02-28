@@ -14,11 +14,11 @@
 pub use ratman_identity::Identity;
 
 pub mod contacts;
+pub mod diff;
 pub mod error;
 pub mod messages;
 pub mod services;
 pub mod users;
-pub mod diff;
 
 pub mod rpc;
 
@@ -27,4 +27,3 @@ pub mod rpc;
 //     #![allow(unused)] // don't bother me pls
 //     include!(concat!(env!("OUT_DIR"), "/schema/types_capnp.rs"));
 // }
-

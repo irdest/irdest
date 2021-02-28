@@ -9,7 +9,7 @@ use crate::{
     messages::MsgStore,
     security::Sec,
     services::ServiceRegistry,
-    users::{UserStore, Announcer},
+    users::{Announcer, UserStore},
 };
 
 use alexandria::{Builder, Library};

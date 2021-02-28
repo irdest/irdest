@@ -25,5 +25,8 @@ fn test_overflow() {
     drop(input);
     drop(output);
 
-    assert_eq!(result.unwrap_err().code(), opus_rs::ErrorCode::InvalidPacket);
+    assert_eq!(
+        result.unwrap_err().code(),
+        opus_rs::ErrorCode::InvalidPacket
+    );
 }

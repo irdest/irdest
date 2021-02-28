@@ -1,6 +1,6 @@
 //! Handling message interaction with Alexandria
 
-use super::{FromRecord, Conv};
+use super::{Conv, FromRecord};
 use crate::{helpers::Tagged, messages::Message};
 use alexandria::{
     record::RecordRef,

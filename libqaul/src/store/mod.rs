@@ -13,7 +13,7 @@ mod services;
 pub(crate) use services::MetadataExt;
 
 mod users;
-pub(crate) use users::{UserProfileExt, KeyWrap};
+pub(crate) use users::{KeyWrap, UserProfileExt};
 
 use crate::{messages::SigTrust, Identity};
 use alexandria::record::{kv::Value, RecordRef};

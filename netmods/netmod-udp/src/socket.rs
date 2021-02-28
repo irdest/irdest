@@ -1,7 +1,6 @@
 //! Socket handler module
 
 use crate::{AddrTable, Envelope, FrameExt, Peer};
-use task_notify::Notify;
 use async_std::{
     future::{self, Future},
     net::{IpAddr, Ipv4Addr, SocketAddr, UdpSocket},
@@ -11,6 +10,7 @@ use async_std::{
 };
 use netmod::{Frame, Target};
 use std::collections::VecDeque;
+use task_notify::Notify;
 
 const MULTI: Ipv4Addr = Ipv4Addr::new(224, 0, 0, 123);
 const SELF: Ipv4Addr = Ipv4Addr::new(0, 0, 0, 0);
@@ -24,7 +24,7 @@ pub(crate) struct Socket {
 
 impl Socket {
     /// Create a new socket handler and return a management reference
-    #[instrument(skip(table), level="trace")]
+    #[instrument(skip(table), level = "trace")]
     pub(crate) async fn with_port(port: u16, table: Arc<AddrTable>) -> Arc<Self> {
         let sock = UdpSocket::bind((SELF, port)).await.unwrap();
         sock.join_multicast_v4(MULTI, SELF)
@@ -62,7 +62,7 @@ impl Socket {
     }
 
     /// Send a multicast with an Envelope
-    #[instrument(skip(self, env), level="trace")]
+    #[instrument(skip(self, env), level = "trace")]
     pub(crate) async fn multicast(&self, env: Envelope) {
         info!("Sending multicast message: {:#?}", env);
         self.sock
@@ -91,7 +91,7 @@ impl Socket {
         .await
     }
 
-    #[instrument(skip(arc, table), level="trace")]
+    #[instrument(skip(arc, table), level = "trace")]
     fn incoming_handle(arc: Arc<Self>, table: Arc<AddrTable>) {
         task::spawn(async move {
             loop {

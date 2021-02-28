@@ -70,7 +70,7 @@ fn join_frames(buf: &mut Vec<Frame>, new: Frame) -> Option<Message> {
 
         // Update the received timestamp in the message
         timesig.receive();
-        
+
         Some(Message {
             id,
             sender,

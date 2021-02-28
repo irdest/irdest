@@ -16,6 +16,5 @@
 //! The following modules are disabled by default and can be enabled
 //! via compile-time feature flags given to cargo.
 
-
 #[cfg(feature = "ffi-java")]
 pub mod java;

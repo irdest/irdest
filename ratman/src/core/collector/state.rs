@@ -1,7 +1,6 @@
 use super::Locked;
 use crate::Message;
 
-use task_notify::Notify;
 use async_std::{
     future::{self, Future},
     pin::Pin,
@@ -10,6 +9,7 @@ use async_std::{
 };
 use netmod::{Frame, SeqId};
 use std::collections::{BTreeMap, VecDeque};
+use task_notify::Notify;
 
 /// Local frame collector state holder
 #[derive(Default)]

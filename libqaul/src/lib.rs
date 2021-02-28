@@ -3,7 +3,7 @@
 //! and high-level peer discovery mechanisms.
 //!
 //! [qaul]: https://qaul.org
-//! 
+//!
 //! Its API (in documentation also called the "service API") enables
 //! applications to run on decentralised networks, without relying on
 //! servers to facilitate data exchange.
@@ -69,7 +69,7 @@
 //!
 //! // libqaul will now advertise Alice as `@alice` along side with
 //! // her cryptographic public key!
-//! 
+//!
 //! # Ok(())
 //! # }
 //! ```

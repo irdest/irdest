@@ -10,7 +10,7 @@ pub enum Error {
     #[error("failed to initialise socket: invalid address")]
     InvalidAddr,
     #[error("failed to send packet!")]
-    FailedToSend
+    FailedToSend,
 }
 
 impl From<async_std::io::Error> for Error {
