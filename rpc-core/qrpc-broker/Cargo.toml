@@ -4,12 +4,13 @@ description = "Provide a generic RPC server to connect qaul services together"
 version = "0.1.0"
 authors = ["Katharina Fey <kookie@spacekookie.de>"]
 edition = "2018"
+license = "AGPL-3.0-or-later"
 
 [dependencies]
 identity = { path = "../../ratman/identity", version ="0.6.0", package = "ratman-identity", features = ["random"] }
 qrpc-sdk = { path = "../qrpc-sdk", version = "0.1", features = ["internals"] }
 
-async-std = "=1.5"
+async-std = "1.0"
 byteorder = "1.0"
 capnp = "0.13"
 lazy_static = "1.0"

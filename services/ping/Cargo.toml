@@ -4,11 +4,12 @@ description = "A test service, demonstrating how to use libqaul, and the qrpc-sd
 version = "0.1.0"
 authors = ["Katharina Fey <kookie@spacekookie.de>"]
 edition = "2018"
+license = "AGPL-3.0-or-later"
 
 [dependencies]
 qrpc-sdk = { path = "../../rpc-core/qrpc-sdk", version = "0.1" }
 # libqaul-rpc = { path = "../../rpc-core/libqaul-rpc" }
 
-async-std = { version = "=1.5", features = ["attributes"] }
+async-std = { version = "1.0", features = ["attributes"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.2", features = ["fmt", "env-filter"] }

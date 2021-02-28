@@ -11,7 +11,7 @@ name = "qauldroid"
 crate-type = ["cdylib"]
 
 [dependencies]
-async-std = "=1.5"
+async-std = "1.0"
 bincode = "1.0"
 jni = { version = "0.14", default-features = false }
 log = "*"

@@ -12,7 +12,7 @@ edition = "2018"
 id = { version ="0.6.0", path = "../../ratman/identity", features = ["digest", "random", "aligned"], package = "ratman-identity" }
 alexandria-tags = { path = "../alexandria-tags" }
 
-async-std = { version = "=1.5", features = ["unstable", "attributes"] }
+async-std = { version = "1.0", features = ["unstable", "attributes"] }
 bincode = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 thiserror = "1.0"
