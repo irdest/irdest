@@ -69,7 +69,7 @@ impl RpcServer {
             .listen(move |msg| {
                 let req = str::from_utf8(msg.data.as_slice())
                     .ok()
-                    .and_then(|json| Capabilities::from_json(json))
+                    .and_then(|json| Capabilities::from_json(dbg!(json)))
                     .unwrap();
 
                 let _this = Arc::clone(&this);

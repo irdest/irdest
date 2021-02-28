@@ -112,6 +112,7 @@ impl UserProfile {
 
 /// All the ways a UserData can change, as individual events.
 #[derive(Serialize, Deserialize, Default, PartialEq, Eq, Debug, Clone)]
+#[serde(default)]
 pub struct UserUpdate {
     /// Set or blank the User's handle
     pub handle: ItemDiff<String>,
