@@ -17,7 +17,7 @@ bincode = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 thiserror = "1.0"
 hex = "0.4"
-keybob = "0.3"
+keybob = "0.4"
 serde = { version = "1.0", features = ["derive", "rc"] }
 sodiumoxide = "0.2.5"
 tracing = "0.1"
