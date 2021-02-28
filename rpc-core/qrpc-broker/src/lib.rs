@@ -71,6 +71,7 @@ async fn handle_packet(s: &mut TcpStream, conns: &ConnMap) -> RpcResult<()> {
         }
         _ => {
             debug!("Message addressed to bus component; looking up stream!");
+            debug!("Looking up stream: {}", to);
             let mut t_stream = match conns.read().await.get(&to).map(|s| s.io.clone()) {
                 Some(s) => s,
                 None => {
