@@ -8,7 +8,7 @@ license = "AGPL-3.0-or-later"
 
 [dependencies]
 qrpc-sdk = { path = "../../rpc-core/qrpc-sdk", version = "0.1" }
-# libqaul-rpc = { path = "../../rpc-core/libqaul-rpc" }
+libqaul-sdk = { path = "../../sdk/libqaul-sdk" }
 
 async-std = { version = "1.0", features = ["attributes"] }
 tracing = "0.1"

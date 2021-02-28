@@ -105,19 +105,23 @@ impl<'s, T: FromPointerReader<'s>> MsgReader<'s, T> {
     }
 }
 
-/// Parse a message into a new ID (maybe)
+/// Parse a message into a new ID
 pub fn resp_id(msg: Message) -> RpcResult<Identity> {
     use crate::rpc::sdk_reply::{HashId, Reader};
 
     let Message {
         id: _,
-        addr: _,
+        to: _,
+        from: _,
         data,
     } = msg;
+
     let r = MsgReader::new(data)?;
     let reader: Reader = r.get_root()?;
     match reader.which() {
         Ok(HashId(Ok(id))) => Ok(Identity::from_string(&id.to_string())),
-        _ => Err(RpcError::EncoderFault("".into())),
+        _ => Err(RpcError::EncoderFault(
+            "Operation failed: unknown component address!".into(),
+        )),
     }
 }

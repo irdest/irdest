@@ -7,7 +7,8 @@
 # data types, so only the address is important
 struct RpcMessage {
     id @0 :Text;
-    addr @1 :Text;
-    data @2 :Data;
+    to @1 :Text;
+    from @2 :Text;
+    data @3 :Data;
 }
 

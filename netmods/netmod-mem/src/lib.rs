@@ -105,7 +105,7 @@ impl Endpoint for MemMod {
         let io = self.io.read().await;
         match *io {
             None => Err(NetError::NotSupported),
-            Some(ref io) => Ok(io.out.send(frame).await),
+            Some(ref io) => Ok(io.out.send(frame).await.unwrap()),
         }
     }
 
@@ -114,8 +114,8 @@ impl Endpoint for MemMod {
         match *io {
             None => Err(NetError::NotSupported),
             Some(ref io) => match io.inc.recv().await {
-                Some(f) => Ok((f, Target::default())),
-                None => Err(NetError::ConnectionLost),
+                Ok(f) => Ok((f, Target::default())),
+                Err(_) => Err(NetError::ConnectionLost),
             },
         }
     }

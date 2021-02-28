@@ -28,17 +28,9 @@
 //! connection is currently down.
 
 use crate::{AtomPtr, IoPair, LinkType, LockedStream, Packet, PacketBuilder};
-use async_std::{
-    future::timeout,
-    io::prelude::WriteExt,
-    net::TcpStream,
-    sync::{Arc, RwLock},
-    task,
-};
-use bincode::serialize;
+use async_std::{future::timeout, io::prelude::WriteExt, net::TcpStream, sync::Arc, task};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::{net::SocketAddr, time::Duration};
-use tracing::{error, trace};
 
 /// Utility module to generate monotonic peer IDs
 mod id {
@@ -73,6 +65,7 @@ pub(crate) enum PeerState {
     /// A valid two-way connection
     Duplex,
     /// Something has gone really wrong
+    #[allow(unused)]
     Invalid,
 }
 
@@ -262,7 +255,7 @@ impl Peer {
     /// output stream if it doesn't yet exist
     async fn send_or_introduce(self: &Arc<Self>, p: Packet, port: u16, _type: LinkType) {
         loop {
-            if { self.sender.get_ref().read().await.is_some() } {
+            if self.sender.get_ref().read().await.is_some() {
                 // Send the packet and re-run the loop if we failed to send
                 match self.send_packet(&p).await {
                     Some(_) => break,
@@ -288,7 +281,7 @@ impl Peer {
     pub(crate) fn run_io_sender(self: Arc<Self>, port: u16, _type: LinkType) {
         trace!("Running IO sender");
         task::spawn(async move {
-            while let Some(p) = self.io.rx.recv().await {
+            while let Ok(p) = self.io.rx.recv().await {
                 trace!("Queued packet {:?}", p);
                 self.send_or_introduce(p, port, _type).await;
 
@@ -302,7 +295,7 @@ impl Peer {
     }
 
     /// Loop on a connection until it could be established!
-    async fn introduce_blocking(self: Arc<Self>, port: u16) {
+    async fn introduce_blocking(self: Arc<Self>, _port: u16) {
         let id = self.id.clone();
         let dst = self.dst.clone().unwrap();
 
@@ -346,7 +339,7 @@ impl Peer {
                 }
             };
 
-            s.set_nodelay(true);
+            s.set_nodelay(true).unwrap();
 
             trace!("Successfully connected to peer `{}`", &dst);
             let mut sender = sender.write().await;
@@ -363,7 +356,7 @@ impl Peer {
     /// spawn an async worker and return, even if the data was not
     /// successfully delivered.
     pub(crate) async fn send(&self, packet: Packet) {
-        self.io.tx.send(packet).await;
+        self.io.tx.send(packet).await.unwrap();
     }
 
     pub(crate) fn get_src(&self) -> Option<SourceAddr> {

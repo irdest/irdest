@@ -17,21 +17,26 @@ use capnp::{message::Builder as Bld, serialize_packed};
 use identity::Identity;
 
 /// Generate an enveloped registry message for this service
-pub fn register(_service: &Service) -> Result<Message> {
+pub fn register(service: &Service) -> Result<Message> {
     let mut msg = Bld::new_default();
 
     let cap = msg.init_root::<cap::Builder>();
     let reg = cap.init_register();
     let mut serv = reg.init_service();
 
-    serv.set_name(&_service.name);
-    serv.set_description(&_service.description);
-    serv.set_version(_service.version as i16);
+    serv.set_name(&service.name);
+    serv.set_description(&service.description);
+    serv.set_version(service.version as i16);
 
     let mut buffer = vec![];
     serialize_packed::write_message(&mut buffer, &msg)?;
 
-    Ok(_internal::make_carrier("net.qaul._broker".into(), buffer))
+    Ok(_internal::make_carrier(
+        // FIXME: get the address from the qrpc-broker?
+        "org.qaul._broker".into(),
+        service.name.clone(),
+        buffer,
+    ))
 }
 
 /// Generate a simple boolean return payload
@@ -69,19 +74,20 @@ pub mod _internal {
     use capnp::{message::Builder as Bld, serialize_packed};
 
     /// Create a carrier frame with address and a unique ID
-    pub fn make_carrier(addr: String, data: Vec<u8>) -> Message {
+    pub fn make_carrier(to: String, from: String, data: Vec<u8>) -> Message {
         let id = Identity::random();
-        Message { id, addr, data }
+        Message { id, to, from, data }
     }
 
     /// Take address and data and turn it into a basic rpc message
     pub fn to(cmsg: Message) -> Vec<u8> {
-        let Message { id, addr, data } = cmsg;
+        let Message { id, to, from, data } = cmsg;
 
         let mut msg = Bld::new_default();
         let mut carrier = msg.init_root::<rpc_message::Builder>();
         carrier.set_id(&id.to_string());
-        carrier.set_addr(&addr);
+        carrier.set_to(&to);
+        carrier.set_from(&from);
         carrier.set_data(&data);
 
         let mut buffer = vec![];
@@ -94,16 +100,18 @@ pub mod _internal {
     /// Feel free to use this function in your service code.  The
     /// first field in the tuple is the destination address, the
     /// second is the data payload.
-    pub fn from(buffer: Vec<u8>) -> RpcResult<(Identity, String, Vec<u8>)> {
+    pub fn from(buffer: Vec<u8>) -> RpcResult<(Identity, String, String, Vec<u8>)> {
         let msg = MsgReader::new(buffer)?;
         let carrier: rpc_message::Reader = msg.get_root().unwrap();
         let id = carrier.get_id()?;
-        let addr = carrier.get_addr()?;
+        let to = carrier.get_to()?;
+        let from = carrier.get_from()?;
         let data = carrier.get_data()?;
 
         Ok((
             Identity::from_string(&id.to_string()),
-            addr.to_string(),
+            to.to_string(),
+            from.to_string(),
             data.to_vec(),
         ))
     }

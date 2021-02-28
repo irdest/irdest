@@ -8,9 +8,13 @@
 //! To write a service to use libqaul, include the client-lib
 //! (libqaul-rpc) for type and API configuration.
 
-use crate::QaulRef;
-use qrpc_sdk::{default_socket_path, error::RpcResult, RpcSocket, Service};
-use async_std::sync::Arc;
+use crate::{
+    types::rpc::{Capabilities, Reply, UserCapabilities, UserReply},
+    QaulRef,
+};
+use async_std::{sync::Arc, task};
+use qrpc_sdk::{default_socket_path, error::RpcResult, io::Message, RpcSocket, Service};
+use std::str;
 
 /// A pluggable RPC server that wraps around libqaul
 ///
@@ -18,7 +22,6 @@ use async_std::sync::Arc;
 /// You will lose access to this type once you start the RPC server.
 /// Currently there is no self-management interface available via
 /// qrpc.
-///
 pub struct RpcServer {
     inner: QaulRef,
     socket: Arc<RpcSocket>,
@@ -35,5 +38,39 @@ impl RpcServer {
         let socket = RpcSocket::connect(addr, port).await?;
         let _self = Self { inner, socket };
         Ok(_self)
+    }
+
+    async fn run_listen(self: &Arc<Self>) {
+        let this = Arc::clone(self);
+        self.socket
+            .listen(move |msg| {
+                let req = str::from_utf8(msg.data.as_slice())
+                    .ok()
+                    .and_then(|json| Capabilities::from_json(json))
+                    .unwrap();
+
+                let _this = Arc::clone(&this);
+                task::spawn(async move { _this.spawn_on_request(msg, req).await });
+            })
+            .await;
+    }
+
+    async fn spawn_on_request(self: &Arc<Self>, msg: Message, cap: Capabilities) {
+        let reply = match cap {
+            Capabilities::Users(UserCapabilities::Create { pw }) => self
+                .inner
+                .users()
+                .create(pw.as_str())
+                .await
+                .map(|auth| Reply::Users(UserReply::Auth(auth)))
+                .map_err(|e| Reply::Error(e)),
+            _ => todo!(),
+        }
+        .unwrap();
+
+        self.socket
+            .reply(msg.reply("...".into(), reply.to_json().as_bytes().to_vec()))
+            .await
+            .unwrap();
     }
 }

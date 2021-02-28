@@ -2,7 +2,8 @@
 
 use crate::{Error, IoPair, Result};
 use async_std::{
-    sync::{channel, Arc, Mutex},
+    channel::bounded,
+    sync::{Arc, Mutex},
     task,
 };
 use std::collections::BTreeMap;
@@ -33,7 +34,7 @@ impl RouteTable {
     pub(crate) fn new() -> Arc<Self> {
         Arc::new(Self {
             routes: Default::default(),
-            new: channel(1),
+            new: bounded(1),
         })
     }
 

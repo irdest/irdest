@@ -9,10 +9,11 @@ use crate::{
     io::{self, Message},
 };
 use async_std::{
+    channel::{bounded, Receiver, Sender},
     future,
     net::{TcpListener, TcpStream},
     stream::StreamExt,
-    sync::{channel, Arc, Mutex, Receiver, Sender},
+    sync::{Arc, Mutex},
     task,
 };
 use identity::Identity;
@@ -75,7 +76,7 @@ impl RpcSocket {
             running: true.into(),
             listening: false.into(),
             wfm: Default::default(),
-            inc_io: channel(4),
+            inc_io: bounded(4),
             timeout,
         });
 
@@ -88,7 +89,7 @@ impl RpcSocket {
         let _self = Arc::clone(self);
         _self.listening.swap(true, Ordering::Relaxed);
         task::spawn(async move {
-            while let Some(msg) = _self.inc_io.1.recv().await {
+            while let Ok(msg) = _self.inc_io.1.recv().await {
                 cb(msg);
             }
         });
@@ -113,7 +114,7 @@ impl RpcSocket {
             running: true.into(),
             listening: true.into(),
             wfm: Default::default(),
-            inc_io: channel(4),
+            inc_io: bounded(4),
             timeout: Duration::from_secs(5),
         });
 
@@ -145,7 +146,7 @@ impl RpcSocket {
     /// that we can handle the return data.  But we also need to
     /// generally handle incoming messages.  To avoid having to peek
     /// into the socket periodically to check if a message has
-    /// arrived, this mechanism uses channels, and an enum type to
+    /// arrived, this mechanism uses boundeds, and an enum type to
     /// associate message IDs.
     fn spawn_incoming(self: &Arc<Self>) {
         let _self = Arc::clone(self);
@@ -164,13 +165,19 @@ impl RpcSocket {
                 let id = msg.id;
                 let mut wfm = _self.wfm.lock().await;
                 match wfm.get(&id) {
-                    Some(sender) => sender.send(msg).await,
-                    None => _self.inc_io.0.send(msg).await,
+                    Some(sender) => sender.send(msg).await.unwrap(),
+                    None => _self.inc_io.0.send(msg).await.unwrap(),
                 }
 
                 wfm.remove(&id);
             }
         });
+    }
+
+    /// Send a message as a reply to a recipient
+    pub async fn reply(self: &Arc<Self>, msg: Message) -> RpcResult<()> {
+        let mut s = self.stream.clone().unwrap();
+        io::send(&mut s, msg).await
     }
 
     /// Send a message to the other side of this stream
@@ -192,7 +199,7 @@ impl RpcSocket {
     {
         // Insert a receive hook for the message we are about to send
         let id = msg.id;
-        let (tx, rx) = channel(1);
+        let (tx, rx) = bounded(1);
         self.wfm.lock().await.insert(id, tx);
 
         // Send off the message...
@@ -202,8 +209,8 @@ impl RpcSocket {
         // Wait for a reply
         future::timeout(self.timeout, async move {
             match rx.recv().await {
-                Some(msg) => convert(msg),
-                None => Err(RpcError::ConnectionFault(
+                Ok(msg) => convert(msg),
+                Err(_) => Err(RpcError::ConnectionFault(
                     "No message with matching ID received!".into(),
                 )),
             }

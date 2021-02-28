@@ -9,7 +9,7 @@ use async_std::{net::TcpStream, sync::RwLock, task};
 use identity::Identity;
 use qrpc_sdk::{
     builders, default_socket_path,
-    error::{RpcError, RpcResult},
+    error::RpcResult,
     io::{self, Message},
     RpcSocket,
 };
@@ -23,6 +23,8 @@ pub(crate) struct ServiceEntry {
 }
 
 type ConnMap = Arc<RwLock<BTreeMap<String, ServiceEntry>>>;
+
+const ADDRESS: &'static str = "org.qaul._broker";
 
 /// Hold the main broker state
 pub struct Broker {
@@ -59,9 +61,9 @@ fn reader_loop(mut stream: TcpStream, data: ConnMap) {
 }
 
 async fn handle_packet(s: &mut TcpStream, conns: &ConnMap) -> RpcResult<()> {
-    let Message { id, addr, data } = io::recv(s).await?;
-    match addr.as_str() {
-        "net.qaul._broker" => {
+    let Message { id, to, from, data } = io::recv(s).await?;
+    match to.as_str() {
+        ADDRESS => {
             debug!("Message addressed to broker; handling!");
             let msg = protocol::broker_command(id, &s, data, &conns).await?;
             io::send(s, msg).await?;
@@ -69,15 +71,16 @@ async fn handle_packet(s: &mut TcpStream, conns: &ConnMap) -> RpcResult<()> {
         }
         _ => {
             debug!("Message addressed to bus component; looking up stream!");
-            let mut t_stream = match conns.read().await.get(&addr).map(|s| s.io.clone()) {
+            let mut t_stream = match conns.read().await.get(&to).map(|s| s.io.clone()) {
                 Some(s) => s,
                 None => {
-                    warn!("Requested component does not exist no qrpc bus!");
+                    warn!("Requested component does not exist on qrpc bus!");
                     io::send(
                         s,
                         Message {
                             id,
-                            addr: "<unknown>".into(),
+                            to: "<unknown>".into(),
+                            from: ADDRESS.into(),
                             data: builders::resp_bool(false),
                         },
                     )
@@ -86,9 +89,8 @@ async fn handle_packet(s: &mut TcpStream, conns: &ConnMap) -> RpcResult<()> {
                 }
             };
 
-            // If we reach this point, we can send
-            // the relay message
-            io::send(&mut t_stream, Message { id, addr, data }).await?;
+            // If we reach this point, we can send the relay message
+            io::send(&mut t_stream, Message { id, to, from, data }).await?;
             Ok(())
         }
     }

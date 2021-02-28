@@ -8,8 +8,31 @@ use identity::Identity;
 /// A message buffer to send or receive
 pub struct Message {
     pub id: Identity,
-    pub addr: String,
+    pub to: String,
+    pub from: String,
     pub data: Vec<u8>,
+}
+
+impl Message {
+    /// Create a new message to an address
+    pub fn to_addr(to: &str, from: &str, data: Vec<u8>) -> Self {
+        Self {
+            id: Identity::random(),
+            to: to.into(),
+            from: from.into(),
+            data,
+        }
+    }
+
+    /// Create a reply to a message ID
+    pub fn reply(self, from: String, data: Vec<u8>) -> Self {
+        Self {
+            to: self.from,
+            from,
+            data,
+            ..self
+        }
+    }
 }
 
 /// Read a framed message from a socket
@@ -23,8 +46,8 @@ pub async fn recv(s: &mut TcpStream) -> RpcResult<Message> {
     s.read_exact(&mut data).await?;
 
     // Parse the carrier message type
-    let (id, addr, data) = _internal::from(data)?;
-    Ok(Message { id, addr, data })
+    let (id, to, from, data) = _internal::from(data)?;
+    Ok(Message { id, to, from, data })
 }
 
 /// Send a message with frame

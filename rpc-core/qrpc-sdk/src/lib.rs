@@ -13,7 +13,7 @@
 //! invocation.  These components are exposed via the API either way,
 //! but only documented on demand to not clutter the main
 //! documentation.
-//! 
+//!
 //!
 //! [manual]: https://docs.qaul.org/contributors/technical/rpc-layer
 //!
@@ -149,3 +149,6 @@ pub mod parser;
 pub use identity::Identity;
 pub use service::{Service, ServiceConnector};
 pub use socket::{default_socket_path, RpcSocket};
+
+/// The address of the qrpc broker itself
+pub const BROKER_ADDRESS: &'static str = "org.qaul._broker";

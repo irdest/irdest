@@ -4,7 +4,8 @@ use crate::{
     utils::Path,
 };
 use async_std::{
-    sync::{channel, Arc, Receiver, RwLock, Sender},
+    channel::{bounded, Receiver, Sender},
+    sync::{Arc, RwLock},
     task,
 };
 use std::{
@@ -29,7 +30,7 @@ pub(crate) struct SubHub {
 
 impl SubHub {
     pub(crate) fn new() -> Arc<Self> {
-        let (inbox, notify) = channel(1);
+        let (inbox, notify) = bounded(1);
 
         let arc = Arc::new(Self {
             curr: 0.into(),
@@ -40,10 +41,10 @@ impl SubHub {
         {
             let arc = Arc::clone(&arc);
             task::spawn(async move {
-                while let Some(d) = notify.recv().await {
+                while let Ok(d) = notify.recv().await {
                     let subs = arc.subs.read().await;
                     for (_, sub) in &*subs {
-                        sub.send(d.clone()).await;
+                        sub.send(d.clone()).await.unwrap();
                     }
                 }
             });
@@ -53,7 +54,7 @@ impl SubHub {
     }
 
     pub(crate) async fn queue(&self, d: Delta) {
-        self.inbox.send(d).await
+        self.inbox.send(d).await.unwrap();
     }
 
     pub(crate) async fn rm_sub(&self, id: SubId) {
@@ -62,7 +63,7 @@ impl SubHub {
 
     pub(crate) async fn add_sub(self: &Arc<Self>, query: Query) -> Subscription {
         let id = self.curr.fetch_add(1, Ordering::Relaxed);
-        let (tx, rx) = channel(1);
+        let (tx, rx) = bounded(1);
 
         self.subs.write().await.insert(id, tx);
         Subscription::new(&self, id, query, rx)
@@ -93,13 +94,13 @@ impl Subscription {
     #[tracing::instrument(skip(hub, id, notify), level = "debug")]
     pub(crate) fn new(hub: &Arc<SubHub>, id: SubId, query: Query, notify: Receiver<Delta>) -> Self {
         let query = query;
-        let (re_notify, poll) = channel(1);
+        let (re_notify, poll) = bounded(1);
 
         {
             let query = query.clone();
             debug!("Spawning new subscription handler");
             task::spawn(async move {
-                while let Some(d) = notify.recv().await {
+                while let Ok(d) = notify.recv().await {
                     let d: Delta = d;
                     trace!("{:#?}", d);
                     if match query {
@@ -113,7 +114,7 @@ impl Subscription {
                         _ => unimplemented!(),
                     } {
                         trace!("Waking subscribers!");
-                        re_notify.send(d.path).await;
+                        re_notify.send(d.path).await.unwrap();
                     }
                 }
             });

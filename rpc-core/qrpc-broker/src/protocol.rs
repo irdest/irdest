@@ -30,7 +30,7 @@ fn parse_register(r: register::Reader) -> RpcResult<String> {
     Ok(sr.get_name().map(|s| s.to_string())?)
 }
 
-/// Handle a commande meant for the message broker
+/// Handle a command meant for the message broker
 #[inline]
 pub(crate) async fn broker_command(
     req_id: Identity,
@@ -59,7 +59,8 @@ pub(crate) async fn broker_command(
 
             Ok(Message {
                 id: req_id,
-                addr: name,
+                to: name,
+                from: crate::ADDRESS.into(),
                 data: builders::resp_id(id),
             })
         }

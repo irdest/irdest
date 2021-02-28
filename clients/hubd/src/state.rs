@@ -1,12 +1,11 @@
 //! Manage the libqaul, service and ratman states
 
 use crate::cfg::Config;
-use directories::ProjectDirs;
+use directories_next::ProjectDirs;
 use libqaul::Qaul;
 use netmod_tcp::{Endpoint, Mode};
 use ratman::Router;
-use std::collections::HashSet;
-use std::{fs::File, io::Read, net::SocketAddr, str::FromStr, sync::Arc};
+use std::{fs::File, io::Read, sync::Arc};
 
 #[allow(unused)]
 pub(crate) struct State {

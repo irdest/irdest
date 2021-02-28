@@ -66,8 +66,11 @@ impl<T> AtomPtr<T> {
 
     /// Swap the data entry with a new value, returning the old
     pub(crate) fn swap(&self, new: T) -> Ref<T> {
+        let arc = Arc::new(new);
+        let new_ptr = Box::into_raw(Box::new(arc));
+
         let ptr = self.inner.load(Ordering::Relaxed);
-        self.inner.swap(ptr, Ordering::Relaxed);
+        self.inner.swap(new_ptr, Ordering::Relaxed);
 
         let b = unsafe { Box::from_raw(ptr) };
         let arc = Arc::clone(&*b);

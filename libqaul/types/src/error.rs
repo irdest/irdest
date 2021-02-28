@@ -17,6 +17,7 @@
 //! probably means. These are meant to simplify front-end development
 //! and avoid having applications return arbitrary codes.
 
+use serde::{Deserialize, Serialize};
 use std::{
     error::Error as StdError,
     fmt::{self, Display, Formatter},
@@ -45,7 +46,7 @@ pub type Result<T> = StdResult<T, Error>;
 /// prefix. Invalid data is data that was either not expected or badly
 /// formatted. `No` in this case takes the place of `Unknown`, meaning
 /// that a query could not be fulfilled.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
 pub enum Error {
     /// Not authorised to perform this action
     NotAuthorised,

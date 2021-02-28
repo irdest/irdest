@@ -157,7 +157,10 @@ pub use identity::{Identity, ID_LEN};
 pub use netmod;
 
 use crate::core::Core;
-use async_std::sync::{Arc, Receiver, Sender};
+use async_std::{
+    channel::{Receiver, Sender},
+    sync::Arc,
+};
 use clock::{ClockCtrl, Tasks};
 use netmod::Endpoint;
 

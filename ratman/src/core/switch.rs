@@ -1,7 +1,4 @@
-use async_std::{
-    sync::{channel, Arc},
-    task,
-};
+use async_std::{channel::bounded, sync::Arc, task};
 use netmod::Recipient;
 
 use crate::{
@@ -44,19 +41,19 @@ impl Switch {
             dispatch,
             collector,
             drivers,
-            ctrl: channel(1),
+            ctrl: bounded(1),
         })
     }
 
     /// Add a new interface to the run switch
     pub(crate) async fn add(&self, id: usize) {
-        self.ctrl.0.send(id).await;
+        self.ctrl.0.send(id).await.unwrap();
     }
 
     /// Dispatches a long-running task to run the switching logic
     pub(crate) fn run(self: Arc<Self>) {
         task::spawn(async move {
-            while let Some(i) = self.ctrl.1.recv().await {
+            while let Ok(i) = self.ctrl.1.recv().await {
                 let switch = Arc::clone(&self);
                 task::spawn(switch.run_inner(i));
             }
@@ -94,7 +91,6 @@ impl Switch {
                     None => self.journal.queue(f).await,
                 },
             }
-
         }
     }
 }

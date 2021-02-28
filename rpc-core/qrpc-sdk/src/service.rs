@@ -46,13 +46,25 @@ impl Service {
     pub fn hash_id(&self) -> Option<Identity> {
         self.hash_id
     }
+
+    /// Get the RpcSocket for this service
+    ///
+    /// This function is called by other component SDKs to get access
+    /// to the underlying RPC socket.
+    pub fn get_socket(&self) -> Arc<RpcSocket> {
+        Arc::clone(
+            self.socket
+                .as_ref()
+                .expect("Can not get socket; service not registered!"),
+        )
+    }
 }
 
 /// An external service that can be connected to
 ///
 /// In order to use the function-set from an external service, your
 /// application needs to include it's client-lib (usually named
-/// `<service>-rpc`) which provides a strongly typed API that
+/// `<service>-sdk`) which provides a strongly typed API that
 /// abstracts away the RPC protocol logic.
 ///
 /// Any service that should be connectable needs to implement this

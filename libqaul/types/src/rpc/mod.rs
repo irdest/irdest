@@ -14,13 +14,16 @@
 // pub(crate) use error::try_read;
 
 use crate::{
+    error::Error,
     messages::{IdType, Mode, MsgQuery},
     services::Service,
-    users::{UserAuth, UserUpdate},
+    users::{UserAuth, UserProfile, UserUpdate},
     Identity,
 };
 use alexandria_tags::TagSet;
 use serde::{Deserialize, Serialize};
+
+pub const ADDRESS: &'static str = "org.qaul.libqaul";
 
 /// Capabilities are functions that can be executed on a remote
 #[derive(Serialize, Deserialize)]
@@ -29,6 +32,16 @@ pub enum Capabilities {
     Services(ServiceCapabilities),
     Messages(MessageCapabilities),
     Contacts(ContactCapabilities),
+}
+
+impl Capabilities {
+    pub fn to_json(&self) -> String {
+        serde_json::to_string(self).expect("Invalid type: can't be made into json!")
+    }
+
+    pub fn from_json(s: &str) -> Option<Self> {
+        serde_json::from_str(s).ok()
+    }
 }
 
 /// User scope libqaul functions
@@ -73,3 +86,28 @@ pub enum MessageCapabilities {
 
 #[derive(Serialize, Deserialize)]
 pub enum ContactCapabilities {}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Reply {
+    Users(UserReply),
+    Error(Error),
+}
+
+impl Reply {
+    pub fn to_json(&self) -> String {
+        serde_json::to_string(self).expect("Invalid type: can't be made into json!")
+    }
+
+    pub fn from_json(s: &str) -> Option<Self> {
+        serde_json::from_str(s).ok()
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum UserReply {
+    List(Vec<UserProfile>),
+    Authenticated(bool),
+    Auth(UserAuth),
+    Ok,
+    Profile(UserProfile),
+}

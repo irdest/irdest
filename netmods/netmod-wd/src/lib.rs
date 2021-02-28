@@ -1,7 +1,8 @@
 //! Netmod driver for Android WiFi Direct
 
 use async_std::{
-    sync::{channel, Arc, Mutex, Receiver, Sender},
+    channel::{bounded, Receiver, Sender},
+    sync::{Arc, Mutex},
     task,
 };
 use async_trait::async_trait;
@@ -16,8 +17,8 @@ pub struct WdMod {
 impl WdMod {
     pub fn new() -> Arc<Self> {
         Arc::new(Self {
-            recv_queue: channel(1),
-            send_queue: channel(1),
+            recv_queue: bounded(1),
+            send_queue: bounded(1),
         })
     }
 
@@ -29,7 +30,7 @@ impl WdMod {
     /// for other drivers.
     pub fn give(self: &Arc<Self>, f: Frame, t: Target) {
         let this = Arc::clone(self);
-        task::spawn(async move { this.recv_queue.0.send((f, t)).await });
+        task::spawn(async move { this.recv_queue.0.send((f, t)).await.unwrap() });
     }
 
     /// Block on taking a new
@@ -45,7 +46,7 @@ impl Endpoint for WdMod {
     }
 
     async fn send(&self, frame: Frame, t: Target) -> Result<()> {
-        self.send_queue.0.send((frame, t)).await;
+        self.send_queue.0.send((frame, t)).await.unwrap();
         Ok(())
     }
 

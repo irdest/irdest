@@ -1,8 +1,6 @@
 //! TCP incoming connection server
 
-use crate::{
-    IoPair, LinkType, Mode, Packet, PacketBuilder, Peer, PeerState, Result, Routes, SourceAddr,
-};
+use crate::{IoPair, LinkType, Mode, Packet, PacketBuilder, PeerState, Result, Routes, SourceAddr};
 use async_std::{
     io::prelude::*,
     net::{TcpListener, TcpStream},
@@ -13,7 +11,6 @@ use async_std::{
 use netmod::{Frame, Target};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
-use tracing::{debug, error, info, trace, warn};
 
 pub(crate) type LockedStream = Arc<RwLock<Option<TcpStream>>>;
 
@@ -149,14 +146,13 @@ impl Server {
             // this match block as small and readable as possible.
             // Avoid useless logging in this block too!
             use Packet::*;
-            use PeerState::*;
             match (peer.state(), f) {
                 (_, Frame(f)) => self.handle_frame(peer.id, f).await,
                 (state, Hello { port, _type }) => {
                     self.handle_hello(peer.id, state, &src_addr, port, _type, Arc::clone(&stream))
                         .await
                 }
-                (state, Ack) => trace!("Received ACK packet on wrong i/o stream. woops"),
+                (_, Ack) => trace!("Received ACK packet on wrong i/o stream. woops"),
                 (state, packet) => panic!(format!("state={:?}, packet={:?}", state, packet)),
             }
         }
@@ -167,7 +163,7 @@ impl Server {
 
     /// Handle an incoming frame message
     async fn handle_frame(self: &Arc<Self>, peer_id: usize, p: Frame) {
-        self.incoming.tx.send((p, peer_id)).await;
+        self.incoming.tx.send((p, peer_id)).await.unwrap();
     }
 
     /// Handle an incoming HELLO message on Tx, or Rx only connections
@@ -215,7 +211,7 @@ impl Server {
                 self.send_hello(id, stream).await;
             }
             // Reverse connection of a peer we have known before
-            (RxOnly, _, Some(id)) => {
+            (RxOnly, _, Some(_id)) => {
                 let id = self.routes.upgrade(rx_peer, port, s).await;
                 trace!("Sending a hello...");
                 self.send_hello(id, stream).await;

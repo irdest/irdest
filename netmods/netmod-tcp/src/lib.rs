@@ -1,5 +1,8 @@
 //! A tcp overlay netmod to connect router across the internet
 
+#[macro_use]
+extern crate tracing;
+
 mod error;
 mod io;
 mod peer;
@@ -21,8 +24,6 @@ use async_std::sync::Arc;
 use async_trait::async_trait;
 use netmod::{self, Endpoint as EndpointExt, Frame, Target};
 use serde::{Deserialize, Serialize};
-use std::net::SocketAddr;
-use tracing::{error, info, trace};
 
 /// Define the runtime mode for this endpount
 ///
@@ -97,7 +98,7 @@ impl Endpoint {
     pub async fn add_peers(&self, peers: Vec<String>) -> Result<()> {
         for p in peers.into_iter() {
             if &p == "" && continue {}
-            
+
             let mut parts: Vec<_> = p.split(|x| x == ' ').collect();
             let _type = parts.get(1);
             let peer = match parts[0].parse().ok() {
@@ -113,11 +114,15 @@ impl Endpoint {
                 _ => LinkType::Bidirect,
             };
 
-            trace!("Adding peer: {} ({})", peer, match t {
-                LinkType::Limited => "limited",
-                LinkType::Bidirect => "",
-            });
-            
+            trace!(
+                "Adding peer: {} ({})",
+                peer,
+                match t {
+                    LinkType::Limited => "limited",
+                    LinkType::Bidirect => "",
+                }
+            );
+
             self.routes.add_via_dst(peer, t).await;
         }
 

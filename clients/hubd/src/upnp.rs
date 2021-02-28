@@ -1,14 +1,11 @@
 //! Automatically forward a port to qaul-hubd to allow easy reverse
 //! connections form a public router.
 
-use igd::{search_gateway, Gateway, PortMappingProtocol as Protocol};
+use igd::{search_gateway, PortMappingProtocol as Protocol};
 use ipnetwork::IpNetwork;
 use pnet::datalink;
-use std::io::Read;
-use std::net::{Ipv4Addr, SocketAddrV4, TcpListener};
+use std::net::{Ipv4Addr, SocketAddrV4};
 use tracing::trace;
-
-//fn ip_is_local(ip: IpV4Addr)
 
 /// Check if an IP is in one of the local IP ranges
 ///
