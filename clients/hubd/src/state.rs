@@ -9,8 +9,8 @@ use std::{fs::File, io::Read, sync::Arc};
 
 #[allow(unused)]
 pub(crate) struct State {
-    qaul: Arc<Qaul>,
-    router: Arc<Router>,
+    pub qaul: Arc<Qaul>,
+    pub router: Arc<Router>,
 }
 
 impl State {
@@ -38,7 +38,7 @@ impl State {
         let router = Router::new();
         router.add_endpoint(ep).await;
 
-        let dirs = ProjectDirs::from("net", "qaul", "hubd").unwrap();
+        let _dirs = ProjectDirs::from("net", "qaul", "hubd").unwrap();
         let qaul = Qaul::new(Arc::clone(&router));
 
         Self { qaul, router }

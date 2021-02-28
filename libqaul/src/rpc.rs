@@ -10,7 +10,7 @@
 
 use crate::{
     types::rpc::{Capabilities, Reply, UserCapabilities, UserReply},
-    QaulRef,
+    Identity, QaulRef,
 };
 use async_std::{sync::Arc, task};
 use qrpc_sdk::{default_socket_path, error::RpcResult, io::Message, RpcSocket, Service};
@@ -25,18 +25,39 @@ use std::str;
 pub struct RpcServer {
     inner: QaulRef,
     socket: Arc<RpcSocket>,
+    serv: Service,
+    id: Identity,
 }
 
 impl RpcServer {
     /// Wrapper around `new` with `default_socket_path()`
-    pub async fn start_default(inner: QaulRef) -> RpcResult<Self> {
+    pub async fn start_default(inner: QaulRef) -> RpcResult<Arc<Self>> {
         let (addr, port) = default_socket_path();
         Self::new(inner, addr, port).await
     }
 
-    pub async fn new(inner: QaulRef, addr: &str, port: u16) -> RpcResult<Self> {
+    pub async fn new(inner: QaulRef, addr: &str, port: u16) -> RpcResult<Arc<Self>> {
         let socket = RpcSocket::connect(addr, port).await?;
-        let _self = Self { inner, socket };
+
+        let mut serv = Service::new(
+            crate::types::rpc::ADDRESS,
+            1,
+            "Core component for qaul ecosystem",
+        );
+        let id = serv.register(Arc::clone(&socket)).await?;
+
+        debug!("libqaul service ID: {}", id);
+
+        let _self = Arc::new(Self {
+            inner,
+            serv,
+            socket,
+            id,
+        });
+
+        let _this = Arc::clone(&_self);
+        task::spawn(async move { _this.run_listen().await });
+
         Ok(_self)
     }
 

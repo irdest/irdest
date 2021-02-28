@@ -23,6 +23,7 @@ pub(crate) struct Config {
 
 impl Config {
     /// Consume the application config into a fully initialised router
+    #[allow(unused)]
     pub(crate) fn into_router(self) -> Arc<Router> {
         let mut buf = String::new();
         let mut f = File::open(self.peers)
@@ -138,7 +139,7 @@ pub(crate) fn match_fold<'a>(app: App<'a, 'a>) -> Config {
         port: m
             .value_of("SOCKET_PORT")
             .map(|s| str::parse(s).unwrap())
-            .or(env::var("QAUL_HUBD_PORThat")
+            .or(env::var("QAUL_HUBD_PORT")
                 .ok()
                 .map(|s| str::parse(&s).unwrap()))
             .unwrap_or(9001),

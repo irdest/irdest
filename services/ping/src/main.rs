@@ -20,6 +20,8 @@ pub(crate) fn parse_log_level() {
         .unwrap_or_default()
         .add_directive(LevelFilter::TRACE.into())
         .add_directive("async_std=error".parse().unwrap())
+        .add_directive("async_io=error".parse().unwrap())
+        .add_directive("polling=error".parse().unwrap())
         .add_directive("mio=error".parse().unwrap());
 
     // Initialise the logger
