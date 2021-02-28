@@ -9,10 +9,7 @@ mod cfg;
 mod log;
 mod state;
 
-use async_std::{
-    future,
-    task::{self, Poll},
-};
+use async_std::{future, task::Poll};
 use libqaul::rpc::RpcServer;
 use qrpc_broker::Broker;
 use state::State;

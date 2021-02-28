@@ -46,7 +46,7 @@ pub type Result<T> = StdResult<T, Error>;
 /// prefix. Invalid data is data that was either not expected or badly
 /// formatted. `No` in this case takes the place of `Unknown`, meaning
 /// that a query could not be fulfilled.
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Error {
     /// Not authorised to perform this action
     NotAuthorised,

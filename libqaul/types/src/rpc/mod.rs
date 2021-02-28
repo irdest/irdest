@@ -10,6 +10,8 @@
 // mod error;
 // mod users;
 
+mod tests;
+
 // pub use error::ConvertError;
 // pub(crate) use error::try_read;
 
@@ -26,11 +28,16 @@ use serde::{Deserialize, Serialize};
 pub const ADDRESS: &'static str = "org.qaul.libqaul";
 
 /// Capabilities are functions that can be executed on a remote
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+#[serde(tag = "context")]
 pub enum Capabilities {
+    #[serde(rename = "users")]
     Users(UserCapabilities),
+    #[serde(rename = "services")]
     Services(ServiceCapabilities),
+    #[serde(rename = "messages")]
     Messages(MessageCapabilities),
+    #[serde(rename = "contacts")]
     Contacts(ContactCapabilities),
 }
 
@@ -45,7 +52,8 @@ impl Capabilities {
 }
 
 /// User scope libqaul functions
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+#[serde(tag = "cmd", content = "data", rename_all = "kebab-case")]
 pub enum UserCapabilities {
     List,
     ListRemote,
@@ -59,10 +67,12 @@ pub enum UserCapabilities {
     Update { auth: UserAuth, update: UserUpdate },
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+#[serde(tag = "cmd", content = "data", rename_all = "kebab-case")]
 pub enum ServiceCapabilities {}
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+#[serde(tag = "cmd", content = "data", rename_all = "kebab-case")]
 pub enum MessageCapabilities {
     Send {
         auth: UserAuth,
@@ -84,10 +94,12 @@ pub enum MessageCapabilities {
     },
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+#[serde(tag = "cmd", content = "data", rename_all = "kebab-case")]
 pub enum ContactCapabilities {}
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+#[serde(tag = "context")]
 pub enum Reply {
     Users(UserReply),
     Error(Error),
@@ -103,7 +115,8 @@ impl Reply {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+#[serde(tag = "type", content = "data", rename_all = "kebab-case")]
 pub enum UserReply {
     List(Vec<UserProfile>),
     Authenticated(bool),
