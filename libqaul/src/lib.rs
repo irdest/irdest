@@ -2,6 +2,8 @@
 //! identities, peer trust management, message sending abstractions,
 //! and high-level peer discovery mechanisms.
 //!
+//! [qaul]: https://qaul.org
+//! 
 //! Its API (in documentation also called the "service API") enables
 //! applications to run on decentralised networks, without relying on
 //! servers to facilitate data exchange.
@@ -49,7 +51,7 @@
 //!
 //! Following is a short example of how to use libqaul directly.  For
 //! examples on how to use the SDK, check out the
-//! [libqaul-sdk](libqaul_sdk) documentation!
+//! [libqaul-sdk](../libqaul_sdk) documentation!
 //!
 //! ```rust,no_run
 //! # async fn main() -> libqaul::error::Result<()> {
@@ -79,8 +81,9 @@
 //! or text-payload messages), but instead require a service.
 //!
 //! For an overview of services written by the qaul project, check
-//! this page in the [developer
-//! manual](https://docs.qaul.org/developer/technical/services.html)!
+//! [this
+//! page](https://docs.qaul.org/developer/technical/services.html) in
+//! the developer manual!
 
 #![doc(html_favicon_url = "https://qaul.org/favicon.ico")]
 #![doc(html_logo_url = "https://qaul.org/img/qaul_icon-128.png")]
