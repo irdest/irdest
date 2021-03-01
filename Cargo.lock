@@ -21,7 +21,7 @@ dependencies = [
  "hex",
  "keybob",
  "rand 0.7.3",
- "ratman-identity 0.6.0",
+ "ratman-identity",
  "serde",
  "serde_json",
  "sodiumoxide",
@@ -188,7 +188,7 @@ dependencies = [
  "event-listener",
  "futures-lite",
  "once_cell",
- "signal-hook 0.3.6",
+ "signal-hook",
  "winapi 0.3.9",
 ]
 
@@ -204,7 +204,7 @@ dependencies = [
  "async-io",
  "async-lock",
  "async-process",
- "crossbeam-utils 0.8.3",
+ "crossbeam-utils",
  "futures-channel",
  "futures-core",
  "futures-io",
@@ -274,15 +274,6 @@ checksum = "cdb031dd78e28731d87d56cc8ffef4a8f36ca26c38fe2de700543e627f8a464a"
 
 [[package]]
 name = "base64"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b25d992356d2eb0ed82172f5248873db5560c4721f564b13cb5193bda5e668e"
-dependencies = [
- "byteorder",
-]
-
-[[package]]
-name = "base64"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3441f0f7b02788e948e47f457ca01f1d7e6d92c693bc132c22b087d3141c03ff"
@@ -299,13 +290,12 @@ dependencies = [
 
 [[package]]
 name = "bindgen"
-version = "0.54.0"
+version = "0.57.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "66c0bb6167449588ff70803f4127f0684f9063097eca5016f37eb52b92c2cf36"
+checksum = "fd4865004a46a0aafb2a0a5eb19d3c9fc46ee5f063a6cfc605c69ac9ecf5263d"
 dependencies = [
  "bitflags 1.2.1",
  "cexpr",
- "cfg-if 0.1.10",
  "clang-sys",
  "clap",
  "env_logger",
@@ -473,9 +463,9 @@ dependencies = [
 
 [[package]]
 name = "clang-sys"
-version = "0.29.3"
+version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe6837df1d5cba2397b835c8530f51723267e16abbf83892e9e5af4f0e5dd10a"
+checksum = "f54d78e30b388d4815220c8dd03fea5656b6c6d32adb59e89061552a102f8da1"
 dependencies = [
  "glob 0.3.0",
  "libc",
@@ -554,23 +544,12 @@ checksum = "8aebca1129a03dc6dc2b127edd729435bbc4a37e1d5f4d7513165089ceb02634"
 
 [[package]]
 name = "crossbeam-channel"
-version = "0.4.4"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b153fe7cbef478c567df0f972e02e6d736db11affe43dfc9c56a9374d1adfb87"
+checksum = "dca26ee1f8d361640700bde38b2c37d8c22b3ce2d360e1fc1c74ea4b0aa7d775"
 dependencies = [
- "crossbeam-utils 0.7.2",
- "maybe-uninit",
-]
-
-[[package]]
-name = "crossbeam-utils"
-version = "0.7.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3c7c73a2d1e9fc0886a08b93e98eb643461230d5f1925e4036204d5f2e261a8"
-dependencies = [
- "autocfg",
- "cfg-if 0.1.10",
- "lazy_static",
+ "cfg-if 1.0.0",
+ "crossbeam-utils",
 ]
 
 [[package]]
@@ -697,9 +676,9 @@ checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
 
 [[package]]
 name = "env_logger"
-version = "0.7.1"
+version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44533bbbb3bb3c1fa17d9f2e4e38bbbaf8396ba82193c4cb1b6445d711445d36"
+checksum = "17392a012ea30ef05a610aa97dfb49496e71c9f676b27879922ea5bdf60d9d3f"
 dependencies = [
  "atty",
  "humantime",
@@ -990,12 +969,9 @@ dependencies = [
 
 [[package]]
 name = "humantime"
-version = "1.3.0"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df004cfca50ef23c36850aaaa59ad52cc70d0e90243c3c7737a4dd32dc7a3c4f"
-dependencies = [
- "quick-error",
-]
+checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
 
 [[package]]
 name = "idna"
@@ -1028,15 +1004,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "61124eeebbd69b8190558df225adf7e4caafce0d743919e5d6b19652314ec5ec"
 dependencies = [
  "cfg-if 1.0.0",
-]
-
-[[package]]
-name = "ipnetwork"
-version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8eca9f51da27bc908ef3dd85c21e1bbba794edaf94d7841e37356275b82d31e"
-dependencies = [
- "serde",
 ]
 
 [[package]]
@@ -1099,7 +1066,7 @@ version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ae8038be446bbffb5bebe247ab05a1b1cb4c33363e204102a01e44f5933e7451"
 dependencies = [
- "base64 0.12.3",
+ "base64",
  "blake2 0.9.1",
  "hmac",
  "pbkdf2",
@@ -1137,11 +1104,11 @@ checksum = "b7282d924be3275cec7f6756ff4121987bc6481325397dde6ba3e7802b1a8b1c"
 
 [[package]]
 name = "libloading"
-version = "0.5.2"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2b111a074963af1d37a139918ac6d49ad1d0d5e47f72fd55388619691a7d753"
+checksum = "6f84d96438c15fcd6c3f244c8fce01d1e2b9c6b5623e9c711dc9286d8fc92d6a"
 dependencies = [
- "cc",
+ "cfg-if 1.0.0",
  "winapi 0.3.9",
 ]
 
@@ -1160,7 +1127,7 @@ dependencies = [
  "alexandria",
  "async-std",
  "async-trait",
- "base64 0.10.1",
+ "base64",
  "bincode",
  "blake2 0.8.1",
  "crossbeam-channel",
@@ -1168,9 +1135,9 @@ dependencies = [
  "hex",
  "jni",
  "libqaul-types",
- "log 0.4.14",
+ "log 0.3.9",
  "mime",
- "netmod-mem 0.2.0",
+ "netmod-mem",
  "qrpc-sdk",
  "rand 0.7.3",
  "ratman",
@@ -1199,7 +1166,7 @@ dependencies = [
  "async-trait",
  "bincode",
  "qrpc-sdk",
- "ratman-identity 0.6.0",
+ "ratman-identity",
  "serde",
  "serde_json",
 ]
@@ -1250,12 +1217,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ffc5c5338469d4d3ea17d269fa8ea3512ad247247c30bd2df69e68309ed0a08"
 
 [[package]]
-name = "maybe-uninit"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60302e4db3a61da70c0cb7991976248362f30319e88850c487b9b95bbf059e00"
-
-[[package]]
 name = "memchr"
 version = "2.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1279,26 +1240,13 @@ dependencies = [
 
 [[package]]
 name = "netmod-mem"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f69ebb700154b418c574cccdfc3b9b94badee8f8e0a456106af13d3b41ffb867"
-dependencies = [
- "async-std",
- "async-trait",
- "crossbeam-channel",
- "ratman-identity 0.4.0",
- "ratman-netmod 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "netmod-mem"
 version = "0.2.0"
 dependencies = [
  "async-std",
  "async-trait",
  "crossbeam-channel",
- "ratman-identity 0.6.0",
- "ratman-netmod 0.3.0",
+ "ratman-identity",
+ "ratman-netmod",
 ]
 
 [[package]]
@@ -1309,8 +1257,8 @@ dependencies = [
  "async-trait",
  "bincode",
  "byteorder",
- "ratman-identity 0.6.0",
- "ratman-netmod 0.3.0",
+ "ratman-identity",
+ "ratman-netmod",
  "serde",
  "thiserror",
  "tracing",
@@ -1324,8 +1272,8 @@ dependencies = [
  "async-std",
  "async-trait",
  "bincode",
- "ratman-identity 0.6.0",
- "ratman-netmod 0.3.0",
+ "ratman-identity",
+ "ratman-netmod",
  "serde",
  "task-notify",
  "tracing",
@@ -1340,7 +1288,7 @@ dependencies = [
  "async-trait",
  "bincode",
  "jni",
- "ratman-netmod 0.3.0",
+ "ratman-netmod",
 ]
 
 [[package]]
@@ -1420,7 +1368,7 @@ version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "216eaa586a190f0a738f2f918511eecfa90f13295abec0e457cdebcceda80cbd"
 dependencies = [
- "base64 0.12.3",
+ "base64",
  "crypto-mac 0.8.0",
  "hmac",
  "rand 0.7.3",
@@ -1500,7 +1448,7 @@ version = "0.27.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b657d5b9a98a2c81b82549922b8b15984e49f8120cd130b11a09f81b9b55d633"
 dependencies = [
- "ipnetwork 0.17.0",
+ "ipnetwork",
  "pnet_base",
  "pnet_datalink",
  "pnet_packet",
@@ -1520,7 +1468,7 @@ version = "0.27.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59001c9c4d9d23bf2f61afaaf134a766fd6932ba2557c606b9112157053b9ac7"
 dependencies = [
- "ipnetwork 0.17.0",
+ "ipnetwork",
  "libc",
  "pnet_base",
  "pnet_sys",
@@ -1648,7 +1596,7 @@ dependencies = [
  "clap",
  "directories-next",
  "igd",
- "ipnetwork 0.16.0",
+ "ipnetwork",
  "libqaul",
  "netmod-tcp",
  "netmod-udp",
@@ -1669,8 +1617,8 @@ dependencies = [
  "capnp",
  "lazy_static",
  "qrpc-sdk",
- "ratman-identity 0.6.0",
- "signal-hook 0.1.17",
+ "ratman-identity",
+ "signal-hook",
  "socket2",
  "tracing",
 ]
@@ -1696,15 +1644,9 @@ dependencies = [
  "byteorder",
  "capnp",
  "capnpc",
- "ratman-identity 0.6.0",
+ "ratman-identity",
  "tracing",
 ]
-
-[[package]]
-name = "quick-error"
-version = "1.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1d01941d82fa2ab50be1e79e6714289dd7cde78eba4c074bc5a4374f650dfe0"
 
 [[package]]
 name = "quote"
@@ -1805,9 +1747,9 @@ dependencies = [
  "chrono",
  "clockctrl",
  "futures",
- "netmod-mem 0.2.0",
- "ratman-identity 0.6.0",
- "ratman-netmod 0.3.0",
+ "netmod-mem",
+ "ratman-identity",
+ "ratman-netmod",
  "serde",
  "task-notify",
  "tracing",
@@ -1820,7 +1762,7 @@ name = "ratman-configure"
 version = "0.1.0"
 dependencies = [
  "async-std",
- "netmod-mem 0.1.0",
+ "netmod-mem",
  "netmod-tcp",
  "netmod-udp",
  "ratman",
@@ -1833,33 +1775,9 @@ name = "ratman-harness"
 version = "0.1.0"
 dependencies = [
  "arbitrary",
- "netmod-mem 0.2.0",
+ "netmod-mem",
  "ratman",
  "tempfile",
-]
-
-[[package]]
-name = "ratman-identity"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d6e396d9351440014492c178d86a24adb7ab831b429205c43ca4521cbeb35bc3"
-dependencies = [
- "blake2 0.8.1",
- "hex",
- "rand 0.7.3",
- "serde",
-]
-
-[[package]]
-name = "ratman-identity"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e94cc012804fd49daa7e0eecb6e3831f58b517dd0152c9533912c09bc5b8972"
-dependencies = [
- "blake2 0.8.1",
- "cfg-if 0.1.10",
- "hex",
- "serde",
 ]
 
 [[package]]
@@ -1868,7 +1786,7 @@ version = "0.6.0"
 dependencies = [
  "bincode",
  "blake2 0.8.1",
- "cfg-if 0.1.10",
+ "cfg-if 1.0.0",
  "hex",
  "rand 0.7.3",
  "serde",
@@ -1881,20 +1799,7 @@ version = "0.3.0"
 dependencies = [
  "async-trait",
  "conjoiner-engine",
- "ratman-identity 0.6.0",
- "serde",
- "twox-hash",
-]
-
-[[package]]
-name = "ratman-netmod"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e04e347dd4b001090e535f966d62c6abf60f8de29b01daf68689d3c832c1c8f"
-dependencies = [
- "async-trait",
- "conjoiner-engine",
- "ratman-identity 0.3.0",
+ "ratman-identity",
  "serde",
  "twox-hash",
 ]
@@ -2040,16 +1945,6 @@ name = "shlex"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fdf1b9db47230893d76faad238fd6097fd6d6a9245cd7a4d90dbd639536bbd2"
-
-[[package]]
-name = "signal-hook"
-version = "0.1.17"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e31d442c16f047a671b5a71e2161d6e68814012b7f5379d269ebd915fac2729"
-dependencies = [
- "libc",
- "signal-hook-registry",
-]
 
 [[package]]
 name = "signal-hook"

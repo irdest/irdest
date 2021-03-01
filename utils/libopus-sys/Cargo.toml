@@ -12,7 +12,7 @@ license = "Apache-2.0"
 
 [build-dependencies]
 cmake = "0.1"
-bindgen = { version = "0.54", optional = true }
+bindgen = { version = "0.57", optional = true }
 
 [features]
 # Used internally to generate lib.rs
