@@ -12,7 +12,7 @@ pub use parser::parse_json;
 pub mod config;
 
 use config::{Endpoint, Id, Network, Params};
-use std::{collections::BTreeMap, net::SocketAddr};
+use std::collections::BTreeMap;
 
 /// A rust API builder equivalent of the json parser
 ///

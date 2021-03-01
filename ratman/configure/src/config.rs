@@ -3,7 +3,7 @@
 use async_std::task::block_on;
 use ratman::Router;
 use std::collections::BTreeMap;
-use std::{net::SocketAddr, ops::Deref, sync::Arc};
+use std::{ops::Deref, sync::Arc};
 
 pub type Id = usize;
 

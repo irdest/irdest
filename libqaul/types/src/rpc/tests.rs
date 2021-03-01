@@ -1,8 +1,5 @@
-#[cfg(test)]
-use super::*;
-
 use crate::diff::ItemDiff;
-use crate::users::{UserAuth, UserUpdate};
+use super::*;
 
 #[test]
 fn create_user() {

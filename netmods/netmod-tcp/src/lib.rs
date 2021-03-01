@@ -99,7 +99,7 @@ impl Endpoint {
         for p in peers.into_iter() {
             if &p == "" && continue {}
 
-            let mut parts: Vec<_> = p.split(|x| x == ' ').collect();
+            let parts: Vec<_> = p.split(|x| x == ' ').collect();
             let _type = parts.get(1);
             let peer = match parts[0].parse().ok() {
                 Some(s) => s,

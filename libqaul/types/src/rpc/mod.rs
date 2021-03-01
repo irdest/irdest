@@ -10,6 +10,7 @@
 // mod error;
 // mod users;
 
+#[cfg(test)]
 mod tests;
 
 // pub use error::ConvertError;

@@ -12,7 +12,6 @@
 //! Because a `MemMod` is always 1-to-1, we need to create two, and
 //! then add two interfaces to the middle router.
 
-use async_std::task;
 use netmod_mem::MemMod;
 use ratman::{Identity, Result, Router};
 
