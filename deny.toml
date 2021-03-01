@@ -1,0 +1,62 @@
+[bans]
+multiple-versions = "allow"
+
+[licenses]
+# ====================================================================
+#                        License checks in qaul
+# ====================================================================
+#
+# The purpose of the license checks is to ensure that all dependencies
+# are available under licenses that are compatible with qaul's.
+#
+# Here's what to do if you want to add a dependency and cargo deny is
+# telling you the license is not permitted.
+#
+# If the dependency is licensed under the GPLv3 or AGPLv3, but does
+# not allow the licensee the option of using a later GPL or AGPL
+# version (in SPDX this is encoded as "GPL-3.0-only" or
+# "AGPL-3.0-only"), we'll have to think very carefully before adding
+# it, because it might mean we're not allowed to give qaul licensees
+# the option of using a later GPL or AGPL version.  Such a dependency
+# should be carefully discussed before being added.
+#
+# Otherwise,
+#
+#  * If the dependency's license allows distribution on the iOS App
+#    Store, and is compatible with the AGPLv3, add it to the "allow"
+#    list below.
+#
+#  * If the dependency is available under a license that is compatible
+#    with the AGPLv3, but does not allow distribution on the iOS App
+#    Store:
+#
+#     * If the dependency will not be used on iOS, add an exception
+#       for that library using the licenses.exceptions config key,
+#       with a comment containing the license, and an explanation that
+#       the dependency cannot be used on iOS.
+#
+#     * If the dependency comes with a special exception to its
+#       license to allow iOS App Store distribution, add an exception
+#       for that library using the licenses.exceptions config key,
+#       with a comment containing the license, and an explanation that
+#       there is a license exception to allow distribution on the iOS
+#       App Store.
+#
+# If none of the criteria above apply, we probably can't use that
+# dependency in qaul.  Notably, we can't use GPL or AGPL dependencies
+# on iOS if they don't have an App Store exception, and we also can't
+# use dependencies that are only available under a specific GPL or
+# AGPL version (with no option to use a later version), because we
+# want to give people the choice to use qaul under later version of
+# the AGPL.
+#
+# If you're unsure about whether it's okay to use a dependency in qaul
+# because of licensing reasons, please get in touch using one of the
+# project communication channels.
+unlicensed = "deny"
+copyleft = "allow"
+allow = [
+  "Apache-2.0",
+  "BSD-3-Clause",
+  "MIT",
+]
