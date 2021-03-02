@@ -7,7 +7,7 @@ license = "AGPL-3.0"
 edition = "2018"
 
 [dependencies]
-alexandria = { version = "0.2", path = "../utils/alexandria" }
+alexandria2 = { version = "0.2", path = "../utils/alexandria" }
 libqaul-types = { path = "types" }
 netmod-mem = { path = "../netmods/netmod-mem", optional = true }
 qrpc-sdk = { path = "../rpc-core/qrpc-sdk", optional = true }

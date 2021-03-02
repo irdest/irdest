@@ -1,5 +1,5 @@
 [package]
-name = "alexandria"
+name = "alexandria2"
 description = "An encrypted document-oriented database with tag based query support"
 version = "0.2.0"
 authors = ["Katharina Fey <kookie@spacekookie.de>"]
@@ -10,7 +10,7 @@ edition = "2018"
 
 [dependencies]
 id = { version ="0.6.0", path = "../../ratman/identity", features = ["digest", "random", "aligned"], package = "ratman-identity" }
-alexandria-tags = { path = "../alexandria-tags" }
+alexandria-tags = { version = "0.2", path = "../alexandria-tags" }
 
 async-std = { version = "1.0", features = ["unstable", "attributes"] }
 bincode = "1.0"
