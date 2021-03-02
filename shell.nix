@@ -30,6 +30,9 @@ stdenv.mkDerivation {
 
     # Required for the RPC protocol
     capnproto
+
+    # Required for gtk client
+    glib gtk3 atk gtk3-x11
     
   ] ++ (with androidenv.androidPkgs_9_0; [
     # Required for Android builds
