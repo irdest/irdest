@@ -1399,7 +1399,7 @@ dependencies = [
 
 [[package]]
 name = "libqaul"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "alexandria2",
  "async-std",
@@ -1412,7 +1412,7 @@ dependencies = [
  "hex",
  "jni",
  "libqaul-types",
- "log 0.4.14",
+ "log 0.3.9",
  "mime",
  "netmod-mem",
  "qrpc-sdk",
