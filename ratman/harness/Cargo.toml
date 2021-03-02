@@ -7,7 +7,7 @@ edition = "2018"
 license = "AGPL-3.0-or-later"
 
 [dependencies]
-arbitrary = "*"
-ratman = { path = ".." }
-netmod-mem = { path = "../../netmods/netmod-mem" }
+arbitrary = "1.0"
+ratman = { version = "0.2", path = ".." }
+netmod-mem = { version = "0.4", path = "../../netmods/netmod-mem" }
 tempfile = "3.0"
