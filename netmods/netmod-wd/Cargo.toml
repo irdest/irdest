@@ -9,6 +9,6 @@ license = "AGPL-3.0-or-later"
 [dependencies]
 jni = { version = "0.14", default-features = false }
 bincode = "1.0"
-netmod = { path = "../../ratman/netmod", package = "ratman-netmod" }
+netmod = { version = "0.4", path = "../../ratman/netmod", package = "ratman-netmod" }
 async-std = { version = "1.0", features = ["unstable"] }
 async-trait = "0.1"
