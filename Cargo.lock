@@ -1412,7 +1412,7 @@ dependencies = [
  "hex",
  "jni",
  "libqaul-types",
- "log 0.3.9",
+ "log 0.4.14",
  "mime",
  "netmod-mem",
  "qrpc-sdk",
