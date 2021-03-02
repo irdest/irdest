@@ -1,11 +1,15 @@
 { lib
 , stdenv
 , naersk
+, buildPackages
+, atk
 , capnproto
 , cmake
-, pkg-config
+, glib
+, gtk3
+, gtk3-x11
 , libsodium
-, buildPackages
+, pkg-config
 }:
 
 naersk.buildPackage rec {
@@ -26,6 +30,12 @@ naersk.buildPackage rec {
     capnproto
     cmake
     pkg-config
+
+    # Required for qaul-gtk
+    glib
+    gtk3
+    atk
+    gtk3-x11
   ];
 
   buildInputs = [
