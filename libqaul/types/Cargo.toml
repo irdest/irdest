@@ -8,7 +8,7 @@ license = "AGPL-3.0-or-later"
 
 [dependencies]
 ratman-identity = { version ="0.6.0", path = "../../ratman/identity", features = ["random"] }
-qrpc-sdk = { path = "../../rpc-core/qrpc-sdk" }
+qrpc-sdk = { version = "0.1", path = "../../rpc-core/qrpc-sdk" }
 serde = { version = "1.0", features = ["derive"] }
 alexandria-tags = { version = "0.2", path = "../../utils/alexandria-tags" }
 serde_json = "1.0"
