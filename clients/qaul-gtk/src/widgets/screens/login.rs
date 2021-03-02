@@ -1,53 +1,70 @@
 use super::{Command, Model};
 
-use gtk::{prelude::*, Align::Center, InputPurpose::Password, Orientation::*};
+use gtk::{
+    prelude::*,
+    Align::{Center, End},
+    InputPurpose::Password,
+    Orientation::*,
+};
 use relm::Widget;
 use relm_derive::widget;
 
 #[widget]
 impl Widget for Login {
     view! {
-        gtk::Box {
-            orientation: Vertical,
 
-            #[name = "greeting"]
+        gtk::Grid {
+            halign: Center,
+            row_spacing: 5,
+            column_spacing: 15,
+
             gtk::Label {
                 text: "Welcome to qaul!",
-            },
-            gtk::Box {
-                orientation: Horizontal,
+                margin_bottom: 15,
                 halign: Center,
-
-                #[name = "user_list"]
-                gtk::ComboBoxText { },
+                cell: { left_attach: 0, top_attach: 0, width: 2 },
             },
-            gtk::Box {
-                orientation: Horizontal,
-                halign: Center,
 
-                #[name = "password"]
-                gtk::Entry {
-                    placeholder_text: Some("Your password"),
-                    input_purpose: Password,
-                },
+            gtk::Label {
+                text: "Select user",
+                halign: End,
+                cell: { left_attach: 0, top_attach: 1}
+            },
 
-                gtk::Button {
-                    label: "Create",
-                    clicked => Command::Login { id: "".into(), password: "".into(), },
-                },
+            #[name = "user_list"]
+            gtk::ComboBoxText {
+                cell: { left_attach: 1, top_attach: 1 },
+            },
+
+            gtk::Label {
+                text: "Password",
+                halign: End,
+                cell: { left_attach: 0, top_attach: 2 }
+            },
+
+            #[name = "password"]
+            gtk::Entry {
+                placeholder_text: Some("*********"),
+                input_purpose: Password,
+                visibility: false,
+                cell: { left_attach: 1, top_attach: 2 },
+            },
+
+            gtk::Button {
+                label: "Login",
+                clicked => Command::Login { id: "".into(), password: "".into(), },
+                cell: { left_attach: 0, top_attach: 3, width: 2 },
             }
 
         }
     }
 
     fn init_view(&mut self) {
-        self.widgets.greeting.set_margin_bottom(15);
-
         // TODO: get available users
 
-        self.widgets
-            .user_list
-            .insert_text(0, "Create a new user ID");
+        dbg!(self.widgets.password.get_input_purpose());
+        
+        self.widgets.user_list.insert_text(0, "Create new ID");
         self.widgets.user_list.set_active(Some(0));
     }
 
