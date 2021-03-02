@@ -1,7 +1,7 @@
 [package]
 name = "ratman-netmod"
 description = "Interface and framing abstraction for Ratman network drivers"
-version = "0.3.0"
+version = "0.4.0"
 authors = [
   "Katharina Fey <kookie@spacekookie.de>",
   "Leonora Tindall <nora@nora.codes>"
