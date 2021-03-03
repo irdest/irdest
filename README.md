@@ -77,7 +77,7 @@ connection types is normal, and no single technology has to work on
 all possible devices.
 
 To learn more about the technical side of qaul, check out the
-[contributor manual].
+[developer manual].
 
 ## How to use
 
@@ -86,7 +86,7 @@ different clients, and a qaul network can consist of many different
 components interacting with each other.  To get started, check out the
 [user manual]!
 
-[user manual]: https://docs.qaul.org/users
+[user manual]: https://docs.qaul.org/user/
 
 
 ## Contributing
@@ -100,7 +100,7 @@ via e-mail!
 If you want some inspiration for what you can do with qaul, check out
 the [services] section.
 
-[contributor manual]: https://docs.qaul.org/contributors
+[developer manual]: https://docs.qaul.org/developer/
 [Matrix]: https://matrix.to/#/!ljaaylfsbkWFYNoNPT:fairydust.space?via=fairydust.space&via=matrix.org&via=public.cat
 [mailing list]: https://lists.sr.ht/~qaul/community
 [services]: ./services
