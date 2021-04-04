@@ -6,6 +6,6 @@ code can be found in the main qaul [code repo].
 
 If you find any mistakes, or sections that can be improved, please [open a merge request], or [send us a patch].
 
-[code repo]: https://git.qaul.org/qaul/qaul/tree/develop/docs/developer
+[code repo]: https://git.irde.st/we/irdest/tree/develop/docs/developer
 [open a merge request]: social/contributions.html#submitting-a-pr
 [send us a patch]: social/contributions.html#submitting-an-e-mail-patch

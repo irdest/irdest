@@ -40,7 +40,7 @@ following tools available.
 Clone the main code repo:
 
 ```console
-$ git clone https://git.qaul.org/qaul/qaul
+$ git clone https://git.irde.st/we/irdest
 $ cd qaul/
 ```
 

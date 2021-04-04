@@ -1,7 +1,7 @@
-# qaul.org website
+# irde.st website
 
-The qaul website is built via the static site generator [hugo].  Its
-contents and sources are part of the [qaul mono repo].
+The irdest website is built via the static site generator [hugo].  Its
+contents and sources are part of the [irdest mono repo].
 
 
 ## Building the website
@@ -20,7 +20,7 @@ website.  The build process will create a `result` symlink to the
 generated site data.
 
 ```console
-$ nix build -f nix/ qaul-website
+$ nix build -f nix/ irdest-website
 ...
 ```
 
@@ -31,7 +31,7 @@ template features to support easy text translations.  Following is a
 breakdown of the structure.
 
 * Template
-  * `qaul-theme` folder contains base HTML and CSS templates.  The
+  * `irdest-theme` folder contains base HTML and CSS templates.  The
     only page not generated via these files is the root page.
   * The root page template can be found in `layouts/index.html`
 * Content
@@ -41,4 +41,4 @@ breakdown of the structure.
 
 
 [hugo]: https://gohugo.io/
-[qaul mono repo]: https://git.qaul.org/qaul/qaul/
+[irdest mono repo]: https://git.irde.st/we/irdest/

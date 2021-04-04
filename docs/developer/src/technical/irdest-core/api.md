@@ -1,7 +1,7 @@
 # Service API
 
 This section of the manual covers the service API.  Please check the
-`libqaul` Rust API docs for actual function docs.  This document will
+`irdest-core` Rust API docs for actual function docs.  This document will
 go into the concepts more than actual code.
 
 The API is written in Rust and uses `async/await` futures, built with
@@ -9,9 +9,9 @@ the `async-std` runtime.  If you build a service in Rust, we recommend
 you use the same runtime to keep the application binary as small as
 possible.
 
-Code and function docs for libqaul can be found [here][libqaul]!
+Code and function docs for irdest-core can be found [here][irdest-core]!
 
-[libqaul]: https://docs.qaul.org/api/libqaul/index.html
+[irdest-core]: https://docs.irde.st/api/irdest-core/index.html
 
 ## Users
 
@@ -31,7 +31,7 @@ make interacting with them easier.
 
 ## User store
 
-An instance of libqaul keeps track of users on the network, and
+An instance of irdest-core keeps track of users on the network, and
 general user announcements, which are saved in the user store.  These
 user profiles are slowly filled with metadata, as more information
 becomes available about a user: did they set an avatar recently, do
@@ -60,7 +60,7 @@ if two users have met, and free-form additional metadata.
 
 ## Storage
 
-Because libqaul already has a mechanism in place to encrypt data for a
+Because irdest-core already has a mechanism in place to encrypt data for a
 user at rest, this mechanism is exposed in the API to external
 services.  On one hand this API can be used to store additional
 metadata for a service, that is required to make it all work, or to

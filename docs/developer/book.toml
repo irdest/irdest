@@ -1,13 +1,13 @@
 [book]
-authors = ["The qaul developers"]
+authors = ["The irdest developers"]
 multilingual = false
 src = "src"
-title = "qaul developer manual"
+title = "irdest developer manual"
 
 [build]
 create-missing = false
 
 [output.html]
 preferred-dark-theme = "rust"
-git-repository-url = "https://git.qaul.org/qaul/qaul/-/tree/develop/docs/developer"
+git-repository-url = "https://git.irde.st/we/irdest/-/tree/develop/docs/developer"
 git-repository-icon = "fa-git"

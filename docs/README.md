@@ -1,16 +1,16 @@
-# qaul documentation
+# irdest documentation
 
-This folder contains the qaul documentation. You can find them online
-under [https://docs.qaul.org](https://docs.qaul.org)
+This folder contains the irdest documentation. You can find them online
+under [https://docs.irde.st](https://docs.irde.st)
 
 You're welcome to contribute to them!
 
 
 ## Guides
 
-* `developer`: a manual aimed at potential qaul developers, and
+* `developer`: a manual aimed at potential irdest developers, and
   hackers who want to understand the internals of various components.
-* `user`: a manual aimed at end-users of qaul applications.  Contains
+* `user`: a manual aimed at end-users of irdest applications.  Contains
   setup guides and available configuration options
 
 
@@ -18,5 +18,5 @@ You're welcome to contribute to them!
 
 The manuals are built with `mdbook`.  You can use the corresponding
 `build.sh` scripts to build the books.  You can also use the
-[`nix`](../nix) build files to build the `qaul-manual-developer` and
-`qaul-manual-user` targets.
+[`nix`](../nix) build files to build the `irdest-manual-developer` and
+`irdest-manual-user` targets.

@@ -1,6 +1,6 @@
-# libqaul Internals
+# irdest-core Internals
 
-This section of the manual covers parts of libqaul not exposed
+This section of the manual covers parts of irdest-core not exposed
 directly via the API.  It's primarily useful to learn to debug
 behaviour, and for future contributors to get up to speed with the
 internal structure.
@@ -12,7 +12,7 @@ that acts as a strongly typed store (messages, users, contacts, files,
 
 ## Key Store
 
-Similar to the user and message store, libqaul stores public keys that
+Similar to the user and message store, irdest-core stores public keys that
 it comes across, for later.  This is meant to opportunisticly fill the
 store with keys that can be user later on to send encrypted messages
 or verify signatures.
@@ -43,17 +43,17 @@ service handler was found.
 ## Persistence
 
 The presistence module is implemented mostly by wrapping internal
-libqaul types with [alexandria] storage callbacks, which is the
+irdest-core types with [alexandria] storage callbacks, which is the
 library which implements all of the persistence logic and at-rest
-encryption.  It is developed as part of qaul, but pulled out of
+encryption.  It is developed as part of irdest, but pulled out of
 the main tree to make it easier to use in other projects.
 
-[alexandria]: https://git.qaul.org/qaul/qaul/blob/develop/utils/alexandria
+[alexandria]: https://git.irde.st/we/irdest/blob/develop/utils/alexandria
 
 ## Routing
 
-All calls to actually send data into a qaul network are implemented by
+All calls to actually send data into a irdest network are implemented by
 Ratman, the delay tolerant, distance vector based routing protocol
-built specifically for qaul.  You can find documentation
+built specifically for irdest.  You can find documentation
 specifically for it in later sections of this manual.
 

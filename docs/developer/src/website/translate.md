@@ -1,6 +1,6 @@
-# Translate the qaul Web Site
+# Translate the irdest Web Site
 
-**The qaul web site is multilingual and can be translated into any language.**
+**The irdest web site is multilingual and can be translated into any language.**
 
 
 ## Translating a Content Page
@@ -28,11 +28,11 @@ To add a new language there are only a few things to do:
     rtl = true
 ```
 
-2. Create a language specific CSS file in the folder `themes/hugo-theme-qaul/static/css/` (e.g. `themes/hugo-theme-qaul/static/css/fr.css` for French). 
+2. Create a language specific CSS file in the folder `themes/hugo-theme-irdest/static/css/` (e.g. `themes/hugo-theme-irdest/static/css/fr.css` for French). 
   * This file contains language specific configuration and will mostly be empty.
   * For right-to-left written languages copy the file for arabic 'ar.css'.
 
-3. Translate the web site menu items. The web site menu items can be found in the folder `themes/hugo-theme-qaul/i18n`. There is a file for each language.
+3. Translate the web site menu items. The web site menu items can be found in the folder `themes/hugo-theme-irdest/i18n`. There is a file for each language.
   * Copy the file `en.toml` and rename it according to your language.
   * Translate each sentence or word in `other = "TRANSLATE THIS PART"`.
 

@@ -9,10 +9,10 @@ digraph {
     diagnostics -> identity
     "routing-core" -> identity
 
-    libqaul -> "R.A.T.M.A.N."
-    libqaul -> platform
-    libqaul -> "qaul-service"
-    libqaul -> identity
+    irdest-core -> "R.A.T.M.A.N."
+    irdest-core -> platform
+    irdest-core -> "qaul-service"
+    irdest-core -> identity
 
-    "qaul-http" -> libqaul
+    "qaul-http" -> irdest-core
 }

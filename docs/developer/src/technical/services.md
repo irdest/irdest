@@ -4,7 +4,7 @@ Following is a list of services that are bundled with qaul, and
 what they can do for you.
 
 Services have an internal ID that is used to identify them in
-`libqaul`, using reverse fully qualified domain specifiers (for
+`irdest-core`, using reverse fully qualified domain specifiers (for
 example `net.qaul.my-app`).
 
 
@@ -19,7 +19,7 @@ instead of being user-facing.
 
 This service provides an interface to send strongly typed messages,
 with extension hooks for external services to provide their own type
-data.  In `libqaul` all payloads are raw binary which is done to save
+data.  In `irdest-core` all payloads are raw binary which is done to save
 space, and not complicate the API unecessarily.  However sometimes
 type information is useful, and an app service might want to rely on
 it.  That's what this fundamental service is for!

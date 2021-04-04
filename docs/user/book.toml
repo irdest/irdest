@@ -10,5 +10,5 @@ create-missing = false
 
 [output.html]
 preferred-dark-theme = "rust"
-git-repository-url = "https://git.qaul.org/qaul/qaul/-/tree/develop/docs/user"
+git-repository-url = "https://git.irde.st/we/irdest/-/tree/develop/docs/user"
 git-repository-icon = "fa-git"

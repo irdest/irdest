@@ -1,8 +1,8 @@
-# libqaul IPC Interfaces
+# irdest-core IPC Interfaces
 
 **This page is outdated!**
 
-While libqaul and all of the qaul services are written in Rust,
+While irdest-core and all of the irdest services are written in Rust,
 that doens't mean that you need to write your application in Rust.
 Especially considering that your application might want to connect to
 an already running daemon on a system, your application needs to
@@ -16,6 +16,6 @@ by your application.  Check out the external book for the API.
 
 Additionally there are more interfaces that are documented in this
 chapter.  Furthermore, if you think that there's a benefit in building
-a new IPC interface for libqaul, get in touch! We're very curious.
+a new IPC interface for irdest-core, get in touch! We're very curious.
 
-[http]: docs.qaul.org/http-api/
+[http]: docs.irde.st/http-api/

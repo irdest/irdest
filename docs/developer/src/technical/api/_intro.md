@@ -8,7 +8,7 @@ be documented.  In the future we might want to move some of them into
 their dedicated books.
 
 For now, this document is an outline for the json RPC interface of
-`libqaul`.  It's being made available via the `libqaul-http` crate.
+`irdest-core`.  It's being made available via the `irdest-core-http` crate.
 
 
 ## Envelope
@@ -35,12 +35,12 @@ isn't handled via the transport protocol (like http).
         "val": "A88A 7CC6 DF68 CE60 2D63 64CB 7393 8924 653D 52FB DBC6 2A39 D892 A9BD 6FA4 FD5D"
       }
     },
-    "service": "net.qaul.chat"
+    "service": "net.irdest.chat"
   }
 }
 ```
 
-This type can be found in `libqaul/rpc/src/json/mod.rs`.  The general
+This type can be found in `irdest-core/rpc/src/json/mod.rs`.  The general
 structure of requests stays the same: there's an ID, some auth data,
 the page (which isn't implemented yet), `method` and `kind` the
 request operates on.
@@ -50,8 +50,8 @@ There are several types available (`kind`):
 
 - **users**, either a local or remote user
 - **contacts**, some user-specific contact data for another user
-- **chat-rooms**, a chat room via service (requires `qaul` feature)
-- **chat-messages**, a chat room message (requires `qaul` feature)
+- **chat-rooms**, a chat room via service (requires `irdest` feature)
+- **chat-messages**, a chat room message (requires `irdest` feature)
 
 
 Possible `methods` are (not all combinations exist though!):
@@ -75,4 +75,4 @@ Three special `methods` only exist for users:
 
 Following is a list of examples of how to construct valid requests.
 If in doubt, the code that parses these is in
-`libqaul/rpc/src/json/parser.rs`.  You can always look it up there.
+`irdest-core/rpc/src/json/parser.rs`.  You can always look it up there.
