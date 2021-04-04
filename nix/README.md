@@ -20,12 +20,6 @@ $ nix-build nix -A qaul-rust
 
 A combined derivation that builds the whole rust workspace (equivalent to running `cargo build --release` in the repository root). It is packaged with [nearsk](https://github.com/nmattia/naersk/). The Rust dependencies are read from `../Cargo.lock`.
 
-### `qaul-web`
-
-```
-$ nix-build nix -A qaul-web
-```
-
 The web client (which connects to a local qaul instance) based on emberjs. It is packaged with [yarn2nix](https://github.com/nix-community/yarn2nix). The JavaScript dependencies are read from `../emberweb/yarn.lock`.
 
 ### `qaul-website`

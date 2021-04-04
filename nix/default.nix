@@ -6,7 +6,6 @@ let
     qaul-manual-developer = self.callPackage ./qaul-manual/developer.nix {};
     qaul-manual-user = self.callPackage ./qaul-manual/user.nix {};
     qaul-rust = self.callPackage ./qaul-rust {};
-    qaul-web = self.callPackage ./qaul-web {};
     qaul-website = self.callPackage ./qaul-website {};
   };
 
