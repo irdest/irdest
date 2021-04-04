@@ -4,14 +4,14 @@ stages:
 
 build-rust:
   needs: []
-  tags: [ qaul-nix ]
+  tags: [ irdest-nix ]
   stage: build
   script:
     - nix-build nix -A qaul-rust
 
 build-website:
   needs: []
-  tags: [ qaul-nix ]
+  tags: [ irdest-nix ]
   stage: build
   script:
     - nix-build nix -A qaul-website
@@ -21,7 +21,7 @@ build-website:
 
 unittests-pipeline:
   needs: []
-  tags: [ qaul-nix ]
+  tags: [ irdest-nix ]
   stage: build
   script:
     - nix-build nix/ci/rust.nix -A pipeline

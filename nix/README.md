@@ -81,7 +81,7 @@ $ jq . result
     ],
     "stage": "build",
     "tags": [
-      "qaul-nix"
+      "irdest-nix"
     ]
   },
   "alexandria-crypto::aes_encrypt_decrypt": {

@@ -57,7 +57,7 @@ in rec {
           map (
             test: nameValuePair "${component}-${test}" {
               needs = [];
-              tags = [ "qaul-nix" ];
+              tags = [ "irdest-nix" ];
               stage = "build";
               script = [
                 "nix-build nix/ci/rust.nix -A tests.${component}.${test}"
