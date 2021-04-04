@@ -2,7 +2,7 @@
 
 use crate::cfg::Config;
 use directories_next::ProjectDirs;
-use libqaul::Qaul;
+use irdest_core::Qaul;
 use netmod_tcp::{Endpoint, Mode};
 use ratman::Router;
 use std::{fs::File, io::Read, sync::Arc};

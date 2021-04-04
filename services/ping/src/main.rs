@@ -6,8 +6,8 @@
 //! considered documentation.  If you find anything that is unclear to
 //! you, or could be commented better, please send us a patch (or MR).
 
-use libqaul_sdk::{users::UserAuth, QaulRpc};
-use qrpc_sdk::{default_socket_path, RpcSocket, Service};
+use irdest_sdk::{users::UserAuth, QaulRpc};
+use irpc_sdk::{default_socket_path, RpcSocket, Service};
 use tracing::{error, info};
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
 
