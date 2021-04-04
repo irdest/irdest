@@ -12,7 +12,7 @@ Margaretenstraße 30<br>
 </address>
 
 E-Mail
-: <contact@qaul.org>
+: <contact@irde.st>
 
 ## Haftungsausschluss
 

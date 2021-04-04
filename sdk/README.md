@@ -1,6 +1,6 @@
-# qaul SDKs
+# Irdest SDKs
 
-In order to develop applications for a qaul network, you need to
+In order to develop applications for a irdest network, you need to
 include the software development kit libraries (SDK libs).  Each
 component your application wants to interact with requires a separate
 library.  For the official core components all SDKs can be found in
@@ -14,15 +14,15 @@ Each SDK exposes a set of types used by the component, with an
 async/await API which uses a common RPC interface (called `qrpc`) to
 facilitate communication and reply data.
 
-Currently the following qaul components have SDK libraries:
+Currently the following irdest components have SDK libraries:
 
-- [libqaul](./libqaul-sdk)
-- [qaul-chat](./qaulchat-sdk)
+- [libirdest](./libirdest-sdk)
+- [irdest-chat](./irdestchat-sdk)
 
 
-## Writing a qaul service
+## Writing a irdest service
 
-You can find much more detailed instructions on how to develop a qaul
+You can find much more detailed instructions on how to develop a irdest
 service in the [developer manual]().  Following is a very simple
 "hello world".
 
@@ -34,11 +34,11 @@ A small, but real-world example of a service can be found
 use qrpc_sdk::{default_socket_path, RpcSocket, Service};
 
 // Include the libqau component SDK
-use libqaul_sdk::{QaulSdk, types::UserAuth};
+use libirdest_sdk::{IrdestSdk, types::UserAuth};
 
 #[async_std::main]
 async fn main() {
-    let mut serv = Service::new("net.qaul.test", 1, "A test service");
+    let mut serv = Service::new("net.irdest.test", 1, "A test service");
     
     // Get the default qrpc socket location
     let (addr, port) = default_socket_path();

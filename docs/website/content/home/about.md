@@ -1,11 +1,11 @@
 ---
-Introduction_Title: What is qaul?
+Introduction_Title: What is irdest?
 Introduction: |
-    **qaul** is a set of tools, that allows devices like laptops 
+    **irdest** is a set of tools, that allows devices like laptops 
     and smartphones to create a **wireless mesh network** over Bluetooth 
     and direct WiFi connections, rather than relying on internet access
     via a mobile network.  This **decentralised and open network** extends
-    across any qaul-enabled device, so that if two people aren't close
+    across any irdest-enabled device, so that if two people aren't close
     enough to each other for their devices to connect directly, data can
     be sent via other devices in the middle, without those devices being
     able to read or change the messages passing through it.
@@ -14,7 +14,7 @@ Introduction: |
     broadcast, and file sharing — all in a single app.  Additionally it is
     a suite of **free software libraries**, meaning that anyone can study
     and modify it, and use it to create their own apps that can operate on
-    a qaul network, independent of the internet.
+    a irdest network, independent of the internet.
 Meshing_Title: What is a mesh network?
 Meshing: |
     In traditional network infrastructure there is a centralised point
@@ -29,9 +29,9 @@ Meshing: |
 
     To create these connections, devices can use a variety of methods,
     such as WiFi and Bluetooth, or plain network cables to create links
-    with other qaul users around them.
+    with other irdest users around them.
 
-    The network that is created by qaul can serve two purposes:
+    The network that is created by irdest can serve two purposes:
     to connect you with people around you to run applications specifically
-    made for qaul, or to act as a tunnel to the traditional Internet.
+    made for irdest, or to act as a tunnel to the traditional Internet.
 ---

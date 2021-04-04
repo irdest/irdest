@@ -1,18 +1,18 @@
 [package]
-name = "qaul-hubd"
-description = "A modular and easy to use internet overlay router for qaul"
+name = "irdest-hubd"
+description = "A modular and easy to use internet overlay router for Irdest"
 version = "0.2.0"
 authors = ["Katharina Fey <kookie@spacekookie>", "Leonora Tindall <nora@nora.codes>"]
 license = "AGPL-3.0-or-later"
 edition = "2018"
 
 [dependencies]
-libqaul = { path = "../../libqaul" }
+irdest-core = { path = "../../irdest-core" }
 netmod-tcp = { path = "../../netmods/netmod-tcp" }
 netmod-udp = { path = "../../netmods/netmod-udp" }
 ratman = { path = "../../ratman" }
 ratman-configure = { path = "../../ratman/configure" }
-qrpc-broker = { path = "../../rpc-core/qrpc-broker" }
+irpc-broker = { path = "../../rpc-core/irpc-broker" }
 
 async-std = { version = "1.0", features = ["attributes"] }
 clap = { version = "2.0", features = ["wrap_help", "color"] }

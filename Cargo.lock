@@ -1284,6 +1284,138 @@ dependencies = [
 ]
 
 [[package]]
+name = "ircore-types"
+version = "0.1.0"
+dependencies = [
+ "alexandria-tags",
+ "async-trait",
+ "bincode",
+ "irpc-sdk",
+ "ratman-identity",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "irdest-core"
+version = "0.2.0"
+dependencies = [
+ "alexandria2",
+ "async-std",
+ "async-trait",
+ "base64",
+ "bincode",
+ "blake2 0.8.1",
+ "crossbeam-channel",
+ "futures",
+ "hex",
+ "ircore-types",
+ "irpc-sdk",
+ "jni",
+ "log 0.4.14",
+ "mime",
+ "netmod-mem",
+ "rand 0.7.3",
+ "ratman",
+ "ratman-harness",
+ "serde",
+ "serde_json",
+ "sodiumoxide",
+ "tempfile",
+ "tracing",
+ "tracing-futures",
+]
+
+[[package]]
+name = "irdest-gtk"
+version = "0.1.0"
+dependencies = [
+ "gtk",
+ "irdest-sdk",
+ "relm",
+ "relm-derive",
+]
+
+[[package]]
+name = "irdest-hubd"
+version = "0.2.0"
+dependencies = [
+ "async-std",
+ "clap",
+ "directories-next",
+ "igd",
+ "ipnetwork",
+ "irdest-core",
+ "irpc-broker",
+ "netmod-tcp",
+ "netmod-udp",
+ "pnet",
+ "ratman",
+ "ratman-configure",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "irdest-ping"
+version = "0.1.0"
+dependencies = [
+ "async-std",
+ "irdest-sdk",
+ "irpc-sdk",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "irdest-sdk"
+version = "0.1.0"
+dependencies = [
+ "ircore-types",
+ "irpc-sdk",
+]
+
+[[package]]
+name = "irpc-broker"
+version = "0.1.0"
+dependencies = [
+ "async-std",
+ "byteorder",
+ "capnp",
+ "irpc-sdk",
+ "lazy_static",
+ "ratman-identity",
+ "signal-hook",
+ "socket2",
+ "tracing",
+]
+
+[[package]]
+name = "irpc-client"
+version = "0.1.0"
+dependencies = [
+ "async-std",
+ "clap",
+ "irpc-sdk",
+ "serde_json",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "irpc-sdk"
+version = "0.1.1"
+dependencies = [
+ "async-std",
+ "async-trait",
+ "byteorder",
+ "capnp",
+ "capnpc",
+ "ratman-identity",
+ "tracing",
+]
+
+[[package]]
 name = "itertools"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1395,57 +1527,6 @@ version = "0.4.0"
 dependencies = [
  "bindgen",
  "cmake",
-]
-
-[[package]]
-name = "libqaul"
-version = "0.1.1"
-dependencies = [
- "alexandria2",
- "async-std",
- "async-trait",
- "base64",
- "bincode",
- "blake2 0.8.1",
- "crossbeam-channel",
- "futures",
- "hex",
- "jni",
- "libqaul-types",
- "log 0.4.14",
- "mime",
- "netmod-mem",
- "qrpc-sdk",
- "rand 0.7.3",
- "ratman",
- "ratman-harness",
- "serde",
- "serde_json",
- "sodiumoxide",
- "tempfile",
- "tracing",
- "tracing-futures",
-]
-
-[[package]]
-name = "libqaul-sdk"
-version = "0.1.0"
-dependencies = [
- "libqaul-types",
- "qrpc-sdk",
-]
-
-[[package]]
-name = "libqaul-types"
-version = "0.1.0"
-dependencies = [
- "alexandria-tags",
- "async-trait",
- "bincode",
- "qrpc-sdk",
- "ratman-identity",
- "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -1730,17 +1811,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
-name = "ping"
-version = "0.1.0"
-dependencies = [
- "async-std",
- "libqaul-sdk",
- "qrpc-sdk",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "pkg-config"
 version = "0.3.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1932,76 +2002,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e0704ee1a7e00d7bb417d0770ea303c1bccbabf0ef1667dae92b5967f5f8a71"
 dependencies = [
  "unicode-xid 0.2.1",
-]
-
-[[package]]
-name = "qaul-gtk"
-version = "0.1.0"
-dependencies = [
- "gtk",
- "libqaul-sdk",
- "relm",
- "relm-derive",
-]
-
-[[package]]
-name = "qaul-hubd"
-version = "0.2.0"
-dependencies = [
- "async-std",
- "clap",
- "directories-next",
- "igd",
- "ipnetwork",
- "libqaul",
- "netmod-tcp",
- "netmod-udp",
- "pnet",
- "qrpc-broker",
- "ratman",
- "ratman-configure",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "qrpc-broker"
-version = "0.1.0"
-dependencies = [
- "async-std",
- "byteorder",
- "capnp",
- "lazy_static",
- "qrpc-sdk",
- "ratman-identity",
- "signal-hook",
- "socket2",
- "tracing",
-]
-
-[[package]]
-name = "qrpc-client"
-version = "0.1.0"
-dependencies = [
- "async-std",
- "clap",
- "qrpc-sdk",
- "serde_json",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "qrpc-sdk"
-version = "0.1.1"
-dependencies = [
- "async-std",
- "async-trait",
- "byteorder",
- "capnp",
- "capnpc",
- "ratman-identity",
- "tracing",
 ]
 
 [[package]]

@@ -1,6 +1,6 @@
 ---
 Title: Internet independent wireless mesh communication
-Tagline: "**qaul** is building tools for the next revolution"
+Tagline: "**irdest** is building tools for the next internet"
 Download: Download
 Community: Community
 Learn: Learn

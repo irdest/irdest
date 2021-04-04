@@ -6,15 +6,15 @@ members = [
     "utils/alexandria-tags",
 
     # Main qaul identity & storage library
-    "libqaul",
-    "libqaul/types",
+    "irdest-core",
+    "irdest-core/types",
 
     # RPC core utilities
-    "rpc-core/qrpc-sdk",
-    "rpc-core/qrpc-broker",
+    "rpc-core/irpc-sdk",
+    "rpc-core/irpc-broker",
 
     # qaul developer SDKs
-    "sdk/libqaul-sdk",
+    "sdk/irdest-sdk",
 
     # The decentralised router
     "ratman",
@@ -42,6 +42,6 @@ members = [
 
     # End-user applications
     "clients/hubd",
-    "clients/qrpc-client",
-    "clients/qaul-gtk",
+    "clients/irpc-client",
+    "clients/irdest-gtk",
 ]

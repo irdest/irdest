@@ -1,14 +1,14 @@
 [package]
-name = "ping"
-description = "A test service, demonstrating how to use libqaul, and the qrpc-sdk."
+name = "irdest-ping"
+description = "A test service, demonstrating how to use irdest-core, and the irpc-sdk"
 version = "0.1.0"
 authors = ["Katharina Fey <kookie@spacekookie.de>"]
 edition = "2018"
 license = "AGPL-3.0-or-later"
 
 [dependencies]
-qrpc-sdk = { path = "../../rpc-core/qrpc-sdk", version = "0.1" }
-libqaul-sdk = { path = "../../sdk/libqaul-sdk" }
+irpc-sdk = { path = "../../rpc-core/irpc-sdk", version = "0.1" }
+irdest-sdk = { path = "../../sdk/irdest-sdk" }
 
 async-std = { version = "1.0", features = ["attributes"] }
 tracing = "0.1"

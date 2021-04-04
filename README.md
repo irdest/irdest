@@ -94,14 +94,14 @@ components interacting with each other.  To get started, check out the
 ## Contributing
 
 Social processes, code, and design guidelines are outlined in the
-[contributor manual].  We have a developer chat hosted on [Matrix]
+[developer manual].  We have a developer chat hosted on [Matrix]
 where we would be happy to answer any questions you have.
 
 If you want some inspiration for what you can do with irdest, check
 out the [services] section.
 
 [developer manual]: https://docs.irde.st/developer/
-[Matrix]: https://matrix.to/#/!ljaaylfsbkWFYNoNPT:fairydust.space?via=fairydust.space&via=matrix.org&via=public.cat
+[Matrix]: https://matrix.to/#/#irdest:fairydust.space?via=ontheblueplanet.com&via=matrix.org&via=fairydust.space
 [services]: ./services
 
 ## License

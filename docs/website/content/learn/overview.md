@@ -3,29 +3,29 @@ Title: Networking overview
 layout: page
 ---
 
-qaul implements a heterogenious, fully decentralised mesh network.
+irdest implements a heterogenious, fully decentralised mesh network.
 What this means is that transmission channels can change between
 device links: the network is made up of roaming network shards.  To
-allow routing across network boundries, qaul uses a public key
+allow routing across network boundries, irdest uses a public key
 address space, to avoid having to deal with network collisions, and
 NAT.
 
 For links that rely on regular IP spaces (v4 or v6), a local lookup
 table is kept in each node that operates an overlay endpoint.
 
-This way qaul can run on unpriviledged devices, because it doesn't
+This way irdest can run on unpriviledged devices, because it doesn't
 rely on modifying kernel routing table parameters to create a DHT
 (distributed hash table); all routing is done entirely in userspace.
 
 
 ## Breadcrumb routing
 
-The router behind qaul is called "ratman" (route and transmission
+The router behind irdest is called "ratman" (route and transmission
 manager), which works via a gossip announcement protocol.  Each node
 on a network periodically announces itself to it's peers, letting them
 know over which of their local interfaces they can reach this node.
-Because of the coupling between ratman IDs and qaul users, this
-corresponds to announcing a user identity on the network for qaul,
+Because of the coupling between ratman IDs and irdest users, this
+corresponds to announcing a user identity on the network for irdest,
 but different applications using ratman can bind these IDs to
 different semantics.
 
@@ -53,13 +53,13 @@ performance.
 
 There are several corner cases for what to do when a loop is
 encountered, or when a network becomes too big that it needs to be
-segmented.  But this covers the basics of how ratman and qaul do
+segmented.  But this covers the basics of how ratman and irdest do
 routing.
 
 
 ## Automatic roaming
 
-Because qaul is primarily designed to run on unpriviledged mobile
+Because irdest is primarily designed to run on unpriviledged mobile
 devices, a network automatically needs to be able to roam between
 transmission channels.  In fact, because of technical limitations on
 mobile platforms connections between devices can't be long lived and
