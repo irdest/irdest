@@ -1,4 +1,6 @@
-![](docs/banner.png)
+<div align="center">
+    <img src="docs/banner.png" height="200px"/>
+</div>
 
 ---
 
