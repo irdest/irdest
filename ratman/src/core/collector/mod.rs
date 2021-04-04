@@ -186,7 +186,7 @@ fn queue_many() {
 
     let seqid = id;
     let len = seq.len();
-    assert_eq!(len, 9);
+    assert_eq!(len, 8);
 
     task::block_on(async move {
         let c = Collector::new();

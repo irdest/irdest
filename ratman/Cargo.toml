@@ -1,9 +1,8 @@
 [package]
 name = "ratman"
-description = "A delay tolerant, journaled and distributed userspace packet router"
+description = "A delay tolerant, journaled, and distributed userspace packet router"
 license = "AGPL-3.0"
-homepage = "https://qaul.org"
-version = "0.2.0"
+version = "0.2.2"
 authors = ["Katharina Fey <kookie@spacekookie.de>", "Leonora Tindall <nora@nora.codes>"]
 edition = "2018"
 
@@ -24,5 +23,5 @@ clockctrl = { version = "0.1", path = "../utils/clockctrl" }
 task-notify = { version = "0.1", path = "../utils/task-notify" }
 
 [dev-dependencies]
-netmod-mem = { path = "../netmods/netmod-mem" }
+netmod-mem = { path = "../netmods/netmod-mem", version = "0.4" }
 bincode = "1.2"

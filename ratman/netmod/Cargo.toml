@@ -1,13 +1,12 @@
 [package]
 name = "ratman-netmod"
 description = "Interface and framing abstraction for Ratman network drivers"
-version = "0.5.0"
+version = "0.5.1"
 authors = [
   "Katharina Fey <kookie@spacekookie.de>",
   "Leonora Tindall <nora@nora.codes>"
 ]
 edition = "2018"
-homepage = "https://qaul.org"
 license = "AGPL-3.0"
 
 [dependencies]
