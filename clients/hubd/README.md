@@ -9,4 +9,4 @@ An open test network is available at `hyperion.kookie.space:11443`
 
 Learn more about `qaul-hubd` in the [user manual]!
 
-[user manual]: https://docs.qaul.org/users
+[user manual]: https://docs.irde.st/user/
