@@ -1,4 +1,4 @@
-# Nix packaging for qaul components
+# Nix packaging for irdest components
 
 From the [Nix Package Manager Guide](https://nixos.org/manual/nix/stable/#ch-about-nix):
 
@@ -10,32 +10,32 @@ From the [Nix Package Manager Guide](https://nixos.org/manual/nix/stable/#ch-abo
 
 ## Packages
 
-The `default.nix` file describes all qaul-specific packages that are not packaged in nixpkgs. Some of them are:
+The `default.nix` file describes all irdest-specific packages that are not packaged in nixpkgs. Some of them are:
 
-### `qaul-rust`
+### `irdest-rust`
 
 ```
-$ nix-build nix -A qaul-rust
+$ nix-build nix -A irdest-rust
 ```
 
 A combined derivation that builds the whole rust workspace (equivalent to running `cargo build --release` in the repository root). It is packaged with [nearsk](https://github.com/nmattia/naersk/). The Rust dependencies are read from `../Cargo.lock`.
 
-The web client (which connects to a local qaul instance) based on emberjs. It is packaged with [yarn2nix](https://github.com/nix-community/yarn2nix). The JavaScript dependencies are read from `../emberweb/yarn.lock`.
+The web client (which connects to a local irdest instance) based on emberjs. It is packaged with [yarn2nix](https://github.com/nix-community/yarn2nix). The JavaScript dependencies are read from `../emberweb/yarn.lock`.
 
-### `qaul-website`
+### `irdest-website`
 
 ```
-$ nix-build nix -A qaul-website
+$ nix-build nix -A irdest-website
 ```
 
-The website served on [qaul.org](https://qaul.org/). It is built using the Hugo static site generator.
+The website served on [irde.st](https://irde.st/). It is built using the Hugo static site generator.
 
 ## Using `nix-shell` for development
 
 You can build Rust components in a Nix development shell, which will make all required native dependencies available:
 
 ```
-$ nix-shell nix -A qaul-rust.builtDependencies
+$ nix-shell nix -A irdest-rust.builtDependencies
 $ cargo build
 ```
 

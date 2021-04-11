@@ -4,7 +4,7 @@
 }:
 
 stdenv.mkDerivation rec {
-  pname = "qaul-website";
+  pname = "irdest-website";
   version = "0.0.0";
 
   src = ../../docs/website;

@@ -31,7 +31,7 @@ naersk.buildPackage rec {
     cmake
     pkg-config
 
-    # Required for qaul-gtk
+    # Required for irdest-gtk
     glib
     gtk3
     atk

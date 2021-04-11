@@ -7,7 +7,7 @@
 }:
 
 stdenv.mkDerivation rec {
-  pname = "qaul-docs-developer";
+  pname = "irdest-manual-user";
   version = "0.0.0";
   src = lib.cleanSourceWith {
     filter = lib.cleanSourceFilter;
@@ -15,7 +15,7 @@ stdenv.mkDerivation rec {
       filter = name: type:
         name == "${toString ../../.}" ||
         name == "${toString ../../.}/docs" ||
-        lib.hasPrefix "${toString ../../.}/docs/developer" name ||
+        lib.hasPrefix "${toString ../../.}/docs/user" name ||
         lib.hasPrefix "${toString ../../.}/licenses" name
       ;
       src = ../../.;
@@ -29,7 +29,7 @@ stdenv.mkDerivation rec {
 
   buildPhase = ''
     mkdir $out
-    cd docs/developer
+    cd docs/user
     mdbook build -d $out
   '';
 

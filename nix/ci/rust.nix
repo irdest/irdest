@@ -8,7 +8,7 @@ in rec {
   # keys and lists of the corresponding components as values
 
   testsListsIfd = pkgs.runCommand "unittests-list" {} ''
-    cd ${pkgs.qaul-rust.testBinaries}/bin
+    cd ${pkgs.irdest-rust.testBinaries}/bin
 
     echo "{" > $out
     for binary in *
@@ -38,7 +38,7 @@ in rec {
           pkgs.runCommand "${component}-${test}" {} ''
             set -xo pipefail
             mkdir -p $out
-            ${pkgs.qaul-rust.testBinaries}/bin/${component}-test ${test} | tee $out/log
+            ${pkgs.irdest-rust.testBinaries}/bin/${component}-test ${test} | tee $out/log
             echo $? > $out/status
             set +x
           ''
