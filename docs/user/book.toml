@@ -1,14 +1,15 @@
 [book]
-authors = ["The qaul developers"]
+authors = ["Katharina Fey <kookie@spacekookie.de", "The irdest developers"]
 language = "en"
 multilingual = false
 src = "src"
-title = "qaul user manual"
+title = "Irdest user manual"
 
 [build]
 create-missing = false
 
 [output.html]
+preferred-theme = "rust"
 preferred-dark-theme = "rust"
 git-repository-url = "https://git.irde.st/we/irdest/-/tree/develop/docs/user"
 git-repository-icon = "fa-git"

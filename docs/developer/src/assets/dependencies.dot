@@ -1,18 +1,15 @@
 digraph {
-    "R.A.T.M.A.N." -> identity
-    "R.A.T.M.A.N." -> netmod
-    "R.A.T.M.A.N." -> diagnostics
-    "R.A.T.M.A.N." -> "routing-core"
-    "R.A.T.M.A.N." -> persistence
+    Ratman -> identity
+    Ratman -> netmod
+    Ratman -> Alexandria
 
     netmod -> identity
-    diagnostics -> identity
-    "routing-core" -> identity
 
-    irdest-core -> "R.A.T.M.A.N."
-    irdest-core -> platform
-    irdest-core -> "qaul-service"
-    irdest-core -> identity
+    "irdest-core" -> "irdest-types"
+    "irdest-core" -> Alexandria
+    "irdest-core" -> Ratman
+    "irdest-core" -> "irpc-sdk"
 
-    "qaul-http" -> irdest-core
+    "irdest-sdk" -> "irdest-types"
+    "irdest-sdk" -> "irpc-sdk"
 }

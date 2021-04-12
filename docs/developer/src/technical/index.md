@@ -1,131 +1,87 @@
 # Technical Documentation
 
-This is an introductory chapter into the technical layers of qaul!
-It is aimed at two different types of people:
+Welcome to the irdest technical documentation.  Following is an
+outline of the system, which will hopefully give you an initial
+understanding of the project stack.
 
-1. People wanting to contribute to the irdest core
-2. People wanting to write apps for a irdest network
+This manual is relevant for both **irdest hackers**, and **irdest
+application developers**.
 
-Before getting started, we need to cover a few basics in project
-structure.  Each section in this document has it's own sub-chapter
-that will go into more details.
+**Note to future editors**: make sure every major component has an
+`internals` section, so to make it convenient to skip.
 
 
 ## Introduction
 
 Fundamentally, irdest is a highly distributed system.  It is not
 accountable to a single set of rules across all devices that are part
-of this system.  It is important to make the distinction between
-"irdest", the application, "irdest network", the distributed network
-of devices, and other components provided by the project that can be
-used to write decentralised applications.
+of this system.  Each device can be home to many users, that can all
+send messages to each other, but have separate states.  Furthermore,
+connections in this system are not always real time.
 
-The primary component in this ecosystem is called `irdest-core`.  It
-provides an abstraction layer for a distributed network of devices,
-user profiles that interact with each other, and the messages and data
-that are exchanged.  The API of this library is called the
-"irdest-core service API" in other parts of the docs.  An application
-written to use `irdest-core` is called a "service".
-
-A service provicdes more specific functionality.  Not all services are
-user-facing.  For example, a service can provide an easy interface to
-send rich-payload messages, that operates on a higher level than the
-irdest-core service API.  Other services can then depend on this
-high-level API.
-
-irdest (the app bundle) is primarily a GUI for a collection of
-services, that all run on the same irdest-core instance under the
-hood.
-
-Unless otherwise stated, all code is written in Rust.
+A lot of traditional networking infrastructe is built up in layers.
+Similarly, the irdest project replicates these layers.  To give you a
+better understanding of what parts of the irdest project do what,
+here's an overview of the layers in a full irdest application stack.
 
 
-## Layers
-
-The irdest stack is heavily abstracted into layers to keep logic
-simple on each layer.  No layer should have to care about data that is
-not meant to be consumed by it.
-
-- **User Interfaces**: users interact with these clients
-- **RPC broker**: allows remote clients to connect to the same daemon,
-  without having to bundle their own libraries.
-- **App services**: a set of services that provide user-facing
-  functionality (text messaging, file sharing, ...)
-- **Core services**: utility services that extend the `irdest-core` API
-- **irdest-core**: primary user profile, and database handler
-- **ratman**: decentralised packet router, responsible for dispatching
-  and receiving messages.
-- **Network Modules**: driver plugins for `ratman` that implement the
-  actual wire-formats for networking
-- **Platform Support**: os-specific utilities and tools
+| Layer            | Component name                      | Description                                                                                                   |
+|------------------|-------------------------------------|---------------------------------------------------------------------------------------------------------------|
+| Network drivers  | `netmod`, `netmod-tcp`, ...         | Network drivers to establish and manage connections with peers via different underlying transport mechansms   |
+| Irdest Router    | `ratman`                            | A decentralised packet router using cryptographic public keys as addresses for users                          |
+| Service API core | `irdest-core`                       | The main irdest state handler, managing an encrypted database, user profiles, and more                        |
+| Irdest RPC       | `irpc-sdk`, `irp-broker`            | A generic RPC protocol to connect different irdest services together                                          |
+| Services         | `irdest-chat`, `irdest-groups`, ... | A service is a micro application (or [actor]) that communicates with other services via the irpc bus          |
+| Clients          | `irdest-hubd`, `irdest-gtk`         | User facing applications that uses a collection of services and the RPC layer to implement different features |
+    
+[actor]: https://en.wikipedia.org/wiki/Actor_(programming_language)
 
 
-### Services & apps
+### Services & clients
 
-A service (app) provides it's own API to clients, either via native
-bindings, or via the common rpc-broker system.  Following is a list of
-all the services that come bundled in irdest by default (more details
-[here][services]).
+A service is a client on the irdest RPC interface.  A service MAY
+expose an API to other services.  An example of such a service is
+`irdest-groups`, which implements encrypted group management logic.
 
-- feed
-- messages
-- files
-- voices
-- radio
+A service that does not expose an API of its own can be referred to as
+a "client service".  Technically all user-interfaces are client
+services.
 
-[services]: ./services.html
+The irdest project develops and ships a set of core services, that can
+all be used via the `irdest-sdk` library.  Check out the [Rust
+documentation][irdest-sdk] to find out how you can write a simple
+client service using these existing APIs.
 
-When connecting your own apps to a `irdest-core` instance you can
-check for the existence of other services, meaning that your
-application can rely on extrenal functionality.  This way the binary
-bundles can be kept small and focussed.
+[irdest-sdk]: https://docs.irde.st/api/irdest_sdk/index.html
 
 
-### RPC broker
+### Irdest RPC
 
-To allow external applications to integrate with an existing irdest/
-`irdest-core` stack, the RPC message broker provides various interfaces to
-integrate with.
+The irdest RPC interface uses a central broker (called irpc-broker)
+which listens for connections over local TCP connections.  This broker
+is included in the `irdest-hubd` client.  A development utility client
+is available: [`irpc-client`]().
 
-- **[http/json]** - http server for `irdest-core` and associated services
-- **[socket-ipc]** - unix ipc socket interface with binary payloads
-- **[android-ipc]** - a specific ipc implementation for Android
-
-[http/json:api]: https://docs.irde.st/http-api/
-[socket-ipc]: ./irdest-core/ipc/socket.html
-[android-ipc]: ./irdest-core/ipc/android.html
+*TODO: link to example service section*
 
 
-### irdest-core
+### Irdest core
 
-The primary state handler is called `irdest-core`.  It handles
-database transactions, local and remote user profiles, and connections
-to the router.  Services can register themselves with a running
-instance for authentication, to gain access to a per-service encrypted
-backing storage.
+The irdest-core manages user identities.
 
-While the main API is written (and accessible) in Rust, most services
-will likely use the RPC broker system built on top of `irdest-core`.
+### Ratman
 
+This is arguably the heart of the irdest application stack.  Ratman is
+a fully decentralised, delay tolerant gossip router.  It provides an
+API that takes messages to send to peers on the network, and returns
+messages received from the network.
 
-### ratman
+It handles announcements, network segmentation, message journaling,
+route updates, and networked archive storage.
 
-A decentralised packet router, modelled partially on BATMAN-adv.  It
-provides an API that takes messages to send to peers on the network,
-and returns messages received from the network.  It handles network
-announcements, network segmentation, message journaling, route
-updates, and networked archive storage.  It's the main driver behind
-irdest, and flexible enough to embed into various other use-cases.
-
-Addresses on a ratman network are 32-byte ed25516 public keys, meaning
-that all messages are automatically encrypted.  Additionally this
-means that the valid address space isn't modelled on IP addresses, or
-similar, and is nearly un-exhaustable.
-
+Addresses on a Ratman network are 32-byte ed25519 public keys, meaning
+that all direct messages are automatically encrypted.
 
 ### Network Modules
 
-When sending messages over an internet overlay network, translation
-between ratman IDs (provided by the `ratman-identity` crate) and the
-various IP spaces needs to be performed.  This logic is implemented in
-the network driver plugins (called "netmods").
+...

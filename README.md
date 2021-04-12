@@ -26,25 +26,25 @@ project are contained in this repository.
 Following is an overview of the available components.  Components have
 additional information in their respective README files.
 
-| Component  | Description                                                                                                                      |
-|------------|----------------------------------------------------------------------------------------------------------------------------------|
-| [clients]  | irdest end-user applications for various platforms                                                                               |
-| [docs]     | Manuals (for both users and developers), and tools to build and deploy documentation                                             |
-| [emberweb] | Cross-platform web interface bundled in with various user clients                                                                |
-| [libqaul]  | Core library of the irdest ecosystem.  Provides networking abstractions, user management and discovery                           |
-| [licenses] | Set of license texts that are in use in this repository                                                                          |
-| [netmods]  | Platform-specific networking interface drivers                                                                                   |
-| [nix]      | [Nix](https://nixos.org) related build utilities                                                                                 |
-| [ratman]   | A decentralised and modular userspace frame router                                                                               |
-| [rpc-core] | Core components of the qrpc development system                                                                                   |
-| [sdk]      | Software Development Kit libraries for third-party developers                                                                    |
-| [services] | A collection of services that use irdest as their network backend.  Some are part of irdest.net, others are development examples |
-| [utils]    | Various utilities in use all over the repository that don't fit in anywhere else                                                 |
+| Component     | Description                                                                                                                              |
+|---------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| [clients]     | irdest end-user applications for various platforms                                                                                       |
+| [docs]        | Manuals (for both users and developers), and tools to build and deploy documentation                                                     |
+| [emberweb]    | Cross-platform web interface bundled in with various user clients                                                                        |
+| [irdest-core] | Core library of the irdest ecosystem.  Provides networking abstractions, user management and discovery                                   |
+| [licenses]    | Set of license texts that are in use in this repository                                                                                  |
+| [netmods]     | Platform-specific networking interface drivers                                                                                           |
+| [nix]         | [Nix](https://nixos.org) related build utilities                                                                                         |
+| [ratman]      | A decentralised and modular userspace frame router                                                                                       |
+| [rpc-core]    | Core components of the qrpc development system                                                                                           |
+| [sdk]         | Software Development Kit libraries for third-party developers                                                                            |
+| [services]    | A collection of services that use irdest as their network backend.  Some are part of the irdest clients, others are development examples |
+| [utils]       | Various utilities in use all over the repository that don't fit in anywhere else                                                         |
 
 [clients]: ./clients
 [docs]: ./docs
 [emberweb]: ./emberweb
-[libirdest]: ./libirdest
+[irdest-core]: ./irdest-core
 [licenses]: ./licenses
 [netmods]: ./netmods
 [nix]: ./nix
@@ -65,7 +65,7 @@ governments can easily shut down communication for millions of people,
 potentially putting them at risk, and slowing down or disrupting any
 organisation or activist movement.
 
-irdest aims to solve this issue by creating decentralised circuits
+Irdest aims to solve this issue by creating decentralised circuits
 between devices directly.  These direct device-to-device connections
 can be imperfect and unstable.  irdest's routing approach takes these
 issues into account by caching undelivered messages, and carrying them
@@ -84,7 +84,7 @@ To learn more about the technical side of irdest, check out the
 ## How to use
 
 There's no single way to use irdest.  Various platforms support
-different clients, and a irdest network can consist of many different
+different clients, and an irdest network can consist of many different
 components interacting with each other.  To get started, check out the
 [user manual]!
 
@@ -106,7 +106,7 @@ out the [services] section.
 
 ## License
 
-irdest is free software licensed under the [GNU Affero General Public
+Irdest is free software licensed under the [GNU Affero General Public
 License version 3](licenses/agpl-3.0.md) or later.
 
 **Additional Permissions:** For Submission to the Apple App Store:
@@ -114,10 +114,11 @@ License version 3](licenses/agpl-3.0.md) or later.
 Provided that you are otherwise in compliance with the AGPLv3 for each
 covered work you convey (including without limitation making the
 Corresponding Source available in compliance with Section 6 of the
-AGPLv3), the irdest developers also grant you the additional permission
-to convey through the Apple App Store non-source executable versions
-of the Program as incorporated into each applicable covered work as
-Executable Versions only under the Mozilla Public License version 2.0.
+AGPLv3), the irdest developers also grant you the additional
+permission to convey through the Apple App Store non-source executable
+versions of the Program as incorporated into each applicable covered
+work as Executable Versions only under the Mozilla Public License
+version 2.0.
 
 A copy of both the AGPL-3.0 and MPL-2.0 license texts are included in
 this repository, along other external licenses for third-party code,

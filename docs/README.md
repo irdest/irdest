@@ -1,16 +1,16 @@
 # irdest documentation
 
-This folder contains the irdest documentation. You can find them online
-under [https://docs.irde.st](https://docs.irde.st)
+This directory tree contains the irdest documentation, and website
+source.  You can find a hosted version at https://irde.st and
+https://irde.st/learn.  If you find any mistakes in any of these
+documents, please feel free to get in touch with us, or open a merge
+request to fix things.
 
-You're welcome to contribute to them!
 
+## Manuals
 
-## Guides
-
-* `developer`: a manual aimed at potential irdest developers, and
-  hackers who want to understand the internals of various components.
-* `user`: a manual aimed at end-users of irdest applications.  Contains
+* `developer`: a manual for potential irdest developers and hackers
+* `user`: a manual forend-users of irdest applications.  Contains
   setup guides and available configuration options
 
 
