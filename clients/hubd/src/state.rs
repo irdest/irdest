@@ -2,14 +2,14 @@
 
 use crate::cfg::Config;
 use directories_next::ProjectDirs;
-use irdest_core::Qaul;
+use irdest_core::Irdest;
 use netmod_tcp::{Endpoint, Mode};
 use ratman::Router;
 use std::{fs::File, io::Read, sync::Arc};
 
 #[allow(unused)]
 pub(crate) struct State {
-    pub qaul: Arc<Qaul>,
+    pub qaul: Arc<Irdest>,
     pub router: Arc<Router>,
 }
 
@@ -39,7 +39,7 @@ impl State {
         router.add_endpoint(ep).await;
 
         let _dirs = ProjectDirs::from("net", "qaul", "hubd").unwrap();
-        let qaul = Qaul::new(Arc::clone(&router));
+        let qaul = Irdest::new(Arc::clone(&router));
 
         Self { qaul, router }
     }

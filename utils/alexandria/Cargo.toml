@@ -1,5 +1,5 @@
 [package]
-name = "alexandria2"
+name = "alexandria"
 description = "An encrypted document-oriented database with tag based query support"
 version = "0.2.0"
 authors = ["Katharina Fey <kookie@spacekookie.de>"]

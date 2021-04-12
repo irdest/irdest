@@ -18,7 +18,7 @@ use std::{path::Path, sync::Arc};
 use tracing::{error, info};
 
 /// An atomic reference counted pointer to a running libqaul instance
-pub type QaulRef = Arc<Qaul>;
+pub type IrdestRef = Arc<Irdest>;
 
 /// Primary context structure for `libqaul`
 ///
@@ -45,7 +45,7 @@ pub type QaulRef = Arc<Qaul>;
 /// 3. Initialise services with a `libqaul` instance reference
 /// 4. Your application is now ready for use
 #[derive(Clone)]
-pub struct Qaul {
+pub struct Irdest {
     /// Store available user profile data
     pub(crate) users: UserStore,
 
@@ -75,12 +75,12 @@ pub struct Qaul {
     pub(crate) store: Arc<Library>,
 }
 
-impl Qaul {
+impl Irdest {
     /// This function exists entirely for doc tests
     #[doc(hidden)]
     #[allow(warnings)]
     #[cfg(feature = "testing")]
-    pub fn dummy() -> QaulRef {
+    pub fn dummy() -> IrdestRef {
         use tempfile;
         let router = Router::new();
         let temp = tempfile::tempdir().unwrap();
@@ -115,7 +115,7 @@ impl Qaul {
     /// application loop so to enable further API abstractions to hook
     /// into the service API.
     #[tracing::instrument(skip(router), level = "info")]
-    pub fn new(router: Arc<Router>) -> QaulRef {
+    pub fn new(router: Arc<Router>) -> IrdestRef {
         // let store = Builder::inspect_path(store_path.into(), "").map_or_else(
         //     |b| match b.build() {
         //         Ok(s) => {

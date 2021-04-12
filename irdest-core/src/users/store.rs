@@ -6,7 +6,7 @@ use crate::types::{
 };
 use crate::{
     error::{Error, Result},
-    qaul::Identity,
+    ird::Identity,
     security::{KeyId, Keypair},
     store::{FromRecord, KeyWrap, UserProfileExt},
 };

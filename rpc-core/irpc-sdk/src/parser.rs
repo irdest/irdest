@@ -1,9 +1,10 @@
-//! An I/O abstraction module for the qrpc system
+//! An I/O abstraction module for the irpc system
 //!
-//! The qrpc system heavily builds on capnproto as an exchange and RPC
+//! The irpc system heavily builds on capnproto as an exchange and RPC
 //! format.  Unfortunately the capnproto-rs interface is pretty shit
 //! (this is rude, I know but it's just not great...).  Having to
-//! interact with it to write services for qaul.net might be a dealbreaker.
+//! interact with it to write services for irdest might be a
+//! dealbreaker.
 //!
 //! And so... this module tries to abstract as much of the low-level
 //! ugliness away.  Instead, you pass it a buffer with a message, and
@@ -55,8 +56,8 @@ impl<'s, T: FromPointerReader<'s>> MsgReader<'s, T> {
     /// `service::Reader`.
     ///
     /// ```
-    /// # use qrpc_sdk::parser::Result;
-    /// use qrpc_sdk::{parser::MsgReader, types::service};
+    /// # use irpc_sdk::parser::Result;
+    /// use irpc_sdk::{parser::MsgReader, types::service};
     ///
     /// # fn run_code() -> Result<()> {
     /// # let buf = vec![];
@@ -73,9 +74,9 @@ impl<'s, T: FromPointerReader<'s>> MsgReader<'s, T> {
     /// defined in this crate.
     ///
     /// ```
-    /// use qrpc_sdk::{parser::MsgReader, error::RpcError, rpc::capabilities::{Reader, Which}};
+    /// use irpc_sdk::{parser::MsgReader, error::RpcError, rpc::capabilities::{Reader, Which}};
     /// # fn foo() -> Result<(), RpcError> {
-    /// # let reader = qrpc_sdk::builders::parse_rpc_msg(vec![]).unwrap();
+    /// # let reader = irpc_sdk::builders::parse_rpc_msg(vec![]).unwrap();
     ///
     /// // Get the `reader` by calling `builders::parse_rpc_msg(...)`
     /// let r: Reader = reader.get_root().unwrap();
@@ -88,18 +89,18 @@ impl<'s, T: FromPointerReader<'s>> MsgReader<'s, T> {
     /// # Ok(())
     /// # }
     ///
-    /// use qrpc_sdk::rpc::{register, unregister, upgrade};
+    /// use irpc_sdk::rpc::{register, unregister, upgrade};
     ///
     /// fn handle_register(_: register::Reader) { /* ... */}
     /// fn handle_unregister(_: unregister::Reader) { /* ... */}
     /// fn handle_upgrade(_: upgrade::Reader) { /* ... */}
     /// ```
     ///
-    /// The above code can be found in the [qrpc-broker] crate.  Your
+    /// The above code can be found in the [irpc-broker] crate.  Your
     /// own service code will differ, but this should give you a good
     /// idea how to start!
     ///
-    /// [qrpc-broker]: https://docs.qaul.net/api/qrpc_broker/index.html
+    /// [irpc-broker]: https://docs.irde.st/api/irpc_broker/index.html
     pub fn get_root(&'s self) -> Result<T> {
         self.r.get_root()
     }

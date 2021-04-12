@@ -1,6 +1,6 @@
 //! A libqaul specific harness for arbitrary API types
 
-use libqaul::Qaul;
+use irdest_core::Irdest;
 use ratman_harness::{temp, Initialize, ThreePoint};
 use std::{sync::Arc, time::Duration};
 
@@ -11,8 +11,8 @@ pub async fn zzz(dur: Duration) {
     async_std::task::sleep(dur).await
 }
 
-pub async fn init() -> ThreePoint<Arc<Qaul>> {
+pub async fn init() -> ThreePoint<Arc<Irdest>> {
     let mut tp = ThreePoint::new().await;
-    tp.init_with(|_, arc| Qaul::new(arc));
+    tp.init_with(|_, arc| Irdest::new(arc));
     tp
 }

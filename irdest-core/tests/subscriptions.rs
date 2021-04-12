@@ -5,15 +5,15 @@
 mod harness;
 use harness::sec5;
 
-use libqaul::{
+use irdest_core::{
     helpers::TagSet,
     messages::{IdType, Mode},
     users::UserAuth,
-    Identity, Qaul,
+    Identity, Irdest,
 };
 use std::sync::Arc;
 
-async fn send_simple(q: &Arc<Qaul>, auth: &UserAuth, target: Identity) -> Identity {
+async fn send_simple(q: &Arc<Irdest>, auth: &UserAuth, target: Identity) -> Identity {
     dbg!(q
         .messages()
         .send(

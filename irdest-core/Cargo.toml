@@ -7,7 +7,7 @@ license = "AGPL-3.0"
 edition = "2018"
 
 [dependencies]
-alexandria = { version = "0.2", path = "../utils/alexandria", package = "alexandria2" }
+alexandria = { version = "0.2", path = "../utils/alexandria" }
 ircore-types = { version = "0.1", path = "types" }
 netmod-mem = { version = "0.4", path = "../netmods/netmod-mem", optional = true }
 irpc-sdk = { version = "0.1", path = "../rpc-core/irpc-sdk", optional = true }

@@ -4,7 +4,7 @@ use super::ToJObject;
 use crate::{
     error::Result,
     users::{UserAuth, UserUpdate},
-    Identity, Qaul,
+    Identity, Irdest,
 };
 
 use async_std::task::block_on;
@@ -19,7 +19,7 @@ use std::sync::Arc;
 #[no_mangle]
 pub unsafe extern "C" fn create(
     this: &JNIEnv,
-    q: Arc<Qaul>,
+    q: Arc<Irdest>,
     handle: JString,
     name: JString,
     pw: JString,
@@ -45,7 +45,7 @@ pub unsafe extern "C" fn create(
 #[no_mangle]
 pub unsafe extern "C" fn login(
     env: &JNIEnv,
-    q: Arc<Qaul>,
+    q: Arc<Irdest>,
     id: Identity,
     pw: JString,
 ) -> Result<UserAuth> {
@@ -53,7 +53,7 @@ pub unsafe extern "C" fn login(
     block_on(async { q.users().login(id, &pw).await })
 }
 
-pub fn list<'env>(local: jboolean, env: &'env JNIEnv<'env>, q: Arc<Qaul>) -> JList<'env, 'env> {
+pub fn list<'env>(local: jboolean, env: &'env JNIEnv<'env>, q: Arc<Irdest>) -> JList<'env, 'env> {
     let users = block_on(async {
         if local != 0 {
             // a jboolean false == 0
@@ -76,7 +76,7 @@ pub fn list<'env>(local: jboolean, env: &'env JNIEnv<'env>, q: Arc<Qaul>) -> JLi
         })
 }
 
-pub fn get<'env>(env: &'env JNIEnv<'env>, q: Arc<Qaul>, id: Identity) -> JObject<'env> {
+pub fn get<'env>(env: &'env JNIEnv<'env>, q: Arc<Irdest>, id: Identity) -> JObject<'env> {
     match block_on(async { q.users().get(id).await }) {
         Ok(u) => u.to_jobject(&env),
         Err(_) => JObject::null(),

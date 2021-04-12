@@ -2,7 +2,7 @@ use crate::{
     contacts::{ContactEntry, ContactQuery},
     error::Result,
     users::UserAuth,
-    Identity, Qaul,
+    Identity, Irdest,
 };
 use serde::{Deserialize, Serialize};
 
@@ -27,12 +27,12 @@ use serde::{Deserialize, Serialize};
 /// user's local contact book, such as their nick, trust, location and
 /// more.
 pub struct Contacts<'chain> {
-    pub(crate) q: &'chain Qaul,
+    pub(crate) q: &'chain Irdest,
 }
 
-impl<'qaul> Contacts<'qaul> {
-    /// Drop this scope and return back to global `Qaul` scope
-    pub fn drop(&'qaul self) -> &'qaul Qaul {
+impl<'ird> Contacts<'ird> {
+    /// Drop this scope and return back to global `Irdest` scope
+    pub fn drop(&'ird self) -> &'ird Irdest {
         self.q
     }
 
@@ -74,8 +74,8 @@ impl<'qaul> Contacts<'qaul> {
     /// this function over `Contacts::get`.
     ///
     /// ```norun
-    /// # use libqaul::{Qaul, error::Result, contacts::ContactQuery};
-    /// # let qaul = Qaul::dummy();
+    /// # use irdest_core::{Irdest, error::Result, contacts::ContactQuery};
+    /// # let qaul = Irdest::dummy();
     /// # let user = qaul.users().create("abc").await.unwrap();
     /// let contacts = qaul.contacts();
     /// # (|| -> Result<()> {

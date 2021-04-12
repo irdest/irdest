@@ -5,10 +5,10 @@
 //! separate scopes, to make reasoning about association easier.
 //!
 //! All scopes can be constructed via the main
-//! [`Qaul`](../struct.Qaul.html) type access functions.
+//! [`Irdest`](../struct.Irdest.html) type access functions.
 //!
 //! ```
-//! # let qaul = libqaul::Qaul::dummy();
+//! # let qaul = irdest_core::Irdest::dummy();
 //! let users = qaul.users();
 //! let messages = qaul.messages();
 //! let contacts = qaul.contacts();

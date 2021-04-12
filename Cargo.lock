@@ -10,21 +10,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "alexandria-api"
-version = "0.1.0"
-
-[[package]]
-name = "alexandria-tags"
-version = "0.2.0"
-dependencies = [
- "bincode",
- "hex",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "alexandria2"
+name = "alexandria"
 version = "0.2.0"
 dependencies = [
  "alexandria-tags",
@@ -43,6 +29,20 @@ dependencies = [
  "thiserror",
  "tracing",
  "tracing-futures",
+]
+
+[[package]]
+name = "alexandria-api"
+version = "0.1.0"
+
+[[package]]
+name = "alexandria-tags"
+version = "0.2.0"
+dependencies = [
+ "bincode",
+ "hex",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -1300,7 +1300,7 @@ dependencies = [
 name = "irdest-core"
 version = "0.2.0"
 dependencies = [
- "alexandria2",
+ "alexandria",
  "async-std",
  "async-trait",
  "base64",

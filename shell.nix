@@ -1,10 +1,16 @@
+/** This shell derivation fetches all required dependencies to hack on Irdest
+ * 
+ * You may want to comment-out the bottom section to ignore Android
+ * platform dependencies.
+ */
+
 with import <nixpkgs> {
   config.android_sdk.accept_license = true;
   config.allowUnfree = true;
 };
 
 stdenv.mkDerivation {
-  name = "qaul";
+  name = "irdest-dev";
   buildInputs = with pkgs; [
 
     # General rust stuff

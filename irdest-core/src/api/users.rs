@@ -1,21 +1,21 @@
 use crate::{
     error::{ratman, Result},
     users::{Token, UserAuth, UserProfile, UserUpdate},
-    Identity, Qaul,
+    Identity, Irdest,
 };
 use serde::{Deserialize, Serialize};
 
 /// Local user data and session management
 ///
-/// Used entirely to namespace API endpoints on `Qaul` instance,
+/// Used entirely to namespace API endpoints on `Irdest` instance,
 /// without having long type identifiers.
 pub struct Users<'chain> {
-    pub(crate) q: &'chain Qaul,
+    pub(crate) q: &'chain Irdest,
 }
 
-impl<'qaul> Users<'qaul> {
-    /// Drop this scope and return back to global `Qaul` scope
-    pub fn drop(&'qaul self) -> &'qaul Qaul {
+impl<'ird> Users<'ird> {
+    /// Drop this scope and return back to global `Irdest` scope
+    pub fn drop(&'ird self) -> &'ird Irdest {
         self.q
     }
 

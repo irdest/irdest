@@ -5,7 +5,7 @@ use crate::{
     helpers::TagSet,
     services::{MetadataMap, ServiceEvent},
     users::UserAuth,
-    Qaul,
+    Irdest,
 };
 
 /// Manage service sessions and related metadata
@@ -29,10 +29,10 @@ use crate::{
 /// to re-implemented secure disk storage, or rely on easier
 /// non-secure storage.
 pub struct Services<'chain> {
-    pub(crate) q: &'chain Qaul,
+    pub(crate) q: &'chain Irdest,
 }
 
-impl<'qaul> Services<'qaul> {
+impl<'ird> Services<'ird> {
     /// Check if "god mode" is supported by this instance
     pub fn god_mode(&self) -> bool {
         true // TODO: make configurable

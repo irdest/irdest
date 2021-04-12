@@ -5,7 +5,7 @@
 mod harness;
 use harness::{sec10, sec5};
 
-use libqaul::users::UserUpdate;
+use irdest_core::users::UserUpdate;
 use ircore_types::diff::ItemDiff;
 
 #[async_std::test]
@@ -70,7 +70,7 @@ async fn modify_user() {
 #[ignore]
 #[async_std::test]
 async fn fail_delete() {
-    use libqaul::{users::UserAuth, Identity};
+    use irdest_core::{users::UserAuth, Identity};
 
     let net = harness::init().await;
 
@@ -144,7 +144,7 @@ async fn login_changed_pw() {
 #[ignore]
 #[async_std::test]
 async fn get_user_profile() {
-    use libqaul::users::UserProfile;
+    use irdest_core::users::UserProfile;
     let net = harness::init().await;
 
     // Create a user

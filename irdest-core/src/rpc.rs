@@ -12,7 +12,7 @@ use crate::{
     error::Error,
     types::rpc::{Capabilities, Reply, UserCapabilities, UserReply},
     users::{UserAuth, UserProfile, UserUpdate},
-    Identity, QaulRef,
+    Identity, IrdestRef,
 };
 use async_std::{sync::Arc, task};
 use irpc_sdk::{default_socket_path, error::RpcResult, io::Message, RpcSocket, Service};
@@ -20,12 +20,12 @@ use std::str;
 
 /// A pluggable RPC server that wraps around libqaul
 ///
-/// Initialise this server with a fully initialised [`Qaul`] instance.
+/// Initialise this server with a fully initialised [`Irdest`] instance.
 /// You will lose access to this type once you start the RPC server.
 /// Currently there is no self-management interface available via
 /// qrpc.
 pub struct RpcServer {
-    inner: QaulRef,
+    inner: IrdestRef,
     socket: Arc<RpcSocket>,
     serv: Service,
     id: Identity,
@@ -33,12 +33,12 @@ pub struct RpcServer {
 
 impl RpcServer {
     /// Wrapper around `new` with `default_socket_path()`
-    pub async fn start_default(inner: QaulRef) -> RpcResult<Arc<Self>> {
+    pub async fn start_default(inner: IrdestRef) -> RpcResult<Arc<Self>> {
         let (addr, port) = default_socket_path();
         Self::new(inner, addr, port).await
     }
 
-    pub async fn new(inner: QaulRef, addr: &str, port: u16) -> RpcResult<Arc<Self>> {
+    pub async fn new(inner: IrdestRef, addr: &str, port: u16) -> RpcResult<Arc<Self>> {
         let socket = RpcSocket::connect(addr, port).await?;
 
         let mut serv = Service::new(

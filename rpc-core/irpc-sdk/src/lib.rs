@@ -1,4 +1,4 @@
-//! A toolkit for writing clients on the qrpc message bus.  This bus
+//! A toolkit for writing clients on the irpc message bus.  This bus
 //! is the backbone of the [qaul.net](https://qaul.net) service
 //! ecosystem.  With it you can create applications (called
 //! "services") that interact with a `libqaul` instance, and other
@@ -19,7 +19,7 @@
 //!
 //! ## Using this sdk
 //!
-//! In order to interact with a running [`qrpc-broker`] instance your
+//! In order to interact with a running [`irpc-broker`] instance your
 //! service needs to register itself and it's capabilities.
 //!
 //! First your service needs a place to save some state, composing
@@ -32,13 +32,13 @@
 //! table, and you get assigned a hash-id to identify you in future
 //! interactions.
 //!
-//! [`qrpc-broker`]: ../qrpc_broker/index.html
+//! [`irpc-broker`]: ../irpc_broker/index.html
 //! [`Service`]: ./struct.Service.html
 //! [`RpcSocket`]: ./struct.RpcSocket.html
 //!
 //! ```
-//! # async fn foo() -> Result<(), qrpc_sdk::error::RpcError> {
-//! use qrpc_sdk::{Service, RpcSocket, default_socket_path};
+//! # async fn foo() -> Result<(), irpc_sdk::error::RpcError> {
+//! use irpc_sdk::{Service, RpcSocket, default_socket_path};
 //!
 //! let mut serv = Service::new("com.example.myapp", 1, "A simple app");
 //! let (addr, port) = default_socket_path();
@@ -55,8 +55,8 @@
 //! initialiser.
 //!
 //! ```
-//! # async fn foo() -> Result<(), qrpc_sdk::error::RpcError> {
-//! # use qrpc_sdk::{Service, RpcSocket, default_socket_path};
+//! # async fn foo() -> Result<(), irpc_sdk::error::RpcError> {
+//! # use irpc_sdk::{Service, RpcSocket, default_socket_path};
 //! # let mut serv = Service::new("com.example.myapp", 1, "A simple app");
 //! # let (addr, port) = default_socket_path();
 //! # let sock = RpcSocket::connect(addr, port).await?;
@@ -70,7 +70,7 @@
 //! This will establish a connection with the `libqaul` component and
 //! verifies it's capability set.  This mechanism is provided by the
 //! [`ServiceConnector`].  Your service will also have to implement
-//! this mechanism to be usable by other services on the qrpc bus.
+//! this mechanism to be usable by other services on the irpc bus.
 //!
 //! [`ServiceConnector`]: ./trait.ServiceConnector.html
 //!
@@ -78,8 +78,8 @@
 //! component.  You can get a copy of it via your service handle.
 //!
 //! ```
-//! # async fn foo() -> Result<(), qrpc_sdk::error::RpcError> {
-//! # use qrpc_sdk::{Service, RpcSocket, default_socket_path};
+//! # async fn foo() -> Result<(), irpc_sdk::error::RpcError> {
+//! # use irpc_sdk::{Service, RpcSocket, default_socket_path};
 //! # let mut serv = Service::new("com.example.myapp", 1, "A simple app");
 //! # let (addr, port) = default_socket_path();
 //! # let sock = RpcSocket::connect(addr, port).await?;
@@ -116,9 +116,9 @@ pub(crate) mod cap_capnp {
     include!(concat!(env!("OUT_DIR"), "/schema/cap_capnp.rs"));
 }
 
-/// qrpc message types
+/// irpc message types
 ///
-/// This interface is exposed to let other parts of the qrpc ecosystem
+/// This interface is exposed to let other parts of the irpc ecosystem
 /// parse and generate these types.  When using this library directly,
 /// try to avoid using them.  Use the main type interface documented
 /// in the root of the crate instead.
@@ -128,7 +128,7 @@ pub mod types {
     pub use crate::types_capnp::service;
 }
 
-/// qrpc message types
+/// irpc message types
 ///
 /// As with the data types used by this crate, try to avoid using them
 /// directly.  Instead use the main API of the crate which invoces
@@ -150,5 +150,5 @@ pub use identity::Identity;
 pub use service::{Service, ServiceConnector};
 pub use socket::{default_socket_path, RpcSocket};
 
-/// The address of the qrpc broker itself
-pub const BROKER_ADDRESS: &'static str = "org.qaul._broker";
+/// The address of the irpc broker itself
+pub const BROKER_ADDRESS: &'static str = "org.irdest._broker";

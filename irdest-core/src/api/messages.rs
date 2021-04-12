@@ -2,7 +2,7 @@ use crate::{
     error::{Error, Result},
     helpers::{QueryResult, Subscription, Tag, TagSet},
     messages::{Envelope, MsgUtils, RatMessageProto, TAG_UNREAD},
-    qaul::{Identity, Qaul},
+    ird::{Identity, Irdest},
     services::Service,
     users::UserAuth,
 };
@@ -22,12 +22,12 @@ fn mode_to_recp(sm: Mode) -> Recipient {
 
 /// Interface to access messages from the network
 pub struct Messages<'chain> {
-    pub(crate) q: &'chain crate::Qaul,
+    pub(crate) q: &'chain crate::Irdest,
 }
 
-impl<'qaul> Messages<'qaul> {
-    /// Drop this scope and return back to global `Qaul` scope
-    pub fn drop(&'qaul self) -> &'qaul Qaul {
+impl<'ird> Messages<'ird> {
+    /// Drop this scope and return back to global `Irdest` scope
+    pub fn drop(&'ird self) -> &'ird Irdest {
         self.q
     }
 

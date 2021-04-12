@@ -54,11 +54,11 @@
 //! [libqaul-sdk](../libqaul_sdk) documentation!
 //!
 //! ```rust,no_run
-//! # async fn foo() -> libqaul::error::Result<()> {
-//! # use libqaul::{helpers::ItemDiff, users::UserUpdate};
+//! # async fn foo() -> irdest_core::error::Result<()> {
+//! # use irdest_core::{helpers::ItemDiff, users::UserUpdate};
 //! # let router = todo!();
-//! use libqaul::Qaul;
-//! let q = Qaul::new(router);
+//! use irdest_core::Irdest;
+//! let q = Irdest::new(router);
 //!
 //! // Create an anonymous user with a password
 //! let alice = q.users().create("password alice secret keeps").await?;
@@ -120,5 +120,5 @@ pub mod ffi;
 pub mod rpc;
 
 // Core state should be in the root
-mod qaul;
-pub use qaul::{Identity, Qaul, QaulRef};
+mod ird;
+pub use ird::{Identity, Irdest, IrdestRef};

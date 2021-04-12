@@ -3,7 +3,7 @@
 use crate::{
     helpers::TagSet,
     messages::{Message, MsgId, SigTrust},
-    qaul::Identity,
+    ird::Identity,
 };
 use rand::distributions::{Distribution, Standard};
 use ratman::ID_LEN;
