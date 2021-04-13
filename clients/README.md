@@ -3,7 +3,7 @@
 This directory contains different irdest user applications.  For a more
 detailed write-up on supported platforms, install instructions, and
 client capabilities, check out the [user
-manual](https://docs.irde.st/user)!
+manual](https://docs.irde.st/user/)!
 
 - [irdest-hubd](./hubd) -- a daemon that accepts connections via the
   QRPC interface.  Comes with TCP, UDP, and UPnP support.
