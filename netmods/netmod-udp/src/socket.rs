@@ -137,6 +137,7 @@ impl Socket {
     }
 }
 
+#[ignore]
 #[test]
 fn test_init() {
     task::block_on(async move {
