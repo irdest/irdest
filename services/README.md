@@ -1,30 +1,31 @@
-# qaul.net services
+# Irdest services
 
-If you are an end-user, looking for applications, check out
-[clients](../clients) instead!
+**If you are an end-user, looking for applications, check out
+[clients](../clients) instead!**
 
-Following is a collection of services that use qaul.net to do
+Following is a collection of services that use irdest to do
 networking.  None of them rely on centralised servers or
 infrastructure, and can operate on a completely ad-hoc network.  Some
-smaller example services are included as examples on how to use
-qaul.net in your applications, and what kind of usecases it can solve.
+smaller example services are included as examples on how to use the
+irdest-sdk in your applications, and what kind of problems it can
+solve.
 
 Note that this is potentially only a small selection of services that
-use qaul.net.  We encourage you to write your own that don't have to
-be part of this repository; we are not a single source of truth.
+use irdest.  We encourage you to write your own that don't have to be
+part of this repository; we are not the single source of truth.
 
 
-| Service          | Part of qaul.net | Description                                                                      |
-|------------------|------------------|----------------------------------------------------------------------------------|
-| [net.qaul.chat]  | Yes              | Encrypted chat application, supporting DMs and group chats                       |
-| [net.qaul.feed]  | Yes              | Twitter-like micro-blogging feed                                                 |
-| [net.qaul.files] | Yes              | Filesharing utilitiy.  Both useful on it's own, and to be used by other services |
-| [net.qaul.ping]  |                  | A simple ping program for a decentralised networking backend                     |
-| [net.qaul.voice] | Yes              | Encrypted voice call services, supporting single and group calls                 |
+| Service            | Part of Irdest client bundle | Description                                                                      |
+|--------------------|------------------------------|----------------------------------------------------------------------------------|
+| [org.irdest.chat]  | Yes                          | Encrypted chat application, supporting DMs and group chats                       |
+| [org.irdest.feed]  | Yes                          | Twitter-like micro-blogging feed                                                 |
+| [org.irdest.files] | Yes                          | Filesharing utilitiy.  Both useful on it's own, and to be used by other services |
+| [org.irdest.ping]  |                              | A simple ping program for a decentralised networking backend                     |
+| [org.irdest.voice] | Yes                          | Encrypted voice call services, supporting single and group calls                 |
 
 
-[net.qaul.chat]: ./chat
-[net.qaul.feed]: ./feed
-[net.qaul.files]: ./files
-[net.qaul.ping]: ./ping
-[net.qaul.voice]: ./voice
+[org.irdest.chat]: ./chat
+[org.irdest.feed]: ./feed
+[org.irdest.files]: ./files
+[org.irdest.ping]: ./ping
+[org.irdest.voice]: ./voice

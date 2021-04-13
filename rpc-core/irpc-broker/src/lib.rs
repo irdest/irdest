@@ -3,96 +3,124 @@
 #[macro_use]
 extern crate tracing;
 
-mod protocol;
+mod map;
+use map::ServiceMap;
 
-use async_std::{net::TcpStream, sync::RwLock, task};
-use identity::Identity;
+mod proto;
+
+use async_std::{net::TcpStream, task};
 use irpc_sdk::{
-    builders, default_socket_path,
-    error::RpcResult,
-    io::{self, Message},
-    RpcSocket,
+    default_socket_path,
+    error::{RpcError, RpcResult},
+    io, RpcSocket, DEFAULT_BROKER_ADDRESS as ADDRESS,
 };
-use std::{collections::BTreeMap, sync::Arc};
-
-#[allow(unused)]
-pub(crate) struct ServiceEntry {
-    pub(crate) id: Identity,
-    pub(crate) addr: String,
-    pub(crate) io: TcpStream,
-}
-
-type ConnMap = Arc<RwLock<BTreeMap<String, ServiceEntry>>>;
-
-const ADDRESS: &'static str = "org.qaul._broker";
+use std::sync::Arc;
 
 /// Hold the main broker state
 pub struct Broker {
     _sock: Arc<RpcSocket>,
-    _conns: ConnMap,
+    _conns: Arc<ServiceMap>,
 }
 
 impl Broker {
     pub async fn new() -> RpcResult<Arc<Self>> {
         let (addr, port) = default_socket_path();
-        let _conns = Default::default();
+        let _conns = ServiceMap::new();
 
+        // Create a new RpcSocket that listens for new connections and
+        // runs the `reader_loop` for each of them.  This means that
+        // each client on the RPC bus can be expected to have their
+        // own reader_loop.
         let _sock = {
             let con = Arc::clone(&_conns);
-            RpcSocket::server(addr, port, |stream, data| reader_loop(stream, data), con).await?
+            RpcSocket::server(addr, port, con, |stream, data| reader_loop(stream, data)).await?
         };
 
         Ok(Arc::new(Self { _sock, _conns }))
     }
 }
 
-fn reader_loop(mut stream: TcpStream, data: ConnMap) {
+/// Continously read from a TcpStream
+fn reader_loop(mut stream: TcpStream, map: Arc<ServiceMap>) {
     task::block_on(async {
+        // First make sure that we receive a registry message and upgrade our connection
+        if let Err(e) = proto::register_service(&map, &mut stream).await {
+            error!("Failed to register service: '{}'; dropping connection", e);
+            return;
+        }
+
+        // Then create a run-loop where we continuously handle incoming messages
         loop {
-            if let Err(e) = handle_packet(&mut stream, &data).await {
-                warn!(
-                    "Error occured while accepting packet: {}; dropping stream",
-                    e
-                );
-                break;
+            debug!("Listening for incoming messages");
+
+            // Some errors are fatal, others are not
+            match handle_packet(&mut stream, &map).await {
+                Ok(()) => {}
+                Err(RpcError::ConnectionFault(msg)) => {
+                    error!("Connection suffered a fatal error: {}", msg);
+                    break;
+                }
+                Err(e) => {
+                    warn!("Error while accepting packet: {}; dropping stream", e);
+                    continue;
+                }
             }
         }
     });
 }
 
-async fn handle_packet(s: &mut TcpStream, conns: &ConnMap) -> RpcResult<()> {
-    let Message { id, to, from, data } = io::recv(s).await?;
-    match to.as_str() {
-        ADDRESS => {
-            debug!("Message addressed to broker; handling!");
-            let msg = protocol::broker_command(id, &s, data, &conns).await?;
-            io::send(s, msg).await?;
-            Ok(())
-        }
-        _ => {
-            debug!("Message addressed to bus component; looking up stream!");
-            debug!("Looking up stream: {}", to);
-            let mut t_stream = match conns.read().await.get(&to).map(|s| s.io.clone()) {
-                Some(s) => s,
-                None => {
-                    warn!("Requested component does not exist on qrpc bus!");
-                    io::send(
-                        s,
-                        Message {
-                            id,
-                            to: "<unknown>".into(),
-                            from: ADDRESS.into(),
-                            data: builders::resp_bool(false),
-                        },
-                    )
-                    .await?;
-                    return Ok(());
-                }
-            };
-
-            // If we reach this point, we can send the relay message
-            io::send(&mut t_stream, Message { id, to, from, data }).await?;
-            Ok(())
-        }
+/// The main logic loop of the broker
+async fn handle_packet(s: &mut TcpStream, map: &Arc<ServiceMap>) -> RpcResult<()> {
+    let msg = io::recv(s).await?;
+    match msg.to.as_str() {
+        ADDRESS => proto::handle_sdk_command(s, map, msg).await,
+        _ => proto::proxy_message(s, map, msg).await,
     }
+}
+
+#[cfg(test)]
+pub(crate) fn setup_logging() {
+    use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
+    let filter = EnvFilter::try_from_env("QAUL_LOG")
+        .unwrap_or_default()
+        .add_directive(LevelFilter::DEBUG.into())
+        .add_directive("async_std=error".parse().unwrap())
+        .add_directive("async_io=error".parse().unwrap())
+        .add_directive("polling=error".parse().unwrap())
+        .add_directive("mio=error".parse().unwrap());
+
+    // Initialise the logger
+    fmt().with_env_filter(filter).init();
+    info!("Initialised logger: welcome to qaul-hubd!");
+}
+
+#[async_std::test]
+async fn test_registration() -> RpcResult<()> {
+    use irpc_sdk::{Capabilities, Service};
+    setup_logging();
+
+    // Create a broker to connect to
+    let broker = Broker::new().await?;
+    let (addr, port) = default_socket_path();
+
+    // Create a client socket and service and register it
+    let mut socket = RpcSocket::connect(addr, port).await?;
+    let mut service = Service::new("org.irdest.test", 1, "A simple test service");
+    service
+        .register(&mut socket, Capabilities::basic_json())
+        .await?;
+    let id = service.id().unwrap();
+
+    let broker_id = broker
+        ._conns
+        .hash_id(&"org.irdest.test".to_string())
+        .await
+        .unwrap();
+
+    assert_eq!(id, broker_id);
+
+    // FIXME: this currently breaks the test
+    // service.shutdown().await?;
+
+    Ok(())
 }

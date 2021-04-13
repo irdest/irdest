@@ -2,7 +2,7 @@
 extern crate tracing;
 
 use clap::{App, AppSettings, Arg};
-use irpc_sdk::{io::Message, Identity, RpcSocket, Service};
+use irpc_sdk::{io::Message, Capabilities, Identity, RpcSocket, Service};
 use std::io::{self, Read};
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
 
@@ -75,18 +75,20 @@ async fn main() {
         "A dynamic qrpc-client service".into(),
     );
 
-    serv.register(RpcSocket::connect(addr, port).await.unwrap_or_else(|_| {
+    let socket = RpcSocket::connect(addr, port).await.unwrap_or_else(|_| {
         fatal!(
             "Failed to connect to QRPC socket '{}'.  Is the broker running?",
             addr_str
         )
-    }))
-    .await
-    .unwrap_or_else(|_| {
-        fatal!(
+    });
+
+    serv.register(&socket, Capabilities::basic_json())
+        .await
+        .unwrap_or_else(|_| {
+            fatal!(
             "Registration for the qrpc-client failed!  Is there already a service with that name?"
         )
-    });
+        });
 
     // Read json from stdin
     let mut json = String::new();
@@ -96,7 +98,7 @@ async fn main() {
 
     let msg = Message::to_addr(name, &serv.name, json.as_bytes().to_vec());
 
-    let sock = serv.get_socket();
+    let sock = serv.socket();
     let reply = sock
         .send(msg, |msg| {
             let json = std::str::from_utf8(&msg.data.as_slice())

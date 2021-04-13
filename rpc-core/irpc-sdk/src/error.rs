@@ -5,10 +5,13 @@ use std::fmt::{self, Display, Formatter};
 pub type RpcResult<T> = Result<T, RpcError>;
 
 /// A set of errors that occur when connecting to services
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum RpcError {
     /// No such service was found by the broker
     NoSuchService(String),
+    /// The requested action could not be performed because the
+    /// provided hash_id was invalid
+    NotAuthorised,
     /// The selected recipient didn't reply within the timeout
     ///
     /// This may indicate that the requested service has crashed, is
@@ -16,14 +19,16 @@ pub enum RpcError {
     /// requests.
     Timeout,
     /// Tried connecting to a service that's already connected
-    AlreadyConnected,
-    /// Failed to perform action that requires a connection
-    NotConnected,
+    AlreadyRegistered,
+    /// While trying to handle registration, an error occurred
+    RegistryFailed,
     /// Invalid connection: performing the last operation has failed
     ConnectionFault(String),
     /// Encoding or decoding a payload failed
     EncoderFault(String),
-    /// Any other failure with it's error message string
+    /// A payload other than the one expected was received
+    UnexpectedPayload,
+    /// Other failures encoded as an error message
     Other(String),
 }
 
@@ -34,13 +39,15 @@ impl Display for RpcError {
             "{}",
             match self {
                 Self::NoSuchService(s) => format!("The requested service {} does not exist!", s),
+                Self::NotAuthorised => format!("Operation denied: provided hash ID was not valid"),
                 Self::Timeout => "The requested operation took too long (timeout)!".into(),
-                Self::AlreadyConnected =>
-                    "Tried connecting to an already connected component!".into(),
-                Self::NotConnected =>
-                    "Tried to perform an action that needs a component connection!".into(),
+                Self::AlreadyRegistered =>
+                    "Tried registering a service that is already registered".into(),
+                Self::RegistryFailed =>
+                    "Failed to register a service because of an invalid payload".into(),
                 Self::ConnectionFault(s) => format!("I/O error: {}", s),
                 Self::EncoderFault(s) => format!("Encode error: {}", s),
+                Self::UnexpectedPayload => format!("Parsing encountered unexpected payload"),
                 Self::Other(s) => format!("Unknown error: {}", s),
             }
         )
@@ -53,9 +60,9 @@ impl From<std::io::Error> for RpcError {
     }
 }
 
-impl From<capnp::Error> for RpcError {
-    fn from(e: capnp::Error) -> Self {
-        Self::EncoderFault(e.to_string())
+impl From<serde_json::Error> for RpcError {
+    fn from(e: serde_json::Error) -> Self {
+        Self::EncoderFault(format!("{}", e))
     }
 }
 

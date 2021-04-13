@@ -15,7 +15,10 @@ use crate::{
     Identity, IrdestRef,
 };
 use async_std::{sync::Arc, task};
-use irpc_sdk::{default_socket_path, error::RpcResult, io::Message, RpcSocket, Service};
+use irpc_sdk::{
+    default_socket_path, error::RpcResult, io::Message, Capabilities as ServiceCapabilities,
+    RpcSocket, Service,
+};
 use std::str;
 
 /// A pluggable RPC server that wraps around libqaul
@@ -46,7 +49,9 @@ impl RpcServer {
             1,
             "Core component for qaul ecosystem",
         );
-        let id = serv.register(Arc::clone(&socket)).await?;
+        serv.register(&socket, ServiceCapabilities::basic_json())
+            .await?;
+        let id = serv.id().unwrap();
 
         debug!("libqaul service ID: {}", id);
 

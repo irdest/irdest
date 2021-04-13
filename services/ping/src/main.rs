@@ -7,7 +7,7 @@
 //! you, or could be commented better, please send us a patch (or MR).
 
 use irdest_sdk::{users::UserAuth, QaulRpc};
-use irpc_sdk::{default_socket_path, RpcSocket, Service};
+use irpc_sdk::{default_socket_path, Capabilities, RpcSocket, Service};
 use tracing::{error, info};
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
 
@@ -40,16 +40,18 @@ async fn main() {
     );
 
     let (addr, port) = default_socket_path();
-    let id = serv
-        .register(match RpcSocket::connect(addr, port).await {
-            Ok(s) => s,
-            Err(e) => {
-                error!("Failed to connect to RPC backend: {}", e);
-                std::process::exit(1);
-            }
-        })
+    let socket = match RpcSocket::connect(addr, port).await {
+        Ok(s) => s,
+        Err(e) => {
+            error!("Failed to connect to RPC backend: {}", e);
+            std::process::exit(1);
+        }
+    };
+
+    serv.register(&socket, Capabilities::basic_json())
         .await
         .unwrap();
+    let id = serv.id().unwrap();
 
     info!("Received service ID '{}' from qrpc-broker", id);
 

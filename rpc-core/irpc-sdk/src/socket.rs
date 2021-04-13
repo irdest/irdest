@@ -7,6 +7,7 @@
 use crate::{
     error::{RpcError, RpcResult},
     io::{self, Message},
+    ENCODING_JSON,
 };
 use async_std::{
     channel::{bounded, Receiver, Sender},
@@ -97,16 +98,16 @@ impl RpcSocket {
 
     /// Bind a socket to listen for connections
     ///
-    /// This function is primarily used by the qrpc-broker and should
+    /// This function is primarily used by the irpc-broker and should
     /// not be used in your service code.  To listen for incoming
     /// connections on the outgoing stream (meaning client side), use
-    /// `listen(...)`
-    pub async fn server<F, D>(addr: &str, port: u16, cb: F, data: D) -> RpcResult<Arc<Self>>
+    /// [`listen(...)`](RpcSocket::listen).
+    pub async fn server<F, D>(addr: &str, port: u16, data: D, cb: F) -> RpcResult<Arc<Self>>
     where
-        F: Fn(TcpStream, D) + Send + Copy + 'static,
         D: Send + Sync + Clone + 'static,
+        F: Fn(TcpStream, D) + Send + Copy + 'static,
     {
-        info!("Opening qrpc socket on {}:{}", addr, port);
+        info!("Opening irpc socket on {}:{}", addr, port);
         let listen = Arc::new(TcpListener::bind(format!("{}:{}", addr, port)).await?);
         let _self = Arc::new(Self {
             stream: None,
@@ -158,7 +159,7 @@ impl RpcSocket {
                     Err(e) => {
                         task::sleep(std::time::Duration::from_millis(10)).await;
                         error!("Failed reading message: {}", e.to_string());
-                        continue;
+                        break;
                     }
                 };
 
@@ -177,7 +178,7 @@ impl RpcSocket {
     /// Send a message as a reply to a recipient
     pub async fn reply(self: &Arc<Self>, msg: Message) -> RpcResult<()> {
         let mut s = self.stream.clone().unwrap();
-        io::send(&mut s, msg).await
+        io::send(&mut s, ENCODING_JSON, &msg).await
     }
 
     /// Send a message to the other side of this stream
@@ -204,7 +205,7 @@ impl RpcSocket {
 
         // Send off the message...
         let mut s = self.stream.clone().unwrap();
-        io::send(&mut s, msg).await?;
+        io::send(&mut s, ENCODING_JSON, &msg).await?;
 
         // Wait for a reply
         future::timeout(self.timeout, async move {

@@ -1,11 +1,13 @@
 //! I/O utility module
 
-use crate::{builders::_internal, error::RpcResult};
+use crate::{error::RpcResult, ENCODING_JSON};
 use async_std::{net::TcpStream, prelude::*};
 use byteorder::{BigEndian, ByteOrder};
 use identity::Identity;
+use serde::{de::DeserializeOwned, Serialize};
 
 /// A message buffer to send or receive
+#[derive(Serialize, Deserialize)]
 pub struct Message {
     pub id: Identity,
     pub to: String,
@@ -25,10 +27,10 @@ impl Message {
     }
 
     /// Create a reply to a message ID
-    pub fn reply(self, from: String, data: Vec<u8>) -> Self {
+    pub fn reply(self, from: &str, data: Vec<u8>) -> Self {
         Self {
             to: self.from,
-            from,
+            from: from.into(),
             data,
             ..self
         }
@@ -41,37 +43,49 @@ pub async fn recv(s: &mut TcpStream) -> RpcResult<Message> {
     s.read_exact(&mut len_buf).await?;
     let len = BigEndian::read_u64(&len_buf);
 
+    // Read the incoming message buffer
     let mut data = vec![0; len as usize];
     trace!("Reading {} byte message from stream", len);
     s.read_exact(&mut data).await?;
 
-    // Parse the carrier message type
-    let (id, to, from, data) = _internal::from(data)?;
-    Ok(Message { id, to, from, data })
+    // Take the encoding byte and match to deserialize
+    let enc = data.remove(0);
+    decode(enc, &data)
 }
 
 /// Send a message with frame
-pub async fn send(s: &mut TcpStream, msg: Message) -> RpcResult<()> {
-    // Serialise into carrier message type
-    let mut msg_buf = _internal::to(msg);
+pub async fn send(s: &mut TcpStream, enc: u8, msg: &Message) -> RpcResult<()> {
+    let mut payload = encode(enc, msg)?;
 
+    // Add the encoding byte to length
+    let len = payload.len() + 1;
+
+    // Create big endian length buffer
     let mut buffer = vec![0; 8];
-    BigEndian::write_u64(&mut buffer, msg_buf.len() as u64);
-    buffer.append(&mut msg_buf);
+    BigEndian::write_u64(&mut buffer, len as u64);
 
-    trace!("Writing {} (+8) bytes to stream", msg_buf.len());
+    // Append the encoding byte
+    buffer.append(&mut vec![enc]);
+
+    // Append the data buffer
+    buffer.append(&mut payload);
+
+    // Write buffer to socket
+    trace!("Writing {} bytes to stream", buffer.len());
     Ok(s.write_all(&buffer).await?)
 }
 
-/// Allow any type to be written to a Capnproto message buffer
-///
-/// On a qrpc bus, a service exposes its API via an `-sdk` crate (for
-/// example `libqaul-sdk`), paired with a `-type` crate (such as
-/// `libqaul-types`).  In order to cut down on potential boilerplate
-/// in converting between the networking types and the internal
-/// library types this trait is meant to facilitate the
-/// transformation.
-pub trait WriteToBuf {
-    /// Take an instance object and turn it into a packed byte buffer
-    fn to_vec(&self) -> RpcResult<Vec<u8>>;
+/// A generic encoding utility
+pub fn encode<S: Serialize>(enc: u8, msg: &S) -> RpcResult<Vec<u8>> {
+    Ok(match enc {
+        ENCODING_JSON => serde_json::to_string(msg).map(|s| s.into_bytes())?,
+        _ => todo!(),
+    })
+}
+
+pub fn decode<D: DeserializeOwned>(enc: u8, data: &Vec<u8>) -> RpcResult<D> {
+    Ok(match enc {
+        ENCODING_JSON => serde_json::from_str(std::str::from_utf8(data).unwrap())?,
+        _ => todo!(), // Old broker won't support new encoding
+    })
 }

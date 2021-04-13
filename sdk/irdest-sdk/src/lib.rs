@@ -34,7 +34,7 @@ pub struct QaulRpc {
 
 impl QaulRpc {
     pub fn connect(service: &Service) -> RpcResult<Self> {
-        let socket = service.get_socket();
+        let socket = service.socket();
         let addr = service.name.clone();
         Ok(Self { socket, addr })
     }
