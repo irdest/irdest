@@ -11,7 +11,7 @@ dependencies = [
 
 [[package]]
 name = "alexandria"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "alexandria-tags",
  "async-std",
@@ -30,10 +30,6 @@ dependencies = [
  "tracing",
  "tracing-futures",
 ]
-
-[[package]]
-name = "alexandria-api"
-version = "0.1.0"
 
 [[package]]
 name = "alexandria-tags"
@@ -2098,7 +2094,7 @@ dependencies = [
 
 [[package]]
 name = "ratman"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "async-std",
  "bincode",

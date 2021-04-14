@@ -1,18 +1,18 @@
 //! Encrypted record-oriented database
 //!
 //! **Experimental:** please note that this database was writted for
-//! [qaul](https://git.qaul.org/qaul/qaul), which itself
-//! is a very experimental platform.  There will be data retention
-//! bugs, and you shouldn't use Alexandria unless you're okay with
-//! losing the data you're storing!
+//! [irdest](https://git.irde.st/we/irdest).  There will be data
+//! retention bugs, and you shouldn't use Alexandria unless you're
+//! okay with losing the data you're storing!
 //!
 //! A multi-payload, zone-encrypting, journaled persistence module,
 //! built with low-overhead applications in mind.
 //!
-//! `alexandria` provides an easy to use database interface with
-//! transactions, merges and dynamic queries, ensuring that your
-//! in-memory representation of data never get's out-of-sync with your
-//! on-disk representation. Don't burn your data.
+//! ## Features
+//!
+//! * Easy to use database interface
+//! * Transactional diff operations
+//! * Dynamic queries
 
 pub(crate) mod core;
 pub(crate) mod crypto;
