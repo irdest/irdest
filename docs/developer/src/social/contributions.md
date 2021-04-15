@@ -3,11 +3,11 @@
 First of all: thank you for wanting to help out :)
 
 The irdest source can be found in our [mono repo].  We accept
-submissions via GitLab merge requests, ~~or via patches sent to our
-mailing list~~ (we currently have no mailing list).
+submissions via GitLab merge requests, or via patches sent to our
+[mailing list]!
 
 [mono repo]: https://git.irde.st/we/irdest
-
+[mailing list]: https://lists.irde.st/archives/list/community@lists.irde.st/
 
 ## Submitting an MR
 
