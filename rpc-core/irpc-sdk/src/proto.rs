@@ -5,6 +5,7 @@ use crate::{
     io::{self, Message},
     Capabilities, Identity,
 };
+use serde::Serialize;
 
 /// A message registering a service with the broker
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -39,6 +40,7 @@ pub enum SdkCommand {
         hash_id: Identity,
         version: u16,
     },
+    Subscription(SubscriptionCmd),
 }
 
 impl SdkCommand {
@@ -50,10 +52,32 @@ impl SdkCommand {
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "type", content = "data")]
 pub enum SdkReply {
+    /// The operation was successful
     Ok,
+    /// Rturn an identity
     Identity(Identity),
+    /// An error occured
     Error(RpcError),
 }
+
+impl From<RpcResult<()>> for SdkReply {
+    fn from(r: RpcResult<()>) -> Self {
+        match r {
+            Ok(()) => Self::Ok,
+            Err(e) => Self::Error(e),
+        }
+    }
+}
+
+impl From<RpcResult<Identity>> for SdkReply {
+    fn from(r: RpcResult<Identity>) -> Self {
+        match r {
+            Ok(id) => Self::Identity(id),
+            Err(e) => Self::Error(e),
+        }
+    }
+}
+
 
 impl SdkReply {
     pub fn parse_identity(enc: u8, msg: &Message) -> RpcResult<Identity> {
@@ -70,6 +94,34 @@ impl SdkReply {
             SdkReply::Error(e) => Err(e),
             _ => Err(RpcError::UnexpectedPayload),
         }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", content = "data")]
+pub enum SubscriptionCmd {
+    /// Register a subscription
+    Register(Vec<u8>),
+    /// Unregister a subscription
+    Unregister(Identity),
+    /// A subscription push event
+    Push(Vec<u8>),
+}
+
+impl SubscriptionCmd {
+    /// Create a subscription register message
+    pub fn register<T: Serialize>(enc: u8, t: T) -> RpcResult<Self> {
+        Ok(Self::Register(io::encode(enc, &t)?))
+    }
+
+    /// Create a subscription unregister message
+    pub fn unregister(id: Identity) -> Self {
+        Self::Unregister(id)
+    }
+
+    /// Create a subscription push message
+    pub fn push<T: Serialize>(enc: u8, t: T) -> RpcResult<Self> {
+        Ok(Self::Push(io::encode(enc, &t)?))
     }
 }
 

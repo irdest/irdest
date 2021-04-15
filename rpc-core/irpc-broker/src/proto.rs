@@ -80,5 +80,8 @@ pub(crate) async fn proxy_message(
     map: &Arc<ServiceMap>,
     msg: Message,
 ) -> RpcResult<()> {
+    // Fetch the target service capabilities
+    let caps = map.caps(&msg.to).await?;
+
     Ok(())
 }
