@@ -1,51 +1,5 @@
-# CMake Related
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
-QaulConfig.h
-cmake/cmake_uninstall.cmake
+# Workspace-wide target directory
+target/
 
-# Build Folders
-third_party/olsr/
-third_party/pjsip/
-third_party/socat/
-third_party/wt/
-build/
-external/
-
-# Android
-assets/files
-assets/www
-android/.gradle
-android/build
-android/local.properties
-android/app/.externalNativeBuild/
-android/app/src/main/local.properties
-android/app/src/main/build.xml
-android/app/src/main/bin
-android/app/src/main/gen
-android/app/src/main/libs
-android/app/src/main/obj
-android/app/src/main/jniLibs
-android/app/src/main/res/raw/ifconfig
-android/app/src/main/res/raw/iptables
-android/app/src/main/res/raw/iwconfig
-android/app/src/main/res/raw/olsrd
-android/app/src/main/res/raw/olsrd_dyn_gw_so*
-android/app/src/main/res/raw/olsrd_qaul_so*
-android/app/src/main/res/raw/socat
-android/app/src/main/res/raw/tether
-android/app/src/main/res/raw/wificonfig
-src/olsrd-plugin/olsrd_qaul.so*
-
-# IDE Settings
-/.project
-/.idea
-cmake-build-debug/
-
-# Rust specific
-**/target
-
-# documentation
-docs/*/book
+# Nix out links
+result
