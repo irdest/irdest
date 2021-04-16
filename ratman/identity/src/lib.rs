@@ -72,12 +72,13 @@ impl Identity {
     ///
     /// This function will panic, if the provided vector isn't long
     /// enough, but extra data will simply be discarded.
-    pub fn truncate<'vec, V: Into<&'vec Vec<u8>>>(vec: V) -> Self {
-        let vec = vec.into();
-        assert!(vec.len() >= ID_LEN);
+    pub fn truncate(bytes: impl AsRef<[u8]>) -> Self {
+        let bytes = bytes.as_ref();
+        assert!(bytes.len() >= ID_LEN);
 
         Self(
-            vec.into_iter()
+            bytes
+                .into_iter()
                 .enumerate()
                 .take(ID_LEN)
                 .fold([0; ID_LEN], |mut buf, (i, u)| {
@@ -136,13 +137,13 @@ impl Identity {
     #[cfg(feature = "digest")]
     pub fn with_digest<'vec, V: Into<&'vec Vec<u8>>>(vec: V) -> Self {
         use blake2::{
-            digest::{Input, VariableOutput},
+            digest::{Update, VariableOutput},
             VarBlake2b,
         };
 
         let mut hasher = VarBlake2b::new(ID_LEN).unwrap();
-        hasher.input(vec.into());
-        Self::truncate(&hasher.vec_result())
+        hasher.update(vec.into());
+        Self::truncate(hasher.finalize_boxed())
     }
 
     /// Generate a new random Identity

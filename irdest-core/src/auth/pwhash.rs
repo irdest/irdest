@@ -28,7 +28,7 @@ impl PwHash {
         let new = Blake2b::new()
             .chain(pw.into())
             .chain(&self.salt)
-            .result()
+            .finalize()
             .to_vec();
 
         self.hash == new
@@ -54,7 +54,7 @@ impl PwHash {
         let hash = Blake2b::new()
             .chain(pw.into())
             .chain(&salt)
-            .result()
+            .finalize()
             .to_vec();
 
         Self { hash, salt }

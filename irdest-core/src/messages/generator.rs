@@ -72,7 +72,7 @@ impl MsgBuilder {
     pub(crate) fn generate(&self) -> Message {
         let mut rng = rand::thread_rng();
         let sender = self.sender.clone().unwrap_or_else(|| {
-            Identity::truncate(&Standard.sample_iter(rng).take(ID_LEN).collect())
+            Identity::truncate(Standard.sample_iter(rng).take(ID_LEN).collect::<Vec<_>>())
         });
         let associator = self.associator.clone().unwrap_or("".into());
         let id = self.id.clone().unwrap_or_else(|| MsgId::random());
