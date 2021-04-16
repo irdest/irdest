@@ -17,4 +17,3 @@ byteorder = "1.0"
 thiserror = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 tracing = "0.1"
-tracing-futures = "0.2"

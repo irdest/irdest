@@ -17,8 +17,5 @@ ratman-configure = { path = "../../ratman/configure" }
 async-std = { version = "1.0", features = ["attributes"] }
 clap = { version = "2.0", features = ["wrap_help", "color"] }
 directories-next = "2.0"
-igd = "0.11"
-ipnetwork = "0.17"
-pnet = "0.27"
 tracing = "0.1"
 tracing-subscriber = { version = "0.2", features = ["fmt", "env-filter"] }

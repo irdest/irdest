@@ -9,7 +9,6 @@ edition = "2018"
 [dependencies]
 alexandria = { version = "0.2", path = "../utils/alexandria" }
 ircore-types = { version = "0.1", path = "types" }
-netmod-mem = { version = "0.4", path = "../netmods/netmod-mem", optional = true }
 irpc-sdk = { version = "0.1", path = "../rpc-core/irpc-sdk", optional = true }
 ratman = { version = "0.2", path = "../ratman" }
 
@@ -18,11 +17,8 @@ async-trait = "0.1"
 base64 = "0.12"
 bincode = "1.0"
 blake2 = "0.8"
-crossbeam-channel = "0.5"
-futures = "0.3"
 hex = "0.4"
 jni = { version = "0.14", optional = true, default-features = false }
-mime = "0.3"
 rand = "0.7"
 serde = { version = "1.0", features = [ "derive" ] }
 sodiumoxide = "0.2.5"
@@ -42,4 +38,4 @@ default = ["generate-message", "testing", "rpc"] # TODO: remove rpc default?
 ffi-java = ["jni"]
 generate-message = []
 rpc = ["irpc-sdk"]
-testing = ["tempfile", "netmod-mem"]
+testing = ["tempfile"]
