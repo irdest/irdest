@@ -6,7 +6,7 @@
 //! considered documentation.  If you find anything that is unclear to
 //! you, or could be commented better, please send us a patch (or MR).
 
-use irdest_sdk::{users::UserAuth, QaulRpc};
+use irdest_sdk::{users::UserAuth, IrdestSdk};
 use irpc_sdk::{default_socket_path, Capabilities, RpcSocket, Service};
 use tracing::{error, info};
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
@@ -55,8 +55,8 @@ async fn main() {
 
     info!("Received service ID '{}' from qrpc-broker", id);
 
-    let libqaul = QaulRpc::connect(&serv).unwrap();
-    let u: UserAuth = libqaul
+    let core = IrdestSdk::connect(&serv).unwrap();
+    let u: UserAuth = core
         .users()
         .create("foo bar baz my password is bad")
         .await

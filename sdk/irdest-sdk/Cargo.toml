@@ -1,6 +1,6 @@
 [package]
 name = "irdest-sdk"
-description = "Client SDK for libqaul"
+description = "Client SDK for irdest"
 version = "0.1.0"
 authors = ["Katharina Fey <kookie@spacekookie.de>"]
 edition = "2018"
@@ -9,3 +9,12 @@ license = "AGPL-3.0-or-later"
 [dependencies]
 ircore-types = { version = "0.1", path = "../../irdest-core/types" }
 irpc-sdk = { version = "0.1", path = "../../rpc-core/irpc-sdk" }
+alexandria-tags = { version = "0.2", path = "../../utils/alexandria-tags" }
+tracing = "0.1"
+
+[dev-dependencies]
+irdest-core = { path = "../../irdest-core" }
+irpc-broker = { path = "../../rpc-core/irpc-broker" }
+ratman-harness = { path = "../../ratman/harness" }
+async-std = { version = "1.0", features = ["attributes"] }
+tracing-subscriber = { version = "0.2", features = ["fmt"] }

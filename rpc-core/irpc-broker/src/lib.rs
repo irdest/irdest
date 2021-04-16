@@ -25,6 +25,10 @@ pub struct Broker {
 impl Broker {
     pub async fn new() -> RpcResult<Arc<Self>> {
         let (addr, port) = default_socket_path();
+        Self::bind(addr, port).await
+    }
+
+    pub async fn bind(addr: &str, port: u16) -> RpcResult<Arc<Self>> {
         let _conns = ServiceMap::new();
 
         // Create a new RpcSocket that listens for new connections and
@@ -50,9 +54,8 @@ fn reader_loop(mut stream: TcpStream, map: Arc<ServiceMap>) {
         }
 
         // Then create a run-loop where we continuously handle incoming messages
+        debug!("Listening for incoming messages");
         loop {
-            debug!("Listening for incoming messages");
-
             // Some errors are fatal, others are not
             match handle_packet(&mut stream, &map).await {
                 Ok(()) => {}

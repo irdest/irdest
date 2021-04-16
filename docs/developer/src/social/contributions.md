@@ -33,3 +33,21 @@ The easiest way of doing this is to configure `git send-email`.
 - Don't send HTML e-mail!
 - Make sure your line-wrapping is wide enough to allow the patch to
   stay un-wrapped!
+
+
+## Lorri & direnv
+
+You can enable automatic environment loading when you enter the
+irdest repository, by configuring [lorri] and [direnv] on your system.
+
+[lorri]: https://github.com/nix-community/lorri
+[direnv]: https://direnv.net/
+
+```console
+ ❤ (uwu) ~/p/code> cd irdest
+direnv: loading ~/projects/code/irdest/.envrc
+direnv: export +AR +AR_FOR_TARGET +AS +AS_FOR_TARGET +CC
+        // ... snip ...
+ ❤ (uwu) ~/p/c/irdest> cargo build                           lorri-keep-env-hack-irdest
+ ...
+```

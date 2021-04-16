@@ -76,12 +76,23 @@ pub(crate) async fn handle_sdk_command(
 
 /// Handle messages address to another service
 pub(crate) async fn proxy_message(
-    stream: &mut TcpStream,
+    _return: &mut TcpStream,
     map: &Arc<ServiceMap>,
     msg: Message,
 ) -> RpcResult<()> {
+    debug!("Proxying message from '{}' to '{}'", msg.from, msg.to);
+
     // Fetch the target service capabilities
     let caps = map.caps(&msg.to).await?;
+    match map.stream(&msg.to).await {
+        Ok(ref mut stream) => io::send(stream, caps.encoding, &msg).await,
+        Err(_) => {
+            warn!(
+                "Swallowing message addressed to unknown service: '{}'",
+                msg.to
+            );
 
-    Ok(())
+            Ok(())
+        }
+    }
 }

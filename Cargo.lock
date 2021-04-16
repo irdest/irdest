@@ -11,7 +11,7 @@ dependencies = [
 
 [[package]]
 name = "alexandria"
-version = "0.2.1"
+version = "0.2.0"
 dependencies = [
  "alexandria-tags",
  "async-std",
@@ -1358,8 +1358,15 @@ dependencies = [
 name = "irdest-sdk"
 version = "0.1.0"
 dependencies = [
+ "alexandria-tags",
+ "async-std",
  "ircore-types",
+ "irdest-core",
+ "irpc-broker",
  "irpc-sdk",
+ "ratman-harness",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

@@ -5,7 +5,7 @@ use std::fmt::{self, Display, Formatter};
 pub type RpcResult<T> = Result<T, RpcError>;
 
 /// A set of errors that occur when connecting to services
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum RpcError {
     /// No such service was found by the broker
     NoSuchService(String),

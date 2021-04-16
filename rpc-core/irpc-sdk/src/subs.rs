@@ -28,7 +28,7 @@ pub(crate) type ArcBool = Arc<AtomicBool>;
 ///
 /// Following is an overview of the subscription message flow.
 ///
-/// ```no_run
+/// ```text
 /// [ Your Service ]                     [ Remote Service ]
 ///     SubscriptionCmd::Register ----------->
 ///            <------------- SdkReply::Identity
@@ -117,7 +117,7 @@ where
 pub struct SubSwitch {
     enc: u8,
     // Maybe lock this
-    map: BTreeMap<Identity, Sender<Vec<u8>>>,
+    map: RwLock<BTreeMap<Identity, Sender<Vec<u8>>>>,
 }
 
 impl SubSwitch {
@@ -130,19 +130,27 @@ impl SubSwitch {
     }
 
     /// Create new subscription on the switch
-    pub fn create<T>(&mut self, encoding: u8) -> Subscription<T>
+    pub async fn create<T>(&self, encoding: u8) -> Subscription<T>
     where
         T: DeserializeOwned,
     {
         let (tx, rx) = bounded(8);
         let id = Identity::random();
-        self.map.insert(id.clone(), tx);
+        self.map.write().await.insert(id.clone(), tx);
         Subscription::new(rx, encoding, id)
     }
 
     /// Send message push data to subscription handler
+    ///
+    /// When calling `forward` you may want to peel the concrete
+    /// message type of your subscription object from the carrier that
+    /// your service is notified with (depending on your service
+    /// protocol).  This ensures that the subscription is typed
+    /// correctly and can read the incoming stream.  A second
+    /// serialisation is done in this function.
     pub async fn forward<T: Serialize>(&self, id: Identity, vec: T) -> RpcResult<()> {
-        let sender = self.map.get(&id).ok_or(RpcError::NoSuchSubscription)?;
+        let map = self.map.read().await;
+        let sender = map.get(&id).ok_or(RpcError::NoSuchSubscription)?;
         sender.send(io::encode(self.enc, &vec)?).await.unwrap();
         Ok(())
     }

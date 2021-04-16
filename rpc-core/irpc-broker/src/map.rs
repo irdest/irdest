@@ -47,6 +47,16 @@ impl ServiceMap {
             .ok_or_else(|| RpcError::NoSuchService(name.clone()))
     }
 
+    /// Get the active TCP stream for a service
+    pub(crate) async fn stream(&self, name: &String) -> RpcResult<TcpStream> {
+        self.inner
+            .read()
+            .await
+            .get(name)
+            .map(|serv| serv.io.clone())
+            .ok_or_else(|| RpcError::NoSuchService(name.clone()))
+    }
+
     /// Register a new service
     pub(crate) async fn register(
         &self,

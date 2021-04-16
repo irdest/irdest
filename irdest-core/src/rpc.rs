@@ -82,11 +82,11 @@ impl RpcServer {
         self.socket
             .listen(move |msg| {
                 let enc = this.serv.encoding();
+                debug!("Received an RPC request: {:?}!", msg);
 
-                let req = io::decode::<String>(enc, &msg.data)
-                    .ok()
-                    .and_then(|json| Capabilities::from_json(&json))
-                    .unwrap();
+                let req = dbg!(io::decode::<Capabilities>(enc, &msg.data)).unwrap();
+
+                debug!("Request: {:?}", req);
 
                 let _this = Arc::clone(&this);
                 task::spawn(async move { _this.spawn_on_request(msg, req).await });
@@ -95,6 +95,7 @@ impl RpcServer {
     }
 
     async fn spawn_on_request(self: &Arc<Self>, msg: Message, cap: Capabilities) {
+        debug!("Executing capability: {:?}", cap);
         use Capabilities::*;
         use MessageCapabilities as MsgCap;
         use UserCapabilities as UserCap;

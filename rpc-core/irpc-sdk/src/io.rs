@@ -15,6 +15,19 @@ pub struct Message {
     pub data: Vec<u8>,
 }
 
+impl std::fmt::Debug for Message {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "Message {{ id: {}, to: {}, from: {}, data: {} }}",
+            self.id,
+            self.to,
+            self.from,
+            std::str::from_utf8(&self.data).unwrap_or("<unprintable>")
+        )
+    }
+}
+
 impl Message {
     /// Create a new message to an address
     pub fn to_addr(to: &str, from: &str, data: Vec<u8>) -> Self {

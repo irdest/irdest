@@ -11,7 +11,7 @@ mod tests;
 
 use crate::{
     error::Error,
-    messages::{IdType, Message, Mode, MsgQuery},
+    messages::{IdType, Message, Mode, MsgId, MsgQuery},
     services::Service,
     users::{UserAuth, UserProfile, UserUpdate},
     Identity,
@@ -125,4 +125,5 @@ pub enum UserReply {
 pub enum MessageReply {
     Ok,
     Message(Message),
+    MsgId(MsgId),
 }
