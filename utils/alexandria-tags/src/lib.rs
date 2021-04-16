@@ -19,10 +19,10 @@ use std::{collections::BTreeSet, fmt};
 /// Simply construct a set via one of the `From` implementations of a
 /// containing type.
 ///
-/// ```norun
-/// # use alexandria::data::TagSet;
+/// ```no_run
+/// # use alexandria_tags::{Tag, TagSet};
 /// # use std::collections::BTreeSet;
-/// let _: TagSet = vec![].into();
+/// let _: TagSet = Vec::<Tag>::new().into();
 /// let _: TagSet = BTreeSet::default().into();
 /// ```
 #[derive(Clone, Debug, Default, Eq, PartialEq, Hash, Serialize, Deserialize)]
