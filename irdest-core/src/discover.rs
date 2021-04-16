@@ -42,7 +42,8 @@ impl Discovery {
 
                 if !irdest.users.known_remote().await.contains(&id) {
                     info!(id = id.to_string().as_str(), "Discovered new user!");
-                    irdest.users
+                    irdest
+                        .users
                         .insert_profile(id, vec![Tag::empty(TAG_PROFILE)])
                         .await;
                 }

@@ -1,8 +1,8 @@
 use crate::{
     error::{Error, Result},
     helpers::{QueryResult, Subscription, Tag, TagSet},
-    messages::{Envelope, MsgUtils, RatMessageProto, TAG_UNREAD},
     ird::{Identity, Irdest},
+    messages::{Envelope, MsgUtils, RatMessageProto, TAG_UNREAD},
     services::Service,
     users::UserAuth,
 };

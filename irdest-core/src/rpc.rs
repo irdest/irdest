@@ -10,16 +10,24 @@
 
 use crate::{
     error::Error,
-    types::rpc::{Capabilities, Reply, UserCapabilities, UserReply},
+    helpers::TagSet,
+    types::rpc::{
+        Capabilities, MessageCapabilities, MessageReply, Reply, UserCapabilities, UserReply,
+        ADDRESS,
+    },
+    types::services::Service,
     users::{UserAuth, UserProfile, UserUpdate},
     Identity, IrdestRef,
 };
 use async_std::{sync::Arc, task};
 use irpc_sdk::{
-    default_socket_path, error::RpcResult, io::Message, Capabilities as ServiceCapabilities,
-    RpcSocket, Service,
+    default_socket_path,
+    error::RpcResult,
+    io::{self, Message},
+    proto::{SdkCommand, SdkReply},
+    Capabilities as ServiceCapabilities, RpcSocket, Service as SdkService, SubManager,
 };
-use std::str;
+use std::{str, sync::atomic::Ordering};
 
 /// A pluggable RPC server that wraps around libqaul
 ///
@@ -30,8 +38,9 @@ use std::str;
 pub struct RpcServer {
     inner: IrdestRef,
     socket: Arc<RpcSocket>,
-    serv: Service,
+    serv: SdkService,
     id: Identity,
+    subs: SubManager,
 }
 
 impl RpcServer {
@@ -44,22 +53,22 @@ impl RpcServer {
     pub async fn new(inner: IrdestRef, addr: &str, port: u16) -> RpcResult<Arc<Self>> {
         let socket = RpcSocket::connect(addr, port).await?;
 
-        let mut serv = Service::new(
+        let mut serv = SdkService::new(
             crate::types::rpc::ADDRESS,
             1,
-            "Core component for qaul ecosystem",
+            "Core component for irdest ecosystem",
         );
-        serv.register(&socket, ServiceCapabilities::basic_json())
+        let id = serv
+            .register(&socket, ServiceCapabilities::basic_json())
             .await?;
-        let id = serv.id().unwrap();
-
-        debug!("libqaul service ID: {}", id);
+        debug!("irdest-core service ID: {}", id);
 
         let _self = Arc::new(Self {
             inner,
             serv,
             socket,
             id,
+            subs: SubManager::new(),
         });
 
         let _this = Arc::clone(&_self);
@@ -72,9 +81,11 @@ impl RpcServer {
         let this = Arc::clone(self);
         self.socket
             .listen(move |msg| {
-                let req = str::from_utf8(msg.data.as_slice())
+                let enc = this.serv.encoding();
+
+                let req = io::decode::<String>(enc, &msg.data)
                     .ok()
-                    .and_then(|json| Capabilities::from_json(dbg!(json)))
+                    .and_then(|json| Capabilities::from_json(&json))
                     .unwrap();
 
                 let _this = Arc::clone(&this);
@@ -85,6 +96,7 @@ impl RpcServer {
 
     async fn spawn_on_request(self: &Arc<Self>, msg: Message, cap: Capabilities) {
         use Capabilities::*;
+        use MessageCapabilities as MsgCap;
         use UserCapabilities as UserCap;
 
         let reply = match cap {
@@ -100,12 +112,35 @@ impl RpcServer {
             Users(UserCap::Get { id }) => self.user_get(id).await,
             Users(UserCap::Update { auth, update }) => self.user_update(auth, update).await,
 
+            // =^-^= Message API functions =^-^=
+            Messages(MsgCap::Subscribe {
+                auth,
+                service,
+                tags,
+            }) => self.message_subscribe(&msg, auth, service, tags).await,
+
+            //     // Subscribe the user and map the output to an encoded buffer
+            //     let reply = match self
+            //         .message_subscribe(&msg, &self.socket, auth, service, tags)
+            //         .await
+            //     {
+            //         Ok(ref sdk) => io::encode(enc, sdk),
+            //         Err(ref ir) => io::encode(enc, ir),
+            //     }
+            //     .unwrap();
+
+            //     // Send the reply and exit the function early
+            //     self.socket.reply(msg.reply(ADDRESS, reply)).await.unwrap();
+            //     return;
+            // }
+            // Subscriptions(SubCap::Unregister(id)) => self.subscription_unregister(id).await,
+
             // =^-^= Everything else is todo! =^-^=
             _ => todo!(),
         };
 
         self.socket
-            .reply(msg.reply("...".into(), reply.to_json().as_bytes().to_vec()))
+            .reply(msg.reply(ADDRESS, reply.to_json().as_bytes().to_vec()))
             .await
             .unwrap();
     }
@@ -175,4 +210,65 @@ impl RpcServer {
             Err(e) => Reply::Error(e),
         }
     }
+
+    async fn message_subscribe(
+        self: &Arc<Self>,
+        msg: &Message,
+        auth: UserAuth,
+        service: Service,
+        tags: TagSet,
+    ) -> Reply {
+        match self.inner.messages().subscribe(auth, service, tags).await {
+            Ok(sub) => {
+                let to = msg.from.clone();
+                let socket = Arc::clone(&self.socket);
+                let _msg = msg.clone();
+
+                let b = self.subs.insert(msg.id).await;
+
+                // Spawn a talk to poll the subscription and then send
+                // out a message to the subscription client
+                //
+                // TODO: this needs a better utility in irpc-sdk
+                task::spawn(async move {
+                    while b.load(Ordering::Relaxed) {
+                        let new_msg = sub.next().await;
+
+                        // Special check here because a subscription
+                        // might be idle for ages and the run
+                        // condition changed.
+                        //
+                        // FIXME: wrap ArcBool into a Future that you
+                        // can select on
+                        if !b.load(Ordering::Relaxed) {
+                            break;
+                        }
+
+                        // Push message to socket
+                        socket
+                            .reply(
+                                _msg.clone().reply(
+                                    ADDRESS,
+                                    // Create a reply message
+                                    Reply::Message(MessageReply::Message(new_msg))
+                                        .to_json()
+                                        .as_bytes()
+                                        .to_vec(),
+                                ),
+                            )
+                            .await
+                            .unwrap();
+                    }
+                });
+
+                Reply::Subscription(msg.id)
+            }
+            Err(e) => Reply::Error(e),
+        }
+    }
+}
+
+/// Keep polling a subscription until it is deallocated
+pub struct RpcSubscription {
+    socket: Arc<RpcSocket>,
 }

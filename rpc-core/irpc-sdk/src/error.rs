@@ -28,6 +28,12 @@ pub enum RpcError {
     EncoderFault(String),
     /// A payload other than the one expected was received
     UnexpectedPayload,
+    /// Subscription can never yield more data
+    SubscriptionEnded,
+    /// No such subscription exists
+    NoSuchSubscription,
+    /// **Non fatal** Failed parsing, resume normally
+    NotASubscription,
     /// Other failures encoded as an error message
     Other(String),
 }
@@ -48,6 +54,9 @@ impl Display for RpcError {
                 Self::ConnectionFault(s) => format!("I/O error: {}", s),
                 Self::EncoderFault(s) => format!("Encode error: {}", s),
                 Self::UnexpectedPayload => format!("Parsing encountered unexpected payload"),
+                Self::SubscriptionEnded => format!("Subscription error"),
+                Self::NoSuchSubscription => format!("Subscription error"),
+                Self::NotASubscription => format!("C'est n'est pas une subscription"),
                 Self::Other(s) => format!("Unknown error: {}", s),
             }
         )

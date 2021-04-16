@@ -56,7 +56,7 @@ pub use caps::{Capabilities, ENCODING_JSON, ENCODING_MSGPACK};
 pub use identity::Identity;
 pub use service::{Dependencies, Service};
 pub use socket::{default_socket_path, RpcSocket};
-pub use subs::Subscription;
+pub use subs::{SubManager, SubSwitch, Subscription};
 
 /// The address of the irpc broker itself
 pub const DEFAULT_BROKER_ADDRESS: &'static str = "org.irdest._broker";

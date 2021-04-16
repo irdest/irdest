@@ -6,19 +6,12 @@
 //! can enable the RPC module, which provides a set of builder
 //! functions to transform types.
 
-// mod util;
-// mod error;
-// mod users;
-
 #[cfg(test)]
 mod tests;
 
-// pub use error::ConvertError;
-// pub(crate) use error::try_read;
-
 use crate::{
     error::Error,
-    messages::{IdType, Mode, MsgQuery},
+    messages::{IdType, Message, Mode, MsgQuery},
     services::Service,
     users::{UserAuth, UserProfile, UserUpdate},
     Identity,
@@ -26,20 +19,17 @@ use crate::{
 use alexandria_tags::TagSet;
 use serde::{Deserialize, Serialize};
 
-pub const ADDRESS: &'static str = "org.qaul.libqaul";
+pub const ADDRESS: &'static str = "org.irdest.core";
 
 /// Capabilities are functions that can be executed on a remote
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
-#[serde(tag = "context")]
+#[serde(tag = "context", rename_all = "kebab-case")]
 pub enum Capabilities {
-    #[serde(rename = "users")]
     Users(UserCapabilities),
-    #[serde(rename = "services")]
     Services(ServiceCapabilities),
-    #[serde(rename = "messages")]
     Messages(MessageCapabilities),
-    #[serde(rename = "contacts")]
     Contacts(ContactCapabilities),
+    UnregisterSub(Identity),
 }
 
 impl Capabilities {
@@ -100,9 +90,13 @@ pub enum MessageCapabilities {
 pub enum ContactCapabilities {}
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
-#[serde(tag = "context")]
+#[serde(tag = "context", rename_all = "kebab-case")]
 pub enum Reply {
     Users(UserReply),
+    Message(MessageReply),
+    /// A special reply type that handles registering subscriptions
+    Subscription(Identity),
+    /// A special reply type that wraps all error codes
     Error(Error),
 }
 
@@ -124,4 +118,11 @@ pub enum UserReply {
     Auth(UserAuth),
     Ok,
     Profile(UserProfile),
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+#[serde(tag = "type", content = "data", rename_all = "kebab-case")]
+pub enum MessageReply {
+    Ok,
+    Message(Message),
 }

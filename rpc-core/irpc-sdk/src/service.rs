@@ -52,7 +52,11 @@ impl Service {
     }
 
     /// Register this service with the RPC broker
-    pub async fn register(&mut self, socket: &Arc<RpcSocket>, caps: Capabilities) -> RpcResult<()> {
+    pub async fn register(
+        &mut self,
+        socket: &Arc<RpcSocket>,
+        caps: Capabilities,
+    ) -> RpcResult<Identity> {
         self.socket = Some(Arc::clone(&socket));
         self.caps = Some(caps.clone());
 
@@ -74,7 +78,7 @@ impl Service {
             .await?;
 
         self.hash_id = Some(id);
-        Ok(())
+        Ok(id)
     }
 
     /// Signal to the broker that this service is shutting down

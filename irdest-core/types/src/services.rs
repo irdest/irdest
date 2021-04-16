@@ -110,8 +110,7 @@ impl DerefMut for MetadataMap {
         &mut self.map
     }
 }
-
-/// Represents a service using libqaul
+/// Represents a service using irdest
 ///
 /// Via this type it's possible to either perform actions as a
 /// particular survice, or none, which means that all service's events

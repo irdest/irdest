@@ -1,5 +1,5 @@
-use crate::diff::ItemDiff;
 use super::*;
+use crate::diff::ItemDiff;
 
 #[test]
 fn create_user() {

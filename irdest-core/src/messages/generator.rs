@@ -2,8 +2,8 @@
 
 use crate::{
     helpers::TagSet,
-    messages::{Message, MsgId, SigTrust},
     ird::Identity,
+    messages::{Message, MsgId, SigTrust},
 };
 use rand::distributions::{Distribution, Standard};
 use ratman::ID_LEN;

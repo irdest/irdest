@@ -5,8 +5,8 @@
 mod harness;
 use harness::{sec10, sec5};
 
-use irdest_core::users::UserUpdate;
 use ircore_types::diff::ItemDiff;
+use irdest_core::users::UserUpdate;
 
 #[async_std::test]
 async fn user_create() {

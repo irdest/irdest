@@ -14,15 +14,10 @@ alexandria-tags = { version = "0.2", path = "../../utils/alexandria-tags" }
 serde_json = "1.0"
 async-trait = "0.1"
 
-# capnp = { version = "0.13", optional = true }
-
-# [build-dependencies]
-# capnpc = { version = "0.13", optional = true }
-
 [dev-dependencies]
 serde_json = "1.0"
 bincode = "1.0"
 
 [features]
 # default = ["rpc"]
-# rpc = ["capnp", "capnpc"]
+# rpc = []

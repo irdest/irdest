@@ -7,7 +7,7 @@ use identity::Identity;
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A message buffer to send or receive
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Message {
     pub id: Identity,
     pub to: String,
