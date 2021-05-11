@@ -3149,8 +3149,14 @@ dependencies = [
 name = "webui"
 version = "0.1.0"
 dependencies = [
+ "async-std",
+ "irdest-core",
+ "irpc-broker",
  "irpc-sdk",
+ "ratman-harness",
  "tide",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
