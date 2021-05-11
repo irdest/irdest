@@ -22,14 +22,14 @@ impl WebServer {
         let mut serv = Service::new("org.irdest.webui", 1, "Webui.");
         let rpc = RpcSocket::connect(addr, port).await.unwrap();
         
-        let mut app = tide::with_state(State {
-            sdk: IrdestSdk::connect(&serv).unwrap()
-        });
-
         let service_id = serv
             .register(&rpc, Capabilities::basic_json())
             .await
             .unwrap();
+
+        let mut app = tide::with_state(State {
+            sdk: IrdestSdk::connect(&serv).unwrap()
+        });
 
         // Add routes here
         app.at("/").get(|req: Request<State>| async {

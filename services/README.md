@@ -22,6 +22,7 @@ part of this repository; we are not the single source of truth.
 | [org.irdest.files] | Yes                          | Filesharing utilitiy.  Both useful on it's own, and to be used by other services |
 | [org.irdest.ping]  |                              | A simple ping program for a decentralised networking backend                     |
 | [org.irdest.voice] | Yes                          | Encrypted voice call services, supporting single and group calls                 |
+| [org.irdest.webui] | *Some*                       | A cross-platform web UI to run in the browser                                    |
 
 
 [org.irdest.chat]: ./chat
@@ -29,3 +30,4 @@ part of this repository; we are not the single source of truth.
 [org.irdest.files]: ./files
 [org.irdest.ping]: ./ping
 [org.irdest.voice]: ./voice
+[org.irdest.webui]: ./webui
