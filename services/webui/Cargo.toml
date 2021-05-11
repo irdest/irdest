@@ -1,5 +1,5 @@
 [package]
-name = "webui"
+name = "irdest-webui"
 description = "A service to host and serve a cross-platform web UI"
 version = "0.1.0"
 authors = ["Katharina Fey <kookie@spacekookie.de>"]

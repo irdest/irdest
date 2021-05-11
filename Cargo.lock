@@ -1523,6 +1523,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "irdest-webui"
+version = "0.1.0"
+dependencies = [
+ "async-std",
+ "irdest-core",
+ "irpc-broker",
+ "irpc-sdk",
+ "ratman-harness",
+ "tide",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "irpc-broker"
 version = "0.1.0"
 dependencies = [
@@ -3143,20 +3157,6 @@ checksum = "a905d57e488fec8861446d3393670fb50d27a262344013181c2cdf9fff5481be"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
-]
-
-[[package]]
-name = "webui"
-version = "0.1.0"
-dependencies = [
- "async-std",
- "irdest-core",
- "irpc-broker",
- "irpc-sdk",
- "ratman-harness",
- "tide",
- "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
