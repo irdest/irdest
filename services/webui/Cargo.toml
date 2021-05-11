@@ -8,6 +8,7 @@ edition = "2018"
 [dependencies]
 tide = "0.16"
 irpc-sdk = { path = "../../rpc-core/irpc-sdk" }
+irdest-sdk = { path = "../../sdk/irdest-sdk" }
 tracing = "0.1"
 
 [dev-dependencies]

@@ -1528,6 +1528,7 @@ version = "0.1.0"
 dependencies = [
  "async-std",
  "irdest-core",
+ "irdest-sdk",
  "irpc-broker",
  "irpc-sdk",
  "ratman-harness",

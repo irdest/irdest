@@ -3,35 +3,48 @@
 use irpc_sdk::{Capabilities, Identity, RpcSocket, Service};
 use std::sync::Arc;
 use tide::Server;
+use irdest_sdk::IrdestSdk;
+use tide::Request;
 
 pub struct WebServer {
-    inner: Server<()>,
+    app: Server<State>,
     rpc: Arc<RpcSocket>,
     service_id: Identity,
 }
 
+#[derive(Clone)]
+struct State {
+    sdk: IrdestSdk,
+}
+
 impl WebServer {
     pub async fn new(addr: &str, port: u16) -> Self {
-        let mut inner = Server::new();
-
         let mut serv = Service::new("org.irdest.webui", 1, "Webui.");
         let rpc = RpcSocket::connect(addr, port).await.unwrap();
+        
+        let mut app = tide::with_state(State {
+            sdk: IrdestSdk::connect(&serv).unwrap()
+        });
+
         let service_id = serv
             .register(&rpc, Capabilities::basic_json())
             .await
             .unwrap();
 
         // Add routes here
-        inner.at("/").get(|_| async { Ok("Hello world") });
+        app.at("/").get(|req: Request<State>| async {
+            // irdest_sdk.users().create("blörp").await;
+            Ok("Hello world")
+        });
 
         Self {
-            inner,
+            app,
             rpc,
             service_id,
         }
     }
 
     pub async fn listen(self, bind: &str) {
-        self.inner.listen(bind).await.unwrap();
+        self.app.listen(bind).await.unwrap();
     }
 }

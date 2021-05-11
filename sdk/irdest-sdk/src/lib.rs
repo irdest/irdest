@@ -35,6 +35,7 @@ use users::{UserAuth, UserProfile, UserUpdate};
 /// this surface to get access to all irdest-core functions, thate are
 /// transparently mapped to the underlying irdest-core instance
 /// potentially running in a different process.
+#[derive(Clone)]
 pub struct IrdestSdk {
     socket: Arc<RpcSocket>,
     addr: String,
