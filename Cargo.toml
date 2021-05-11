@@ -36,8 +36,9 @@ members = [
     "netmods/netmod-udp",
     "netmods/netmod-wd",
 
-    # Set of services in qaul
+    # Set of services in irdest
     "services/ping",
+    "services/webui",
 
     # End-user applications
     "clients/hubd",
