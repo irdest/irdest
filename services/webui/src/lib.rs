@@ -2,6 +2,7 @@
 
 mod api;
 
+use tide::utils::Before;
 use irdest_sdk::IrdestSdk;
 use irpc_sdk::{Capabilities, Identity, RpcSocket, Service};
 use std::sync::Arc;
@@ -34,13 +35,17 @@ impl WebServer {
             sdk: IrdestSdk::connect(&serv).unwrap(),
         });
 
-        // Add routes here
-        app.at("/").get(api::auth::create_user);
+        app.with(api::auth::LoadUserMiddleware {});
+        
+        app.at("/auth/register").post(api::auth::register);
+        app.at("/auth/login").post(api::auth::login);
+        app.at("/auth/verify_token").post(api::auth::verify_token);
 
         Self { app, rpc }
     }
 
     pub async fn listen(self, bind: &str) {
+        println!("Listening on {}", bind);
         self.app.listen(bind).await.unwrap();
     }
 }

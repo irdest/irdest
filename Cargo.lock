@@ -1532,6 +1532,7 @@ dependencies = [
  "irpc-broker",
  "irpc-sdk",
  "ratman-harness",
+ "serde",
  "tide",
  "tracing",
  "tracing-subscriber",
