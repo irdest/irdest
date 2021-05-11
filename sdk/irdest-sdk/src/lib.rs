@@ -110,7 +110,7 @@ impl<'ir> UserRpc<'ir> {
     }
 
     /// Check if a user ID and token combination is valid
-    pub async fn is_authenticated(&self, auth: UserAuth) -> Result<()> {
+    pub async fn is_authenticated(&self, auth: UserAuth) -> RpcResult<()> {
         match self
             .rpc
             .send(Capabilities::Users(UserCapabilities::IsAuthenticated {
@@ -135,7 +135,7 @@ impl<'ir> UserRpc<'ir> {
     /// user, instead of leaving files completely unencrypted. In this
     /// case, there's no real security, but a drive-by will still only
     /// grab encrypted files.
-    pub async fn create(&self, pw: &str) -> Result<UserAuth> {
+    pub async fn create(&self, pw: &str) -> RpcResult<UserAuth> {
         match self
             .rpc
             .send(Capabilities::Users(UserCapabilities::Create {
@@ -154,7 +154,7 @@ impl<'ir> UserRpc<'ir> {
     /// This function requires a valid login for the user that's being
     /// deleted.  This does not delete any data associated with this
     /// user, or messages from the node (or other device nodes).
-    pub async fn delete(&self, auth: UserAuth) -> Result<()> {
+    pub async fn delete(&self, auth: UserAuth) -> RpcResult<()> {
         match self
             .rpc
             .send(Capabilities::Users(UserCapabilities::Delete { auth }))
@@ -167,7 +167,8 @@ impl<'ir> UserRpc<'ir> {
     }
 
     /// Change the passphrase for an authenticated user
-    pub fn change_pw(&self, auth: UserAuth, new_pw: &str) -> Result<()> {
+    pub async fn change_pw(&self, auth: UserAuth, new_pw: &str) -> RpcResult<()> {
+        let new_pw = new_pw.to_string();
         match self
             .rpc
             .send(Capabilities::Users(UserCapabilities::ChangePw {
@@ -183,7 +184,7 @@ impl<'ir> UserRpc<'ir> {
     }
 
     /// Create a new session login for a local User
-    pub async fn login<S: Into<String>>(&self, id: Identity, pw: S) -> Result<UserAuth> {
+    pub async fn login<S: Into<String>>(&self, id: Identity, pw: S) -> RpcResult<UserAuth> {
         match self
             .rpc
             .send(Capabilities::Users(UserCapabilities::Login {
@@ -199,7 +200,7 @@ impl<'ir> UserRpc<'ir> {
     }
 
     /// Drop the current session Token, invalidating it
-    pub async fn logout(&self, auth: UserAuth) -> Result<()> {
+    pub async fn logout(&self, auth: UserAuth) -> RpcResult<()> {
         match self
             .rpc
             .send(Capabilities::Users(UserCapabilities::Logout { auth }))
@@ -216,7 +217,7 @@ impl<'ir> UserRpc<'ir> {
     /// No athentication is required for this endpoint, seeing as only
     /// public information is exposed via the `UserProfile`
     /// abstraction anyway.
-    pub async fn get(&self, id: Identity) -> Result<UserProfile> {
+    pub async fn get(&self, id: Identity) -> RpcResult<UserProfile> {
         match self
             .rpc
             .send(Capabilities::Users(UserCapabilities::Get { id }))
@@ -229,7 +230,7 @@ impl<'ir> UserRpc<'ir> {
     }
 
     /// Update a `UserProfile` with a lambda, if authentication passes
-    pub async fn update(&self, auth: UserAuth, update: UserUpdate) -> Result<()> {
+    pub async fn update(&self, auth: UserAuth, update: UserUpdate) -> RpcResult<()> {
         match self
             .rpc
             .send(Capabilities::Users(UserCapabilities::Update {
