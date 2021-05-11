@@ -3149,6 +3149,7 @@ dependencies = [
 name = "webui"
 version = "0.1.0"
 dependencies = [
+ "irpc-sdk",
  "tide",
 ]
 

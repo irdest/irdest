@@ -6,4 +6,5 @@ authors = ["Katharina Fey <kookie@spacekookie.de>"]
 edition = "2018"
 
 [dependencies]
-tide = "*"
+tide = "0.16"
+irpc-sdk = { path = "../../rpc-core/irpc-sdk" }
