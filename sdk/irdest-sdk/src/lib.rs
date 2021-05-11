@@ -229,7 +229,7 @@ impl<'ir> UserRpc<'ir> {
         }
     }
 
-    /// Update a `UserProfile` with a lambda, if authentication passes
+    /// Update a `UserProfile` with a `UserUpdate` diff type
     pub async fn update(&self, auth: UserAuth, update: UserUpdate) -> RpcResult<()> {
         match self
             .rpc
@@ -277,6 +277,36 @@ impl<'ir> MessageRpc<'ir> {
             .await
         {
             Ok(Reply::Message(MessageReply::MsgId(id))) => Ok(id),
+            Err(e) => Err(e),
+            _ => Err(RpcError::EncoderFault("Invalid reply payload!".into())),
+        }
+    }
+
+    /// Subscribe to a stream of future message updates
+    pub async fn subscribe<S, T>(
+        &self,
+        auth: UserAuth,
+        service: S,
+        tags: T,
+    ) -> Result<Subscription<Message>>
+    where
+        S: Into<Service>,
+        T: Into<TagSet>,
+    {
+        match self
+            .rpc
+            .send(Capabilities::Messages(
+                rpc::MessageCapabilities::Subscribe {
+                    auth,
+                    service: service.into(),
+                    tags: tags.into(),
+                },
+            ))
+            .await
+        {
+            Ok(Reply::Subscription(sub_id)) => {
+                todo!()
+            }
             Err(e) => Err(e),
             _ => Err(RpcError::EncoderFault("Invalid reply payload!".into())),
         }

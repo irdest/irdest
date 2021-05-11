@@ -131,7 +131,7 @@ impl<'ird> Users<'ird> {
         self.q.users.get(user).await
     }
 
-    /// Update a `UserProfile` with a lambda, if authentication passes
+    /// Update a `UserProfile` with a `UserUpdate` diff type
     pub async fn update(&self, user: UserAuth, update: UserUpdate) -> Result<()> {
         let (id, _) = self.q.auth.trusted(user)?;
         self.q.users.modify(id, update).await
