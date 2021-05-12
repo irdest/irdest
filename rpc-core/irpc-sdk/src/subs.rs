@@ -146,10 +146,10 @@ impl SubSwitch {
     /// protocol).  This ensures that the subscription is typed
     /// correctly and can read the incoming stream.  A second
     /// serialisation is done in this function.
-    pub async fn forward<T: Serialize>(&self, id: Identity, vec: T) -> RpcResult<()> {
+    pub async fn forward(&self, id: Identity, vec: Vec<u8>) -> RpcResult<()> {
         let map = self.map.read().await;
         let sender = map.get(&id).ok_or(RpcError::NoSuchSubscription)?;
-        sender.send(io::encode(self.enc, &vec)?).await.unwrap();
+        sender.send(vec).await.unwrap();
         Ok(())
     }
 }

@@ -95,7 +95,7 @@ pub enum Reply {
     Users(UserReply),
     Message(MessageReply),
     /// A special reply type that handles registering subscriptions
-    Subscription(Identity),
+    Subscription(SubscriptionReply),
     /// A special reply type that wraps all error codes
     Error(Error),
 }
@@ -126,4 +126,10 @@ pub enum MessageReply {
     Ok,
     Message(Message),
     MsgId(MsgId),
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+#[serde(tag = "type", content = "data", rename_all = "kebab-case")]
+pub enum SubscriptionReply {
+    Ok(Identity),
 }

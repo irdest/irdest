@@ -10,9 +10,11 @@ pub use async_std::future::timeout;
 pub use ratman_harness::{millis, sec10, sec5};
 
 pub fn parse_log_level() {
-    let filter = EnvFilter::try_from_env("QAUL_LOG")
+    let filter = EnvFilter::try_from_env("IRDEST_LOG")
         .unwrap_or_default()
         .add_directive(LevelFilter::DEBUG.into())
+        .add_directive("alexandria=warn".parse().unwrap())
+        .add_directive("ratman=warn".parse().unwrap())
         .add_directive("async_std=error".parse().unwrap())
         .add_directive("async_io=error".parse().unwrap())
         .add_directive("polling=error".parse().unwrap())
@@ -20,7 +22,7 @@ pub fn parse_log_level() {
 
     // Initialise the logger
     fmt().with_env_filter(filter).init();
-    info!("Initialised logger: welcome to qaul-hubd!");
+    info!("Initialised logger: welcome to irdest-hubd!");
 }
 
 pub struct TestServer {

@@ -18,14 +18,16 @@ pub use irpc_sdk::{
     default_socket_path,
     error::{RpcError, RpcResult},
     io::{self, Message},
-    RpcSocket, Service, SubSwitch, Subscription,
+    RpcSocket, Service, SubSwitch, Subscription, ENCODING_JSON,
 };
 pub use std::{str, sync::Arc};
 
 use alexandria_tags::TagSet;
 use async_std::task;
 use messages::{IdType, Message as IrdestMessage, Mode, MsgId};
-use rpc::{Capabilities, MessageReply, Reply, UserCapabilities, UserReply, ADDRESS};
+use rpc::{
+    Capabilities, MessageReply, Reply, SubscriptionReply, UserCapabilities, UserReply, ADDRESS,
+};
 use services::Service as ServiceId;
 use users::{UserAuth, UserProfile, UserUpdate};
 
@@ -316,31 +318,20 @@ impl<'ir> MessageRpc<'ir> {
         {
             // Create a Subscription object and a task that pushes
             // updates to it for incoming subscription events
-            Ok(Reply::Subscription(sub_id)) => {
-                let s = self.rpc.subs.create(0, sub_id).await;
+            Ok(Reply::Subscription(SubscriptionReply::Ok(sub_id))) => {
+                let s = self.rpc.subs.create(ENCODING_JSON, sub_id).await;
 
-                panic!("WE GOT A SUBSCRIPTION ID!!!!: {}", sub_id);
-                
                 // Listen for events for this task
                 let rpc = Arc::clone(&self.rpc.socket.clone());
                 let subs = Arc::clone(&self.rpc.subs);
-                let enc = self.rpc.enc;
                 task::spawn(async move {
                     let subs = Arc::clone(&subs);
 
                     rpc.wait_for(sub_id, |Message { data, .. }| {
                         let subs = Arc::clone(&subs);
 
-                        async move {
-                            match io::decode::<Reply>(enc, &data).ok() {
-                                Some(Reply::Message(MessageReply::Message(msg))) => {
-                                    subs.forward(sub_id, msg).await
-                                }
-                                _ => Err(RpcError::EncoderFault(
-                                    "Received invalid subscription payload!".into(),
-                                )),
-                            }
-                        }
+                        // Return this future to run
+                        async move { subs.forward(sub_id, data).await }
                     })
                     .await
                     .unwrap();

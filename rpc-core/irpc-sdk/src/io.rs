@@ -99,6 +99,12 @@ pub fn encode<S: Serialize>(enc: u8, msg: &S) -> RpcResult<Vec<u8>> {
 pub fn decode<D: DeserializeOwned>(enc: u8, data: &Vec<u8>) -> RpcResult<D> {
     Ok(match enc {
         ENCODING_JSON => serde_json::from_str(std::str::from_utf8(data).unwrap())?,
-        _ => todo!(), // Old broker won't support new encoding
+        enc => {
+            error!(
+                "Received a message with unsupported encoding type `{}`",
+                enc
+            );
+            todo!()
+        } // Old broker won't support new encoding
     })
 }

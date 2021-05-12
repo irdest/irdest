@@ -12,8 +12,8 @@ use crate::{
     error::Error,
     helpers::TagSet,
     types::rpc::{
-        Capabilities, MessageCapabilities, MessageReply, Reply, UserCapabilities, UserReply,
-        ADDRESS,
+        Capabilities, MessageCapabilities, MessageReply, Reply, SubscriptionReply,
+        UserCapabilities, UserReply, ADDRESS,
     },
     types::services::Service,
     users::{UserAuth, UserProfile, UserUpdate},
@@ -82,9 +82,9 @@ impl RpcServer {
         self.socket
             .listen(move |msg| {
                 let enc = this.serv.encoding();
-                debug!("Received an RPC request: {:?}!", msg);
+                info!("Received an RPC request from '{}'!", msg.from);
 
-                let req = dbg!(io::decode::<Capabilities>(enc, &msg.data)).unwrap();
+                let req = io::decode::<Capabilities>(enc, &msg.data).unwrap();
 
                 debug!("Request: {:?}", req);
 
@@ -232,24 +232,16 @@ impl RpcServer {
                             break;
                         }
 
-                        // Push message to socket
+                        let r = Reply::Message(MessageReply::Message(new_msg));
+
                         socket
-                            .reply(
-                                _msg.clone().reply(
-                                    ADDRESS,
-                                    // Create a reply message
-                                    Reply::Message(MessageReply::Message(new_msg))
-                                        .to_json()
-                                        .as_bytes()
-                                        .to_vec(),
-                                ),
-                            )
+                            .reply(_msg.clone().reply(ADDRESS, r.to_json().as_bytes().to_vec()))
                             .await
                             .unwrap();
                     }
                 });
 
-                Reply::Subscription(msg.id)
+                Reply::Subscription(SubscriptionReply::Ok(msg.id))
             }
             Err(e) => Reply::Error(e),
         }
