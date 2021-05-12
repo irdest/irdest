@@ -20,6 +20,7 @@ use async_std::{
 use identity::Identity;
 use std::{
     collections::BTreeMap,
+    future::Future,
     net::Shutdown,
     sync::atomic::{AtomicBool, Ordering},
     time::Duration,
@@ -217,6 +218,41 @@ impl RpcSocket {
             }
         })
         .await?
+    }
+
+    /// Wait for and yield messages with a particular ID
+    ///
+    /// This function exists to expose localised listening hooks for
+    /// messages.  Use this, for example, to wait for messages
+    /// associated with a particular stream or query.
+    ///
+    /// Because async closures in Rust are unstable, and the `call_me`
+    /// code will most likely want to access async functions the
+    /// closure MUST actually return a `Future`, which will be run
+    /// internally to this function.  This also means that any state
+    /// needs to be capturable.
+    ///
+    /// **This function will never return!** To shut down this
+    /// listening, call `stop_wait` with the message ID passed to this
+    /// function.
+    pub async fn wait_for<F, Q>(self: &Arc<Self>, id: Identity, call_me: F) -> RpcResult<()>
+    where
+        F: Fn(Message) -> Q,
+        Q: Future<Output = RpcResult<()>>,
+    {
+        let (tx, rx) = bounded(1);
+        self.wfm.lock().await.insert(id, tx);
+
+        while let Ok(maybe) = rx.recv().await {
+            call_me(maybe).await?;
+        }
+
+        Ok(())
+    }
+
+    /// Stop a listener running for a particular message ID
+    pub async fn stop_for(self: &Arc<Self>, id: Identity) {
+        self.wfm.lock().await.remove(&id);
     }
 
     /// Terminate all workers associated with this socket

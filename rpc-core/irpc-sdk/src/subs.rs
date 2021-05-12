@@ -113,29 +113,27 @@ where
 }
 
 /// Map between an RPC connection and subscription objects
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct SubSwitch {
     enc: u8,
-    // Maybe lock this
-    map: RwLock<BTreeMap<Identity, Sender<Vec<u8>>>>,
+    map: Arc<RwLock<BTreeMap<Identity, Sender<Vec<u8>>>>>,
 }
 
 impl SubSwitch {
     /// Create a new map for RPC subscriptions
-    pub fn new(enc: u8) -> Self {
-        Self {
+    pub fn new(enc: u8) -> Arc<Self> {
+        Arc::new(Self {
             enc,
             ..Default::default()
-        }
+        })
     }
 
     /// Create new subscription on the switch
-    pub async fn create<T>(&self, encoding: u8) -> Subscription<T>
+    pub async fn create<T>(&self, encoding: u8, id: Identity) -> Subscription<T>
     where
         T: DeserializeOwned,
     {
         let (tx, rx) = bounded(8);
-        let id = Identity::random();
         self.map.write().await.insert(id.clone(), tx);
         Subscription::new(rx, encoding, id)
     }

@@ -13,6 +13,8 @@
 /// Re-export the core Identity from ratman
 pub use ratman_identity::Identity;
 
+pub use alexandria_tags as tags;
+
 pub mod contacts;
 pub mod diff;
 pub mod error;

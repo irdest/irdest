@@ -9,7 +9,7 @@ use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
 pub use async_std::future::timeout;
 pub use ratman_harness::{millis, sec10, sec5};
 
-fn parse_log_level() {
+pub fn parse_log_level() {
     let filter = EnvFilter::try_from_env("QAUL_LOG")
         .unwrap_or_default()
         .add_directive(LevelFilter::DEBUG.into())
@@ -70,8 +70,8 @@ impl RpcState {
     }
 }
 
-pub async fn zzz(dur: Duration) {
-    async_std::task::sleep(dur).await
+pub async fn zzz(ms: u64) {
+    async_std::task::sleep(Duration::from_millis(ms)).await
 }
 
 pub async fn make_service(port: u16) -> RpcResult<Service> {

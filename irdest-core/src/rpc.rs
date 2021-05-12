@@ -120,25 +120,11 @@ impl RpcServer {
                 tags,
             }) => self.message_subscribe(&msg, auth, service, tags).await,
 
-            //     // Subscribe the user and map the output to an encoded buffer
-            //     let reply = match self
-            //         .message_subscribe(&msg, &self.socket, auth, service, tags)
-            //         .await
-            //     {
-            //         Ok(ref sdk) => io::encode(enc, sdk),
-            //         Err(ref ir) => io::encode(enc, ir),
-            //     }
-            //     .unwrap();
-
-            //     // Send the reply and exit the function early
-            //     self.socket.reply(msg.reply(ADDRESS, reply)).await.unwrap();
-            //     return;
-            // }
-            // Subscriptions(SubCap::Unregister(id)) => self.subscription_unregister(id).await,
-
             // =^-^= Everything else is todo! =^-^=
             _ => todo!(),
         };
+
+        debug!("Message reply: {:?}", reply);
 
         self.socket
             .reply(msg.reply(ADDRESS, reply.to_json().as_bytes().to_vec()))
@@ -225,6 +211,7 @@ impl RpcServer {
                 let socket = Arc::clone(&self.socket);
                 let _msg = msg.clone();
 
+                debug!("Inserting subscription...");
                 let b = self.subs.insert(msg.id).await;
 
                 // Spawn a talk to poll the subscription and then send
