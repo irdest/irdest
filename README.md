@@ -30,7 +30,6 @@ additional information in their respective README files.
 |---------------|------------------------------------------------------------------------------------------------------------------------------------------|
 | [clients]     | irdest end-user applications for various platforms                                                                                       |
 | [docs]        | Manuals (for both users and developers), and tools to build and deploy documentation                                                     |
-| [emberweb]    | Cross-platform web interface bundled in with various user clients                                                                        |
 | [irdest-core] | Core library of the irdest ecosystem.  Provides networking abstractions, user management and discovery                                   |
 | [licenses]    | Set of license texts that are in use in this repository                                                                                  |
 | [netmods]     | Platform-specific networking interface drivers                                                                                           |
@@ -43,7 +42,6 @@ additional information in their respective README files.
 
 [clients]: ./clients
 [docs]: ./docs
-[emberweb]: ./emberweb
 [irdest-core]: ./irdest-core
 [licenses]: ./licenses
 [netmods]: ./netmods
