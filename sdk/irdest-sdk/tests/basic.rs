@@ -12,7 +12,7 @@ use irpc_sdk::{error::RpcResult, Subscription};
 #[async_std::test]
 async fn user_create() -> RpcResult<()> {
     // Create a small test network with 2 RPC sockets
-    let state = RpcState::new(6060, 7070).await;
+    let _state = RpcState::new(6060, 7070).await;
 
     // Register a service on one of them
     let serv = harness::make_service(6060).await?;
@@ -36,8 +36,8 @@ async fn user_create() -> RpcResult<()> {
 async fn subscription() -> RpcResult<()> {
     harness::parse_log_level();
 
-    let state = RpcState::new(6060, 7070).await;
-    let serv = harness::make_service(6060).await?;
+    let state = RpcState::new(8080, 9090).await;
+    let serv = harness::make_service(8080).await?;
     let sdk = IrdestSdk::connect(&serv)?;
     let auth = sdk
         .users()
