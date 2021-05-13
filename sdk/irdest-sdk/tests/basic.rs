@@ -79,9 +79,8 @@ async fn subscription() -> RpcResult<()> {
             .unwrap();
     });
 
-    while let Ok(msg) = sub.next().await {
-        println!("Received message: {} => {:?}", msg.id, msg.payload);
-    }
+    let msg = sub.next().await.unwrap();
 
+    assert_eq!(msg.payload, "Hello you!".as_bytes().to_vec());
     Ok(())
 }

@@ -13,6 +13,9 @@
 //! use irdest_sdk::IrdestSdk;
 //! ```
 
+#[macro_use]
+extern crate tracing;
+
 pub use ircore_types::*;
 pub use irpc_sdk::{
     default_socket_path,
@@ -324,14 +327,24 @@ impl<'ir> MessageRpc<'ir> {
                 // Listen for events for this task
                 let rpc = Arc::clone(&self.rpc.socket.clone());
                 let subs = Arc::clone(&self.rpc.subs);
+                let enc = self.rpc.enc;
                 task::spawn(async move {
                     let subs = Arc::clone(&subs);
 
                     rpc.wait_for(sub_id, |Message { data, .. }| {
                         let subs = Arc::clone(&subs);
 
-                        // Return this future to run
-                        async move { subs.forward(sub_id, data).await }
+                        async move {
+                            match io::decode(enc, &data) {
+                                Ok(Reply::Message(MessageReply::Message(ref msg))) => {
+                                    subs.forward(sub_id, msg).await
+                                }
+                                _ => {
+                                    warn!("Received invalid subscription payload; dropping!");
+                                    Ok(())
+                                }
+                            }
+                        }
                     })
                     .await
                     .unwrap();
