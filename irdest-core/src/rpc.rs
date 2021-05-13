@@ -135,7 +135,7 @@ impl RpcServer {
 
             // =^-^= Service API functions =^-^=
             Services(ServCap::Register { name }) => self.service_register(&msg, name).await,
-            Services(ServCap::Unregister { name, sub }) => self.service_unregister(name, sub).await,
+            Services(ServCap::Unregister { name }) => self.service_unregister(name).await,
             Services(ServCap::Insert {
                 auth,
                 service,
@@ -297,11 +297,48 @@ impl RpcServer {
     }
 
     async fn service_register(self: &Arc<Self>, msg: &Message, name: String) -> Reply {
-        todo!()
+        let socket = Arc::clone(&self.socket);
+        let sub = msg.id;
+        let _msg = msg.clone();
+
+        match self
+            .inner
+            .services()
+            .register(name, move |event| {
+                debug!("Sending '{}' to service '{}'", event.tt(), _msg.from);
+
+                // Create a closure which takes events and sends them
+                // to the remote via RPC.  On the SDK side we can
+                // re-use the subscription mechanism to hook into this
+                // behaviour.
+                task::block_on(async {
+                    socket
+                        .reply(
+                            (&_msg).clone().reply(
+                                ADDRESS,
+                                Reply::Service(ServiceReply::Event { event, sub })
+                                    .to_json()
+                                    .as_bytes()
+                                    .to_vec(),
+                            ),
+                        )
+                        .await
+                        .unwrap()
+                });
+            })
+            .await
+        {
+            // The Reply type here only contains the subscription ID
+            Ok(()) => Reply::Service(ServiceReply::Register { sub }),
+            Err(e) => Reply::Error(e),
+        }
     }
 
-    async fn service_unregister(self: &Arc<Self>, name: String, sub: Identity) -> Reply {
-        todo!()
+    async fn service_unregister(self: &Arc<Self>, name: String) -> Reply {
+        match self.inner.services().unregister(name).await {
+            Ok(()) => Reply::Service(ServiceReply::Ok),
+            Err(e) => Reply::Error(e),
+        }
     }
 
     async fn service_insert(

@@ -73,6 +73,11 @@ impl IrdestSdk {
         MessageRpc { rpc: self }
     }
 
+    pub fn services<'ir>(&'ir self) -> ServiceRpc<'ir> {
+        ServiceRpc { rpc: self }
+    }
+
+    
     async fn send(&self, cap: Capabilities) -> RpcResult<Reply> {
         let json = cap.to_json();
         let msg = Message::to_addr(ADDRESS, &self.addr, json.as_bytes().to_vec());

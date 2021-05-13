@@ -45,11 +45,21 @@ where
 }
 
 /// Event type that can be sent to services to react to state changes
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
 pub enum ServiceEvent {
     /// A user session was started
     Open(UserAuth),
     /// A user session was ended
     Close(UserAuth),
+}
+
+impl ServiceEvent {
+    pub fn tt(&self) -> String {
+        match self {
+            Self::Open(UserAuth(id, _)) => format!("OpenEvent({})", id),
+            Self::Close(UserAuth(id, _)) => format!("CloseEvent({})", id),
+        }
+    }
 }
 
 /// A 2-String tuple used for data indexing

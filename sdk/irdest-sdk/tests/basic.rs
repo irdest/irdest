@@ -3,6 +3,7 @@ use harness::RpcState;
 
 use irdest_sdk::{
     messages::{IdType, Message, Mode},
+    services::ServiceEvent,
     tags::TagSet,
     IrdestSdk,
 };
@@ -12,10 +13,10 @@ use irpc_sdk::{error::RpcResult, Subscription};
 #[async_std::test]
 async fn user_create() -> RpcResult<()> {
     // Create a small test network with 2 RPC sockets
-    let _state = RpcState::new(6060, 7070).await;
+    let _state = RpcState::new(6000, 6500).await;
 
     // Register a service on one of them
-    let serv = harness::make_service(6060).await?;
+    let serv = harness::make_service(6000).await?;
 
     // Initialise Irdest SDK
     let sdk = IrdestSdk::connect(&serv)?;
@@ -34,10 +35,8 @@ async fn user_create() -> RpcResult<()> {
 
 #[async_std::test]
 async fn subscription() -> RpcResult<()> {
-    harness::parse_log_level();
-
-    let state = RpcState::new(8080, 9090).await;
-    let serv = harness::make_service(8080).await?;
+    let state = RpcState::new(6010, 6510).await;
+    let serv = harness::make_service(6010).await?;
     let sdk = IrdestSdk::connect(&serv)?;
     let auth = sdk
         .users()
@@ -82,5 +81,31 @@ async fn subscription() -> RpcResult<()> {
     let msg = sub.next().await.unwrap();
 
     assert_eq!(msg.payload, "Hello you!".as_bytes().to_vec());
+    Ok(())
+}
+
+/// A simple test that connects to an Irdest instance over RPC
+#[async_std::test]
+async fn service_create() -> RpcResult<()> {
+    // Create a small test network with 2 RPC sockets
+    let _state = RpcState::new(6020, 6520).await;
+
+    // Register a service on one of them
+    let serv = harness::make_service(6020).await?;
+
+    // Initialise Irdest SDK
+    let sdk = IrdestSdk::connect(&serv)?;
+
+    // Register a new service
+    let s = sdk.services().register("test").await?;
+
+    let auth = sdk.users().create("foo bar baz boink").await?;
+
+    let event = match s.next().await {
+        Ok(ServiceEvent::Open(e)) => e,
+        _ => unreachable!(),
+    };
+
+    assert_eq!(auth, event);
     Ok(())
 }

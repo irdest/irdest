@@ -9,10 +9,11 @@
 #[cfg(test)]
 mod tests;
 
+// irdest-core type imports
 use crate::{
     error::Error,
     messages::{IdType, Message, Mode, MsgId, MsgQuery},
-    services::Service,
+    services::{Service, ServiceEvent},
     users::{UserAuth, UserProfile, UserUpdate},
     Identity,
 };
@@ -68,7 +69,7 @@ pub enum ServiceCapabilities {
     Register { name: String },
     /// Unregister a service.  This MUST also remove the subscription
     /// associated to this service
-    Unregister { name: String, sub: Identity },
+    Unregister { name: String },
     Insert {
         auth: UserAuth,
         service: String,
@@ -168,6 +169,10 @@ pub enum ServiceReply {
     /// Returned when registering a service.  The sub_id MUST be
     /// registered as a Subscription over `ServiceEvent`
     Register {
+        sub: Identity,
+    },
+    Event {
+        event: ServiceEvent,
         sub: Identity,
     },
     Query {
