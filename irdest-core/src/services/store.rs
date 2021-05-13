@@ -1,7 +1,7 @@
 use crate::{
     error::{Error, Result},
     services::StoreKey,
-    store::{FromRecord, MetadataExt, MetadataMap},
+    store::FromRecord,
     Identity,
 };
 use alexandria::{
