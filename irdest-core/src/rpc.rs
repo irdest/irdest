@@ -11,11 +11,12 @@
 use crate::{
     error::Error,
     helpers::TagSet,
+    messages::{IdType, Mode},
+    services::{Service, StoreKey},
     types::rpc::{
-        Capabilities, MessageCapabilities, MessageReply, Reply, SubscriptionReply,
-        UserCapabilities, UserReply, ADDRESS,
+        Capabilities, MessageCapabilities, MessageReply, Reply, ServiceCapabilities, ServiceReply,
+        SubscriptionReply, UserCapabilities, UserReply, ADDRESS,
     },
-    types::services::Service,
     users::{UserAuth, UserProfile, UserUpdate},
     Identity, IrdestRef,
 };
@@ -25,7 +26,7 @@ use irpc_sdk::{
     error::RpcResult,
     io::{self, Message},
     proto::{SdkCommand, SdkReply},
-    Capabilities as ServiceCapabilities, RpcSocket, Service as SdkService, SubManager,
+    Capabilities as SdkCapabilities, RpcSocket, Service as SdkService, SubManager,
 };
 use std::{str, sync::atomic::Ordering};
 
@@ -59,7 +60,7 @@ impl RpcServer {
             "Core component for irdest ecosystem",
         );
         let id = serv
-            .register(&socket, ServiceCapabilities::basic_json())
+            .register(&socket, SdkCapabilities::basic_json())
             .await?;
         debug!("irdest-core service ID: {}", id);
 
@@ -98,6 +99,7 @@ impl RpcServer {
         debug!("Executing capability: {:?}", cap);
         use Capabilities::*;
         use MessageCapabilities as MsgCap;
+        use ServiceCapabilities as ServCap;
         use UserCapabilities as UserCap;
 
         let reply = match cap {
@@ -114,11 +116,38 @@ impl RpcServer {
             Users(UserCap::Update { auth, update }) => self.user_update(auth, update).await,
 
             // =^-^= Message API functions =^-^=
+            Messages(MsgCap::Send {
+                auth,
+                mode,
+                id_type,
+                service,
+                tags,
+                payload,
+            }) => {
+                self.message_send(auth, mode, id_type, service, tags, payload)
+                    .await
+            }
             Messages(MsgCap::Subscribe {
                 auth,
                 service,
                 tags,
             }) => self.message_subscribe(&msg, auth, service, tags).await,
+
+            // =^-^= Service API functions =^-^=
+            Services(ServCap::Register { name }) => self.service_register(&msg, name).await,
+            Services(ServCap::Unregister { name, sub }) => self.service_unregister(name, sub).await,
+            Services(ServCap::Insert {
+                auth,
+                service,
+                key,
+                value,
+            }) => self.service_insert(auth, service, key, value).await,
+            Services(ServCap::Delete { auth, service, key }) => {
+                self.service_delete(auth, service, key).await
+            }
+            Services(ServCap::Query { auth, service, key }) => {
+                self.service_query(auth, service, key).await
+            }
 
             // =^-^= Everything else is todo! =^-^=
             _ => todo!(),
@@ -198,6 +227,26 @@ impl RpcServer {
         }
     }
 
+    async fn message_send(
+        self: &Arc<Self>,
+        auth: UserAuth,
+        mode: Mode,
+        id_type: IdType,
+        service: Service,
+        tags: TagSet,
+        payload: Vec<u8>,
+    ) -> Reply {
+        match self
+            .inner
+            .messages()
+            .send(auth, mode, id_type, service, tags, payload)
+            .await
+        {
+            Ok(id) => Reply::Message(MessageReply::MsgId(id)),
+            Err(e) => Reply::Error(e),
+        }
+    }
+
     async fn message_subscribe(
         self: &Arc<Self>,
         msg: &Message,
@@ -243,6 +292,66 @@ impl RpcServer {
 
                 Reply::Subscription(SubscriptionReply::Ok(msg.id))
             }
+            Err(e) => Reply::Error(e),
+        }
+    }
+
+    async fn service_register(self: &Arc<Self>, msg: &Message, name: String) -> Reply {
+        todo!()
+    }
+
+    async fn service_unregister(self: &Arc<Self>, name: String, sub: Identity) -> Reply {
+        todo!()
+    }
+
+    async fn service_insert(
+        self: &Arc<Self>,
+        auth: UserAuth,
+        service: String,
+        key: String,
+        value: Vec<u8>,
+    ) -> Reply {
+        match self
+            .inner
+            .services()
+            .insert(auth, service, StoreKey::from(key), value)
+            .await
+        {
+            Ok(()) => Reply::Service(ServiceReply::Ok),
+            Err(e) => Reply::Error(e),
+        }
+    }
+
+    async fn service_delete(
+        self: &Arc<Self>,
+        auth: UserAuth,
+        service: String,
+        key: String,
+    ) -> Reply {
+        match self
+            .inner
+            .services()
+            .delete(auth, service, StoreKey::from(key))
+            .await
+        {
+            Ok(()) => Reply::Service(ServiceReply::Ok),
+            Err(e) => Reply::Error(e),
+        }
+    }
+
+    async fn service_query(
+        self: &Arc<Self>,
+        auth: UserAuth,
+        service: String,
+        key: String,
+    ) -> Reply {
+        match self
+            .inner
+            .services()
+            .query(auth, service, StoreKey::from(key.as_str()))
+            .await
+        {
+            Ok(val) => Reply::Service(ServiceReply::Query { key, val }),
             Err(e) => Reply::Error(e),
         }
     }

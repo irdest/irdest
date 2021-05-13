@@ -66,15 +66,17 @@ impl<'ird> Messages<'ird> {
         payload: Vec<u8>,
     ) -> Result<MsgId>
     where
-        S: Into<String>,
+        S: Into<Service>,
         T: Into<TagSet>,
     {
         let (sender, _) = self.q.auth.trusted(user)?;
         let recipient = mode_to_recp(mode);
-        let associator = service.into();
+        let associator = match service.into() {
+            Service::Name(a) => a,
+            _ => panic!("Don't call `send` with Service::God!"),
+        };
         let id = id_type.consume();
         let tags: TagSet = tags.into();
-        println!("Sending `{}` with tags {:?}", id, tags);
 
         let env = Envelope {
             id,
@@ -84,7 +86,7 @@ impl<'ird> Messages<'ird> {
             tags: tags.iter().cloned().collect(),
         };
 
-        debug!("Sending message with ID `{:?}`", id);
+        debug!("Sending message ID `{:?}` with tags: `{:?}`", id, tags);
         debug!("Sending message to {:?}", recipient);
 
         // Only insert the message into the store if the Id is unique!
