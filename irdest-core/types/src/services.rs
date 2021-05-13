@@ -13,112 +13,19 @@
 //!
 //! [`qrpc`]: https://docs.qaul.net/api/qrpc-sdk/index.html
 
+use std::fmt::{self, Display};
+
 use crate::users::UserAuth;
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
-use std::ops::{Deref, DerefMut};
 
-/// An arbitrary map of metadata that can be stored by a service
-///
-/// Data is stored per service/per user and is tagged with search
-/// tags.  This structure (and API) can be used to store service
-/// related data on a device that will be encrypted and can be loaded
-/// on reboot, meaning that your service doesn't have to worry about
-/// storing things securely on different platforms.
-///
-/// `MetadataMap` has a builder API that makes constructing initial
-/// maps easier than just providing an already initialised BTreeMap.
-#[derive(Debug, Default, Clone, Eq, PartialEq)]
-pub struct MetadataMap {
-    name: String,
-    map: BTreeMap<String, Vec<u8>>,
-}
-
-impl MetadataMap {
-    /// Creates a new, empty metadata map
-    pub fn new<S: Into<String>>(name: S) -> Self {
-        Self {
-            name: name.into(),
-            map: Default::default(),
-        }
-    }
-
-    /// Create a metadata map from a name and initialised map construct
-    ///
-    /// ```
-    /// # use ircore_types::services::MetadataMap;
-    /// MetadataMap::from("numbers", vec![("fav", vec![1, 2, 3, 4])]);
-    /// ```
-    ///
-    /// Because from takes `IntoIterator`, you can also initialise
-    /// your map in-place:
-    ///
-    /// ```
-    /// # use ircore_types::services::MetadataMap;
-    /// MetadataMap::from("numbers", vec![
-    ///     ("fav", vec![1, 2, 3, 4]),
-    ///     ("prime", vec![1, 3, 5, 7, 11]),
-    ///     ("acab", vec![13, 12]),
-    /// ]);
-    /// ```
-    pub fn from<S, K, M, V>(name: S, map: M) -> Self
-    where
-        S: Into<String>,
-        K: Into<String>,
-        M: IntoIterator<Item = (K, V)>,
-        V: IntoIterator<Item = u8>,
-    {
-        let name = name.into();
-        let map = map
-            .into_iter()
-            .map(|(k, v)| (k.into(), v.into_iter().collect()))
-            .collect();
-        Self { name, map }
-    }
-
-    /// Return this entries name
-    pub fn name(&self) -> &String {
-        &self.name
-    }
-
-    /// Add (and override) a key-value map and return the modified map
-    pub fn add<K, V>(mut self, k: K, v: V) -> Self
-    where
-        K: Into<String>,
-        V: Into<Vec<u8>>,
-    {
-        self.map.insert(k.into(), v.into());
-        self
-    }
-
-    /// Delete a key and return the modified map
-    pub fn delete<K: Into<String>>(mut self, k: K) -> Self {
-        self.map.remove(&k.into());
-        self
-    }
-}
-
-impl Deref for MetadataMap {
-    type Target = BTreeMap<String, Vec<u8>>;
-    fn deref(&self) -> &Self::Target {
-        &self.map
-    }
-}
-
-impl DerefMut for MetadataMap {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.map
-    }
-}
-
-/// Represents a service using libqaul
+/// Represents a service using irdest
 ///
 /// Via this type it's possible to either perform actions as a
 /// particular survice, or none, which means that all service's events
 /// become available.  While this is probably not desirable (and
 /// should be turned off) in most situations, this way a user-level
 /// service can do very powerful things with the "raw" netork traffic
-/// of a qaul network.
+/// of an irdest network.
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum Service {
     /// Get access to all service's events
@@ -139,6 +46,67 @@ where
 
 /// Event type that can be sent to services to react to state changes
 pub enum ServiceEvent {
+    /// A user session was started
     Open(UserAuth),
+    /// A user session was ended
     Close(UserAuth),
+}
+
+/// A 2-String tuple used for data indexing
+///
+/// A `StoreKey` can be created from Strings, using the `#` symbol to
+/// separate the namespace and key parts.  To access either parts of
+/// the key, use the appropriate functions.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct StoreKey(String, String);
+
+impl StoreKey {
+    /// Create a StoreKey with explicit namespace and key
+    pub fn new<Ns: Into<String>, Key: Into<String>>(ns: Ns, key: Key) -> Self {
+        Self(ns.into(), key.into())
+    }
+
+    /// Create a StoreKey with empty namespace
+    pub fn no_namespace<S: Into<String>>(key: S) -> Self {
+        Self("".into(), key.into())
+    }
+
+    /// Return the namespace section of the StoreKey
+    pub fn namespace(&self) -> &String {
+        &self.0
+    }
+
+    /// Return the key section of the StoreKey
+    pub fn key(&self) -> &String {
+        &self.1
+    }
+}
+
+impl From<String> for StoreKey {
+    fn from(s: String) -> Self {
+        let mut v: Vec<_> = s.split('#').collect();
+
+        if v.len() == 1 {
+            Self("".into(), v.remove(0).into())
+        } else {
+            Self(v.remove(0).into(), v.remove(0).into())
+        }
+    }
+}
+
+impl From<&str> for StoreKey {
+    fn from(s: &str) -> Self {
+        s.to_string().into()
+    }
+}
+
+impl Display for StoreKey {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // No `#` must be present in namespaces or keys
+        assert!(!self.namespace().contains("#"));
+        assert!(!self.key().contains("#"));
+
+        // Then just concat them together
+        write!(f, "{}", format!("{}#{}", self.namespace(), self.key()))
+    }
 }

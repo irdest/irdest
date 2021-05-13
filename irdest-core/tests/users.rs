@@ -1,4 +1,4 @@
-//! libqaul user tests
+//! irdest-core user tests
 
 #![allow(unused)]
 

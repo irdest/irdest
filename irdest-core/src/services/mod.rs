@@ -12,7 +12,7 @@ use std::collections::BTreeMap;
 
 mod store;
 
-pub use ircore_types::services::{MetadataMap, Service, ServiceEvent};
+pub use ircore_types::services::{Service, ServiceEvent, StoreKey};
 
 pub(crate) use self::store::MetadataStore;
 

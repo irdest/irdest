@@ -10,7 +10,7 @@ mod messages;
 pub(crate) use messages::MsgUtils;
 
 mod services;
-pub(crate) use services::MetadataExt;
+pub(crate) use services::{MetadataExt, MetadataMap};
 
 mod users;
 pub(crate) use users::{KeyWrap, UserProfileExt};

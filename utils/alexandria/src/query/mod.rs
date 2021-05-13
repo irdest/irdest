@@ -139,6 +139,16 @@ impl QueryResult {
         }
     }
 
+    /// Peel a single `RecordRef` from this `QueryResult`
+    ///
+    /// **Panics if the `QueryResult` is of variant `Many`**
+    pub fn as_single(&self) -> RecordRef {
+        match self {
+            Self::Single(rec) => rec.clone(),
+            _ => panic!("Called `as_single()` on a QueryResult::Many!"),
+        }
+    }
+
     pub fn merge(self, o: QueryResult) -> Self {
         use self::QueryResult::*;
 
