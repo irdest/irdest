@@ -60,7 +60,32 @@ pub enum UserCapabilities {
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
 #[serde(tag = "cmd", content = "data", rename_all = "kebab-case")]
-pub enum ServiceCapabilities {}
+pub enum ServiceCapabilities {
+    /// Register a new service
+    ///
+    /// This type _actually_ creates a subscription that is mapped to
+    /// a user function.
+    Register { name: String },
+    /// Unregister a service.  This MUST also remove the subscription
+    /// associated to this service
+    Unregister { name: String, sub: Identity },
+    Insert {
+        auth: UserAuth,
+        service: String,
+        key: String,
+        value: Vec<u8>,
+    },
+    Delete {
+        auth: UserAuth,
+        service: String,
+        key: String,
+    },
+    Query {
+        auth: UserAuth,
+        service: String,
+        key: String,
+    },
+}
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
 #[serde(tag = "cmd", content = "data", rename_all = "kebab-case")]
@@ -94,6 +119,8 @@ pub enum ContactCapabilities {}
 pub enum Reply {
     Users(UserReply),
     Message(MessageReply),
+    Service(ServiceReply),
+
     /// A special reply type that handles registering subscriptions
     Subscription(SubscriptionReply),
     /// A special reply type that wraps all error codes
@@ -132,4 +159,19 @@ pub enum MessageReply {
 #[serde(tag = "type", content = "data", rename_all = "kebab-case")]
 pub enum SubscriptionReply {
     Ok(Identity),
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+#[serde(tag = "type", content = "data", rename_all = "kebab-case")]
+pub enum ServiceReply {
+    Ok,
+    /// Returned when registering a service.  The sub_id MUST be
+    /// registered as a Subscription over `ServiceEvent`
+    Register {
+        sub: Identity,
+    },
+    Query {
+        key: String,
+        val: Vec<u8>,
+    },
 }

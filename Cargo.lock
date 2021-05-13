@@ -1433,6 +1433,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "irchat-types"
+version = "0.1.0"
+dependencies = [
+ "alexandria-tags",
+ "ratman-identity",
+ "serde",
+]
+
+[[package]]
 name = "ircore-types"
 version = "0.1.0"
 dependencies = [
@@ -1441,6 +1450,13 @@ dependencies = [
  "ratman-identity",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "irdest-chat"
+version = "0.1.0"
+dependencies = [
+ "irdest-sdk",
 ]
 
 [[package]]

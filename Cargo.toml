@@ -38,6 +38,7 @@ members = [
 
     # Set of services in irdest
     "services/chat",
+    "services/chat/types",
     "services/ping",
     "services/webui",
 
