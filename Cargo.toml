@@ -9,25 +9,25 @@ members = [
     "irdest-core/types",
 
     # RPC core utilities
-    "rpc-core/irpc-sdk",
     "rpc-core/irpc-broker",
+    "rpc-core/irpc-sdk",
 
     # qaul developer SDKs
     "sdk/irdest-sdk",
 
     # The decentralised router
     "ratman",
+    "ratman/configure",
     "ratman/harness",
     "ratman/identity",
     "ratman/netmod",
-    "ratman/configure",
 
     # Various utility crates
-    "utils/task-notify",
     "utils/clockctrl",
     "utils/libopus-sys",
     "utils/opus-rs",
     "utils/permute",
+    "utils/task-notify",
     "utils/visn",
 
     # Available netmod drivers
@@ -37,11 +37,12 @@ members = [
     "netmods/netmod-wd",
 
     # Set of services in irdest
+    "services/chat",
     "services/ping",
     "services/webui",
 
     # End-user applications
     "clients/hubd",
-    "clients/irpc-client",
     "clients/irdest-gtk",
+    "clients/irpc-client",
 ]
