@@ -1,7 +1,7 @@
 //! Encrypted record-oriented database
 //!
-//! **Experimental:** please note that this database was writted for
-//! [irdest](https://git.irde.st/we/irdest).  There will be data
+//! **Experimental:** please note that this database is being written
+//! for [irdest](https://git.irde.st/we/irdest).  There will be data
 //! retention bugs, and you shouldn't use Alexandria unless you're
 //! okay with losing the data you're storing!
 //!
@@ -14,10 +14,14 @@
 //! * Transactional diff operations
 //! * Dynamic queries
 
+#[macro_use]
+extern crate tracing;
+
 pub(crate) mod core;
 pub(crate) mod crypto;
 pub(crate) mod delta;
 pub(crate) mod dir;
+pub(crate) mod io;
 pub(crate) mod meta;
 pub(crate) mod notify;
 pub(crate) mod store;

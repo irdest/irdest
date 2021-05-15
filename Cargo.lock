@@ -80,6 +80,7 @@ dependencies = [
  "sodiumoxide",
  "tempfile",
  "thiserror",
+ "toml",
  "tracing",
 ]
 

@@ -27,6 +27,13 @@ impl Session {
             Self::Global => None,
         }
     }
+
+    pub(crate) fn to_slug(&self) -> String {
+        match self {
+            Self::Global => "shared".into(),
+            Self::Id(id) => id.to_string(),
+        }
+    }
 }
 
 impl From<Id> for Session {

@@ -25,6 +25,15 @@ pub enum Error {
     #[error("failed to initialise library at offset `{}`", offset)]
     InitFailed { offset: String },
 
+    #[error("suffered I/O error: `{}`", msg)]
+    IoFailed { msg: String },
+
+    #[error("failed to load library configuration: `{}`", msg)]
+    InvalidCfg { msg: String },
+
+    #[error("failed to sync data: `{}`", msg)]
+    SyncFailed { msg: String },
+
     #[error("failed to perform action because user `{}` is locked", id)]
     UserNotOpen { id: String },
 
@@ -42,12 +51,6 @@ pub enum Error {
 
     #[error("path exists already: {}", path)]
     PathExists { path: String },
-
-    #[error("failed to load data: `{}`", msg)]
-    LoadFailed { msg: String },
-
-    #[error("failed to sync data: `{}`", msg)]
-    SyncFailed { msg: String },
 
     #[error("tried to apply Diff of incompatible type")]
     BadDiffType,
@@ -140,7 +143,15 @@ impl From<bincode::Error> for Error {
 
 impl From<async_std::io::Error> for Error {
     fn from(e: async_std::io::Error) -> Self {
-        Self::LoadFailed {
+        Self::IoFailed {
+            msg: format!("{}", e),
+        }
+    }
+}
+
+impl From<toml::de::Error> for Error {
+    fn from(e: toml::de::Error) -> Self {
+        Self::InvalidCfg {
             msg: format!("{}", e),
         }
     }
