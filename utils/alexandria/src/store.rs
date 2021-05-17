@@ -24,17 +24,17 @@ pub(crate) struct Store {
     /// The per-user datastore
     usrd: BTreeMap<Id, Notify<BTreeMap<Path, Notify<Encrypted<Arc<Record>, KeyPair>>>>>,
     /// Per-user GC locks
-    gc_usr: BTreeMap<Id, BTreeMap<Path, GcReq>>,
+    gc_usr: BTreeMap<Id, BTreeMap<Path, GcGuard>>,
     /// Shared-scope GC lock
-    gc_shared: BTreeMap<Path, GcReq>,
+    gc_shared: BTreeMap<Path, GcGuard>,
 }
 
-/// A request for garbage collection wrapper
+/// A guard marker for garbage collection
 ///
-/// Specifies if an item should be held for GC, how many holders there
-/// are and if the item should be deleted when the hold expires.
+/// Specifies if an item should be held from GC, how many holders
+/// there are and if the item should be deleted when the hold expires.
 #[derive(Default)]
-struct GcReq {
+struct GcGuard {
     /// Number of GC holders
     ctr: usize,
     /// Determine if the item should be deleted
@@ -65,6 +65,12 @@ impl Store {
                 .get(path)
                 .and_then(|e| e.deref().map(|ref rec| Arc::clone(&rec)).ok()))
             .map_or(Err(Error::NoSuchPath { path: path.into() }), |rec| Ok(rec))
+    }
+
+    pub(crate) fn get_payload(&self, id: Session, path: &Path) -> Result<Vec<u8>> {
+        trace!("Synchronising path: {:?}/{}", id, path);
+
+        todo!()
     }
 
     /// Similar to `insert`, but useful to seed an entire record from
@@ -156,7 +162,7 @@ impl Store {
         db.path(&path);
 
         // Check if the path GC is locked and mark to delete
-        if let Some(GcReq { ref mut del, .. }) = self.gc_set_mut(id).get_mut(path) {
+        if let Some(GcGuard { ref mut del, .. }) = self.gc_set_mut(id).get_mut(path) {
             trace!("Marking path `{}` for future deletion", path);
             *del = true;
             return Ok(());
@@ -214,11 +220,11 @@ impl Store {
         });
     }
 
-    /// Release the GC for a set of paths and delete them
+    /// Release the GC guard for a set of paths and delete them
     #[tracing::instrument(skip(self), level = "trace")]
     pub(crate) fn gc_release(&mut self, paths: &Vec<(Path, Session)>) -> Result<()> {
         paths.iter().fold(Ok(()), |res, (path, id)| {
-            if let Some(GcReq {
+            if let Some(GcGuard {
                 ref mut ctr,
                 ref del,
             }) = self.gc_set_mut(*id).get_mut(&path)
@@ -275,8 +281,8 @@ impl Store {
         }
     }
 
-    /// A utility functiot to get the mutable gc lock, depending on id
-    fn gc_set_mut(&mut self, id: Session) -> &mut BTreeMap<Path, GcReq> {
+    /// A utility function to get the mutable gc lock, depending on id
+    fn gc_set_mut(&mut self, id: Session) -> &mut BTreeMap<Path, GcGuard> {
         match id.id() {
             Some(id) => self.gc_usr.entry(id).or_default(),
             None => &mut self.gc_shared,

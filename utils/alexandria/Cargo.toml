@@ -28,3 +28,4 @@ bincode = "1.0"
 ed25519-dalek = "1.0.0-pre.3"
 rand = "0.7"
 tempfile = "3.0"
+tracing-subscriber = { version = "0.2", features = ["fmt"] }

@@ -17,5 +17,5 @@ pub(crate) fn parse_log_level() {
 
     // Initialise the logger
     fmt().with_env_filter(filter).init();
-    info!("Initialised logger: welcome to qaul-hubd!");
+    info!("Initialised logger: welcome to irdest-hubd!");
 }

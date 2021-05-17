@@ -30,19 +30,6 @@ use std::fmt::{self, Display, Formatter};
 /// # use alexandria::utils::Path;
 /// let _: Path = "/test:data".into();
 /// ```
-///
-/// ## Util macro
-///
-/// If you want to create paths from identifiers, not just strings, or
-/// if you want to avoid stringly typed paths, you can also use the
-/// `mkPath!` macro in the same module.
-///
-/// ```rust,ignore
-/// # use alexandria::path::mkPath;
-/// let _: Path = mkPath!("imgs", "bob", "cool");
-/// ```
-///
-///
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub struct Path {
     leaf: String,
@@ -50,6 +37,17 @@ pub struct Path {
 }
 
 impl Path {
+    pub fn new<S, I>(leaf: S, seq: I) -> Self
+    where
+        S: Into<String>,
+        I: IntoIterator<Item = S>,
+    {
+        Self {
+            leaf: leaf.into(),
+            seq: seq.into_iter().map(Into::into).collect(),
+        }
+    }
+
     pub fn leaf(&self) -> &str {
         self.leaf.as_str()
     }
@@ -95,3 +93,15 @@ fn parse_path_simple() {
     assert_eq!(leaf, "bob".to_string());
     assert_eq!(seq, vec!["msg".to_string()]);
 }
+
+// #[macro_export]
+// macro_rules! path {
+//     ($x:expr) => (Path::new($x, vec![]));
+//     ($x:expr, $($y:expr),+) => (Path::new($x, vec![ $($y),+ ]));
+// }
+
+// #[test]
+// fn path_from_macro() {
+//     let p = path!("cool", vec!["img", "bob"]);
+//     assert_eq!(p, "/img/bob:cool".into());
+// }

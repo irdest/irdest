@@ -20,10 +20,10 @@ impl Dirs {
     }
 
     pub(crate) fn scaffold(&self) -> Result<()> {
-        fs::create_dir_all(&self.root)?;
-        fs::create_dir(self.records())?;
-        fs::create_dir(self.meta())?;
-        fs::create_dir(self.cache())?;
+        let _ = fs::create_dir_all(&self.root);
+        let _ = fs::create_dir(self.records());
+        let _ = fs::create_dir(self.meta());
+        let _ = fs::create_dir(self.cache());
         Ok(())
     }
 

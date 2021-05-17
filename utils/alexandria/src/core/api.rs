@@ -1,15 +1,16 @@
 use crate::{
-    core::{Session, SessionsApi},
+    core::{Builder, Session, SessionsApi},
     delta::{DeltaBuilder, DeltaType},
-    error::Result,
+    dir::Dirs,
+    error::{Error, Result},
+    io::{Config, Sync},
     meta::{tags::TagCache, users::UserTable},
     query::{Query, QueryIterator, QueryResult, SetQuery, SubHub, Subscription},
     store::Store,
     utils::{Diff, Id, Path, TagSet},
 };
 use async_std::sync::{Arc, RwLock};
-use std::fmt::Debug;
-use tracing::info;
+use std::{fmt::Debug, path};
 
 /// In-memory representation of an alexandria database
 ///
@@ -18,8 +19,10 @@ use tracing::info;
 ///
 /// [builder]: struct.Builder.html
 pub struct Library {
-    // /// The main management path
-    // pub(crate) root: Dirs,
+    /// The main management path
+    pub(crate) root: Dirs,
+    /// On-disk configuration
+    pub(crate) cfg: RwLock<Config>,
     /// Table with encrypted user metadata
     pub(crate) users: RwLock<UserTable>,
     /// Cache of tag/path mappings
@@ -28,22 +31,36 @@ pub struct Library {
     pub(crate) store: RwLock<Store>,
     /// The state handler for subscriptions
     pub(crate) subs: Arc<SubHub>,
+    /// Synchronisation engine
+    pub(crate) sync: Arc<Sync>,
 }
 
 impl Library {
     /// Internally called setup function
-    pub(crate) fn init(self) -> Result<Self> {
-        // self.root.scaffold()?;
-        Ok(self)
+    pub(crate) async fn init(&self) -> Result<()> {
+        warn!("Creating an ALPHA library on disk; data loss may occur!");
+
+        // Create the directory scaffolding
+        self.root.scaffold()?;
+
+        // Write the library configuration
+        self.cfg.read().await.write(&self.root)?;
+
+        Ok(())
     }
 
     /// Load and re-initialise a previous database session from disk
-    pub fn load<'tmp, P, S>(_: P, _: S) -> Result<Self>
+    pub fn load<'tmp, P, S>(offset: P, root_sec: S) -> Result<Arc<Self>>
     where
-        P: Into<&'tmp Path>,
+        P: Into<&'tmp path::Path>,
         S: Into<String>,
     {
-        unimplemented!()
+        let offset = offset.into();
+        let p = offset.to_str().unwrap_or("<Unknown directory>");
+
+        Builder::inspect_path(offset, root_sec).map_err(|_| Error::IoFailed {
+            msg: format!("Invalid library path: {}", p),
+        })
     }
 
     /// Load the database sessions API scope
@@ -51,7 +68,37 @@ impl Library {
         SessionsApi { inner: self }
     }
 
-    /// Similar to `insert`, but instead operating on a batch of Diffs
+    /// Start the synchronisation engine for this database
+    ///
+    /// By default an alexandria `Library` exists purely in-memory.
+    /// This is useful for testing purposes.  To allow alexandria to
+    /// synchronise data to disk dynamically, call this function to
+    /// start an async task to supervise this behaviour.
+    ///
+    /// This function returns `Err(_)` if the offset provided during
+    /// initialisation can't be written to.
+    pub async fn sync(self: &Arc<Self>) -> Result<()> {
+        self.init().await?;
+
+        let sync = Arc::clone(&self.sync);
+        let this = Arc::clone(&self);
+
+        sync.start(this).await.map_err(|e| {
+            error!("Synchronisation engine emitted an error: {}", e);
+            e
+        })
+    }
+
+    /// Force unfinished transactions to sync to disk
+    pub fn ensure(&self) {
+        self.sync.block_on_clear();
+    }
+
+    /// Create a new record and apply a batch of diffs to it immediately
+    ///
+    /// Semantically this function works the same as `insert`, meaning
+    /// that the provided path must be unique for the given session,
+    /// and the tags provided can not be updated in the future.
     #[tracing::instrument(skip(self, data, tags), level = "info")]
     pub async fn batch<T, D>(&self, id: Session, path: Path, tags: T, data: Vec<D>) -> Result<Id>
     where
@@ -82,7 +129,9 @@ impl Library {
         })?;
         drop(tc);
 
-        self.subs.queue(db.make()).await;
+        let delta = db.make();
+        self.sync.queue(&delta);
+        self.subs.queue(delta).await;
 
         info!("Batch insert succeeded");
         Ok(rec_id)
@@ -90,8 +139,15 @@ impl Library {
 
     /// Insert a new record into the library and return it's ID
     ///
-    /// You need to have a valid and active user session to do so, and
-    /// the `path` must be unique.
+    /// The provided path must be unique for the provided user
+    /// session.  This function will return an error if a record
+    /// already exists at the given path.
+    ///
+    /// Note that it is currently not possible to update the tag set
+    /// of a record after it has been created, so make sure to include
+    /// any relevant search tags in this function call.  If you want
+    /// to change them in the future, you will have to delete and
+    /// re-create the record.
     #[tracing::instrument(skip(self, data, tags), level = "info")]
     pub async fn insert<T, D>(&self, id: Session, path: Path, tags: T, data: D) -> Result<Id>
     where
@@ -116,12 +172,20 @@ impl Library {
         })?;
         drop(tc);
 
-        self.subs.queue(db.make()).await;
+        let delta = db.make();
+        self.sync.queue(&delta);
+        self.subs.queue(delta).await;
 
         info!("Record insert succeeded");
         Ok(rec_id)
     }
 
+    /// Delete a path from the database
+    ///
+    /// Note that a record MAY not be deleted immediately, if it has a
+    /// GC guard hold on it from one (or multiple) query iterators.
+    /// In that case a path may still be available via a direct query,
+    /// even though it has already been deleted.
     #[tracing::instrument(skip(self), level = "info")]
     pub async fn delete(&self, id: Session, path: Path) -> Result<()> {
         if let Session::Id(id) = id {
@@ -139,13 +203,17 @@ impl Library {
         tc.delete_path(id, path)?;
         drop(tc);
 
-        self.subs.queue(db.make()).await;
+        let delta = db.make();
+        self.sync.queue(&delta);
+        self.subs.queue(delta).await;
 
         info!("Record delete succeeded");
         Ok(())
     }
 
-    /// Update a record in-place
+    /// Update an existing record with a diff
+    ///
+    /// This function requires the given record path to already exist.
     #[tracing::instrument(skip(self, diff), level = "info")]
     pub async fn update<D>(&self, id: Session, path: Path, diff: D) -> Result<()>
     where
@@ -162,10 +230,46 @@ impl Library {
         store.update(&mut db, id, &path, diff.into())?;
         drop(store);
 
-        self.subs.queue(db.make()).await;
+        let delta = db.make();
+        self.sync.queue(&delta);
+        self.subs.queue(delta).await;
 
         info!("Record update succeeded");
         Ok(())
+    }
+
+    /// Update, or insert a record into the database
+    ///
+    /// This function will update a record in the database, or create
+    /// it if the provided path doesn't already exist.  If the record
+    /// doesn't already exist, and no `tags` parameter is provided, it
+    /// will initialise to `TagSet::empty()`.
+    ///
+    /// Furthermore, once a record is created its tag set can not
+    /// currently be changed.  Thus in update-mode this function will
+    /// ignore additional parameter passed into `tags`.
+    pub async fn upsert<T, D>(&self, id: Session, path: Path, tags: T, diff: D) -> Result<Id>
+    where
+        T: Into<Option<TagSet>>,
+        D: Into<Diff>,
+    {
+        if let Session::Id(id) = id {
+            self.users.read().await.is_open(id)?;
+            info!("Passed open-auth for id `{}`", id.to_string());
+        }
+
+        // Read-lock the store to check for the existance of a path
+        let store = self.store.read().await;
+        let exists = store.get_path(id, &path);
+        drop(store);
+
+        match exists {
+            Ok(rec) => self.update(id, path, diff).await.map(|_| rec.header.id),
+            Err(_) => {
+                self.insert(id, path, tags.into().unwrap_or(TagSet::empty()), diff)
+                    .await
+            }
+        }
     }
 
     /// Query the database with a specific query object
@@ -190,7 +294,7 @@ impl Library {
     /// # use alexandria::{Builder, GLOBAL, Library, error::Result, utils::{Tag, TagSet, Path}, query::Query};
     /// # async fn foo() -> Result<()> {
     /// # let tmp = tempfile::tempdir().unwrap();
-    /// # let lib = Builder::new().offset(tmp.path()).build().unwrap();
+    /// # let lib = Builder::new().offset(tmp.path()).build();
     /// let path = Path::from("/msg:alice");
     /// lib.query(GLOBAL, Query::Path(path)).await;
     /// # Ok(()) }
@@ -216,7 +320,7 @@ impl Library {
     /// # use alexandria::{GLOBAL, Builder, Library, error::Result, utils::{Tag, TagSet, Path}, query::Query};
     /// # async fn foo() -> Result<()> {
     /// # let tmp = tempfile::tempdir().unwrap();
-    /// # let lib = Builder::new().offset(tmp.path()).build().unwrap();
+    /// # let lib = Builder::new().offset(tmp.path()).build();
     /// # let tag1 = Tag::new("tag1", vec![1, 3, 1, 2]);
     /// # let tag2 = Tag::new("tag2", vec![13, 12]);
     /// let tags = TagSet::from(vec![tag1, tag2]);
@@ -278,7 +382,7 @@ impl Library {
     /// # use alexandria::{GLOBAL, Builder, Library, error::Result, utils::{Tag, TagSet, Path}, query::Query};
     /// # async fn foo() -> Result<()> {
     /// # let tmp = tempfile::tempdir().unwrap();
-    /// # let lib = Builder::new().offset(tmp.path()).build().unwrap();
+    /// # let lib = Builder::new().offset(tmp.path()).build();
     /// # let tag1 = Tag::new("tag1", vec![1, 3, 1, 2]);
     /// # let tag2 = Tag::new("tag2", vec![13, 12]);
     /// let tags = TagSet::from(vec![tag1, tag2]);
@@ -360,7 +464,7 @@ impl Library {
     /// # use alexandria::{GLOBAL, Builder, Library, error::Result, utils::{Tag, TagSet, Path}, query::{Query, SetQuery}};
     /// # async fn foo() -> Result<()> {
     /// # let tmp = tempfile::tempdir().unwrap();
-    /// # let lib = Builder::new().offset(tmp.path()).build().unwrap();
+    /// # let lib = Builder::new().offset(tmp.path()).build();
     /// # let my_tag = Tag::new("tag1", vec![1, 3, 1, 2]);
     /// let tags = TagSet::from(vec![my_tag]);
     /// let sub = lib.subscribe(GLOBAL, Query::tags().subset(tags)).await?;

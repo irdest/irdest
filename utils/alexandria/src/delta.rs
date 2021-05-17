@@ -2,6 +2,7 @@ use crate::{
     utils::{Id, Path, TagSet},
     Session,
 };
+use chrono::{DateTime, Utc};
 
 pub(crate) struct DeltaBuilder {
     user: Session,
@@ -9,6 +10,7 @@ pub(crate) struct DeltaBuilder {
     rec_id: Option<Id>,
     tags: Option<TagSet>,
     action: DeltaType,
+    time: DateTime<Utc>,
 }
 
 impl DeltaBuilder {
@@ -19,6 +21,7 @@ impl DeltaBuilder {
             path: None,
             rec_id: None,
             tags: Some(TagSet::empty()),
+            time: Utc::now(),
         }
     }
 
@@ -41,15 +44,16 @@ impl DeltaBuilder {
             action: self.action,
             tags: self.tags.unwrap_or_else(|| TagSet::empty()),
             path: self.path.unwrap(),
+            time: self.time,
         }
     }
 }
 
 /// A transaction to the active dataset of a library
 ///
-/// A delta is atomic, touches one field of one record, and can reside in the hot
-/// cache before being fully commited.  It is authenticated against an
-/// active user before being cached.
+/// A delta is atomic, touches one field of one record, and can reside
+/// in the hot cache before being fully committed.  It is
+/// authenticated against an active user before being cached.
 ///
 /// The `path` segment is constructed via the
 #[derive(Clone, Debug)]
@@ -59,6 +63,7 @@ pub(crate) struct Delta {
     pub(crate) path: Path,
     pub(crate) tags: TagSet,
     pub(crate) action: DeltaType,
+    pub(crate) time: DateTime<Utc>,
 }
 
 #[derive(Clone, Debug)]

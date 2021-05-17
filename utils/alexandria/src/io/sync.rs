@@ -1,19 +1,20 @@
 use crate::{
-    delta::Delta,
+    delta::{Delta, DeltaType},
     dir::Dirs,
     error::{Error, Result},
     io::format,
     utils::Path,
-    Library, Session,
+    Library,
 };
 use async_std::{sync::Mutex, task};
-use std::{collections::VecDeque, fs, path::PathBuf, sync::Arc, time::Duration};
-use tracing::{error, warn};
-
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-enum SyncItem {
-    Path(Path),
-}
+use std::{
+    collections::VecDeque,
+    fs::{self, OpenOptions as Open},
+    io::Write,
+    path::PathBuf,
+    sync::Arc,
+    time::Duration,
+};
 
 /// Persistence synchronisation module
 ///
@@ -59,9 +60,12 @@ impl Sync {
             let sync = Arc::clone(&self);
             let lib = Arc::clone(&lib);
             task::spawn(async move {
+                info!("Starting synchronisation task...");
                 loop {
                     {
                         let mut vec = sync.dirty.lock().await;
+                        trace!("Syncing {} records", vec.len());
+
                         if let Err(e) = write_store(&lib, &sync.dirs, &vec).await {
                             error!("Sync::write_store failed: {}", e);
                         };
@@ -82,16 +86,42 @@ impl Sync {
         let d = d.clone();
         task::spawn(async move {
             let mut dirty = this.dirty.lock().await;
+            debug!("Queuing delta: {:?} {}", d.action, d.path);
             dirty.push_back(d);
         });
+    }
+
+    /// Block the current flow of runtime until the sync engine is empty
+    pub(crate) fn block_on_clear(self: &Arc<Self>) {
+        let this = Arc::clone(self);
+
+        task::block_on(async move {
+            loop {
+                match this.dirty.lock().await.len() {
+                    0 => break,
+                    _ => task::sleep(Duration::from_millis(50)).await,
+                }
+            }
+        })
     }
 }
 
 async fn write_store(l: &Arc<Library>, dirs: &Dirs, deltas: &VecDeque<Delta>) -> Result<()> {
     for ref d in deltas {
-        let fs_path = format::path(dirs, &d.user, &d.path);
+        trace!("Syncing path {}", d.path);
+        let path = d.path.clone();
+        let fs_path = format::path(dirs, &d.user, &path);
 
-        //
+        // Match on the delta type
+        let buf = match d.action {
+            DeltaType::Insert | DeltaType::Update => {
+                let store = l.store.read().await;
+                Some(format::encode(store.get_path(d.user, &d.path)?))
+            }
+            DeltaType::Delete => None,
+        };
+
+        SyncWriter { fs_path, buf }.run(path.clone())
     }
 
     Ok(())
@@ -100,6 +130,65 @@ async fn write_store(l: &Arc<Library>, dirs: &Dirs, deltas: &VecDeque<Delta>) ->
 /// An asynchronous update writer
 pub struct SyncWriter {
     fs_path: PathBuf,
-    sess: Session,
-    path: Path,
+    buf: Option<Vec<u8>>,
+}
+
+impl SyncWriter {
+    fn run(self, path: Path) {
+        task::spawn(async move {
+            if let Err(e) = match self.buf {
+                Some(_) => self.write(),
+                None => self.delete(),
+            } {
+                error!("Error occured while syncing path `{}`: {}", path, e);
+            }
+        });
+    }
+
+    fn write(self) -> Result<()> {
+        let buf = self.buf.unwrap();
+        let mut f = Open::new()
+            .truncate(true)
+            .write(true)
+            .create(true)
+            .open(self.fs_path)?;
+        Ok(f.write_all(&buf)?)
+    }
+
+    fn delete(self) -> Result<()> {
+        Ok(fs::remove_file(self.fs_path)?)
+    }
+}
+
+#[async_std::test]
+async fn write_and_load() -> Result<()> {
+    use crate::{
+        query::Query,
+        record::kv::Value,
+        utils::{Diff, TagSet},
+        Builder, Library, GLOBAL,
+    };
+    let tmp = tempfile::tempdir().unwrap();
+    let lib = Builder::new().offset(tmp.path()).build();
+    lib.sync().await?;
+
+    lib.insert(
+        GLOBAL,
+        "/:bar".into(),
+        TagSet::empty(),
+        Diff::map().insert("test key", "test value"),
+    )
+    .await?;
+
+    drop(lib);
+
+    let lib = Library::load(tmp.path(), "")?;
+
+    let rec = lib.query(GLOBAL, Query::Path("/:bar".into())).await?;
+    assert_eq!(
+        rec.as_single().kv().get("test key"),
+        Some(&Value::from("test value"))
+    );
+
+    Ok(())
 }

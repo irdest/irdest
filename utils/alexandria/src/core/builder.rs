@@ -1,12 +1,16 @@
 use crate::{
-    error::Result,
+    dir::Dirs,
+    io::{versions, Config, Sync},
     meta::{tags::TagCache, users::UserTable},
     query::SubHub,
     store::Store,
     Library,
 };
 use async_std::sync::{Arc, RwLock};
-use std::{path::Path, result::Result as StdResult};
+use std::{
+    path::{Path, PathBuf},
+    result::Result as StdResult,
+};
 
 /// A utility to configure and initialise an alexandria database
 ///
@@ -23,15 +27,14 @@ use std::{path::Path, result::Result as StdResult};
 /// let lib = Builder::new()
 ///               .offset(dir.path())
 ///               .root_sec("car horse battery staple")
-///               .build()?;
+///               .build();
 /// # drop(lib);
 /// # Ok(()) }
 /// ```
 #[derive(Default)]
 pub struct Builder {
     /// The main offset path
-    #[allow(unused)]
-    offset: Option<String>,
+    offset: Option<PathBuf>,
 }
 
 impl Builder {
@@ -50,28 +53,30 @@ impl Builder {
         P: Into<&'tmp Path>,
         S: Into<String>,
     {
-        let p: &Path = offset.into();
+        let p = offset.into();
+        let root = Dirs::new(p);
 
         // If the path doesn't exist it can't be a database
-        if !p.exists() {
+        if !root.valid() {
             return Err(Self::new().offset(p));
         }
 
-        // TODO: Check for a magic file here
         // TODO: load database with provided root secret
 
-        // let root = Dirs::new(p);
-        let users = RwLock::new(UserTable::new());
-        let tag_cache = RwLock::new(TagCache::new());
+        // Load the database config and return a builder if it fails
+        let cfg = Config::load(&root).map_err(|_| Self::new())?;
+        if cfg.version == versions::ALPHA {
+            warn!("Loading an ALPHA library from disk; data loss may occur!");
+        }
 
-        let store = RwLock::new(Store::new());
-        let subs = SubHub::new();
         Ok(Arc::new(Library {
-            // root,
-            users,
-            tag_cache,
-            store,
-            subs,
+            root: root.clone(),
+            cfg: RwLock::new(cfg),
+            users: RwLock::new(UserTable::new()),
+            tag_cache: RwLock::new(TagCache::new()),
+            store: RwLock::new(Store::new()),
+            subs: SubHub::new(),
+            sync: Sync::new(root),
         }))
     }
 
@@ -81,8 +86,7 @@ impl Builder {
     /// devices it needs to be a directory that's accessibly from the
     /// daemon that owns the alexandria scope.
     pub fn offset<'tmp, P: Into<&'tmp Path>>(self, offset: P) -> Self {
-        let p: &Path = offset.into();
-        let offset = p.to_str().map(|s| s.to_string());
+        let offset = Some(PathBuf::from(offset.into()));
         Self { offset, ..self }
     }
 
@@ -97,24 +101,24 @@ impl Builder {
     }
 
     /// Consume the builder and create a Library
-    pub fn build(self) -> Result<Arc<Library>> {
-        // let root = Dirs::new(
-        //     self.offset
-        //         .expect("Builder without `offset` cannot be built"),
-        // );
-        let users = RwLock::new(UserTable::new());
-        let tag_cache = RwLock::new(TagCache::new());
+    ///
+    /// Note that this will not create a persistent storage on-disk.
+    /// To achieve this, you must call `sync()` on the created
+    /// library.
+    pub fn build(self) -> Arc<Library> {
+        let root = Dirs::new(
+            self.offset
+                .expect("Builder without `offset` cannot be built"),
+        );
 
-        let store = RwLock::new(Store::new());
-        let subs = SubHub::new();
-        Library {
-            // root,
-            users,
-            tag_cache,
-            store,
-            subs,
-        }
-        .init()
-        .map(|l| Arc::new(l))
+        Arc::new(Library {
+            root: root.clone(),
+            cfg: RwLock::new(Config::init()),
+            users: RwLock::new(UserTable::new()),
+            tag_cache: RwLock::new(TagCache::new()),
+            store: RwLock::new(Store::new()),
+            subs: SubHub::new(),
+            sync: Sync::new(root),
+        })
     }
 }

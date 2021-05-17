@@ -1,6 +1,9 @@
 use crate::{dir::Dirs, error::Result};
 use serde::{Deserialize, Serialize};
-use std::{fs::File, io::Read};
+use std::{
+    fs::{File, OpenOptions as Open},
+    io::{Read, Write},
+};
 
 /// The current version of the library
 pub const VERSION: u32 = 0;
@@ -34,5 +37,17 @@ impl Config {
         f.read_to_string(&mut buf)?;
 
         Ok(toml::from_str(buf.as_str())?)
+    }
+
+    pub(crate) fn write(&self, d: &Dirs) -> Result<()> {
+        let path = d.root().join("db.config");
+
+        let mut f = Open::new()
+            .truncate(true)
+            .write(true)
+            .create(true)
+            .open(path)?;
+        f.write_all(toml::to_string(&self)?.as_bytes())?;
+        Ok(())
     }
 }

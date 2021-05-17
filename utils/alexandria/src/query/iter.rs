@@ -110,9 +110,9 @@ impl QueryIterator {
     ///
     /// This can have unwanted side-effects, such as having records
     /// still accessible by other tasks after they were deleted, when
-    /// accessed by path directly (but not via tags), or not actually
-    /// deleting records if the program aborts before the iterator can
-    /// restart the garbage collector again.
+    /// accessed by path directly (however not via search tags), or
+    /// not actually deleting records if the program aborts before the
+    /// iterator can restart the garbage collector again.
     pub async fn lock(&self) {
         let mut s = self.inner.store.write().await;
         s.gc_lock(&self.paths);
@@ -151,7 +151,7 @@ impl Drop for QueryIterator {
         async_std::task::block_on(async {
             let mut s = self.inner.store.write().await;
             s.gc_release(&self.paths)
-                .expect("Failed to release deleted records!");
+                .expect("Failed to release GC guard for records!");
         });
     }
 }
@@ -181,7 +181,7 @@ mod harness {
         /// Create a new test data setup
         pub fn setup() -> Self {
             let dir = tempdir().unwrap();
-            let lib = Builder::new().offset(dir.path()).build().unwrap();
+            let lib = Builder::new().offset(dir.path()).build();
             let rng = OsRng {};
 
             Self { lib, rng }

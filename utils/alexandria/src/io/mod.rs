@@ -6,5 +6,5 @@ mod sync;
 pub use sync::Sync;
 
 mod cfg;
-pub use cfg::Config;
 pub use cfg::legacy as versions;
+pub use cfg::Config;
