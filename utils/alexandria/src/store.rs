@@ -3,7 +3,7 @@
 use crate::{
     crypto::{
         asym::{KeyPair, SharedKey},
-        DetachedKey, Encrypted,
+        CipherText, DetachedKey, Encrypted, Encrypter,
     },
     delta::{DeltaBuilder, DeltaType},
     error::{Error, Result},
@@ -67,10 +67,43 @@ impl Store {
             .map_or(Err(Error::NoSuchPath { path: path.into() }), |rec| Ok(rec))
     }
 
-    pub(crate) fn get_payload(&self, id: Session, path: &Path) -> Result<Vec<u8>> {
+    /// Get a single encrypted record to store
+    ///
+    /// The selected entry _won't_ be closed, but encrypted via a
+    /// side-channel.  No decrypted records can ever be written to
+    /// disk.
+    // TODO: this function is awful and should not exist!  FIXME please.
+    //
+    // Why?  I'll tell you whyyy!  Okay, a "Record" in the database
+    // contains a body, and a secret header.  Both the body and secret
+    // header should be encrypted, leaving the rest of the header
+    // untouched.  This means that we can do a quick index of the
+    // database with tags and IDs, without exposing paths, users, etc.
+    //
+    // But, this doesn't actually work currently.  We need to have a
+    // way to get a record into an encryptable state without blocking
+    // other access to the database while this operation is happening.
+    // Furthermore, do we automatically re-open a record or should
+    // future code-paths dynamically unlock the entries?  This
+    // mechanism isn't currently implemented.
+    //
+    // Fundamentally we can't change a Record because it is wrappen in
+    // Arc<Record>.  So do we lock a record in place by swapping its
+    // location in memory with an encrypted variant?
+    pub(crate) fn get_encrypted(
+        &self,
+        key: Arc<KeyPair>,
+        id: Session,
+        path: &Path,
+    ) -> Result<CipherText> {
         trace!("Synchronising path: {:?}/{}", id, path);
+        let rec: Record = self
+            .tree(id)
+            .get(path)
+            .ok_or(Error::NoSuchPath { path: path.into() })
+            .and_then(|not| not.deref().unwrap().prepare(Arc::clone(&key)))?;
 
-        todo!()
+        key.seal(&rec)
     }
 
     /// Similar to `insert`, but useful to seed an entire record from
@@ -278,6 +311,17 @@ impl Store {
         match id.id() {
             Some(id) => self.usrd.entry(id).or_insert(Notify::new(BTreeMap::new())),
             None => &mut self.shared,
+        }
+    }
+
+    /// A utility function to get the mutable tree, depending on id
+    fn tree(&self, id: Session) -> &BTreeMap<Path, Notify<Encrypted<Arc<Record>, KeyPair>>> {
+        match id.id() {
+            Some(ref id) => self
+                .usrd
+                .get(id)
+                .expect(&format!("Failed to get tree for session {}", id)),
+            None => &self.shared,
         }
     }
 

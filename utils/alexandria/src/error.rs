@@ -134,7 +134,7 @@ impl From<bincode::Error> for Error {
             Io(e) => format!("I/O error: '{}'", e),
             SizeLimit => "Payload too large!".into(),
             SequenceMustHaveLength => "Internal sequencing error".into(),
-            _ => "Unknown encoding error".into(),
+            e => format!("Encoding error: {}", e),
         };
 
         Self::SyncFailed { msg }

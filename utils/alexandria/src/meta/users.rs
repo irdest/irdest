@@ -46,6 +46,10 @@ impl UserWithKey {
             inner: User { id, key },
         }
     }
+
+    fn key(&self) -> Arc<KeyPair> {
+        Arc::clone(&self.inner.key)
+    }
 }
 
 impl DetachedKey<Key> for UserWithKey {
@@ -83,6 +87,14 @@ impl UserTable {
         self.0
             .remove(&id)
             .map_or(Err(Error::NoSuchUser { id: id.to_string() }), |_| Ok(()))
+    }
+
+    /// Get the key for a user session
+    pub(crate) fn get_key(&self, id: Id) -> Result<Arc<KeyPair>> {
+        self.0
+            .get(id)
+            .map(|user| user.key())
+            .map_err(|_| Error::NoSuchUser { id: id.to_string() })
     }
 
     /// Unlock a user entry in place

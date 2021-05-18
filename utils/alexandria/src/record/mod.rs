@@ -140,6 +140,20 @@ impl Record {
         Ok(Self { header, body })
     }
 
+    /// Generate a variant of this type that is safe to encrypt
+    ///
+    /// This copies the data in-memory and thus yields a `Self` type,
+    /// not wrapped by an `Arc`.
+    pub(crate) fn prepare(&self, key: Arc<KeyPair>) -> Result<Self> {
+        let mut header = self.header.clone();
+        header.sec.close(Arc::clone(&key))?;
+
+        let mut body = self.body.clone();
+        body.close(key)?;
+
+        Ok(Self { header, body })
+    }
+
     /// Apply a diff to a record
     pub(crate) fn apply(&mut self, diff: Diff) -> Result<()> {
         match self.body.deref_mut()? {

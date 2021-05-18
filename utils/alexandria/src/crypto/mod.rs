@@ -52,7 +52,7 @@ impl<K> DetachedKey<K> for Id {}
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub(crate) enum Encrypted<T, K>
 where
-    T: Clone + Encoder<T> + DetachedKey<K>,
+    T: Debug + Clone + Encoder<T> + DetachedKey<K>,
     K: Encrypter<T>,
 {
     /// An in-use data variant
@@ -70,7 +70,7 @@ where
 
 impl<T, K> Encrypted<T, K>
 where
-    T: Clone + Encoder<T> + DetachedKey<K>,
+    T: Debug + Clone + Encoder<T> + DetachedKey<K>,
     K: Encrypter<T>,
 {
     pub(crate) fn new(init: T) -> Self {

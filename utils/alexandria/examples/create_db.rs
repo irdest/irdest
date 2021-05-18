@@ -1,7 +1,7 @@
 use alexandria::{
     error::Result,
-    utils::{Diff, TagSet},
-    Builder, GLOBAL,
+    utils::{Diff, Id, TagSet},
+    Builder,
 };
 use std::path::PathBuf;
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
@@ -32,8 +32,10 @@ async fn main() -> Result<()> {
     let lib = Builder::new().offset(path.as_path()).build();
     lib.sync().await?;
 
+    let s = lib.sessions().create(Id::random(), "peterpan").await?;
+
     lib.insert(
-        GLOBAL,
+        s,
         "/:bar".into(),
         TagSet::empty(),
         Diff::map().insert("test key", "test value"),
@@ -41,6 +43,6 @@ async fn main() -> Result<()> {
     .await?;
 
     lib.ensure();
-    
+
     Ok(())
 }

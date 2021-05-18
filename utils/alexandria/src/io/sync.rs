@@ -110,13 +110,16 @@ async fn write_store(l: &Arc<Library>, dirs: &Dirs, deltas: &VecDeque<Delta>) ->
     for ref d in deltas {
         trace!("Syncing path {}", d.path);
         let path = d.path.clone();
-        let fs_path = format::path(dirs, &d.user, &path);
+        let fs_path = format::path(dirs, d.rec_id.unwrap());
 
         // Match on the delta type
         let buf = match d.action {
             DeltaType::Insert | DeltaType::Update => {
                 let store = l.store.read().await;
-                Some(format::encode(store.get_path(d.user, &d.path)?))
+                let key = l.users.read().await.get_key(d.user.id().unwrap())?;
+
+                let e = store.get_encrypted(key, d.user, &d.path)?;
+                Some(format::encode(e))
             }
             DeltaType::Delete => None,
         };
