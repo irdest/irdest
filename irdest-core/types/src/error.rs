@@ -1,6 +1,6 @@
 //! Error and Result handling
 //!
-//! `libqaul` spans over a large abstraction surface, from drivers all
+//! `irdest-core` spans over a large abstraction surface, from drivers all
 //! the way to "business logic" functions in the service API. This
 //! makes communicating errors challenging at times. Generally, no
 //! lower layer `Error` objects are wrapped here, to avoid introducing
@@ -8,7 +8,7 @@
 //!
 //! Instead, `Error` attempts to provide a comprehensive set of
 //! failures modes, that can be returned to communicate a failure,
-//! that then needs tobe interpreted and addressed by an implementing
+//! that then needs to be interpreted and addressed by an implementing
 //! application. This way, it becomes easier for _your_ service to
 //! wrap errors, or to enumerate them more easily.
 //!
@@ -24,7 +24,7 @@ use std::{
     result::Result as StdResult,
 };
 
-/// `libqaul` specific Result with embedded Error
+/// `irdest-core` specific Result with embedded Error
 ///
 /// The returned `Error` can sometimes be considered non-fatal. Check
 /// the `Error` documentation for the specific returned variant to
@@ -32,7 +32,7 @@ use std::{
 /// on every returned `Err(_)` however is a bad idea.
 pub type Result<T> = StdResult<T, Error>;
 
-/// `libqaul` service API error states
+/// `irdest-core` service API error states
 ///
 /// All errors that can occur in interaction with the API are encoded
 /// as variants on this enum. In most cases, no additional metadata is
@@ -44,7 +44,7 @@ pub type Result<T> = StdResult<T, Error>;
 ///
 /// Most variants of this enum use either an `Invalid` or `No`
 /// prefix. Invalid data is data that was either not expected or badly
-/// formatted. `No` in this case takes the place of `Unknown`, meaning
+/// formatted. `No` in this case, takes the place of `Unknown`, meaning
 /// that a query could not be fulfilled.
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Error {

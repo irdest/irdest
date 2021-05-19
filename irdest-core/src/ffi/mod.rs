@@ -1,15 +1,15 @@
-//! Various foreign-function interface wrappers for libqaul
+//! Various foreign-function interface wrappers for irdest-core
 //!
-//! These interfaces enable you to use libqaul from different
+//! These interfaces enable you to use irdest-core from different
 //! programming languages and build setups.  In most cases it's
-//! recommended to use the `libqaul-rpc` stack that enables
+//! recommended to use the `irpc` stack that enables
 //! inter-process communication (via various protocols and channels),
-//! but sometimes binding to libqaul and various other libraries (such
+//! but sometimes binding to irdest-core and various other libraries (such
 //! as the services) directly for integration).
 //!
-//! For example, while the main UI might use the `libqaul-rpc` +
-//! `libqaul-http` interface to manage call states in `qaul-voice`,
-//! your app might bind directly to `qaul-voice` to save the overhead
+//! For example, while the main UI might use the `irpc` +
+//! `irdest-http` interface to manage call states in `irdest-voice`,
+//! your app might bind directly to `irdest-voice` to save the overhead
 //! of streaming voice data via http calls and to make integrations
 //! easier.
 //!

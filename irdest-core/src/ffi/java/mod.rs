@@ -1,4 +1,4 @@
-//! Java JNI wrappers for libqaul
+//! Java JNI wrappers for irdest-core
 #![allow(non_snake_case)]
 
 use crate::{users::UserProfile, Identity};
