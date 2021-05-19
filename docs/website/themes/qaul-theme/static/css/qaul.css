@@ -140,3 +140,8 @@ header.block, footer.block {
 .col-padding {
     margin: 1em;
 }
+
+.sponsor {
+    height: 8em;
+    padding: 0 4em 0 0;
+}

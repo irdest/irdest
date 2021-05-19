@@ -57,7 +57,15 @@
   <div class="wrap">
     <h1>{{ .Params.Contribute_Title }}</h1>
     {{ .Params.Contribute | markdownify }}
-  </div>
 </section>
 {{ end }}
+
+{{ with .Site.GetPage "home/contribute" }}
+<section class="block block-content">
+  <div class="wrap">
+    <h1>{{ .Params.Funding_Title }}</h1>
+    {{ .Params.Funding | markdownify }}
+</section>
+{{ end }}
+
 {{ end }}

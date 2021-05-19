@@ -13,4 +13,14 @@ Contribute: |
     If you have trouble setting up the hubd server, check out the 
     [Learn](/learn#manuals) page to find user manuals, and documentation
     on both code-internals, and irdest protocol descriptions.
+Funding_Title: Funding & Partnerships
+Funding: |
+    The Irdest project does not work alone, and we are always looking for
+    collaboration opportunities.  Please don't hesitante to contact us!
+
+    <br />
+
+    <a href="https://nlnet.nl/project/Irdest/"><img class="sponsor" src="img/nlnet.svg" /></a>
+    <a href="https://nlnet.nl/NGI0/"><img class="sponsor" src="img/NGIZero-green.hex.svg" /></a>
+    <a href="https://summerofcode.withgoogle.com/projects/#4792427082153984"><img class="sponsor" src="img/freifunk.svg" /></a>
 ---
