@@ -18,9 +18,10 @@ Funding: |
     The Irdest project does not work alone, and we are always looking for
     collaboration opportunities.  Please don't hesitante to contact us!
 
-    <br />
-
-    <a href="https://nlnet.nl/project/Irdest/"><img class="sponsor" src="img/nlnet.svg" /></a>
-    <a href="https://nlnet.nl/NGI0/"><img class="sponsor" src="img/NGIZero-green.hex.svg" /></a>
-    <a href="https://summerofcode.withgoogle.com/projects/#4792427082153984"><img class="sponsor" src="img/freifunk.svg" /></a>
+    <div class="sponsors">
+        <a href="https://nlnet.nl/project/Irdest/"><img class="sponsor" src="img/nlnet.svg" /></a>
+        <a href="https://nlnet.nl/NGI0/"><img class="sponsor" src="img/NGIZero-green.hex.svg" /></a>
+        <a href="https://summerofcode.withgoogle.com/projects/#4792427082153984"><img class="sponsor" src="img/GSoC.svg" /></a>
+        <a href="https://freifunk.net"><img class="sponsor" src="img/freifunk.svg" /></a>
+    </div>
 ---

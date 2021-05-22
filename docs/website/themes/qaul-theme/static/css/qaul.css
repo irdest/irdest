@@ -141,7 +141,13 @@ header.block, footer.block {
     margin: 1em;
 }
 
+.sponsors {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+}
+
 .sponsor {
+    padding: 1em;
     height: 8em;
-    padding: 0 4em 0 0;
 }
