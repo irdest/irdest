@@ -160,7 +160,7 @@ fn persist_user_profile() {
     };
 
     let dir = tempfile::tempdir().unwrap();
-    let lib = Builder::new().offset(dir.path()).build().unwrap();
+    let lib = Builder::new().offset(dir.path()).build();
 
     let profile = UserProfile {
         id: Identity::random(),

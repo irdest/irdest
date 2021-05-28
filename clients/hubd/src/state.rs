@@ -1,8 +1,7 @@
 //! Manage the libqaul, service and ratman states
 
 use crate::cfg::Config;
-use directories_next::ProjectDirs;
-use irdest_core::Irdest;
+use irdest_core::{helpers::Directories, Irdest};
 use netmod_tcp::{Endpoint, Mode};
 use ratman::Router;
 use std::{fs::File, io::Read, sync::Arc};
@@ -38,8 +37,10 @@ impl State {
         let router = Router::new();
         router.add_endpoint(ep).await;
 
-        let _dirs = ProjectDirs::from("net", "qaul", "hubd").unwrap();
-        let qaul = Irdest::new(Arc::clone(&router));
+        let qaul = Irdest::new(
+            Arc::clone(&router),
+            Directories::new("irdest-hubd").unwrap(),
+        );
 
         Self { qaul, router }
     }

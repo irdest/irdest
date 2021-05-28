@@ -217,7 +217,7 @@ mod harness {
 
     pub(super) fn init() -> Test {
         let dir = tempdir().unwrap();
-        let lib = Builder::new().offset(dir.path()).build().unwrap();
+        let lib = Builder::new().offset(dir.path()).build();
 
         // Because the message store requires user namespaces, it
         // depends on the user store initialising first!  We then also

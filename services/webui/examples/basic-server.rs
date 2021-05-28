@@ -1,7 +1,7 @@
 #![allow(unused)]
 
 use async_std::future::timeout;
-use irdest_core::{rpc::RpcServer, Irdest, IrdestRef};
+use irdest_core::{helpers::Directories, rpc::RpcServer, Irdest, IrdestRef};
 use irdest_webui::WebServer;
 use irpc_broker::Broker;
 use irpc_sdk::{error::RpcResult, Capabilities, RpcSocket, Service};
@@ -86,7 +86,7 @@ pub async fn make_service(port: u16) -> RpcResult<Service> {
 
 async fn init() -> ThreePoint<Arc<Irdest>> {
     let mut tp = ThreePoint::new().await;
-    tp.init_with(|_, arc| Irdest::new(arc));
+    tp.init_with(|_, arc| Irdest::new(arc, Directories::temp().unwrap()));
     tp
 }
 

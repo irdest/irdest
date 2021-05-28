@@ -172,7 +172,7 @@ mod harness {
     pub(super) fn setup() -> UserStore {
         use alexandria::Builder;
         let dir = tempfile::tempdir().unwrap();
-        let lib = Builder::new().offset(dir.path()).build().unwrap();
+        let lib = Builder::new().offset(dir.path()).build();
         UserStore::new(lib)
     }
 

@@ -1,5 +1,8 @@
 //! A set of API helpers
 
+mod dirs;
+pub use dirs::Directories;
+
 mod subs;
 pub use subs::{SubId, Subscription};
 

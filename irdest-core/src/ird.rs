@@ -6,6 +6,7 @@ use crate::{
     auth::AuthStore,
     contacts::ContactStore,
     discover::Discovery,
+    helpers::Directories,
     messages::MsgStore,
     security::Sec,
     services::ServiceRegistry,
@@ -73,6 +74,9 @@ pub struct Irdest {
 
     /// Main library handle for storage
     pub(crate) store: Arc<Library>,
+
+    /// Directories used by this Irdest instance
+    pub(crate) dirs: Directories,
 }
 
 impl Irdest {
@@ -81,10 +85,9 @@ impl Irdest {
     #[allow(warnings)]
     #[cfg(feature = "testing")]
     pub fn dummy() -> IrdestRef {
-        use tempfile;
+        let dirs = Directories::temp().unwrap();
         let router = Router::new();
-        let temp = tempfile::tempdir().unwrap();
-        let store = Builder::new().build().unwrap();
+        let store = Builder::new().offset(dirs.data.as_path()).build();
 
         Arc::new(Self {
             router,
@@ -96,6 +99,7 @@ impl Irdest {
             services: ServiceRegistry::new(Arc::clone(&store)),
             sec: Arc::new(Sec::new()),
             store,
+            dirs,
         })
     }
 
@@ -115,27 +119,26 @@ impl Irdest {
     /// application loop so to enable further API abstractions to hook
     /// into the service API.
     #[tracing::instrument(skip(router), level = "info")]
-    pub fn new(router: Arc<Router>) -> IrdestRef {
-        // let store = Builder::inspect_path(store_path.into(), "").map_or_else(
-        //     |b| match b.build() {
-        //         Ok(s) => {
-        //             info!("Creating new backing store");
-        //             s
-        //         },
-        //         Err(e) => {
-        //             error!("Failed to create backing store: {}", e.to_string());
-        //             std::process::exit(2);
-        //         }
-        //     },
-        //     |s| {
-        //         info!("Loading existing store from disk");
-        //         s
-        //     },
-        // );
+    pub fn new(router: Arc<Router>, dirs: Directories) -> IrdestRef {
+        let store = match Builder::inspect_path(
+            dirs.data.as_path(),
+            // A shared secret for all irdest implementations -- this
+            // secret will never actually be used to encrypt anything
+            // other than publicirdest metadata, which should be
+            // deemed WELL KNOWN DATA anyway.
+            "IeB4dooTh5aipheef9Aeg7Xahhoo3goC9ook5ain7AhCeim8ceisaiseefooyaje",
+        ) {
+            Ok(l) => {
+                info!("Loading existing alexandria store from disk!");
+                l
+            }
+            Err(builder) => {
+                info!("Creating new backing store at path {:?}", dirs.data);
+                builder.build()
+            }
+        };
 
-        let store = Builder::new().build().unwrap();
-
-        let q = Arc::new(Self {
+        let ird = Arc::new(Self {
             router: Arc::clone(&router),
             users: UserStore::new(Arc::clone(&store)),
             announcer: Announcer::new(),
@@ -145,11 +148,12 @@ impl Irdest {
             services: ServiceRegistry::new(Arc::clone(&store)),
             sec: Arc::new(Sec::new()),
             store,
+            dirs,
         });
 
         // TODO: Where to store this?!
-        Discovery::start(Arc::clone(&q), router);
-        q
+        Discovery::start(Arc::clone(&ird), router);
+        ird
     }
 
     /// Get messages function scope
@@ -172,3 +176,9 @@ impl Irdest {
         Services { q: self }
     }
 }
+
+/// A test that creates a user in Irdest, de-allocates the irdest
+/// stack and reloads it from disk to demonstrate that user sessions
+/// can be persistent across runs!
+#[async_std::test]
+async fn create_user_with_reload() {}

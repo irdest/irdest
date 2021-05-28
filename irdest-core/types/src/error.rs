@@ -80,11 +80,13 @@ pub enum Error {
     ServiceExists,
     /// Some internal components failed to communicate
     CommFault,
+    /// A system I/O failure
+    IoFault,
 }
 
 impl Error {
     pub fn help(&self) -> String {
-        match std::env::var("QAUL_LANG").as_ref().map(|s| s.as_str()) {
+        match std::env::var("IRDEST_LANG").as_ref().map(|s| s.as_str()) {
             Ok("ar") => "حدث خطأ غير معروف",
             Ok("de") => "Ein unbekannter Fehler ist aufgetreten",
             _ => "An unknown Error occured",
@@ -112,9 +114,16 @@ impl Display for Error {
             Self::NoService => "No such service was found",
             Self::ServiceExists => "A sevice with this name already exists",
             Self::CommFault => "Some internal components failed to communicate",
+            Self::IoFault => "A system I/O failure occured",
         };
         write!(f, "{}", msg)
     }
 }
 
 impl StdError for Error {}
+
+impl From<std::io::Error> for Error {
+    fn from(_: std::io::Error) -> Self {
+        Self::IoFault
+    }
+}

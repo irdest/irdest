@@ -1,4 +1,4 @@
-use irdest_core::{rpc::RpcServer, Irdest, IrdestRef};
+use irdest_core::{helpers::Directories, rpc::RpcServer, Irdest, IrdestRef};
 use irpc_broker::Broker;
 use irpc_sdk::{error::RpcResult, Capabilities, RpcSocket, Service};
 use ratman_harness::{Initialize, ThreePoint};
@@ -87,6 +87,6 @@ pub async fn make_service(port: u16) -> RpcResult<Service> {
 
 async fn init() -> ThreePoint<Arc<Irdest>> {
     let mut tp = ThreePoint::new().await;
-    tp.init_with(|_, arc| Irdest::new(arc));
+    tp.init_with(|_, arc| Irdest::new(arc, Directories::temp().unwrap()));
     tp
 }
