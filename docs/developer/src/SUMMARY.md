@@ -12,5 +12,6 @@
     - [Internals](./technical/irdest-core/internals.md)
     - [API](./technical/irdest-core/api.md)
   - [Ratman](./technical/ratman/index.md)
-- [Design Guides](./design/index.md)
+- [Design guides](./design/index.md)
+  - [Style guide](./design/style.md)
 - [irdest website](./website/index.md)
