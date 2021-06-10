@@ -40,11 +40,11 @@ class ChatRoomFragment(val room: ChatRoom) : Fragment() {
 
         // Some messages
         val messages: MutableList<ChatMessage> = mutableListOf(
-                ChatMessage(Id(""), "15:11", "Hey, how are you?", Id("1")),
-                ChatMessage(Id(""), "15:32", "Not bad, kinda stressed", Id("0")),
-                ChatMessage(Id(""), "15:33", "Trying to get this app to work", Id("0")),
-                ChatMessage(Id(""), "15:36", "Yea? What's the problem?", Id("1")),
-                ChatMessage(Id(""), "15:41", "There's just so many things that don't work properly and Android " +
+            ChatMessage(Id("Spacekookie"), "15:11", "Hey, how are you?", Id("1")),
+            ChatMessage(Id("Zelf"), "15:32", "Not bad, kinda stressed", Id("0")),
+            ChatMessage(Id("Milan"), "15:33", "Trying to get this app to work", Id("0")),
+            ChatMessage(Id("Arthur"), "15:36", "Yea? What's the problem?", Id("1")),
+            ChatMessage(Id("Ayush"), "15:41", "There's just so many things that don't work properly and Android " +
                         "has the tendency to layer lots of abstractions on top of each other, and trying to get them all to play nice is really annoying." +
                         "\n\n" +
                         "Really, I wish I could just not do any of this >.>", Id("0"))

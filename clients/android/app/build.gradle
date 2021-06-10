@@ -1,8 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
-apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
 apply from: '../scripts/build_detekt.gradle'
 apply plugin: 'org.mozilla.rust-android-gradle.rust-android'
 
@@ -56,21 +54,14 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
-    // Koin for Android
-    koin_version = "2.1.5"
-    compile "org.koin:koin-android:$koin_version"
-    compile "org.koin:koin-androidx-scope:$koin_version"
-    compile "org.koin:koin-androidx-viewmodel:$koin_version"
-    compile "org.koin:koin-androidx-fragment:$koin_version"
-
     implementation 'com.mikhaellopez:circularimageview:4.2.0'
 }
 
 cargo {
     module = "../../../utils/android-support"
     targetDirectory = "../../../target"
-    libname = "qauldroid"
-    targetIncludes = ['libqauldroid.so']
+    libname = "irdestcore"
+    targetIncludes = ['libirdestdroid.so']
     targets = ["arm64"]
 }
 

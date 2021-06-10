@@ -8,5 +8,5 @@ set -e
 # Required for libsodium & libopus x-compile
 export PKG_CONFIG_ALLOW_CROSS=1
 
-/qaul.net/clients/android/gradlew cargoBuild
+./gradlew cargoBuild
 chown $QAUL_USER:$QAUL_GROUP -R /qaul.net/target

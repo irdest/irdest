@@ -26,7 +26,7 @@ class UsersFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        adapter = UsersTabsAdapter(parentFragmentManager)
+        adapter = UsersTabsAdapter(fragmentManager!!)
         pager = view.findViewById(R.id.users_tab_pager)
         pager.adapter = adapter
 

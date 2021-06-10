@@ -53,3 +53,22 @@ captures/
 
 fastlane/README.md
 fastlane/report.xml
+
+
+### Android Patch ###
+gen-external-apklibs
+
+# IDEA/Android Studio ignores
+*.ipr
+*.iws
+/.idea/*
+
+# IDEA/Android Studio Ignore exceptions
+!/.idea/vcs.xml
+!/.idea/inspectionProfiles/
+!/.idea/scopes/
+!/.idea/codeStyles/
+!/.idea/encodings.xml
+!/.idea/copyright/
+!/.idea/kotlinCodeInsightSettings.xml
+app/jacoco.exec

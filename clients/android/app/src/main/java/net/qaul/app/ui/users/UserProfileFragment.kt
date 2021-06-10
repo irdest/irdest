@@ -42,7 +42,7 @@ class UserProfileFragment(val profile: UserProfile) : Fragment() {
         val startChat = root.findViewById<Button>(R.id.user_profile_open_chat)
         startChat.setOnClickListener {
             val room = AppState.get().chatStart(profile.handle, listOf<Id>(profile.id) as ArrayList<Id>?)
-            ChatRoomFragment(room).transitionInto(parentFragmentManager)
+            ChatRoomFragment(room).transitionInto(fragmentManager!!)
         }
 
         return root

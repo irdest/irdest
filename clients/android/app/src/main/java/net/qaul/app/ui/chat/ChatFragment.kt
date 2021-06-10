@@ -44,7 +44,7 @@ class ChatFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val root = inflater.inflate(R.layout.fragment_chat, container, false)
-        fragMan = parentFragmentManager
+        fragMan = fragmentManager!!
 
         val list = root!!.findViewById<RecyclerView>(R.id.chat_room_list)!!
         list.layoutManager = LinearLayoutManager(context)

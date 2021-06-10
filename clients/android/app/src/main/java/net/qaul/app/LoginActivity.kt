@@ -25,7 +25,7 @@ class LoginActivity : AppCompatActivity() {
             // The "android-support" crate creates a dynamic library called "libqauldroid"
             // which we can include here simply via "qauldroid" because it's being put
             // into the library search path via ~ m a g i c ~
-            System.loadLibrary("qauldroid")
+            System.loadLibrary("irdestcore")
         }
     }
 

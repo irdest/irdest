@@ -18,7 +18,7 @@ class FileFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, bundle: Bundle?): View? {
         val root = inflater.inflate(R.layout.fragment_files, container, false)
         layouter = LinearLayoutManager(context)
-        fragMan = parentFragmentManager
+        fragMan = fragmentManager!!
         adapter = FileListAdapter(fragMan)
 
         val list = root!!.findViewById<RecyclerView>(R.id.file_list)!!

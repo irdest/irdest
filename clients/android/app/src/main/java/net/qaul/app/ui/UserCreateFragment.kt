@@ -26,7 +26,7 @@ class UserCreateFragment(val login: LoginActivity) : Fragment() {
             Toast.makeText(context, "Your user ID is: '${id.inner}'", Toast.LENGTH_LONG).show()
 
             login.updateUsers()
-            parentFragmentManager.popBackStack() // Go back to login!
+            fragmentManager?.popBackStack() // Go back to login!
         }
 
         return root
