@@ -43,3 +43,4 @@ build-android-app:
   stage: build
   trigger:
     include: 'clients/android/irdest-android-ci.yml'
+    strategy: depend
