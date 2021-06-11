@@ -1,14 +1,14 @@
 # Our ultimately orz docker image
 image: irdest/android-build-env
 
-# Basic android and gradle stuff
+# Move to android dir before running CI on it
 before_script:
   - pwd
   - cd clients/android
   - ls
 
 # Run Lint
-lintDebug:
+Run Lint:
    interruptible: true
    stage: build
    script:
@@ -16,10 +16,10 @@ lintDebug:
    artifacts:
      when: always
      paths:
-       - clients/android/app/lint/reports/lint-results-debug.html
+       - "**/reports/"
 
 # Make Project
-assembleDebug:
+Build Application & Generate APK:
   interruptible: true
   stage: build
   script:
@@ -29,7 +29,7 @@ assembleDebug:
       - clients/android/app/build/outputs/
 
 # Run all tests, if any fails, interrupt the pipeline(fail it)
-debugTests:
+Run Unit Tests:
   interruptible: true
   stage: test
   script:
