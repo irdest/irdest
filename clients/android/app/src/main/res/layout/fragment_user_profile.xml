@@ -78,7 +78,7 @@
         android:backgroundTint="#DFDFDF"
         android:text="Call"
         android:textColor="#FFFFFF"
-        app:layout_constraintEnd_toEndOf="@+id/circularImageView"
+        app:layout_constraintEnd_toEndOf="@id/user_profile_avi"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toEndOf="@+id/user_profile_open_chat"
         app:layout_constraintTop_toTopOf="@+id/user_profile_open_chat" />

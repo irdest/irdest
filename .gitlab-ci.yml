@@ -1,7 +1,7 @@
 stages:
   - build
   - test
-
+  - triggers
 build-rust:
   needs: []
   tags: [ irdest-nix ]
@@ -38,3 +38,8 @@ unittests:
       - artifact: rust-gitlab-ci.yml
         job: unittests-pipeline
     strategy: depend
+
+build-android-app:
+  stage: build
+  trigger:
+    include: 'clients/android/.gitlab-ci-android.yml'

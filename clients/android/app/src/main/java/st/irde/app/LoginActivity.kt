@@ -40,7 +40,7 @@ class LoginActivity : AppCompatActivity() {
         // TODO: Request permissions
 
         // Start the wifi service
-        startService(Intent(this, WifiP2PService::class.java))
+        startService(Intent(this, WifiP2PService(this)::class.java))
 
         // Handle the register screen
         val register = findViewById<Button>(R.id.button_register)

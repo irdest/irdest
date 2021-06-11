@@ -1,10 +1,13 @@
 package st.irde.app.net
 
+import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.net.wifi.WpsInfo
 import android.net.wifi.p2p.WifiP2pConfig
 import android.net.wifi.p2p.WifiP2pInfo
@@ -13,14 +16,15 @@ import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceRequest
 import android.os.IBinder
 import android.util.Log
-import java.lang.Exception
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import java.net.InetSocketAddress
 import java.net.NoRouteToHostException
 import java.net.ServerSocket
 import java.net.Socket
 
-
-class WifiP2PService : Service(), WifiP2pManager.ConnectionInfoListener {
+class WifiP2PService constructor(private val activity: Activity) : Service(),
+    WifiP2pManager.ConnectionInfoListener {
     private val manager: WifiP2pManager by lazy(LazyThreadSafetyMode.NONE) {
         getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
     }
@@ -58,9 +62,9 @@ class WifiP2PService : Service(), WifiP2pManager.ConnectionInfoListener {
         Log.d("WD", "Requesting Wi-Fi P2P peers")
 
         val serviceInfo = WifiP2pDnsSdServiceInfo.newInstance(
-                "d${(Math.random() * 1000).toInt()}",
-                "_ratman._tcp",
-                mapOf())
+            "d${(Math.random() * 1000).toInt()}",
+            "_ratman._tcp",
+            mapOf())
 
         // Add a local "ratman" service
         manager.addLocalService(channel, serviceInfo, object : WifiP2pManager.ActionListener {
@@ -75,7 +79,8 @@ class WifiP2PService : Service(), WifiP2pManager.ConnectionInfoListener {
 
         manager.setDnsSdResponseListeners(channel, { instanceName, registrationType, srcDevice ->
             Log.d("WD", "Found service $instanceName $registrationType $srcDevice")
-            Log.d("WD", "can connect? " + (registrationType == "_ratman._tcp.local." && srcDevice != null).toString())
+            Log.d("WD",
+                "can connect? " + (registrationType == "_ratman._tcp.local." && srcDevice != null).toString())
             if (registrationType == "_ratman._tcp.local." && srcDevice != null) {
                 val config = WifiP2pConfig()
                 config.deviceAddress = srcDevice.deviceAddress
@@ -94,26 +99,35 @@ class WifiP2PService : Service(), WifiP2pManager.ConnectionInfoListener {
             Log.d("WD", "DNS SD TXT record available: $fullDomainName $txtRecordMap $srcDevice")
         })
 
-        manager.addServiceRequest(channel, WifiP2pDnsSdServiceRequest.newInstance(), object : WifiP2pManager.ActionListener {
-            override fun onSuccess() {
-                Log.d("WD", "Added service discovery request")
-            }
+        manager.addServiceRequest(channel, WifiP2pDnsSdServiceRequest.newInstance(),
+            object : WifiP2pManager.ActionListener {
+                override fun onSuccess() {
+                    Log.d("WD", "Added service discovery request")
+                }
 
-            override fun onFailure(reason: Int) {
-                Log.d("WD", "Failed adding service discovery request")
-            }
-        })
+                override fun onFailure(reason: Int) {
+                    Log.d("WD", "Failed adding service discovery request")
+                }
+            })
     }
 
-    fun discoverPeers() = manager.discoverServices(channel, object : WifiP2pManager.ActionListener {
-        override fun onSuccess() {
-            Log.d("WD", "Started service discovery")
-        }
+    private val FINE_LOCATION = 0
+    fun discoverPeers() {
+        if (ActivityCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION) != PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(activity, arrayOf(ACCESS_FINE_LOCATION),
+                FINE_LOCATION)
+        } else {
+            manager.discoverServices(channel, object : WifiP2pManager.ActionListener {
+                override fun onSuccess() {
+                    Log.d("WD", "Started service discovery")
+                }
 
-        override fun onFailure(reason: Int) {
-            Log.d("WD", "Service discovery failed")
+                override fun onFailure(reason: Int) {
+                    Log.d("WD", "Service discovery failed")
+                }
+            })
         }
-    })
+    }
 
     // This function will be called
     override fun onConnectionInfoAvailable(info: WifiP2pInfo?) {
@@ -148,7 +162,9 @@ class WifiP2PService : Service(), WifiP2pManager.ConnectionInfoListener {
 
                     for (x in 0..10) {
                         try {
-                            it.connect(InetSocketAddress(info.groupOwnerAddress.hostAddress, serverPort), 5000)
+                            it.connect(
+                                InetSocketAddress(info.groupOwnerAddress.hostAddress, serverPort),
+                                5000)
 
                             Log.d("WD", "connected to leader")
                             it.getOutputStream().use { out ->

@@ -1,0 +1,36 @@
+# Our ultimately orz docker image
+image: irdest/android-build-env
+
+# Basic android and gradle stuff
+before_script:
+  - pwd
+  - cd clients/android
+  - ls
+
+# Run Lint
+lintDebug:
+   interruptible: true
+   stage: build
+   script:
+     - ./gradlew -Pci --console=plain :app:lintDebug -PbuildDir=lint
+   artifacts:
+     when: always
+     paths:
+       - clients/android/app/lint/reports/lint-results-debug.html
+
+# Make Project
+assembleDebug:
+  interruptible: true
+  stage: build
+  script:
+    - ./gradlew assembleDebug
+  artifacts:
+    paths:
+      - clients/android/app/build/outputs/
+
+# Run all tests, if any fails, interrupt the pipeline(fail it)
+debugTests:
+  interruptible: true
+  stage: test
+  script:
+    - ./gradlew -Pci --console=plain :app:testDebug
