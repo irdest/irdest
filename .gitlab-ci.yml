@@ -42,4 +42,4 @@ unittests:
 build-android-app:
   stage: build
   trigger:
-    include: 'clients/android/.gitlab-ci-android.yml'
+    include: 'clients/android/irdest-android-ci.yml'
