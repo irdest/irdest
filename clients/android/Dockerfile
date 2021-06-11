@@ -1,6 +1,6 @@
 FROM ubuntu:18.04
 
-LABEL maintainer="Katharina Fey, qaul community"
+LABEL maintainer="Katharina Fey, irdest community"
 
 ENV ANDROID_HOME="/opt/android-sdk" \
     ANDROID_NDK="/opt/android-ndk" \
@@ -34,7 +34,7 @@ ENV ANDROID_NDK_ROOT="$ANDROID_NDK_HOME"
 
 ENV PATH="$PATH:$ANDROID_SDK_HOME/emulator:$ANDROID_SDK_HOME/tools/bin:$ANDROID_SDK_HOME/tools:$ANDROID_SDK_HOME/platform-tools:$ANDROID_NDK:$FLUTTER_HOME/bin:$FLUTTER_HOME/bin/cache/dart-sdk/bin"
 
-WORKDIR /qaul/clients/android
+WORKDIR /irdest/clients/android
 
 # Installing packages
 RUN apt-get update -qq > /dev/null && \
