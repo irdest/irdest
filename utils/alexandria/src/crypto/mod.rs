@@ -1,8 +1,17 @@
 //! Provides more convenient crypto wrappers
 #![allow(unused)]
 
+pub(crate) mod pkcry;
+
 pub(crate) mod aes;
+
+#[deprecated]
 pub(crate) mod asym;
+
+pub(crate) mod bs;
+
+mod hidden;
+pub(crate) use hidden::Hid;
 
 mod map;
 pub(crate) use map::EncryptedMap;
@@ -26,6 +35,7 @@ pub(crate) struct CipherText {
 }
 
 /// A trait that encrypts data on an associated key
+#[deprecated]
 pub(crate) trait Encrypter<T>
 where
     T: Encoder<T>,
@@ -39,6 +49,7 @@ where
 /// Sometimes a type that is stored inside the `Encrypted` can bring
 /// it's own key, to avoid having to have a second control-structure
 /// for the keys.
+#[deprecated]
 pub(crate) trait DetachedKey<K> {
     fn key(&self) -> Option<Arc<K>> {
         None
@@ -50,6 +61,7 @@ impl<K> DetachedKey<K> for Id {}
 
 /// A generic wrapper around the unlock state of data
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[deprecated]
 pub(crate) enum Encrypted<T, K>
 where
     T: Debug + Clone + Encoder<T> + DetachedKey<K>,
@@ -178,72 +190,4 @@ where
             _ => panic!("Couldn't consume encrypted value!"),
         }
     }
-}
-
-#[test]
-fn aes_encrypt_decrypt() {
-    use aes::{Constructor, Key};
-
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    struct Data {
-        num: i32,
-    };
-
-    impl DetachedKey<Key> for Data {
-        fn key(&self) -> Option<Arc<Key>> {
-            None
-        }
-    }
-
-    let key = Arc::new(Key::from_pw("fuck", "cops"));
-    let data = Data { num: 1312 };
-
-    // Encrypted data wrapper
-    let mut enc = Encrypted::new(data.clone());
-
-    // Close the entry
-    enc.close(Arc::clone(&key)).unwrap();
-    assert!(enc.encrypted());
-
-    // Re-open the entry
-    enc.open(&*key).unwrap();
-    assert_eq!(enc.encrypted(), false);
-
-    let data2 = enc.consume();
-
-    assert_eq!(data, data2);
-}
-
-#[test]
-fn asym_encrypt_decrypt() {
-    use asym::KeyPair;
-
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    struct Data {
-        num: i32,
-    };
-
-    impl DetachedKey<KeyPair> for Data {
-        fn key(&self) -> Option<Arc<KeyPair>> {
-            None
-        }
-    }
-
-    let key = Arc::new(KeyPair::new());
-    let data = Data { num: 1312 };
-
-    // Encrypted data wrapper
-    let mut enc = Encrypted::new(data.clone());
-
-    // Close the entry
-    enc.close(Arc::clone(&key)).unwrap();
-    assert!(enc.encrypted());
-
-    // Re-open the entry
-    enc.open(&*key).unwrap();
-    assert_eq!(enc.encrypted(), false);
-
-    let data2 = enc.consume();
-
-    assert_eq!(data, data2);
 }

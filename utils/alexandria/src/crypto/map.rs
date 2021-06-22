@@ -15,6 +15,7 @@ use std::{
 
 /// A mapper around encrypted data in a map
 #[derive(Serialize, Deserialize)]
+#[deprecated]
 pub(crate) struct EncryptedMap<K, V, Q>
 where
     K: Serialize + DeserializeOwned + Ord + PartialOrd + Hash + ToString,
