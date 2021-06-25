@@ -36,7 +36,8 @@
     <string name="placeholder_id">5555-4444-3333-2222-1111-ACAB</string>
     <string name="placeholder_handle">\@spacekookie</string>
     <string name="title_activity_settings">SettingsActivity</string>
-
+    <string name="register_info">New to network? Register!</string>
+    <string name="server_config">Configure Server</string>
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
     <string name="sync_header">Sync</string>
