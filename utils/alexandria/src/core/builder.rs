@@ -35,6 +35,7 @@ use std::{
 pub struct Builder {
     /// The main offset path
     offset: Option<PathBuf>,
+    sync: bool,
 }
 
 impl Builder {
@@ -88,6 +89,14 @@ impl Builder {
     pub fn offset<'tmp, P: Into<&'tmp Path>>(self, offset: P) -> Self {
         let offset = Some(PathBuf::from(offset.into()));
         Self { offset, ..self }
+    }
+
+    /// Indicate that this library should be synchronised to disk
+    ///
+    /// Calling this function during creation eliminates the need to
+    /// call `Library::sync` on the final database type.
+    pub fn sync(self) -> Self {
+        Self { sync: true, ..self }
     }
 
     /// Some secret that will be used for the root namespace

@@ -33,3 +33,5 @@ pub mod record;
 pub mod utils;
 
 pub use crate::core::{Builder, Library, Session, SessionsApi, GLOBAL};
+
+pub(crate) type Locked<T> = async_std::sync::RwLock<T>;

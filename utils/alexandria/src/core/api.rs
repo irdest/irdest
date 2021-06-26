@@ -40,9 +40,6 @@ impl Library {
     pub(crate) async fn init(&self) -> Result<()> {
         warn!("Creating an ALPHA library on disk; data loss may occur!");
 
-        // Create the directory scaffolding
-        self.root.scaffold()?;
-
         // Write the library configuration
         self.cfg.read().await.write(&self.root)?;
 
@@ -50,6 +47,11 @@ impl Library {
     }
 
     /// Load and re-initialise a previous database session from disk
+    ///
+    /// While this function technically does the same thing, you
+    /// should switch to `builder::inspect_path` to load or create
+    /// databases on the fly instead.
+    #[deprecated]
     pub fn load<'tmp, P, S>(offset: P, root_sec: S) -> Result<Arc<Self>>
     where
         P: Into<&'tmp path::Path>,
@@ -69,6 +71,9 @@ impl Library {
     }
 
     /// Start the synchronisation engine for this database
+    ///
+    /// If you call `sync()` on `Builder` calling this function is no
+    /// longer required.
     ///
     /// By default an alexandria `Library` exists purely in-memory.
     /// This is useful for testing purposes.  To allow alexandria to

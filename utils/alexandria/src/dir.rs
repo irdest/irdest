@@ -19,12 +19,12 @@ impl Dirs {
         self.root.exists()
     }
 
-    pub(crate) fn scaffold(&self) -> Result<()> {
+    pub(crate) fn scaffold(self) -> Result<Self> {
         let _ = fs::create_dir_all(&self.root);
         let _ = fs::create_dir(self.records());
         let _ = fs::create_dir(self.meta());
         let _ = fs::create_dir(self.cache());
-        Ok(())
+        Ok(self)
     }
 
     /// Return the root of the library
@@ -43,6 +43,11 @@ impl Dirs {
         self.root.join("meta")
     }
 
+    /// Grab all files from a directory based on a filter
+    pub(crate) fn filter_meta(&self, reg: &str) -> Vec<PathBuf> {
+        vec![]
+    }
+    
     /// Return the cache directory in the library
     #[allow(unused)]
     pub(crate) fn cache(&self) -> PathBuf {

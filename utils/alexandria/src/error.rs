@@ -70,6 +70,13 @@ pub enum Error {
     InternalError { msg: String },
 }
 
+impl Error {
+    /// Create an internal error from an error string slice
+    pub(crate) fn internal(msg: &str) -> Self {
+        Self::InternalError { msg: msg.into() }
+    }
+}
+
 /// A convenience alias to contain a common alexandria error
 pub type Result<T> = std::result::Result<T, Error>;
 
