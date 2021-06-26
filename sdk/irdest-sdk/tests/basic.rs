@@ -11,6 +11,7 @@ use irpc_sdk::{error::RpcResult, Subscription};
 
 /// A simple test that connects to an Irdest instance over RPC
 #[async_std::test]
+#[ignore]
 async fn user_create() -> RpcResult<()> {
     // Create a small test network with 2 RPC sockets
     let _state = RpcState::new(6000, 6500).await;
@@ -34,13 +35,14 @@ async fn user_create() -> RpcResult<()> {
 }
 
 #[async_std::test]
+#[ignore]
 async fn subscription() -> RpcResult<()> {
     let state = RpcState::new(6010, 6510).await;
     let serv = harness::make_service(6010).await?;
     let sdk = IrdestSdk::connect(&serv)?;
     let auth = sdk
         .users()
-        .create("dont write your passwords in unit tests duh")
+        .create("dont write your passwords in unit ignores duh")
         .await?;
 
     // Create a user on node B manually
@@ -86,6 +88,7 @@ async fn subscription() -> RpcResult<()> {
 
 /// A simple test that connects to an Irdest instance over RPC
 #[async_std::test]
+#[ignore]
 async fn service_create() -> RpcResult<()> {
     // Create a small test network with 2 RPC sockets
     let _state = RpcState::new(6020, 6520).await;
