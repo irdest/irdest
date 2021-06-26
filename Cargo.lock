@@ -1523,6 +1523,7 @@ dependencies = [
 name = "irdest-chat"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "irdest-sdk",
 ]
 
