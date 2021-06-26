@@ -101,7 +101,6 @@ pub(crate) use ircore_types as types;
 
 // Internal modules
 mod auth;
-mod crypto;
 mod discover;
 mod security;
 mod store;

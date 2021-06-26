@@ -29,7 +29,7 @@ pub struct SecKey {
 }
 
 impl SecKey {
-    pub fn open<T>(&self, data: &CipherText, auth: &PubKey) -> Result<T>
+    pub(crate) fn open<T>(&self, data: &CipherText, auth: &PubKey) -> Result<T>
     where
         T: Encoder<T>,
     {

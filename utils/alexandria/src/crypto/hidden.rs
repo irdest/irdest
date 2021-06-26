@@ -1,6 +1,7 @@
 use crate::utils::Id;
 
 /// A utility type to ensure that user IDs are not leaked
+#[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub(crate) struct Hid(Id);
 
 impl Hid {

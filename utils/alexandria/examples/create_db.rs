@@ -1,8 +1,4 @@
-use alexandria::{
-    error::Result,
-    utils::{Diff, Id, TagSet},
-    Builder,
-};
+use alexandria::{api::Library, error::Result};
 use std::path::PathBuf;
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
 
@@ -25,24 +21,26 @@ pub(crate) fn parse_log_level() {
 #[async_std::main]
 async fn main() -> Result<()> {
     parse_log_level();
-
     info!("Initialising alexandria database!");
 
-    let path = PathBuf::new().join("test.db");
-    let lib = Builder::new().offset(path.as_path()).build();
-    lib.sync().await?;
+    let path = PathBuf::new().join("test.ax");
 
-    let s = lib.sessions().create(Id::random(), "peterpan").await?;
+    let lib = Library::create(path)?;
 
-    lib.insert(
-        s,
-        "/:bar".into(),
-        TagSet::empty(),
-        Diff::map().insert("test key", "test value"),
-    )
-    .await?;
+    // let lib = Builder::new().offset(path.as_path()).build();
+    // lib.sync().await?;
 
-    lib.ensure();
+    // let s = lib.sessions().create(Id::random(), "peterpan").await?;
+
+    // lib.insert(
+    //     s,
+    //     "/:bar".into(),
+    //     TagSet::empty(),
+    //     Diff::map().insert("test key", "test value"),
+    // )
+    // .await?;
+
+    // lib.ensure();
 
     Ok(())
 }
