@@ -27,6 +27,7 @@ pub(crate) mod notify;
 pub(crate) mod store;
 pub(crate) mod wire;
 
+pub mod api;
 pub mod error;
 pub mod query;
 pub mod record;

@@ -87,7 +87,7 @@ impl Irdest {
     pub fn dummy() -> IrdestRef {
         let dirs = Directories::temp().unwrap();
         let router = Router::new();
-        let store = Builder::new().offset(dirs.data.as_path()).build();
+        let store = Builder::new().sync().offset(dirs.data.as_path()).build();
 
         Arc::new(Self {
             router,
