@@ -46,6 +46,20 @@ pub(crate) enum RoomState {
     Diff(RoomDiff),
 }
 
-pub(crate) struct Room {}
+/// Metadata for a room
+pub struct Room {
+    /// A computer-friendly identifier
+    pub id: RoomId,
+    /// A human-friendly identifier
+    pub name: String,
+    /// List of room participants.  Currently it is not possible to
+    /// add or remove participants
+    pub participants: Vec<Identity>,
+    /// An unread message counter.  Utility to make implementing
+    /// front-ends easier
+    pub unread: usize,
+    /// Last known message
+    pub last_msg: MsgId,
+}
 
 pub(crate) enum RoomDiff {}

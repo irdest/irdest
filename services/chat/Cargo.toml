@@ -9,3 +9,4 @@ license = "AGPL-3.0-or-later"
 [dependencies]
 irdest-sdk = { path = "../../sdk/irdest-sdk" }
 chrono = { version = "*", features = ["serde"] }
+thiserror = "1.0"
