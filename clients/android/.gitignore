@@ -62,6 +62,7 @@ gen-external-apklibs
 *.ipr
 *.iws
 /.idea/*
+lint/
 
 # IDEA/Android Studio Ignore exceptions
 !/.idea/vcs.xml

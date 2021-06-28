@@ -3,4 +3,16 @@
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
+
+    <!-- Custom margin dims-->
+    <dimen name="margin_very_small">5dp</dimen>
+    <dimen name="margin_small">12dp</dimen>
+    <dimen name="margin_medium">22dp</dimen>
+    <dimen name="margin_large">192dp</dimen>
+    <dimen name="margin_very_large">222dp</dimen>
+
+    <!-- Custom padding dims    -->
+    <dimen name="padding_small">25dp</dimen>
+
+
 </resources>

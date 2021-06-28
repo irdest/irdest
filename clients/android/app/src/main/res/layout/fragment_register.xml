@@ -11,13 +11,13 @@
         android:id="@+id/root_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingStart="25dp"
-        android:paddingEnd="25dp"
+        android:paddingStart="@dimen/padding_small"
+        android:paddingEnd="@dimen/padding_small"
         tools:ignore="UselessParent">
 
         <TextView
             app:layout_constraintTop_toTopOf="@id/root_layout"
-            android:layout_marginTop="192dp"
+            android:layout_marginTop="@dimen/margin_large"
             android:id="@+id/fragment_register_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -27,14 +27,14 @@
         <TextView
             android:id="@+id/registration_info"
             app:layout_constraintTop_toBottomOf="@id/fragment_register_title"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="@dimen/margin_small"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/register_hello2" />
 
         <com.google.android.material.textfield.TextInputLayout
             app:layout_constraintTop_toBottomOf="@id/registration_info"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="@dimen/margin_small"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:id="@+id/registry_name"
             android:layout_width="match_parent"
@@ -51,7 +51,7 @@
 
         <com.google.android.material.textfield.TextInputLayout
             app:layout_constraintTop_toBottomOf="@id/registry_name"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="@dimen/margin_small"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:id="@+id/registry_handle"
             android:layout_width="match_parent"
@@ -70,7 +70,7 @@
 
         <com.google.android.material.textfield.TextInputLayout
             app:layout_constraintTop_toBottomOf="@id/registry_handle"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="@dimen/margin_small"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:id="@+id/registry_password_entry"
             android:layout_width="match_parent"
@@ -90,7 +90,7 @@
         <Button
             app:layout_constraintTop_toBottomOf="@id/registry_password_entry"
             android:id="@+id/registry_create"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="@dimen/margin_small"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/button_register" />

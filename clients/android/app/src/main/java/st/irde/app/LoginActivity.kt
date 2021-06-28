@@ -56,7 +56,8 @@ class LoginActivity : AppCompatActivity() {
         }
 
         // Update users once
-//        updateUsers()
+        spinner = findViewById(R.id.user_list_picker)
+        updateUsers()
 
         // Connect the TCP stack to the selected peering server
 //        val peerEntry = findViewById<EditText>(R.id.app_peering_server)
@@ -69,19 +70,18 @@ class LoginActivity : AppCompatActivity() {
 //            Toast.makeText(baseContext, "Connected to server...", Toast.LENGTH_LONG).show()
 //        }
 
-        val pwEntry = findViewById<TextInputLayout>(R.id.passwordTextInputLayout)
+        val pwEntry = findViewById<TextInputLayout>(R.id.password_text_input_layout)
         val login = findViewById<Button>(R.id.button_login)
         login.setOnClickListener {
-            Toast.makeText(this, "This will be implemented after default server is set", Toast.LENGTH_SHORT).show()
-//            if (spinner.selectedItem != null) {
-//                val selected = spinner.selectedItem as UserProfile
-//                if (AppState.get().usersLogin(selected.id, pwEntry.editText?.text.toString())) {
-//                    Toast.makeText(baseContext, "Successfully logged in!", Toast.LENGTH_SHORT).show()
-//                    startActivity(Intent(this, MainActivity::class.java))
-//                } else {
-//                    Toast.makeText(baseContext, "Wrong password!!", Toast.LENGTH_LONG).show()
-//                }
-//            }
+            if (spinner.selectedItem != null) {
+                val selected = spinner.selectedItem as UserProfile
+                if (AppState.get().usersLogin(selected.id, pwEntry.editText?.text.toString())) {
+                    Toast.makeText(baseContext, "Successfully logged in!", Toast.LENGTH_SHORT).show()
+                    startActivity(Intent(this, MainActivity::class.java))
+                } else {
+                    Toast.makeText(baseContext, "Wrong password!!", Toast.LENGTH_LONG).show()
+                }
+            }
 
             Log.d(LOG_TAG, "Nothing selected, can't log-in!")
         }
