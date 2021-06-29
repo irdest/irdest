@@ -15,10 +15,8 @@ use jni::{
 };
 
 use android_logger::{Config, FilterBuilder};
-use libqaul::{users::UserAuth, Qaul};
+use irdest_core::{users::UserAuth, helpers::Directories, Irdest};
 use log::Level;
-use qaul_chat::Chat;
-use qaul_voice::Voice;
 use ratman::Router;
 use ratman_netmod::{Frame, Target};
 
@@ -48,7 +46,7 @@ pub unsafe extern "C" fn Java_net_qaul_app_ffi_NativeQaul_setupState(
 
     let tcp = block_on(async {
         use netmod_tcp::Endpoint;
-        let ep = Endpoint::new("0.0.0.0", port as u16, "qauld")
+        let ep = Endpoint::new("0.0.0.0", port as u16, "qauld", netmod_tcp::Mode::Static)
             .await
             .unwrap();
         router.add_endpoint(Arc::clone(&ep)).await;
@@ -63,34 +61,33 @@ pub unsafe extern "C" fn Java_net_qaul_app_ffi_NativeQaul_setupState(
     });
     info!("Router init...done");
 
-    let libqaul = Qaul::new(router);
-    info!("libqaul init...done");
+    let irdest = Irdest::new(router, Directories::android("st.irde.app"));
+    info!("lib-irdest init...done");
 
-    block_on(async {
-        use libqaul::users::UserUpdate;
-        let auth = libqaul.users().create("1234").await.unwrap();
-        libqaul
-            .users()
-            .update(
-                auth.clone(),
-                UserUpdate::RealName(Some("Alice Anonymous".into())),
-            )
-            .await;
-        libqaul
-            .users()
-            .update(auth.clone(), UserUpdate::DisplayName(Some("alice".into())))
-            .await;
-    });
+    // Uncomment it and then fix, there is some referencing error, most probably we're using incorrect import of `UserUpdate` here
+    // block_on(async {
+    //     use irdest_core::users::UserUpdate;
+    //     let auth = irdest.users().create("1234").await.unwrap();
+    //     irdest
+    //         .users()
+    //         .update(
+    //             auth.clone(),
+    //             UserUpdate::RealName(Some("Alice Anonymous".into())),
+    //         )
+    //         .await;
+    //     irdest
+    //         .users()
+    //         .update(auth.clone(), UserUpdate::DisplayName(Some("alice".into())))
+    //         .await;
+    // });
 
-    let chat = block_on(async { Chat::new(Arc::clone(&libqaul)).await }).unwrap();
-    let voice = block_on(async { Voice::new(Arc::clone(&libqaul)).await }).unwrap();
     info!("Service init: done");
 
     // We just return the state pointer here because for some reason
     // storing the state directly in the instance variable doesn't
     // work, or didn't work when I last tried it.  Patches to change
     // this very welcome, if they work!
-    GcWrapped::new(tcp, wd, libqaul, chat, voice).into_ptr()
+    GcWrapped::new(tcp, wd, irdest).into_ptr()
 }
 
 /// Check if an auth token is still valid
@@ -136,14 +133,14 @@ pub unsafe extern "C" fn Java_net_qaul_app_ffi_NativeQaul_connectTcp(
         .collect();
     let port = port as u16;
 
-    block_on(async {
-        use std::net::{Ipv4Addr, SocketAddrV4};
-        tcp.load_peers(vec![SocketAddrV4::new(
-            Ipv4Addr::new(addr[0], addr[1], addr[2], addr[3]),
-            port,
-        )])
-        .await;
-    });
+    // block_on(async {
+    //     use std::net::{Ipv4Addr, SocketAddrV4};
+    //     tcp.load_peers(vec![SocketAddrV4::new(
+    //         Ipv4Addr::new(addr[0], addr[1], addr[2], addr[3]),
+    //         port,
+    //     )])
+    //     .await;
+    // });
 }
 
 fn frame_to_jframe<'env>(env: &'env JNIEnv, f: Frame, t: Target) -> JObject<'env> {

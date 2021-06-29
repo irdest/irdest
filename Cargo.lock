@@ -96,6 +96,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "android-tracing"
+version = "0.1.0"
+dependencies = [
+ "android_log-sys",
+ "serde_json",
+ "tracing",
+ "tracing-core",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "android_log-sys"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b8052e2d8aabbb8d556d6abbcce2a22b9590996c5f849b9c7ce4544a2e3b984e"
+
+[[package]]
+name = "android_logger"
+version = "0.8.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8cbd542dd180566fad88fd2729a53a62a734843c626638006a9d63ec0688484e"
+dependencies = [
+ "android_log-sys",
+ "env_logger 0.7.1",
+ "lazy_static",
+ "log",
+]
+
+[[package]]
 name = "ansi_term"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -438,7 +467,7 @@ dependencies = [
  "cexpr",
  "clang-sys",
  "clap",
- "env_logger",
+ "env_logger 0.8.3",
  "lazy_static",
  "lazycell",
  "log",
@@ -898,6 +927,16 @@ name = "either"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
+
+[[package]]
+name = "env_logger"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "44533bbbb3bb3c1fa17d9f2e4e38bbbaf8396ba82193c4cb1b6445d711445d36"
+dependencies = [
+ "log",
+ "regex",
+]
 
 [[package]]
 name = "env_logger"
@@ -1502,6 +1541,7 @@ dependencies = [
  "ircore-types",
  "irpc-sdk",
  "jni",
+ "libc",
  "log",
  "rand 0.7.3",
  "ratman",
@@ -1708,6 +1748,27 @@ name = "libc"
 version = "0.2.94"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "18794a8ad5b29321f790b55d93dfba91e125cb1a9edbd4f8e3150acc771c1a5e"
+
+[[package]]
+name = "libirdestdroid"
+version = "0.1.0"
+dependencies = [
+ "android-tracing",
+ "android_logger",
+ "async-std",
+ "bincode",
+ "irdest-core",
+ "jni",
+ "libc",
+ "log",
+ "netmod-tcp",
+ "netmod-wd",
+ "ratman",
+ "ratman-configure",
+ "ratman-netmod",
+ "tempfile",
+ "tracing",
+]
 
 [[package]]
 name = "libloading"

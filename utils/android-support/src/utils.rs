@@ -6,42 +6,42 @@ use jni::{
     objects::{JClass, JObject, JString, JValue},
     JNIEnv,
 };
-use libqaul::{users::UserAuth, Identity, Qaul};
-use qaul_chat::Chat;
-use qaul_voice::Voice;
+use irdest_core::{users::UserAuth, Identity, Irdest};
+// use qaul_chat::Chat; // disabled, as these APIs ain't ready yet
+// use qaul_voice::Voice;
 use std::{
     ffi::{CStr, CString},
     ops::Deref,
 };
 
 pub(crate) struct AndroidState {
-    libqaul: Arc<QaulWrapped>,
+    irdestcore: Arc<IrdestWrapped>,
     tcp: Arc<netmod_tcp::Endpoint>,
     wd: Arc<netmod_wd::WdMod>,
     auth: Option<UserAuth>,
 }
 
-pub(crate) struct QaulWrapped(Arc<Qaul>, pub(crate) Arc<Chat>, pub(crate) Arc<Voice>);
+pub(crate) struct IrdestWrapped(Arc<Irdest>);
 
-impl Drop for QaulWrapped {
+impl Drop for IrdestWrapped {
     fn drop(&mut self) {
-        debug!("Calling drop() on QaulWrapped: running std::mem::forget(...)");
+        debug!("Calling drop() on IrdestWrapped: running std::mem::forget(...)");
         std::mem::forget(&self.0);
     }
 }
 
-impl QaulWrapped {
-    pub(crate) fn qaul(&self) -> Arc<Qaul> {
+impl IrdestWrapped {
+    pub(crate) fn qaul(&self) -> Arc<Irdest> {
         Arc::clone(&self.0)
     }
 
-    pub(crate) fn chat(&self) -> Arc<Chat> {
-        Arc::clone(&self.1)
-    }
+    // pub(crate) fn chat(&self) -> Arc<Chat> {
+    //     Arc::clone(&self.1)
+    // }
 
-    pub(crate) fn voice(&self) -> Arc<Voice> {
-        Arc::clone(&self.2)
-    }
+    // pub(crate) fn voice(&self) -> Arc<Voice> {
+    //     Arc::clone(&self.2)
+    // }
 }
 
 type StateWrapped = Arc<RwLock<AndroidState>>;
@@ -62,12 +62,10 @@ impl GcWrapped {
     pub(crate) fn new(
         tcp: Arc<netmod_tcp::Endpoint>,
         wd: Arc<netmod_wd::WdMod>,
-        libqaul: Arc<Qaul>,
-        chat: Arc<Chat>,
-        voice: Arc<Voice>,
+        irdestcore: Arc<Irdest>,
     ) -> Self {
         Self(Arc::new(RwLock::new(AndroidState {
-            libqaul: Arc::new(QaulWrapped(libqaul, chat, voice)),
+            irdestcore: Arc::new(IrdestWrapped(irdestcore)),
             tcp,
             wd,
             auth: None,
@@ -86,8 +84,8 @@ impl GcWrapped {
     }
 
     /// Get the inner state representation from the wrapper
-    pub(crate) fn get_inner(&self) -> Arc<QaulWrapped> {
-        block_on(async { Arc::clone(&self.0.read().await.libqaul) })
+    pub(crate) fn get_inner(&self) -> Arc<IrdestWrapped> {
+        block_on(async { Arc::clone(&self.0.read().await.irdestcore) })
     }
 
     pub(crate) fn get_tcp(&self) -> Arc<netmod_tcp::Endpoint> {

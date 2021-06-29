@@ -46,4 +46,7 @@ members = [
     "clients/hubd",
     "clients/irdest-gtk",
     "clients/irpc-client",
+    "utils/android-support",
+    "utils/android-tracing"
+
 ]

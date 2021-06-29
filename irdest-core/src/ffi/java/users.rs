@@ -29,15 +29,15 @@ pub unsafe extern "C" fn create(
     let pw = super::conv_jstring(this, pw);
     let auth = block_on(async { q.users().create(&pw).await })?;
 
-    block_on(async {
-        q.users()
-            .update(auth.clone(), UserUpdate::DisplayName(Some(handle)))
-            .await;
+    // block_on(async {
+    //     q.users()
+    //         .update(auth.clone(), UserUpdate::DisplayName(Some(handle)))
+    //         .await;
 
-        q.users()
-            .update(auth.clone(), UserUpdate::RealName(Some(name)))
-            .await
-    })?;
+    //     q.users()
+    //         .update(auth.clone(), UserUpdate::RealName(Some(name)))
+    //         .await
+    // })?;
 
     Ok(auth)
 }

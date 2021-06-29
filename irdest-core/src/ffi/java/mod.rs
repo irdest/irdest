@@ -38,7 +38,7 @@ impl ToJObject for UserProfile {
         //let id = to_jstring(env, Some(self.id.to_string()));
         let id = JavaId::from_identity(self.id);
         let display_name = to_jstring(env, self.display_name);
-        let real_name = to_jstring(env, self.real_name);
+        let real_name = to_jstring(env, self.handle);
 
         let class: JClass<'env> = env
             .find_class("net/qaul/app/ffi/models/UserProfile")

@@ -11,6 +11,7 @@ alexandria = { version = "0.2", path = "../utils/alexandria" }
 ircore-types = { version = "0.1", path = "types" }
 irpc-sdk = { version = "0.1", path = "../rpc-core/irpc-sdk", optional = true }
 ratman = { version = "0.2", path = "../ratman" }
+libc = "0.2"
 
 async-std = { version = "1.0", features = ["attributes", "unstable"] }
 async-trait = "0.1"

@@ -1,7 +1,16 @@
 use crate::error::{Error, Result};
 use directories::ProjectDirs;
-use std::{path::PathBuf, sync::Arc};
 use tempfile::TempDir;
+use std::{
+    env,
+    ffi::{CStr, OsStr},
+    mem,
+    os::unix::ffi::OsStrExt,
+    path::{Path, PathBuf},
+    sync::Arc,
+    ptr,
+};
+use libc::{self, c_char};
 
 /// A config, data, and cache directories helper
 ///
@@ -19,6 +28,39 @@ pub struct Directories {
 
     // Tempdir will remote itself if Directories is dropped
     temp: Option<Arc<TempDir>>,
+}
+
+pub fn home_dir() -> PathBuf {
+    unsafe fn char_ptr_to_path_buf(ptr: *mut c_char) -> PathBuf {
+        OsStr::from_bytes(CStr::from_ptr(ptr).to_bytes()).into()
+    }
+
+    // Check env var, otherwise, call libc::getpwuid_r
+    env::var_os("HOME")
+        .map(PathBuf::from)
+        .or_else(|| {
+            let mut buf = [0; 4096];
+            let mut result = ptr::null_mut();
+            let mut passwd: libc::passwd = unsafe { mem::zeroed() };
+
+            let getpwuid_r_code = unsafe {
+                libc::getpwuid_r(
+                    libc::getuid(),
+                    &mut passwd,
+                    buf.as_mut_ptr(),
+                    buf.len(),
+                    &mut result,
+                )
+            };
+            // If success
+            if getpwuid_r_code == 0 && !result.is_null() {
+                let home_dir = unsafe { char_ptr_to_path_buf(passwd.pw_dir) };
+                Some(home_dir)
+            } else {
+                None
+            }
+        })
+        .unwrap()
 }
 
 impl Directories {
@@ -49,4 +91,22 @@ impl Directories {
                 temp: None,
             })
     }
+
+    // Accesses the app-specific private directory for saving state
+    pub fn android(client_id: &str) -> Directories{ 
+    let mut android_home = PathBuf::new();
+    android_home.push(home_dir()); // "/data"
+    android_home.push("user/0");   // "/data/user/0"
+    android_home.push(client_id);
+    android_home.push("cache");
+    info!("home_dir: {:?} ", android_home);
+
+    Self { 
+        data: android_home.clone(),
+        config: android_home.clone(),
+        cache: android_home.clone(),
+        temp: None
+    }
+}
+
 }
