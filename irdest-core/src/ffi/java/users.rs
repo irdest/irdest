@@ -1,4 +1,4 @@
-//! libqaul users module
+//! irdest-core users module
 
 use super::ToJObject;
 use crate::{

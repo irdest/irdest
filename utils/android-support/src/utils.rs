@@ -7,8 +7,6 @@ use jni::{
     JNIEnv,
 };
 use irdest_core::{users::UserAuth, Identity, Irdest};
-// use qaul_chat::Chat; // disabled, as these APIs ain't ready yet
-// use qaul_voice::Voice;
 use std::{
     ffi::{CStr, CString},
     ops::Deref,
@@ -31,7 +29,7 @@ impl Drop for IrdestWrapped {
 }
 
 impl IrdestWrapped {
-    pub(crate) fn qaul(&self) -> Arc<Irdest> {
+    pub(crate) fn irdest(&self) -> Arc<Irdest> {
         Arc::clone(&self.0)
     }
 
@@ -150,7 +148,7 @@ impl JavaId {
     }
 
     pub(crate) fn into_obj<'a>(self, env: &'a JNIEnv) -> JObject<'a> {
-        let class: JClass<'a> = env.find_class("net/qaul/app/ffi/models/Id").unwrap();
+        let class: JClass<'a> = env.find_class("st/irde/app/ffi/models/Id").unwrap();
 
         env.new_object(
             class,

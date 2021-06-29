@@ -23,7 +23,7 @@ class LoginActivity : AppCompatActivity() {
             // The "android-support" crate creates a dynamic library called "libirdestdroid"
             // which we can include here simply via "irdestdroid" because it's being put
             // into the library search path via ~ m a g i c ~
-            System.loadLibrary("irdestcore")
+            System.loadLibrary("irdestdroid")
         }
     }
 

@@ -19,34 +19,34 @@ use ratman_configure::{EpBuilder, NetBuilder};
 
 /// Lits all local users that are available for login
 #[no_mangle]
-pub unsafe extern "C" fn Java_net_qaul_app_ffi_NativeQaul_usersList(
+pub unsafe extern "C" fn Java_st_irde_app_ffi_NativeIrdest_usersList(
     env: JNIEnv,
     _: JObject,
-    qaul: jlong,
+    irdest: jlong,
     local: jboolean,
 ) -> jobject {
     info!("Rust FFI usersList");
-    let state = GcWrapped::from_ptr(qaul as i64);
+    let state = GcWrapped::from_ptr(irdest as i64);
     let w = state.get_inner();
-    let obj = (*irdest_core::ffi::java::users::list(local, &env, w.qaul())).into_inner();
+    let obj = (*irdest_core::ffi::java::users::list(local, &env, w.irdest())).into_inner();
     std::mem::forget(state);
     obj
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_net_qaul_app_ffi_NativeQaul_usersCreate<'env>(
+pub unsafe extern "C" fn Java_st_irde_app_ffi_NativeIrdest_usersCreate<'env>(
     env: JNIEnv,
     _: JObject,
-    qaul: jlong,
+    irdest: jlong,
     handle: JString,
     name: JString,
     pw: JString,
 ) -> jobject {
     info!("Rust FFI usersCreate");
-    let state = GcWrapped::from_ptr(qaul as i64);
+    let state = GcWrapped::from_ptr(irdest as i64);
     let w = state.get_inner();
 
-    match irdest_core::ffi::java::users::create(&env, w.qaul(), handle, name, pw) {
+    match irdest_core::ffi::java::users::create(&env, w.irdest(), handle, name, pw) {
         Err(e) => {
             error!("Error occured while creating user: {:?}", e);
             std::mem::forget(state); // FIXME
@@ -65,15 +65,15 @@ pub unsafe extern "C" fn Java_net_qaul_app_ffi_NativeQaul_usersCreate<'env>(
 }
 
 // #[no_mangle]
-// pub unsafe extern "C" fn Java_net_qaul_app_ffi_NativeQaul_usersModify<'env>(
+// pub unsafe extern "C" fn Java_st_irde_app_ffi_NativeIrdest_usersModify<'env>(
 //     env: JNIEnv,
 //     _: JObject,
-//     qaul: jlong,
+//     irdest: jlong,
 //     handle: JString,
 //     name: JString,
 // ) -> jobject {
 //     info!("Rust FFI usersModify");
-//     let state = GcWrapped::from_ptr(qaul as i64);
+//     let state = GcWrapped::from_ptr(irdest as i64);
 //     let auth = state.get_auth().unwrap();
 //     let w = state.get_inner();
 
@@ -85,31 +85,31 @@ pub unsafe extern "C" fn Java_net_qaul_app_ffi_NativeQaul_usersCreate<'env>(
 //         let updates = vec![UserUpdate::DisplayName(handle), UserUpdate::RealName(name)];
 
 //         for u in updates {
-//             match w.qaul().users().update(auth.clone(), u).await {
+//             match w.irdest().users().update(auth.clone(), u).await {
 //                 Ok(_) => continue,
 //                 Err(e) => error!("Failure: {}", e), // TODO: return proper failure?
 //             }
 //         }
 
-//         irdest_core::ffi::java::users::get(&env, w.qaul(), auth.0).into_inner()
+//         irdest_core::ffi::java::users::get(&env, w.irdest(), auth.0).into_inner()
 //     })
 // }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_net_qaul_app_ffi_NativeQaul_usersLogin(
+pub unsafe extern "C" fn Java_st_irde_app_ffi_NativeIrdest_usersLogin(
     env: JNIEnv,
     _this: JObject,
-    qaul: jlong,
+    irdest: jlong,
     id: JObject,
     pw: JString,
 ) -> jboolean {
     info!("Rust FFI usersLogin");
-    let state = GcWrapped::from_ptr(qaul as i64);
+    let state = GcWrapped::from_ptr(irdest as i64);
     let w = state.get_inner();
 
     let id = JavaId::from_obj(&env, id).into_identity();
 
-    let b = (match irdest_core::ffi::java::users::login(&env, w.qaul(), id, pw) {
+    let b = (match irdest_core::ffi::java::users::login(&env, w.irdest(), id, pw) {
         Ok(auth) => {
             state.set_auth(Some(auth));
             true

@@ -1759,7 +1759,6 @@ dependencies = [
  "bincode",
  "irdest-core",
  "jni",
- "libc",
  "log",
  "netmod-tcp",
  "netmod-wd",

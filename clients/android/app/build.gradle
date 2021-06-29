@@ -60,7 +60,7 @@ dependencies {
 cargo {
     module = "../../../utils/android-support"
     targetDirectory = "../../../target"
-    libname = "irdestcore"
+    libname = "irdestdroid"
     targetIncludes = ['libirdestdroid.so']
     targets = ["arm64"]
 }

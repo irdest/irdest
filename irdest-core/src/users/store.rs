@@ -19,8 +19,8 @@ use alexandria::{
 
 use std::{collections::BTreeSet, sync::Arc};
 
-pub(crate) const TAG_PROFILE: &'static str = "libqaul.user.profile";
-pub(crate) const TAG_LOCAL: &'static str = "libqaul.user.local";
+pub(crate) const TAG_PROFILE: &'static str = "irdestcore.user.profile";
+pub(crate) const TAG_LOCAL: &'static str = "irdestcore.user.local";
 
 fn key_path(id: Id) -> Path {
     Path::from(format!("/users/keys:{}", id))

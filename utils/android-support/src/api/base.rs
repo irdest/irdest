@@ -1,7 +1,7 @@
 //! Base android (java ffi) API
 //!
 //! This module provides some simple utilities for setting up the
-//! libqaul and router state, and adding new TCP routes to the driver.
+//! irdest-core and router state, and adding new TCP routes to the driver.
 
 use crate::utils::{self, GcWrapped};
 use async_std::{
@@ -22,7 +22,7 @@ use ratman_netmod::{Frame, Target};
 
 /// Setup the main database and router state
 #[no_mangle]
-pub unsafe extern "C" fn Java_net_qaul_app_ffi_NativeQaul_setupState(
+pub unsafe extern "C" fn Java_st_irde_app_ffi_NativeIrdest_setupState(
     _: JNIEnv,
     _: JObject,
     port: jint,
@@ -40,7 +40,7 @@ pub unsafe extern "C" fn Java_net_qaul_app_ffi_NativeQaul_setupState(
     // let subscriber = android_tracing::AndroidSubscriber::new(true)
     //     .with(EnvFilter::new("android_support=trace,[]=warn"));
 
-    info!("Running ratman-configure and libqaul bootstrap code...");
+    info!("Running ratman-configure and irdest-core bootstrap code...");
 
     let router = Router::new();
 
@@ -67,7 +67,7 @@ pub unsafe extern "C" fn Java_net_qaul_app_ffi_NativeQaul_setupState(
     // Uncomment it and then fix, there is some referencing error, most probably we're using incorrect import of `UserUpdate` here
     // block_on(async {
     //     use irdest_core::users::UserUpdate;
-    //     let auth = irdest.users().create("1234").await.unwrap();
+    //     let auth = irdest_core::java::ffi::users::create("1234").await.unwrap();
     //     irdest
     //         .users()
     //         .update(
@@ -92,18 +92,18 @@ pub unsafe extern "C" fn Java_net_qaul_app_ffi_NativeQaul_setupState(
 
 /// Check if an auth token is still valid
 #[no_mangle]
-pub unsafe extern "C" fn Java_net_qaul_app_ffi_NativeQaul_checkLogin(
+pub unsafe extern "C" fn Java_st_irde_app_ffi_NativeIrdest_checkLogin(
     _: JNIEnv,
     _: JObject,
-    qaul: jlong,
+    irdest: jlong,
 ) -> jboolean {
     info!("Rust FFI checkLogin");
-    let state = GcWrapped::from_ptr(qaul as i64);
+    let state = GcWrapped::from_ptr(irdest as i64);
     match state.get_auth() {
         None => false,
         Some(auth) => block_on(async {
             let w = state.get_inner();
-            w.qaul()
+            w.irdest()
                 .users()
                 .is_authenticated(auth)
                 .await
@@ -116,15 +116,15 @@ pub unsafe extern "C" fn Java_net_qaul_app_ffi_NativeQaul_checkLogin(
 
 /// Check if an auth token is still valid
 #[no_mangle]
-pub unsafe extern "C" fn Java_net_qaul_app_ffi_NativeQaul_connectTcp(
+pub unsafe extern "C" fn Java_st_irde_app_ffi_NativeIrdest_connectTcp(
     env: JNIEnv,
     _: JObject,
-    qaul: jlong,
+    irdest: jlong,
     addr: JString,
     port: jint,
 ) {
     info!("Rust FFI connectTcp");
-    let state = GcWrapped::from_ptr(qaul as i64);
+    let state = GcWrapped::from_ptr(irdest as i64);
     let tcp = state.get_tcp();
 
     let addr: Vec<u8> = utils::conv_jstring(&env, addr)
@@ -162,7 +162,7 @@ fn frame_to_jframe<'env>(env: &'env JNIEnv, f: Frame, t: Target) -> JObject<'env
         Target::Single(id) => id as i32,
     };
 
-    let class: JClass<'env> = env.find_class("net/qaul/app/ffi/models/Frame").unwrap();
+    let class: JClass<'env> = env.find_class("st/irde/app/ffi/models/Frame").unwrap();
     env.new_object(
         class,
         "([BI)V",
@@ -194,13 +194,13 @@ fn from_jframe<'env>(env: &'env JNIEnv, jframe: JObject<'env>) -> (Frame, Target
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_net_qaul_app_ffi_NativeQaul_wdToSend(
+pub unsafe extern "C" fn Java_st_irde_app_ffi_NativeIrdest_wdToSend(
     env: JNIEnv,
     _: JObject,
-    qaul: jlong,
+    irdest: jlong,
 ) -> jobject {
     info!("Rust FFI wdToSend");
-    let state = GcWrapped::from_ptr(qaul as i64);
+    let state = GcWrapped::from_ptr(irdest as i64);
     let wd = state.get_wd();
 
     // Blocks until a new frame should be sent
@@ -211,14 +211,14 @@ pub unsafe extern "C" fn Java_net_qaul_app_ffi_NativeQaul_wdToSend(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_net_qaul_app_ffi_NativeQaul_wdReceived(
+pub unsafe extern "C" fn Java_st_irde_app_ffi_NativeIrdest_wdReceived(
     env: JNIEnv,
     _: JObject,
-    qaul: jlong,
+    irdest: jlong,
     frame: JObject,
 ) {
     info!("Rust FFI wdReceived");
-    let state = GcWrapped::from_ptr(qaul as i64);
+    let state = GcWrapped::from_ptr(irdest as i64);
     let wd = state.get_wd();
     let (f, t) = from_jframe(&env, frame);
 
