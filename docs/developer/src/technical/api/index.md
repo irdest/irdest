@@ -1,78 +1,81 @@
-# Development Interfaces
+# Irdest developer APIs
 
-**This page is outdated!**
+This section of the developer manual outlines the basic capabilities
+of the irdest service API.  Most likely you will also want to read the
+next section [RPC], which explains, how to connect to an
+existing irdest daemon via the RPC interface.
 
-This document will change quite a lot during the development,
-especially because there are several layers of interfaces that need to
-be documented.  In the future we might want to move some of them into
-their dedicated books.
+Each of the sections below corresponds to an API scope in the irdest
+service API!
 
-For now, this document is an outline for the json RPC interface of
-`irdest-core`.  It's being made available via the `irdest-core-http` crate.
+[RPC]: ./rpc
 
+## Users & UserAuth
 
-## Envelope
+The core authentication scope in irdest is a user.  A user is
+represented and advertised on the network by its ID, a 128 bit
+cryptographic public key.  This key is used to encrypt messages _to_
+the user, and to verify the integrity of messages _from_ the user.
 
-Every message is packed into an envelope.  It contains metadata that
-might be present in some transports, but not others.  The envelope was
-generally built to be streamed via sockets, where message association
-isn't handled via the transport protocol (like http).
+In order to issue a command to the API as a particular user, a session
+first needs to be started.  This yields an authentication type called
+`UserAuth`.  It contains both the user ID, as well as a random token
+chosen by irdest-core, which is checked for validity on every future
+API call.  Multiple sessions for the same user can exist at the same
+time!
 
-```json
-{
-  "id": "1",
-  "auth": {
-    "id": "7F9B BAA9 DF90 0F48 CD41 7FD4 2C9C E432 1309 FB79 8CF9 C56F FB9A 8F2C 29C1 12D9",
-    "token": "56C0 F4C0 BD0D E822 B21D 4120 CC43 5C73 1F92 B246 C988 3335 72F5 8F1A 2701 3FD7"
-  },
-  "page": "1",
-  "method": "query",
-  "kind": "messages",
-  "data": {
-    "query": {
-      "tag": {
-        "key": "room-id",
-        "val": "A88A 7CC6 DF68 CE60 2D63 64CB 7393 8924 653D 52FB DBC6 2A39 D892 A9BD 6FA4 FD5D"
-      }
-    },
-    "service": "net.irdest.chat"
-  }
-}
-```
-
-This type can be found in `irdest-core/rpc/src/json/mod.rs`.  The general
-structure of requests stays the same: there's an ID, some auth data,
-the page (which isn't implemented yet), `method` and `kind` the
-request operates on.
+**Sessions do not currently time out, however this behaviour is
+subject to change!**
 
 
-There are several types available (`kind`):
+## Messages
 
-- **users**, either a local or remote user
-- **contacts**, some user-specific contact data for another user
-- **chat-rooms**, a chat room via service (requires `irdest` feature)
-- **chat-messages**, a chat room message (requires `irdest` feature)
+Sending messages between users is the primary way that data is
+exchanged over an irdest network.  More complicated and stateful
+algorithms can be implemented on top of this basic message sending
+capability.  For that reason, messages sent via the irdest service API
+are non-typed, arbitrarily sized byte arrays.  It is up to an
+application/ service to decide what the payload of a message means.
+
+When sending messages your service name is also encoded in them, to
+allow remote peers to decide whether to keep a message, or discard it.
+For example, a device that does not run the `foo` service may choose
+to not keep incoming messages associated with it.
+
+There are two modes when sending messages.  DIRECT, and FLOOD.  Direct
+messages are addressed to a single user, and are routed by the
+underlying network to the device and user in question.  Flood messages
+are very different.  They are spread to every device reachable via the
+network.  Devices that do not run your service will not _keep_ the
+message, but they will still propagate it through the network to a
+device that potentially does.
+
+Also, keep in mind that neighbouring devices may choose to discard
+your FLOOD messages if their message payload is too large.
 
 
-Possible `methods` are (not all combinations exist though!):
+## Contacts
 
-- **list**, get a list of all, if available
-- **create**, create a new (with side-effects, such as sending)
-- **delete**, remove from local stores
-- **get**, return single item by ID
-- **query**, return a set of items, according to some query
-- **modify**, change an existing item in some way
-- **subscribe**, (not implemented yet)
-- **unsubscribe**, (not implemented yet)
+Contact updates are a way for users to reveal more personal
+information about themselves to other people on their network.  The
+irdest API has a set of endpoints to search and update the local
+contact book.  It is also a way for users to track "trust" and
+friendships between users on the network.
 
+The local contact book is filled with contact updates from peers on
+the network.  Higher priority is given to updates from trusted and
+friendly users in case of space limitations.
 
-Three special `methods` only exist for users: 
-
-- **login**, validate password and receive auth tokens
-- **logout**, end session token
-- **repass**, change user passphrase
+It is not currently possible to limit contact updates to trusted
+users, but this will change in the future.
 
 
-Following is a list of examples of how to construct valid requests.
-If in doubt, the code that parses these is in
-`irdest-core/rpc/src/json/parser.rs`.  You can always look it up there.
+## Storage
+
+The irdest core uses an encrypted database called [alexandria].  To
+protect users against potential metadata side-channel attacks, your
+service can store data in a per-user, per-service store inside the
+same database.
+
+This is of course optional, but encouraged, unless you have very a
+very specific security-at-rest scheme in mind.
