@@ -1,37 +1,60 @@
+//! A simple group chat running on an irdest network
+
+mod room;
+mod storage;
+mod sub;
+
 pub mod error;
 pub mod types;
-mod sub;
 
 use crate::{
     error::Result,
+    storage::ServiceStore,
     sub::Subscription,
     types::{Attachment, Room, RoomId},
 };
-use irdest_sdk::{users::UserAuth, messages::MsgId, Identity, IrdestSdk};
+use irdest_sdk::{messages::MsgId, users::UserAuth, Identity, IrdestSdk};
 use std::sync::Arc;
 use types::ChatMessage;
 
 /// A simple, decentralised chat that runs on an irdest network
 pub struct ChatService {
-    // ¯\_ (ツ)_/¯
+    store: ServiceStore,
 }
 
 impl ChatService {
     /// Create a chat service via an existing irdest SDK connection
-    pub fn bind(_: Arc<IrdestSdk>) -> Arc<Self> {
-        todo!()
+    pub fn bind(inner: Arc<IrdestSdk>) -> Arc<Self> {
+        Arc::new(Self {
+            store: ServiceStore::new(&inner),
+        })
     }
 
     /// Create a new room with a set of peers
     ///
+    /// If no name is given, one will be inferred from the set of
+    /// participants.
+    ///
     /// Returns a copy of the new metadata set for the room.  If a
     /// room with that exact set of participants exists already an
     /// `Error::DuplicateRoom(RoomId)` will be returned instead.
-    pub fn create_room<I>(self: &Arc<Self>, _auth: UserAuth, _peers: I) -> Result<Room>
+    pub async fn create_room<I>(
+        self: &Arc<Self>,
+        auth: UserAuth,
+        peers: I,
+        name: Option<String>,
+    ) -> Result<Room>
     where
         I: Into<Vec<Identity>>,
     {
-        todo!()
+        let v = peers.into();
+
+        let name = match name {
+            Some(n) => n,
+            None => self.store.generate_name(&v).await,
+        };
+
+        self.store.create_room(auth, v, name).await
     }
 
     /// Get the current metadata state for a room with an ID
