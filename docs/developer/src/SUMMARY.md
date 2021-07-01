@@ -4,7 +4,7 @@
 - [Social](./social/index.md)
   - [Contributions](./social/contributions.md)
   - [Code of Conduct](./social/code-of-conduct.md)
-- [Technical](./technical/index.md)
+- [Technical overview](./technical/index.md)
   - [Irdest APIs](./technical/api/index.md)
   - [Irdest services](./technical/services/index.md)
     - [Example service guide](./technical/services/guide.md)
