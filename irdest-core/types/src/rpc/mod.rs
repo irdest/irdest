@@ -13,7 +13,7 @@ mod tests;
 use crate::{
     error::Error,
     messages::{IdType, Message, Mode, MsgId, MsgQuery},
-    services::{Service, ServiceEvent},
+    services::{Service, ServiceEvent, StoreKey},
     users::{UserAuth, UserProfile, UserUpdate},
     Identity,
 };
@@ -73,18 +73,18 @@ pub enum ServiceCapabilities {
     Insert {
         auth: UserAuth,
         service: String,
-        key: String,
+        key: StoreKey,
         value: Vec<u8>,
     },
     Delete {
         auth: UserAuth,
         service: String,
-        key: String,
+        key: StoreKey,
     },
     Query {
         auth: UserAuth,
         service: String,
-        key: String,
+        key: StoreKey,
     },
 }
 
@@ -176,7 +176,7 @@ pub enum ServiceReply {
         sub: Identity,
     },
     Query {
-        key: String,
+        key: StoreKey,
         val: Vec<u8>,
     },
 }

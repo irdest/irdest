@@ -345,13 +345,13 @@ impl RpcServer {
         self: &Arc<Self>,
         auth: UserAuth,
         service: String,
-        key: String,
+        key: StoreKey,
         value: Vec<u8>,
     ) -> Reply {
         match self
             .inner
             .services()
-            .insert(auth, service, StoreKey::from(key), value)
+            .insert(auth, service, key, value)
             .await
         {
             Ok(()) => Reply::Service(ServiceReply::Ok),
@@ -363,14 +363,9 @@ impl RpcServer {
         self: &Arc<Self>,
         auth: UserAuth,
         service: String,
-        key: String,
+        key: StoreKey,
     ) -> Reply {
-        match self
-            .inner
-            .services()
-            .delete(auth, service, StoreKey::from(key))
-            .await
-        {
+        match self.inner.services().delete(auth, service, key).await {
             Ok(()) => Reply::Service(ServiceReply::Ok),
             Err(e) => Reply::Error(e),
         }
@@ -380,12 +375,12 @@ impl RpcServer {
         self: &Arc<Self>,
         auth: UserAuth,
         service: String,
-        key: String,
+        key: StoreKey,
     ) -> Reply {
         match self
             .inner
             .services()
-            .query(auth, service, StoreKey::from(key.as_str()))
+            .query(auth, service, key.clone())
             .await
         {
             Ok(val) => Reply::Service(ServiceReply::Query { key, val }),

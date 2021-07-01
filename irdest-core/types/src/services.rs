@@ -67,7 +67,7 @@ impl ServiceEvent {
 /// A `StoreKey` can be created from Strings, using the `#` symbol to
 /// separate the namespace and key parts.  To access either parts of
 /// the key, use the appropriate functions.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct StoreKey(String, String);
 
 impl StoreKey {
