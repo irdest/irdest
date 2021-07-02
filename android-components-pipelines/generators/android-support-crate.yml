@@ -5,5 +5,5 @@ android-support-crate:
   stage: build
   trigger:
     include: 
-    - 'android-components-pipelines/scripts/android-support-crate-ci.yml'
+    - '**/*/android-support-crate-ci.yml'
     strategy: depend

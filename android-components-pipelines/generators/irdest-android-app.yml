@@ -5,5 +5,5 @@ irdest-android-app:
   stage: build
   trigger:
     include: 
-    - 'android-components-pipelines/scripts/irdest-android-app-ci.yml'
+    - '**/*/irdest-android-app-ci.yml'
     strategy: depend

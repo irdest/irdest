@@ -1,4 +1,4 @@
-# Script that runs in [`android-support` crate] pipeline after it has been created
+# Script that runs in `android-support-crate` pipeline after it has been created
 
 # Our ultimately orz docker image
 image: irdest/android-build-env

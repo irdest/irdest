@@ -43,6 +43,6 @@ android-components:
   stage: build
   trigger:
     include: 
-    - 'android-components-pipelines/generators/android-support-crate.yml'
-    - 'android-components-pipelines/generators/irdest-android-app.yml'
+    - '**/*/android-support-crate.yml'
+    - '**/*/irdest-android-app.yml'
     strategy: depend
