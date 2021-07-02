@@ -1,11 +1,11 @@
+# Script that runs in `irdest-android-app` pipeline after it has been created
+
 # Our ultimately orz docker image
 image: irdest/android-build-env
 
 # Move to android dir before running CI on it
 before_script:
-  - pwd
   - cd clients/android
-  - ls
 
 # Run Lint
 Run Lint:

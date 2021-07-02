@@ -39,8 +39,10 @@ unittests:
         job: unittests-pipeline
     strategy: depend
 
-build-android-app:
+android-components:
   stage: build
   trigger:
-    include: 'clients/android/irdest-android-ci.yml'
+    include: 
+    - 'android-components-pipelines/generators/android-support-crate.yml'
+    - 'android-components-pipelines/generators/irdest-android-app.yml'
     strategy: depend

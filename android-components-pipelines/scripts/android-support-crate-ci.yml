@@ -1,0 +1,14 @@
+# Script that runs in [`android-support` crate] pipeline after it has been created
+
+# Our ultimately orz docker image
+image: irdest/android-build-env
+
+# Move to android dir to invoke cross-compilation via gradle command
+before_script:
+  - cd clients/android
+
+build-android-support-crate:
+  interruptible: true
+  stage: build
+  script: 
+    - ./gradlew cargoBuild  

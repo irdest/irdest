@@ -1,0 +1,9 @@
+# `Triggers` a child pipeline that builds `android-support` crate
+# The script that runs the pipeline is from path provided to `include`
+
+android-support-crate:
+  stage: build
+  trigger:
+    include: 
+    - 'android-components-pipelines/scripts/android-support-crate-ci.yml'
+    strategy: depend
