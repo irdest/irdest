@@ -8,7 +8,7 @@ existing irdest daemon via the RPC interface.
 Each of the sections below corresponds to an API scope in the irdest
 service API!
 
-[RPC]: ./rpc
+[RPC]: ./rpc.html
 
 ## Users & UserAuth
 

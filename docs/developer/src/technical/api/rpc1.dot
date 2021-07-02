@@ -1,0 +1,13 @@
+digraph G {
+  splines=ortho
+  pad=0.5
+
+  broker [shape=house label="RPC broker"]
+  app [shape=rect label="Your application"]
+  core [shape=rect label="irdest-core"]
+  chat [shape=rect label="irdest-chat"]
+  
+  broker -> app [dir=back]
+  broker -> chat [dir=back]
+  broker -> core [dir=back]
+}

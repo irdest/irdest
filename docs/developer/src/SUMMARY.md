@@ -6,6 +6,7 @@
   - [Code of Conduct](./social/code-of-conduct.md)
 - [Technical overview](./technical/index.md)
   - [Irdest APIs](./technical/api/index.md)
+    - [RPC and SDKs](./technical/api/rpc.md)
   - [Irdest services](./technical/services/index.md)
     - [Example service guide](./technical/services/guide.md)
   - [irdest-core](./technical/irdest-core/index.md)
