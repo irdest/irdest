@@ -133,14 +133,11 @@ can do.  Ideally, any application that requires some form of networked
 communication with other users of the application can be ported to run
 natively over an irdest network.
 
-For "legacy" applications, we also provide a TCP/IP proxy service
+For "legacy" applications, we also provide a TCP/IP [proxy service]()
 (work in progress).
 
 
 ## What next?
-
-This manual is intended for both people interested in working on
-irdest itself, and writing applications to use irdest.
 
 ### For irdest application developers
 
@@ -149,12 +146,12 @@ system.  If you have further questions on how your users can see and
 interact with each other, the following sections of this manual may
 also be of interest to you.
 
-- [Irdest APIs](./api/index/)
-- [Irdest RPC](./rpc/index/)
-- [Routing basics](./ratman/basics/)
+- [Irdest APIs](./api/)
+- [Irdest RPC overview](./api/rpc.html)
+- [Routing basics](./ratman/basics.html)
 
 
-## For irdest hackers
+### For irdest hackers
 
 Depending on what part of the stack you want to work on, you should
 read the introduction to that chapter, as well as the internals
