@@ -33,7 +33,7 @@ stack.  Each layer has a short description below.
 
 [osi]: https://en.wikipedia.org/wiki/OSI_model
 
-| Layer                         | Comonent names                 |
+| Layer                         | Component(s)                 |
 |-------------------------------|--------------------------------|
 | Network drivers (Layer 1 & 2) | `netmod`, `netmod-tcp`, ...    |
 | Irdest Router (Layer 3 & 4)   | `ratman`                       |
@@ -58,14 +58,14 @@ layers 1 & 2.
 
 ### Irdest router
 
-A decentralised packet router using cryptographic public keys as
+A decentralised packet router that uses cryptographic public keys as
 addresses for users.  One router is unique to a device and manages
 both I/O with network drivers, as well as message requests to the
 layers above.
 
 The irdest router announces itself to other routers on the network via
 the Mesh Router Command Protocol (MRCP), and updates its internal
-routing table according to a chosen routing strategy, neigbour network
+routing table according to a chosen routing strategy, neighbour network
 topology and link quality.
 
 In the OSI model, this maps to layer 3 and 4.
@@ -83,7 +83,7 @@ In the OSI model, this partially maps to layer 5.
 ### Irdest RPC core & SDKs
 
 A generic RPC protocol to connect different irdest services together.
-Because there can only be one router running per device, it needs to
+Since there can only be one router running per device, it needs to
 be possible for different applications to interact with this router at
 the same time.  This is done by running the irdest core and router in
 a background daemon and using an RPC protocol/ interface (called irpc)
