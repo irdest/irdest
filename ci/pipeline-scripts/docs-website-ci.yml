@@ -1,0 +1,10 @@
+# Script that triggers the pipeline for documentation on website
+
+build-website:
+  tags: [ irdest-nix ]
+  stage: build
+  script:
+    - nix-build nix -A irdest-website
+  artifacts:
+    paths:
+      - result/*

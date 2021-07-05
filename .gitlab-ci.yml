@@ -13,3 +13,9 @@ android-components:
     - '**/*/android-support-crate.yml'
     - '**/*/irdest-android-app.yml'
     strategy: depend
+
+docs: 
+  stage: build
+  trigger:
+    include: '**/*/docs-website-ci.yml'
+    strategy: depend
