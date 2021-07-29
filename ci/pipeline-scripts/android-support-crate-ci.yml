@@ -11,4 +11,10 @@ build-android-support-crate:
   interruptible: true
   stage: build
   script: 
-    - ./gradlew cargoBuild  
+    - ./gradlew cargoBuild
+    - cd ../../
+    - strip -S target/aarch64-linux-android/debug/libirdestdroid.so -I elf64-x86-64
+    - tar -zcvf libirdestdroid.tar.gz target/aarch64-linux-android/debug/libirdestdroid.so
+  artifacts:
+    paths:
+      - libirdestdroid.tar.gz
