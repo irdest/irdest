@@ -41,12 +41,12 @@ impl ToJObject for UserProfile {
         let real_name = to_jstring(env, self.handle);
 
         let class: JClass<'env> = env
-            .find_class("net/qaul/app/ffi/models/UserProfile")
+            .find_class("st/irde/app/ffi/models/UserProfile")
             .unwrap();
 
         env.new_object(
             class,
-            "(Lnet/qaul/app/ffi/models/Id;Ljava/lang/String;Ljava/lang/String;Z)V",
+            "(Lst/irde/app/ffi/models/Id;Ljava/lang/String;Ljava/lang/String;Z)V",
             &[
                 JValue::Object(id.into_obj(env)),
                 JValue::Object(*display_name),
@@ -82,7 +82,7 @@ impl JavaId {
     }
 
     pub(crate) fn into_obj<'a>(self, env: &'a JNIEnv) -> JObject<'a> {
-        let class: JClass<'a> = env.find_class("net/qaul/app/ffi/models/Id").unwrap();
+        let class: JClass<'a> = env.find_class("st/irde/app/ffi/models/Id").unwrap();
 
         env.new_object(
             class,

@@ -43,14 +43,14 @@ class ChatFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val root = inflater.inflate(R.layout.fragment_chat, container, false)
-        fragMan = fragmentManager!!
+        fragMan = requireFragmentManager()
 
         val list = root!!.findViewById<RecyclerView>(R.id.chat_room_list)!!
         list.layoutManager = LinearLayoutManager(context)
 
         chatList = root.findViewById<RecyclerView>(R.id.chat_room_list)
         chatList.layoutManager = LinearLayoutManager(context)
-        updateRooms()
+//        updateRooms()
 
         // Do the FAB stuff
         val fab = root.findViewById<FloatingActionButton>(R.id.chat_room_list_start)
