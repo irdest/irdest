@@ -27,7 +27,7 @@
             android:label="@string/title_activity_settings" />
         <activity
             android:name="st.irde.app.LoginActivity"
-            android:windowSoftInputMode="adjustPan">
+            android:windowSoftInputMode="stateVisible|adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
