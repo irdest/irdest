@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:gravity="center"
     tools:context=".ui.UserCreateFragment">
 
@@ -16,83 +16,81 @@
         tools:ignore="UselessParent">
 
         <TextView
-            app:layout_constraintTop_toTopOf="@id/root_layout"
-            android:layout_marginTop="@dimen/margin_large"
             android:id="@+id/fragment_register_title"
             android:layout_width="match_parent"
+            android:layout_marginTop="@dimen/margin_medium"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/margin_medium"
             android:text="@string/register_hello"
-            android:textAppearance="@style/TextAppearance.AppCompat.Display1" />
+            android:textAppearance="@style/TextAppearance.AppCompat.Display1"
+            app:layout_constraintBottom_toTopOf="@id/registration_info"
+             />
 
         <TextView
             android:id="@+id/registration_info"
-            app:layout_constraintTop_toBottomOf="@id/fragment_register_title"
-            android:layout_marginTop="@dimen/margin_small"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/register_hello2" />
+            android:layout_marginTop="40dp"
+            android:layout_marginBottom="@dimen/margin_small"
+            android:text="@string/register_hello2"
+            app:layout_constraintBottom_toTopOf="@id/registry_name" />
 
         <com.google.android.material.textfield.TextInputLayout
-            app:layout_constraintTop_toBottomOf="@id/registration_info"
-            android:layout_marginTop="@dimen/margin_small"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:id="@+id/registry_name"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/margin_small"
             android:hint="@string/prompt_name"
-            >
+            app:layout_constraintBottom_toTopOf="@id/registry_handle">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                />
+                android:layout_height="wrap_content" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
-            app:layout_constraintTop_toBottomOf="@id/registry_name"
-            android:layout_marginTop="@dimen/margin_small"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:id="@+id/registry_handle"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/margin_small"
             android:hint="@string/prompt_handle"
-            >
+            app:layout_constraintBottom_toTopOf="@id/registry_password_entry">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:autofillHints="handle"
-                android:inputType="textAutoComplete"
-                />
+                android:inputType="textAutoComplete" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
-            app:layout_constraintTop_toBottomOf="@id/registry_handle"
-            android:layout_marginTop="@dimen/margin_small"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:id="@+id/registry_password_entry"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/margin_small"
             android:hint="@string/prompt_password"
-            >
+            app:layout_constraintBottom_toTopOf="@id/registry_create">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:autofillHints="name"
-                android:inputType="textAutoComplete"
-                />
+                android:inputType="textAutoComplete" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
         <Button
-            app:layout_constraintTop_toBottomOf="@id/registry_password_entry"
             android:id="@+id/registry_create"
-            android:layout_marginTop="@dimen/margin_small"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/button_register" />
+            android:text="@string/button_register"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginTop="@dimen/margin_medium"
+            app:layout_constraintTop_toTopOf="@id/registry_password_entry"/>
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
