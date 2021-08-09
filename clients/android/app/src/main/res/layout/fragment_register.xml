@@ -18,13 +18,11 @@
         <TextView
             android:id="@+id/fragment_register_title"
             android:layout_width="match_parent"
-            android:layout_marginTop="@dimen/margin_medium"
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/margin_medium"
             android:text="@string/register_hello"
             android:textAppearance="@style/TextAppearance.AppCompat.Display1"
-            app:layout_constraintBottom_toTopOf="@id/registration_info"
-             />
+            app:layout_constraintBottom_toTopOf="@id/registration_info" />
 
         <TextView
             android:id="@+id/registration_info"
@@ -42,7 +40,8 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/margin_small"
             android:hint="@string/prompt_name"
-            app:layout_constraintBottom_toTopOf="@id/registry_handle">
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
@@ -55,9 +54,9 @@
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="@dimen/margin_small"
+            android:layout_marginTop="@dimen/margin_small"
             android:hint="@string/prompt_handle"
-            app:layout_constraintBottom_toTopOf="@id/registry_password_entry">
+            app:layout_constraintTop_toBottomOf="@id/registry_name">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
@@ -72,9 +71,9 @@
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="@dimen/margin_small"
+            android:layout_marginTop="@dimen/margin_small"
             android:hint="@string/prompt_password"
-            app:layout_constraintBottom_toTopOf="@id/registry_create">
+            app:layout_constraintTop_toBottomOf="@id/registry_handle">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
@@ -88,9 +87,8 @@
             android:id="@+id/registry_create"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_small"
             android:text="@string/button_register"
-            app:layout_constraintBottom_toBottomOf="parent"
-            android:layout_marginTop="@dimen/margin_medium"
-            app:layout_constraintTop_toTopOf="@id/registry_password_entry"/>
+            app:layout_constraintTop_toBottomOf="@id/registry_password_entry" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
