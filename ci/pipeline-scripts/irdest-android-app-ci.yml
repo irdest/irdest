@@ -13,10 +13,12 @@ Run Lint:
    stage: build
    script:
      - ./gradlew -Pci --console=plain :app:lintDebug -PbuildDir=lint
+     - mkdir ../../reports 
+     - mv app/lint/reports/ ../../ && cd $_
    artifacts:
      when: always
      paths:
-       - "**/reports/"
+       - reports
 
 # Make Project
 Build Application & Generate APK:
@@ -24,9 +26,11 @@ Build Application & Generate APK:
   stage: build
   script:
     - ./gradlew assembleDebug
+    - mv app/build/outputs/apk/debug/app-debug.apk ../../irdest-debug.apk
+    - cd ../../
   artifacts:
     paths:
-      - "**/app/build/**/*.apk"
+      - irdest-debug.apk
 
 # Run all tests, if any fails, interrupt the pipeline(fail it)
 Run Unit Tests:
