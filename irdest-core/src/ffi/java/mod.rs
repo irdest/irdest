@@ -38,7 +38,7 @@ impl ToJObject for UserProfile {
         //let id = to_jstring(env, Some(self.id.to_string()));
         let id = JavaId::from_identity(self.id);
         let display_name = to_jstring(env, self.display_name);
-        let real_name = to_jstring(env, self.handle);
+        let handle = to_jstring(env, self.handle);
 
         let class: JClass<'env> = env
             .find_class("st/irde/app/ffi/models/UserProfile")
@@ -49,8 +49,8 @@ impl ToJObject for UserProfile {
             "(Lst/irde/app/ffi/models/Id;Ljava/lang/String;Ljava/lang/String;Z)V",
             &[
                 JValue::Object(id.into_obj(env)),
+                JValue::Object(*handle),
                 JValue::Object(*display_name),
-                JValue::Object(*real_name),
                 JValue::Bool(false as jboolean),
             ],
         )

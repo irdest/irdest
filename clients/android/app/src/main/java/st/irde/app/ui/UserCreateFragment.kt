@@ -40,7 +40,7 @@ class UserCreateFragment(private val login: LoginFragment) : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         button.setOnClickListener {
             val id = AppState.get()
-              .usersCreate(handle.editText.toString(), name.editText?.text?.trim().toString(), password.editText?.text?.trim().toString())
+              .usersCreate(handle.editText?.text?.toString(), name.editText?.text?.trim().toString(), password.editText?.text?.trim().toString())
             Toast.makeText(context, "Your user ID is: '${id.inner}'", Toast.LENGTH_LONG).show()
 
             login.updateUsers()
