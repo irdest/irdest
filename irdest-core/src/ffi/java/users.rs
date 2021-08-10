@@ -3,6 +3,7 @@
 use super::ToJObject;
 use crate::{
     error::Result,
+    helpers::ItemDiff,
     users::{UserAuth, UserUpdate},
     Identity, Irdest,
 };
@@ -29,15 +30,14 @@ pub unsafe extern "C" fn create(
     let pw = super::conv_jstring(this, pw);
     let auth = block_on(async { q.users().create(&pw).await })?;
 
-    // block_on(async {
-    //     q.users()
-    //         .update(auth.clone(), UserUpdate::DisplayName(Some(handle)))
-    //         .await;
+    // Update the user handle and display name
+    let update = UserUpdate {
+        handle: ItemDiff::Set(handle),
+        display_name: ItemDiff::Set(name),
+        ..Default::default()
+    };
 
-    //     q.users()
-    //         .update(auth.clone(), UserUpdate::RealName(Some(name)))
-    //         .await
-    // })?;
+    block_on(async { q.users().update(auth.clone(), update).await })?;
 
     Ok(auth)
 }
