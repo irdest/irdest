@@ -21,6 +21,7 @@ Run Lint:
      when: always
      paths:
        - "**/reports/*"
+     expire_in: 45 mins
 
 # Make Project
 Build Application & Generate APK:
@@ -28,11 +29,10 @@ Build Application & Generate APK:
   stage: build
   script:
     - ./gradlew assembleDebug
-    - mv app/build/outputs/apk/debug/app-debug.apk ../../irdest-debug.apk
-    - cd ../../
   artifacts:
     paths:
-      - irdest-debug.apk
+      - "**/apk/*"
+    expire_in: 45 mins
 
 # Run all tests, if any fails, interrupt the pipeline(fail it)
 Run Unit Tests:
@@ -43,11 +43,12 @@ Run Unit Tests:
 
 Upload Artifacts:
   stage: artifacts
+  when: always
   script:
+    - mv app/build/outputs/apk/debug/app-debug.apk ../../irdest-debug.apk
     - mv app/lint/reports/ ../../ && cd $_
   artifacts:
     when: always
     paths:
-      - reports
       - irdest-debug.apk
-  when: always
+      - reports
