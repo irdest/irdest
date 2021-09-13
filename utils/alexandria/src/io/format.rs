@@ -12,6 +12,8 @@ pub(crate) fn path(dirs: &Dirs, id: Id) -> PathBuf {
 }
 
 /// Serialize an entire record into a binary array
+// This function should not have to exist
+#[deprecated]
 pub(crate) fn encode(ref txt: CipherText) -> Vec<u8> {
     bincode::serialize(txt).unwrap()
 }

@@ -1,6 +1,6 @@
 use crate::{
-    utils::{Id, Path, TagSet},
     Session,
+    utils::{Id, Path, TagSet},
 };
 use chrono::{DateTime, Utc};
 

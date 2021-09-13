@@ -16,13 +16,10 @@ mod iter;
 pub use iter::QueryIterator;
 
 mod sub;
-pub(crate) use sub::SubHub;
+// pub(crate) use sub::SubHub;
 pub use sub::Subscription;
 
-use crate::{
-    record::RecordRef,
-    utils::{Id, Path, TagSet},
-};
+use crate::utils::{Id, Path, TagSet};
 
 /// A one-dimentional database query
 ///
@@ -121,54 +118,54 @@ impl TagQuery {
     }
 }
 
-/// The result of a query to the database
-#[derive(Clone, Debug)]
-pub enum QueryResult {
-    /// There was a single matching item
-    Single(RecordRef),
-    /// There were many matching items
-    Many(Vec<RecordRef>),
-}
+// /// The result of a query to the database
+// #[derive(Clone, Debug)]
+// pub enum QueryResult {
+//     /// There was a single matching item
+//     Single(RecordRef),
+//     /// There were many matching items
+//     Many(Vec<RecordRef>),
+// }
 
-impl QueryResult {
-    /// A simple check if the result only contains one record
-    pub fn single(&self) -> bool {
-        match self {
-            Self::Single(_) => true,
-            Self::Many(_) => false,
-        }
-    }
+// impl QueryResult {
+//     /// A simple check if the result only contains one record
+//     pub fn single(&self) -> bool {
+//         match self {
+//             Self::Single(_) => true,
+//             Self::Many(_) => false,
+//         }
+//     }
 
-    /// Peel a single `RecordRef` from this `QueryResult`
-    ///
-    /// **Panics if the `QueryResult` is of variant `Many`**
-    pub fn as_single(&self) -> RecordRef {
-        match self {
-            Self::Single(rec) => rec.clone(),
-            _ => panic!("Called `as_single()` on a QueryResult::Many!"),
-        }
-    }
+//     /// Peel a single `RecordRef` from this `QueryResult`
+//     ///
+//     /// **Panics if the `QueryResult` is of variant `Many`**
+//     pub fn as_single(&self) -> RecordRef {
+//         match self {
+//             Self::Single(rec) => rec.clone(),
+//             _ => panic!("Called `as_single()` on a QueryResult::Many!"),
+//         }
+//     }
 
-    pub fn merge(self, o: QueryResult) -> Self {
-        use self::QueryResult::*;
+//     pub fn merge(self, o: QueryResult) -> Self {
+//         use self::QueryResult::*;
 
-        match (self, o) {
-            (Single(r1), Single(r2)) => Self::Many(vec![r1, r2]),
-            (Single(r), Many(mut vec)) => {
-                vec.push(r);
-                Self::Many(vec)
-            }
-            (Many(mut vec), Single(r)) => {
-                vec.push(r);
-                Self::Many(vec)
-            }
-            (Many(mut vec1), Many(mut vec2)) => {
-                vec1.append(&mut vec2);
-                Self::Many(vec1)
-            }
-        }
-    }
-}
+//         match (self, o) {
+//             (Single(r1), Single(r2)) => Self::Many(vec![r1, r2]),
+//             (Single(r), Many(mut vec)) => {
+//                 vec.push(r);
+//                 Self::Many(vec)
+//             }
+//             (Many(mut vec), Single(r)) => {
+//                 vec.push(r);
+//                 Self::Many(vec)
+//             }
+//             (Many(mut vec1), Many(mut vec2)) => {
+//                 vec1.append(&mut vec2);
+//                 Self::Many(vec1)
+//             }
+//         }
+//     }
+// }
 
 /// a special type of query on a set
 ///

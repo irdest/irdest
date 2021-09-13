@@ -1,5 +1,4 @@
-use crate::{error::DiffErrors, error::Result, record::kv::Value};
-use std::collections::BTreeMap;
+use crate::{error::DiffErrors, error::Result};
 
 pub(crate) type DiffResult<T> = std::result::Result<T, DiffErrors>;
 

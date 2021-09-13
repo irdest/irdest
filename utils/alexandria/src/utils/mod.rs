@@ -10,9 +10,9 @@
 /// random (via `Id::random()`).
 pub use id::Identity as Id;
 
-mod diff;
-pub use diff::{Diff, DiffSeg};
-pub(crate) use diff::{DiffExt, DiffResult};
+// mod diff;
+// pub use diff::{Diff, DiffSeg};
+// pub(crate) use diff::{DiffExt, DiffResult};
 
 mod path;
 pub use path::Path;

@@ -3,24 +3,30 @@
 use bincode::{self, Result};
 use serde::{de::DeserializeOwned, Serialize};
 
-pub(crate) trait Encodable: Serialize + DeserializeOwned {}
-impl<T> Encodable for T where T: Serialize + DeserializeOwned {}
-
 /// A generic trait for anything that can be serialised
-pub(crate) trait Encoder<T> {
+pub(crate) trait Encode<T> {
     fn encode(&self) -> Result<Vec<u8>>;
+}
+
+/// A generic trait for anything that can be deserialised
+pub(crate) trait Decode<T> {
     fn decode(data: &Vec<u8>) -> Result<T>;
 }
 
-// Blanket impl for anything than can be `Encoder<T>`
-impl<T> Encoder<T> for T
+// Blanket impl for anything than can be `Encode<T>`
+impl<T> Encode<T> for T
 where
-    T: Encodable,
+    T: Serialize,
 {
     fn encode(&self) -> Result<Vec<u8>> {
         bincode::serialize(self)
     }
+}
 
+impl<T> Decode<T> for T
+where
+    T: DeserializeOwned,
+{
     fn decode(data: &Vec<u8>) -> Result<T> {
         bincode::deserialize(data)
     }

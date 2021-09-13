@@ -5,8 +5,7 @@
 //! retention bugs, and you shouldn't use Alexandria unless you're
 //! okay with losing the data you're storing!
 //!
-//! A multi-payload, zone-encrypting, journaled persistence module,
-//! built with low-overhead applications in mind.
+//! A mixed-mode, metadata-encrypting, identity concealing database.
 //!
 //! ## Features
 //!
@@ -17,22 +16,18 @@
 #[macro_use]
 extern crate tracing;
 
-pub(crate) mod core;
 pub(crate) mod crypto;
 pub(crate) mod delta;
 pub(crate) mod dir;
 pub(crate) mod io;
 pub(crate) mod meta;
 pub(crate) mod notify;
-pub(crate) mod store;
-pub(crate) mod wire;
 
 pub mod api;
 pub mod error;
 pub mod query;
-pub mod record;
 pub mod utils;
 
-pub use crate::core::{Builder, Library, Session, SessionsApi, GLOBAL};
+pub use api::{Library, Session};
 
 pub(crate) type Locked<T> = async_std::sync::RwLock<T>;

@@ -1,5 +1,4 @@
-use crate::{crypto::DetachedKey, wire::Encodable};
-use async_std::sync::Arc;
+use crate::io::wire::{Decode, Encode};
 use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize, Serializer};
 use std::task::Waker;
 use std::{
@@ -34,7 +33,7 @@ where
 
 impl<T> DerefMut for Notify<T>
 where
-    T: Encodable,
+    T: Encode<T> + Decode<T> + Serialize + DeserializeOwned,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.waker.as_ref().map(|w| w.wake_by_ref());
@@ -44,7 +43,7 @@ where
 
 impl<T> Notify<T>
 where
-    T: Encodable,
+    T: Encode<T> + Decode<T> + Serialize + DeserializeOwned,
 {
     /// Create an empty Notify handler
     pub(crate) fn new(inner: T) -> Self {
@@ -68,19 +67,9 @@ where
     }
 }
 
-// If T implements DetachedKey, just proxy the trait
-impl<K, T> DetachedKey<K> for Notify<T>
-where
-    T: Encodable + DetachedKey<K>,
-{
-    fn key(&self) -> Option<Arc<K>> {
-        self.inner.key()
-    }
-}
-
 impl<T> Serialize for Notify<T>
 where
-    T: Encodable,
+    T: Encode<T> + Decode<T> + Serialize + DeserializeOwned,
 {
     fn serialize<S>(&self, ser: S) -> Result<S::Ok, S::Error>
     where
@@ -92,7 +81,7 @@ where
 
 impl<'de, T> Deserialize<'de> for Notify<T>
 where
-    T: Encodable,
+    T: Encode<T> + Decode<T> + Serialize + DeserializeOwned,
 {
     fn deserialize<D>(de: D) -> Result<Self, D::Error>
     where

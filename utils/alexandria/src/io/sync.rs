@@ -115,11 +115,12 @@ async fn write_store(l: &Arc<Library>, dirs: &Dirs, deltas: &VecDeque<Delta>) ->
         // Match on the delta type
         let buf = match d.action {
             DeltaType::Insert | DeltaType::Update => {
-                let store = l.store.read().await;
-                let key = l.users.read().await.get_key(dbg!(d.user.id()).unwrap())?;
+                // let store = l.store.read().await;
+                // let key = l.users.read().await.get_key(dbg!(d.user.id()).unwrap())?;
 
-                let e = store.get_encrypted(key, d.user, &d.path)?;
-                Some(format::encode(e))
+                // let e = store.get_encrypted(key, d.user, &d.path)?;
+                // Some(format::encode(e))
+                todo!()
             }
             DeltaType::Delete => None,
         };
@@ -164,57 +165,56 @@ impl SyncWriter {
     }
 }
 
-/// This test is still broken -- persistence is unsupported!
-///
-/// Fixing this test is part of the effort documented in #4, #10, and
-/// #12 (general refactoring of the Alexandria internals)
-#[ignore]
-#[async_std::test]
-async fn write_and_load() -> Result<()> {
-    use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
+// /// This test is still broken -- persistence is unsupported!
+// ///
+// /// Fixing this test is part of the effort documented in #4, #10, and
+// /// #12 (general refactoring of the Alexandria internals)
+// #[ignore]
+// #[async_std::test]
+// async fn write_and_load() -> Result<()> {
+//     use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
 
-    let filter = EnvFilter::try_from_env("IRDEST_LOG")
-        .unwrap_or_default()
-        .add_directive(LevelFilter::TRACE.into())
-        .add_directive("async_std=error".parse().unwrap())
-        .add_directive("async_io=error".parse().unwrap())
-        .add_directive("polling=error".parse().unwrap())
-        .add_directive("mio=error".parse().unwrap());
+//     let filter = EnvFilter::try_from_env("IRDEST_LOG")
+//         .unwrap_or_default()
+//         .add_directive(LevelFilter::TRACE.into())
+//         .add_directive("async_std=error".parse().unwrap())
+//         .add_directive("async_io=error".parse().unwrap())
+//         .add_directive("polling=error".parse().unwrap())
+//         .add_directive("mio=error".parse().unwrap());
 
-    // Initialise the logger
-    fmt().with_env_filter(filter).init();
+//     // Initialise the logger
+//     fmt().with_env_filter(filter).init();
 
-    use crate::{
-        query::Query,
-        record::kv::Value,
-        utils::{Diff, TagSet},
-        Builder, Library, GLOBAL,
-    };
-    let tmp = tempfile::tempdir().unwrap();
-    let lib = Builder::new().offset(tmp.path()).build();
-    lib.sync().await?;
+//     use crate::{
+//         query::Query,
+//         utils::{Diff, TagSet},
+//         Builder, Library,
+//     };
+//     let tmp = tempfile::tempdir().unwrap();
+//     let lib = Builder::new().offset(tmp.path()).build();
+//     lib.sync().await?;
 
-    let id = crate::utils::Id::random();
-    let sess = lib.sessions().create(id, "abcdefg").await.unwrap();
+//     let id = crate::utils::Id::random();
+//     let sess = lib.sessions().create(id, "abcdefg").await.unwrap();
 
-    lib.insert(
-        sess.clone(),
-        "/:bar".into(),
-        TagSet::empty(),
-        Diff::map().insert("test key", "test value"),
-    )
-    .await?;
+//     lib.insert(
+//         sess.clone(),
+//         "/:bar".into(),
+//         TagSet::empty(),
+//         Diff::map().insert("test key", "test value"),
+//     )
+//     .await?;
 
-    lib.ensure();
-    drop(lib);
+//     lib.ensure();
+//     drop(lib);
 
-    let lib = Library::load(tmp.path(), "")?;
+//     let lib = Library::load(tmp.path(), "")?;
 
-    let rec = lib.query(GLOBAL, Query::Path("/:bar".into())).await?;
-    assert_eq!(
-        rec.as_single().kv().get("test key"),
-        Some(&Value::from("test value"))
-    );
+//     let rec = lib.query(GLOBAL, Query::Path("/:bar".into())).await?;
+//     assert_eq!(
+//         rec.as_single().kv().get("test key"),
+//         Some(&Value::from("test value"))
+//     );
 
-    Ok(())
-}
+//     Ok(())
+// }

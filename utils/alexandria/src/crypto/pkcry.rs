@@ -1,8 +1,9 @@
 use crate::{
     crypto::CipherText,
     error::{Error, Result},
-    wire::Encoder,
+    io::wire::{Decode, Encode},
 };
+use serde::{de::DeserializeOwned, Serialize};
 use sodiumoxide::crypto::box_::{self, Nonce, PublicKey, SecretKey};
 
 /// A wrapper around an NaCl public key
@@ -13,7 +14,7 @@ pub struct PubKey {
 impl PubKey {
     pub(crate) fn seal<T>(&self, data: &T, auth: &SecKey) -> Result<CipherText>
     where
-        T: Encoder<T>,
+        T: Encode<T> + DeserializeOwned,
     {
         let non = box_::gen_nonce();
         let enc = data.encode()?;
@@ -31,7 +32,7 @@ pub struct SecKey {
 impl SecKey {
     pub(crate) fn open<T>(&self, data: &CipherText, auth: &PubKey) -> Result<T>
     where
-        T: Encoder<T>,
+        T: Decode<T> + Serialize,
     {
         let CipherText {
             ref nonce,
