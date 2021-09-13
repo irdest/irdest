@@ -26,6 +26,7 @@ pub(crate) mod notify;
 pub mod api;
 pub mod error;
 pub mod query;
+pub mod record;
 pub mod utils;
 
 pub use api::{Library, Session};
