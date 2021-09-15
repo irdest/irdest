@@ -1,2 +1,2 @@
-utils/libopus-sys/opus/* linguist-vendored
+utils/libopus-sys/opus/**/* linguist-vendored
 
