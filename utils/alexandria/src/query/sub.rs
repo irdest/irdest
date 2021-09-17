@@ -134,87 +134,87 @@ impl Subscription {
     }
 }
 
-#[cfg(test)]
-use crate::utils::TagSet;
+// #[cfg(test)]
+// use crate::utils::TagSet;
 
-#[cfg(test)]
-struct SubTest {
-    hub: Arc<SubHub>,
-    path: Path,
-}
+// #[cfg(test)]
+// struct SubTest {
+//     hub: Arc<SubHub>,
+//     path: Path,
+// }
 
-#[cfg(test)]
-impl SubTest {
-    fn new<P: Into<Path>>(p: P) -> Self {
-        SubTest {
-            hub: SubHub::new(),
-            path: p.into(),
-        }
-    }
+// #[cfg(test)]
+// impl SubTest {
+//     fn new<P: Into<Path>>(p: P) -> Self {
+//         SubTest {
+//             hub: SubHub::new(),
+//             path: p.into(),
+//         }
+//     }
 
-    fn sub(&self, query: Query) -> Subscription {
-        task::block_on(async { self.hub.add_sub(query).await })
-    }
+//     fn sub(&self, query: Query) -> Subscription {
+//         task::block_on(async { self.hub.add_sub(query).await })
+//     }
 
-    fn insert<T: Into<Option<TagSet>>>(&self, ts: T) {
-        use crate::{
-            delta::{DeltaBuilder, DeltaType},
-            GLOBAL,
-        };
-        let delta = {
-            let mut db = DeltaBuilder::new(GLOBAL, DeltaType::Insert);
-            db.path(&self.path);
-            if let Some(ref ts) = ts.into() {
-                db.tags(ts);
-            }
-            db.make()
-        };
+//     fn insert<T: Into<Option<TagSet>>>(&self, ts: T) {
+//         use crate::{
+//             delta::{DeltaBuilder, DeltaType},
+//             GLOBAL,
+//         };
+//         let delta = {
+//             let mut db = DeltaBuilder::new(GLOBAL, DeltaType::Insert);
+//             db.path(&self.path);
+//             if let Some(ref ts) = ts.into() {
+//                 db.tags(ts);
+//             }
+//             db.make()
+//         };
 
-        let hub = Arc::clone(&self.hub);
-        task::spawn(async move { hub.queue(delta).await });
-    }
+//         let hub = Arc::clone(&self.hub);
+//         task::spawn(async move { hub.queue(delta).await });
+//     }
 
-    #[cfg(test)]
-    #[allow(unused)]
-    fn path(&self) -> Path {
-        self.path.clone()
-    }
-}
+//     #[cfg(test)]
+//     #[allow(unused)]
+//     fn path(&self) -> Path {
+//         self.path.clone()
+//     }
+// }
 
-#[async_std::test]
-async fn single_delta() {
-    let test = SubTest::new("/msg:bob");
+// #[async_std::test]
+// async fn single_delta() {
+//     let test = SubTest::new("/msg:bob");
 
-    let sub = test.sub(Query::Path(test.path.clone()));
+//     let sub = test.sub(Query::Path(test.path.clone()));
 
-    test.insert(None);
+//     test.insert(None);
 
-    assert_eq!(sub.next().await, test.path);
-}
+//     assert_eq!(sub.next().await, test.path);
+// }
 
-#[async_std::test]
-async fn tag_delta() {
-    use crate::utils::Tag;
-    let test = SubTest::new("/msg:bob");
+// #[async_std::test]
+// async fn tag_delta() {
+//     use crate::utils::Tag;
+//     let test = SubTest::new("/msg:bob");
 
-    let sub = test.sub(Query::Tag(SetQuery::Subset(
-        vec![Tag::empty("tag-a")].into(),
-    )));
+//     let sub = test.sub(Query::Tag(SetQuery::Subset(
+//         vec![Tag::empty("tag-a")].into(),
+//     )));
 
-    let ts: TagSet = vec![Tag::empty("tag-a"), Tag::empty("tag-b")].into();
-    test.insert(ts);
+//     let ts: TagSet = vec![Tag::empty("tag-a"), Tag::empty("tag-b")].into();
+//     test.insert(ts);
 
-    assert_eq!(sub.next().await, test.path);
-}
+//     assert_eq!(sub.next().await, test.path);
+// }
 
-#[async_std::test]
-async fn tag_delta_matching() {
-    use crate::utils::Tag;
-    let test = SubTest::new("/msg:bob");
-    let ts: TagSet = vec![Tag::empty("tag-a"), Tag::empty("tag-b")].into();
+// #[async_std::test]
+// async fn tag_delta_matching() {
+//     use crate::utils::Tag;
+//     let test = SubTest::new("/msg:bob");
+//     let ts: TagSet = vec![Tag::empty("tag-a"), Tag::empty("tag-b")].into();
 
-    let sub = test.sub(Query::Tag(SetQuery::Equals(ts.clone())));
-    test.insert(ts);
+//     let sub = test.sub(Query::Tag(SetQuery::Equals(ts.clone())));
+//     test.insert(ts);
 
-    assert_eq!(sub.next().await, test.path);
-}
+//     assert_eq!(sub.next().await, test.path);
+// }

@@ -1,7 +1,10 @@
 //! I/O persistence module
 
+pub(crate) mod chunk;
 pub(crate) mod format;
-pub(crate) mod wire;
+
+mod wire;
+pub(crate) use wire::{Decode, Encode};
 
 mod sync;
 pub use sync::Sync;

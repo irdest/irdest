@@ -18,3 +18,18 @@ mod path;
 pub use path::Path;
 
 pub use alexandria_tags::{Tag, TagSet};
+
+pub(crate) trait FindInVec<T> {
+    fn find<P>(&self, p: P) -> Option<&T>
+    where
+        P: Fn(&T) -> bool;
+}
+
+impl<T> FindInVec<T> for Vec<T> {
+    fn find<P>(&self, p: P) -> Option<&T>
+    where
+        P: Fn(&T) -> bool,
+    {
+        self.iter().find(|t| p(t))
+    }
+}

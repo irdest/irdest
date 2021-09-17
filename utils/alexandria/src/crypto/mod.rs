@@ -16,11 +16,14 @@ use async_std::sync::Arc;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{fmt::Debug, marker::PhantomData};
 
+/// A number that's only used once
+pub(crate) type Nonce = [u8; 64];
+
 /// An encrypted piece of data
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub(crate) struct CipherText {
     /// Number only used once
-    nonce: Vec<u8>,
+    pub(crate) nonce: Vec<u8>,
     /// Data buffer
-    data: Vec<u8>,
+    pub(crate) data: Vec<u8>,
 }

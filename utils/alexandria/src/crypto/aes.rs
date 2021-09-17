@@ -7,7 +7,7 @@
 use crate::{
     crypto::CipherText,
     error::{Error, Result},
-    io::wire::{Decode, Encode},
+    io::{Decode, Encode},
 };
 use keybob::{Key as KeyBuilder, KeyType};
 use serde::{de::DeserializeOwned, Serialize};
@@ -23,7 +23,7 @@ impl Key {
         todo!()
     }
 
-    fn seal<T: Encode<T>, Serialize>(&self, data: &T) -> Result<CipherText> {
+    fn seal<T: Encode, Serialize>(&self, data: &T) -> Result<CipherText> {
         let nonce = gen_nonce();
         let encoded = data.encode()?;
         let data = seal(&encoded, &nonce, &self.inner);
@@ -39,7 +39,7 @@ impl Key {
             ref nonce,
             ref data,
         } = data;
-        let nonce = Nonce::from_slice(nonce.as_slice()).ok_or(Error::InternalError {
+        let nonce = Nonce::from_slice(&nonce).ok_or(Error::InternalError {
             msg: "Failed to read nonce!".into(),
         })?;
         let clear =

@@ -1,7 +1,7 @@
 use crate::{
     crypto::CipherText,
     error::{Error, Result},
-    io::wire::{Decode, Encode},
+    io::{Decode, Encode},
 };
 use serde::{de::DeserializeOwned, Serialize};
 use sodiumoxide::crypto::box_::{self, Nonce, PublicKey, SecretKey};
@@ -12,15 +12,11 @@ pub struct PubKey {
 }
 
 impl PubKey {
-    pub(crate) fn seal<T>(&self, data: &T, auth: &SecKey) -> Result<CipherText>
-    where
-        T: Encode<T> + DeserializeOwned,
-    {
+    pub(crate) fn seal(&self, data: &[u8], auth: &SecKey) -> CipherText {
         let non = box_::gen_nonce();
-        let enc = data.encode()?;
-        let data = box_::seal(&enc, &non, &self.inner, &auth.inner);
+        let data = box_::seal(&data, &non, &self.inner, &auth.inner);
         let nonce = non.0.iter().cloned().collect();
-        Ok(CipherText { nonce, data })
+        CipherText { nonce, data }
     }
 }
 

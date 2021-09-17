@@ -4,17 +4,17 @@ use bincode::{self, Result};
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A generic trait for anything that can be serialised
-pub(crate) trait Encode<T> {
+pub(crate) trait Encode {
     fn encode(&self) -> Result<Vec<u8>>;
 }
 
 /// A generic trait for anything that can be deserialised
 pub(crate) trait Decode<T> {
-    fn decode(data: &Vec<u8>) -> Result<T>;
+    fn decode(data: &[u8]) -> Result<T>;
 }
 
 // Blanket impl for anything than can be `Encode<T>`
-impl<T> Encode<T> for T
+impl<T> Encode for T
 where
     T: Serialize,
 {
@@ -27,7 +27,7 @@ impl<T> Decode<T> for T
 where
     T: DeserializeOwned,
 {
-    fn decode(data: &Vec<u8>) -> Result<T> {
+    fn decode(data: &[u8]) -> Result<T> {
         bincode::deserialize(data)
     }
 }

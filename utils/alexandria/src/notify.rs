@@ -1,4 +1,4 @@
-use crate::io::wire::{Decode, Encode};
+use crate::io::{Decode, Encode};
 use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize, Serializer};
 use std::task::Waker;
 use std::{
@@ -33,7 +33,7 @@ where
 
 impl<T> DerefMut for Notify<T>
 where
-    T: Encode<T> + Decode<T> + Serialize + DeserializeOwned,
+    T: Encode + Decode<T> + Serialize + DeserializeOwned,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.waker.as_ref().map(|w| w.wake_by_ref());
@@ -43,7 +43,7 @@ where
 
 impl<T> Notify<T>
 where
-    T: Encode<T> + Decode<T> + Serialize + DeserializeOwned,
+    T: Encode + Decode<T> + Serialize + DeserializeOwned,
 {
     /// Create an empty Notify handler
     pub(crate) fn new(inner: T) -> Self {
@@ -69,7 +69,7 @@ where
 
 impl<T> Serialize for Notify<T>
 where
-    T: Encode<T> + Decode<T> + Serialize + DeserializeOwned,
+    T: Encode + Decode<T> + Serialize + DeserializeOwned,
 {
     fn serialize<S>(&self, ser: S) -> Result<S::Ok, S::Error>
     where
@@ -81,7 +81,7 @@ where
 
 impl<'de, T> Deserialize<'de> for Notify<T>
 where
-    T: Encode<T> + Decode<T> + Serialize + DeserializeOwned,
+    T: Encode + Decode<T> + Serialize + DeserializeOwned,
 {
     fn deserialize<D>(de: D) -> Result<Self, D::Error>
     where
