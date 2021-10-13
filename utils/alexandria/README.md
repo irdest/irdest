@@ -1,44 +1,26 @@
-# alexandria 📚
+![](./logo.png)
 
-Strongly typed, embedded record-database with built-in encryption at
-rest storage.  Supports key-value Diff transactions, as well as
-externally loaded binary payloads.  Encrypted metadata without extra
-configuration.
+Encrypted, mixed-mode embedded database.
 
-Alexandria has the following features:
+Alexandria provides a strongly typed Rust API to store data in either
+document records (key-value store) or table records with a type
+checked schema.  All data and metadata is encrypted at rest.
 
-- Store data on internal db path
-- Query the database by path or dynamic search tags
-- Subscribe to events based on query
-- Iterate over query dynamically
-- Store data in session or global namespaces
+* Per-user namespaces
+* Records identified via paths (e.g. `foo:/bar/baz`)
+* Query the database by path or user-defined search paths
+* Subscribe to events based on query
+* Iterate over query dynamically
 
 **Notice:** alexandria should be considered experimental and not used
 in production systems where data loss is unacceptable.
 
 
-## How to use
+Alexandria is developed as part of [irdest].  We have a [Matrix]
+channel! Please come by and ask us questions!  (the issue tracker is a
+bad place to ask questions)
 
-Alexandria requires `rustc` 1.42 to compile.
-
-```rust
-use alexandria::{Library, Builder};
-use tempfile::tempdir();
-
-let dir = tempdir().unwrap();
-let lib = Builder::new()
-              .offset(dir.path())
-              .root_sec("car horse battery staple")
-              .build()?
-
-
-```
-
-
-Alexandria is developed as part of [irdest].  We have a
-[Matrix] channel! Please come by and ask us questions!  (the issue
-tracker is a bad place to ask questions)
-
+[irdest]: https://irde.st
 [Matrix]: https://matrix.to/#/#irdest:fairydust.space?via=ontheblueplanet.com&via=matrix.org&via=fairydust.space
 
 
@@ -61,5 +43,3 @@ Executable Versions only under the Mozilla Public License version 2.0.
 
 A copy of both the GPL-3.0 and MPL-2.0 license texts are included in
 this repository.
-
-[irdest]: https://irde.st
