@@ -6,6 +6,12 @@ use crate::{
 use serde::{de::DeserializeOwned, Serialize};
 use sodiumoxide::crypto::box_::{self, Nonce, PublicKey, SecretKey};
 
+/// Generate a new random pk pair
+pub(crate) fn keypair() -> (PubKey, SecKey) {
+    let (p, s) = box_::gen_keypair();
+    (PubKey { inner: p }, SecKey { inner: s })
+}
+
 /// A wrapper around an NaCl public key
 pub struct PubKey {
     inner: PublicKey,
@@ -43,4 +49,15 @@ impl SecKey {
 
         Ok(T::decode(&clear)?)
     }
+}
+
+#[test]
+fn seal_and_open_string() {
+    let (p, s) = keypair();
+    let data1: String = "Encrypting repo. A little, secure horse cry. at the perfect bowl".into();
+    
+    let ct = p.seal(&data1.encode().unwrap(), &s);
+    let data2: String = s.open(&ct, &p).unwrap();
+
+    assert_eq!(data1, data2);
 }

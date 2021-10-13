@@ -20,10 +20,12 @@ pub(crate) struct Key {
 
 impl Key {
     pub fn from_pw(pw: &str, salt: &str) -> Self {
-        todo!()
+        let kb = KeyBuilder::from_pw(KeyType::Aes128, pw, salt);
+        let inner = SodiumKey::from_slice(kb.as_slice()).unwrap();
+        Self { inner }
     }
 
-    fn seal<T: Encode, Serialize>(&self, data: &T) -> Result<CipherText> {
+    pub(crate) fn seal<T: Encode>(&self, data: &T) -> Result<CipherText> {
         let nonce = gen_nonce();
         let encoded = data.encode()?;
         let data = seal(&encoded, &nonce, &self.inner);
@@ -34,7 +36,7 @@ impl Key {
         })
     }
 
-    fn open<T: Decode<T>, DeserializeOwned>(&self, data: &CipherText) -> Result<T> {
+    pub(crate) fn open<T: Decode<T>>(&self, data: &CipherText) -> Result<T> {
         let CipherText {
             ref nonce,
             ref data,
@@ -55,4 +57,15 @@ fn key_is_key() {
     let k1 = KeyBuilder::from_pw(KeyType::Aes128, "password", "salt");
     let k2 = KeyBuilder::from_pw(KeyType::Aes128, "password", "salt");
     assert_eq!(k1, k2);
+}
+
+#[test]
+fn seal_and_open_string() {
+    let key = Key::from_pw("password", "salt");
+    let data1: String = "Encrypting repo. A little, secure horse cry. at the perfect bowl".into();
+
+    let ct = key.seal(&data1).unwrap();
+    let data2: String = key.open(&ct).unwrap();
+
+    assert_eq!(data1, data2);
 }
