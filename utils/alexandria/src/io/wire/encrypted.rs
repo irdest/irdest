@@ -3,7 +3,7 @@
 use protobuf::Message;
 
 use crate::io::{error::Result, proto::encrypted as proto};
-use std::io::Read;
+use std::io::{Read, Write};
 
 /// A single encrypted piece of data
 pub enum Encrypted<'r> {
@@ -82,6 +82,11 @@ impl EncryptedChunk {
         let inner = proto::Chunk::parse_from_reader(reader)?;
         Ok(Self { inner })
     }
+    /// Write length-prepended encoding to writer stream
+    pub fn to_writer<T: Write>(&self, writer: &mut T) -> Result<()> {
+        self.inner.write_length_delimited_to_writer(writer)?;
+        Ok(())
+    }
     /// Get access to the encrypted header
     pub fn header(&self) -> Encrypted {
         Encrypted::wrap(self.inner.get_header())
@@ -92,17 +97,21 @@ impl EncryptedChunk {
     }
 }
 
+/// Encrypted record index structure
+///
+/// This type has an encrypted header, as well as a list of chunks
+/// accessible by it.
 pub struct RecordIndex {
     inner: proto::RecordIndex,
 }
 
 impl RecordIndex {
     /// Create a new encrypted record index from an encrypted header and child list
-    pub fn new(header: Encrypted, chunks: Vec<String>) -> Self {
+    pub fn new(header: Encrypted, chunks: Encrypted) -> Self {
         let mut inner = proto::RecordIndex::new();
         inner.set_version(crate::io::cfg::VERSION);
         inner.set_header(header.peel());
-        inner.set_chunks(chunks.into());
+        inner.set_chunks(chunks.peel());
         Self { inner }
     }
     /// Create a new wrapper from a reader
@@ -110,12 +119,17 @@ impl RecordIndex {
         let inner = proto::RecordIndex::parse_from_reader(reader)?;
         Ok(Self { inner })
     }
+    /// Write length-prepended encoding to writer stream
+    pub fn to_writer<T: Write>(&self, writer: &mut T) -> Result<()> {
+        self.inner.write_length_delimited_to_writer(writer)?;
+        Ok(())
+    }
     /// Get access to the encrypted header
     pub fn header(&self) -> Encrypted {
         Encrypted::wrap(self.inner.get_header())
     }
     /// Get access to the chunk list
-    pub fn chunks(&self) -> &[String] {
-        self.inner.get_chunks()
+    pub fn chunks(&self) -> Encrypted {
+        Encrypted::wrap(self.inner.get_chunks())
     }
 }

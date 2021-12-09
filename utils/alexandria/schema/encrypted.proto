@@ -27,5 +27,5 @@ message Chunk {
 message RecordIndex {
         uint32 version = 1;
         Encrypted header = 2;
-        repeated string chunks = 3;
+        Encrypted chunks = 3;
 }
