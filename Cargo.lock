@@ -73,12 +73,12 @@ dependencies = [
  "async-std",
  "async-trait",
  "bincode",
- "capnp",
- "capnpc",
  "chrono",
  "ed25519-dalek",
  "hex",
  "keybob",
+ "protobuf",
+ "protoc-rust",
  "rand 0.7.3",
  "ratman-identity",
  "regex",
@@ -150,9 +150,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.40"
+version = "1.0.51"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "28b2cd92db5cbd74e8e5028f7e27dd7aa3090e89e4f2a197cc7c8dfb69c7063b"
+checksum = "8b26702f315f53b6071259e15dd9d64528213b44d61de1ec926eca7715d62203"
 
 [[package]]
 name = "arrayref"
@@ -482,7 +482,7 @@ dependencies = [
  "regex",
  "rustc-hash",
  "shlex",
- "which",
+ "which 3.1.1",
 ]
 
 [[package]]
@@ -592,21 +592,6 @@ dependencies = [
  "glib-sys",
  "libc",
  "system-deps",
-]
-
-[[package]]
-name = "capnp"
-version = "0.14.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae9b8a7119420b5279ddc2b4ee553ee15bcf4605df6135a26f03ffe153bee97c"
-
-[[package]]
-name = "capnpc"
-version = "0.14.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b47bce811162518b5c38f746ed584bd2922ae7bb560ef64f230d2e4ee0d111fe"
-dependencies = [
- "capnp",
 ]
 
 [[package]]
@@ -2165,6 +2150,43 @@ dependencies = [
 ]
 
 [[package]]
+name = "protobuf"
+version = "2.25.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "47c327e191621a2158159df97cdbc2e7074bb4e940275e35abf38eb3d2595754"
+
+[[package]]
+name = "protobuf-codegen"
+version = "2.25.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3df8c98c08bd4d6653c2dbae00bd68c1d1d82a360265a5b0bbc73d48c63cb853"
+dependencies = [
+ "protobuf",
+]
+
+[[package]]
+name = "protoc"
+version = "2.25.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9ac70cfc8935f5db2a29c0929db697035d02284011a9b78a5ef5d48092ce9673"
+dependencies = [
+ "log",
+ "which 4.2.2",
+]
+
+[[package]]
+name = "protoc-rust"
+version = "2.25.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6bad71c8404e3e09024fccbab55aae36e3662662167dc4530a242c8cc8ef8d20"
+dependencies = [
+ "protobuf",
+ "protobuf-codegen",
+ "protoc",
+ "tempfile",
+]
+
+[[package]]
 name = "quote"
 version = "0.6.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2831,18 +2853,18 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "1.0.24"
+version = "1.0.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0f4a65597094d4483ddaed134f409b2cb7c1beccf25201a9f73c719254fa98e"
+checksum = "854babe52e4df1653706b98fcfc05843010039b406875930a70e4d9644e5c417"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.24"
+version = "1.0.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7765189610d8241a44529806d6fd1f2e0a08734313a35d5b3a556f92b381f3c0"
+checksum = "aa32fd3f627f367fe16f893e2597ae3c05020f8bba2666a4e6ea73d377e5714b"
 dependencies = [
  "proc-macro2 1.0.26",
  "quote 1.0.9",
@@ -3298,6 +3320,17 @@ version = "3.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d011071ae14a2f6671d0b74080ae0cd8ebf3a6f8c9589a2cd45f23126fe29724"
 dependencies = [
+ "libc",
+]
+
+[[package]]
+name = "which"
+version = "4.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ea187a8ef279bc014ec368c27a920da2024d2a711109bfbe3440585d5cf27ad9"
+dependencies = [
+ "either",
+ "lazy_static",
  "libc",
 ]
 

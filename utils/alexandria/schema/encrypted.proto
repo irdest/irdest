@@ -1,0 +1,27 @@
+// This schema file contains all types that are written to-disk
+syntax = "proto3";
+
+// Some piece of encrypted data with a Nonce
+message Encrypted {
+        uint32 version = 1;
+        bytes nonce = 2;
+        bytes data = 3;
+}
+
+// A single data chunk with its own metadata header and data section
+// 
+// The chunk header is only used to determine when to fill an existing
+// chunk or to start a new chunk
+message Chunk {
+        uint32 version = 1;
+        Encrypted header = 2;
+        Encrypted body = 3;
+}
+
+// An index type that points to a set of chunks that is associated
+// with a record
+message RecordIndex {
+        uint32 version = 1;
+        Encrypted header = 2;
+        repeated string chunks = 3;
+}

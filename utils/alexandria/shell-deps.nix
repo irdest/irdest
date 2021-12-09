@@ -1,1 +1,1 @@
-{ pkgs, ... }: with pkgs; [ libsodium capnproto ]
+{ pkgs, ... }: [ pkgs.protobuf ]
