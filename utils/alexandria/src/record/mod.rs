@@ -41,11 +41,11 @@
 //! mandatory record header and can then distinguish between the
 //! underlying types.
 
-mod types;
+// mod types;
 
-pub mod doc;
-pub mod table;
-pub use types::Type;
+// pub mod doc;
+// pub mod table;
+// pub use types::Type;
 
 use crate::utils::{Id, TagSet};
 use chrono::{DateTime, Utc};

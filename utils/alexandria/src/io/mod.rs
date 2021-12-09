@@ -1,6 +1,13 @@
 //! I/O persistence module
 
-pub(crate) mod chunk;
+pub(self) mod encrypted_capnp {
+    include!(concat!(env!("OUT_DIR"), "/proto/encrypted_capnp.rs"));
+}
+
+pub(self) mod chunk_capnp {
+    include!(concat!(env!("OUT_DIR"), "/proto/chunk_capnp.rs"));
+}
+
 pub(crate) mod format;
 
 mod wire;

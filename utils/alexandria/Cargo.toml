@@ -7,6 +7,7 @@ repository = "https://git.irde.st/we/irdest"
 documentation = "https://docs.rs/alexandria"
 license = "GPL-3.0-or-later"
 edition = "2018"
+build = "build.rs"
 
 [dependencies]
 id = { version ="0.6.0", path = "../../ratman/identity", features = ["digest", "random", "aligned"], package = "ratman-identity" }
@@ -15,16 +16,20 @@ alexandria-tags = { version = "0.2", path = "../alexandria-tags" }
 async-std = { version = "1.0", features = ["unstable", "attributes"] }
 async-trait = "0.1"
 bincode = "1.0"
+capnp = "0.14"
 chrono = { version = "0.4", features = ["serde"] }
 thiserror = "1.0"
 hex = "0.4"
 keybob = "0.4"
-serde = { version = "1.0", features = ["derive", "rc"] }
+serde = { version = "1.0", features = ["derive", "rc"] } ## Is this still needed?
 sodiumoxide = "0.2.5"
 tracing = "0.1"
 toml = "0.5"
 rand = "0.7"
 regex = "1.0"
+
+[build-dependencies]
+capnpc = "0.14"
 
 [dev-dependencies]
 bincode = "1.0"
