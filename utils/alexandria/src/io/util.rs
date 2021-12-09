@@ -1,4 +1,4 @@
-//! Wire serialiser formats
+//! Basic wire serialiser
 
 use bincode::{self, Result};
 use serde::{de::DeserializeOwned, Serialize};

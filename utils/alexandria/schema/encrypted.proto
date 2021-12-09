@@ -12,6 +12,10 @@ message Encrypted {
 // 
 // The chunk header is only used to determine when to fill an existing
 // chunk or to start a new chunk
+//
+// TODO: split a chunk into separate types for header and body to
+// allow for peek-loading of just the encrypted header (in order to
+// support "large binary objects" (LBOs))
 message Chunk {
         uint32 version = 1;
         Encrypted header = 2;

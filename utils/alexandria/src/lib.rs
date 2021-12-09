@@ -14,7 +14,7 @@
 //! * Dynamic queries
 
 // FIXME: THIS MUST BE REMOVED AGAIN!
-#![allow(unused)]
+#![allow(unused, deprecated)]
 
 
 #[macro_use]
