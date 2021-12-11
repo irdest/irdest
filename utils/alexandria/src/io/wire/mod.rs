@@ -3,5 +3,8 @@
 //! This module wraps around an encoding library (currently protobuf)
 //! to read and write data to disk.
 
-pub mod encrypted;
-pub mod chunk;
+mod encrypted;
+pub use encrypted::*;
+
+mod chunk;
+pub use chunk::*;

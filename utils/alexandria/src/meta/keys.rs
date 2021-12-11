@@ -25,4 +25,14 @@ impl KeyStore {
             subs: Default::default(),
         })
     }
+
+    // /// Get access to a secret key
+    // pub(crate) async fn get_seckey(self: &Arc<Self>, id: &Hid) -> Option<&SecKey> {
+    //     self.subs.read().await.get(id)
+    // }
+
+    // /// Get access to a public key
+    // pub(crate) async fn get_pubkey(self: &Arc<Self>, id: &Hid) -> Option<&PubKey> {
+    //     self.pubs.read().await.get(id)
+    // }
 }

@@ -5,6 +5,9 @@ pub(crate) mod aes;
 pub(crate) mod bs;
 pub(crate) mod pkcry;
 
+mod engine;
+pub(crate) use engine::{CryEngineHandle, CryReqPayload, CryRespPayload};
+
 mod hidden;
 pub(crate) use hidden::Hid;
 
