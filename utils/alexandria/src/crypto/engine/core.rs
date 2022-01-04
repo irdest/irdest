@@ -10,8 +10,9 @@ use async_std::{
 use id::Identity;
 
 /// A send-receive handle to the crypto engine
-pub struct CryEngineHandle {
-    tx: Sender<CryReqPayload>,
+#[derive(Clone)]
+pub(crate) struct CryEngineHandle {
+    pub tx: Sender<CryReqPayload>,
 }
 
 pub struct CryEngine {
@@ -28,6 +29,7 @@ impl CryEngine {
 
     async fn run(self) {
         while let Ok(CryReqPayload { resp, user, op }) = self.rx.recv().await {
+            println!("Received a CRY request payload");
             match op {
                 ReqPayload::Encrypt(ref payload) => self.encrypt(resp, payload, user).await,
                 ReqPayload::Decrypt(ref payload) => self.decrypt(resp, payload, user).await,
@@ -43,7 +45,7 @@ impl CryEngine {
         resp.send(CryRespPayload {
             status: 0,
             payload: ResponsePayload::Encrypted(payload),
-        });
+        }).await;
     }
 
     /// Execute a decryption request for a particular user ID
@@ -55,7 +57,7 @@ impl CryEngine {
                 payload: ResponsePayload::Clear(payload),
             },
             Err(e) => {
-                error!("Oh no!  An error has occured in an asynchronous process (decrypting payload): {}", e);
+                panic!("Oh no!  An error has occured in an asynchronous process (decrypting payload): {}", e);
                 CryRespPayload {
                     status: 1,
                     payload: ResponsePayload::Clear(vec![]),

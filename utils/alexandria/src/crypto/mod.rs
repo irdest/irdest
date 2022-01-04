@@ -6,7 +6,9 @@ pub(crate) mod bs;
 pub(crate) mod pkcry;
 
 mod engine;
-pub(crate) use engine::{CryEngineHandle, ReqPayload, CryReqPayload, CryRespPayload, ResponsePayload};
+pub(crate) use engine::{
+    CryEngine, CryEngineHandle, CryReqPayload, CryRespPayload, ReqPayload, ResponsePayload,
+};
 
 mod hidden;
 pub(crate) use hidden::Hid;

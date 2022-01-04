@@ -25,6 +25,11 @@ impl KeyStore {
         })
     }
 
+    pub async fn add_pair(self: &Arc<Self>, user: Identity, pub_: PubKey, sec_: SecKey) {
+        self.pubs.write().await.insert(user, Arc::new(pub_));
+        self.subs.write().await.insert(user, Arc::new(sec_));
+    }
+
     pub async fn get_pair(self: &Arc<Self>, user: &Identity) -> Option<(Arc<PubKey>, Arc<SecKey>)> {
         let pubkey = Arc::clone(self.pubs.read().await.get(user).as_ref()?);
         let seckey = Arc::clone(self.subs.read().await.get(user).as_ref()?);

@@ -2,7 +2,7 @@
 
 use protobuf::Message;
 
-use crate::io::{error::Result, proto::encrypted as proto};
+use crate::io::{error::Result, proto::encrypted as proto, wire};
 use std::io::{Read, Write};
 
 /// A single encrypted piece of data
@@ -20,15 +20,31 @@ impl<'r> Encrypted<'r> {
         inner.set_data(data);
         Self::Owned(inner)
     }
-    /// Create a new wrapper from a reader
-    pub fn from_reader<T: Read>(reader: &mut T) -> Result<Self> {
-        let inner = proto::Encrypted::parse_from_reader(reader)?;
+
+    /// Create a new RowHeader wrapper from a reader
+    pub(crate) fn from_reader<T: Read>(reader: &mut T) -> Result<Self> {
+        let buf = wire::read_with_length(reader)?;
+        println!("Reading encrypted: {:?}", buf);
+        let inner = proto::Encrypted::parse_from_bytes(&buf)?;
         Ok(Self::Owned(inner))
     }
+
+    /// Write length-prepended encoding to writer stream
+    pub(crate) fn to_writer<T: Write>(&self, writer: &mut T) -> Result<()> {
+        let buf = match self {
+            Self::Owned(e) => e.write_to_bytes()?,
+            Self::Ref(e) => e.write_to_bytes()?,
+        };
+        println!("Writing Encrypted: {:?}", buf);
+        wire::write_with_length(writer, &buf)?;
+        Ok(())
+    }
+
     /// Create a new wrapper from an existing parsed inner type
     pub fn wrap(inner: &'r proto::Encrypted) -> Self {
         Self::Ref(inner)
     }
+
     /// Peel away the wrapper type for encoding
     pub fn peel(self) -> proto::Encrypted {
         match self {
@@ -36,6 +52,7 @@ impl<'r> Encrypted<'r> {
             _ => unimplemented!(), // not supported
         }
     }
+
     /// Get access to the encoding version
     pub fn version(&self) -> u32 {
         match self {
@@ -43,6 +60,7 @@ impl<'r> Encrypted<'r> {
             Self::Ref(i) => i.get_version(),
         }
     }
+
     /// Get access to the inner nonce
     pub fn nonce(&self) -> &[u8] {
         match self {
@@ -50,6 +68,7 @@ impl<'r> Encrypted<'r> {
             Self::Ref(i) => i.get_nonce(),
         }
     }
+
     /// Get access to the inner encrypted section
     pub fn data(&self) -> &[u8] {
         match self {
@@ -76,14 +95,17 @@ impl EncryptedChunk {
         inner.set_header(header.peel());
         Ok(Self { inner })
     }
-    /// Create a new wrapper from a reader
-    pub fn from_reader<T: Read>(reader: &mut T) -> Result<Self> {
-        let inner = proto::Chunk::parse_from_reader(reader)?;
+    /// Create a new EncryptedChunk wrapper from a reader
+    pub(crate) fn from_reader<T: Read>(reader: &mut T) -> Result<Self> {
+        let buf = wire::read_with_length(reader)?;
+        let inner = proto::Chunk::parse_from_bytes(&buf)?;
         Ok(Self { inner })
     }
+
     /// Write length-prepended encoding to writer stream
-    pub fn to_writer<T: Write>(&self, writer: &mut T) -> Result<()> {
-        self.inner.write_length_delimited_to_writer(writer)?;
+    pub(crate) fn to_writer<T: Write>(&self, writer: &mut T) -> Result<()> {
+        let buf = self.inner.write_to_bytes()?;
+        wire::write_with_length(writer, &buf)?;
         Ok(())
     }
     /// Get access to the encrypted header

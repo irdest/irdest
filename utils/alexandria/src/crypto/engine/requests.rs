@@ -4,6 +4,7 @@ use id::Identity;
 use crate::crypto::CipherText;
 
 /// A single encryption request to the engine
+#[derive(Debug)]
 pub(crate) struct CryReqPayload {
     pub resp: Sender<CryRespPayload>,
     pub user: Identity,
@@ -26,17 +27,20 @@ impl CryReqPayload {
 }
 
 /// Indicate which operation to perform
+#[derive(Debug)]
 pub(crate) enum ReqPayload {
     Encrypt(Vec<u8>),
     Decrypt(CipherText),
 }
 
+#[derive(Debug)]
 pub(crate) enum ResponsePayload {
     Clear(Vec<u8>),
     Encrypted(CipherText),
 }
 
 /// Response to the cryptographic operation
+#[derive(Debug)]
 pub(crate) struct CryRespPayload {
     pub status: u32,
     pub payload: ResponsePayload,
