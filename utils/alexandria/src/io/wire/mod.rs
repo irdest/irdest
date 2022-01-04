@@ -8,3 +8,6 @@ pub use encrypted::*;
 
 mod chunk;
 pub use chunk::*;
+
+mod table;
+pub use table::*;

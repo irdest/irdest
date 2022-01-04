@@ -19,13 +19,12 @@ message Encrypted {
 message Chunk {
         uint32 version = 1;
         Encrypted header = 2;
-        Encrypted body = 3;
 }
 
 // An index type that points to a set of chunks that is associated
 // with a record
 message RecordIndex {
         uint32 version = 1;
-        Encrypted header = 2;
-        Encrypted chunks = 3;
+        Encrypted list = 2;
 }
+

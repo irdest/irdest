@@ -16,8 +16,9 @@ fn main() {
             ..Default::default()
         })
         .out_dir(out_path)
-        .input("schema/encrypted.proto")
         .input("schema/chunk.proto")
+        .input("schema/encrypted.proto")
+        .input("schema/table.proto")
         .run()
         .expect("Failed to compile protobuf schemas!");
 }

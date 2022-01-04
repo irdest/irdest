@@ -45,14 +45,13 @@ pub(self) mod proto {
     include!(concat!(env!("OUT_DIR"), "/io/proto_gen/mod.rs"));
 }
 
-mod cfg;
-mod error;
-// mod sync;
 #[deprecated]
 mod util;
+
+mod cfg;
+mod error;
 mod wire;
 
 pub use cfg::legacy as versions;
 pub use cfg::Config;
-// pub use sync::Sync;
 pub(crate) use util::{Decode, Encode};

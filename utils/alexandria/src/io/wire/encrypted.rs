@@ -1,4 +1,4 @@
-//! Capn Proto wrapper module
+//! Protobuf wrapper module
 
 use protobuf::Message;
 
@@ -70,11 +70,10 @@ pub struct EncryptedChunk {
 
 impl EncryptedChunk {
     /// Create a new encrypted chunk from a set of encrypted fields
-    pub fn new(header: Encrypted, body: Encrypted) -> Result<Self> {
+    pub fn new(header: Encrypted) -> Result<Self> {
         let mut inner = proto::Chunk::new();
         inner.set_version(crate::io::cfg::VERSION);
         inner.set_header(header.peel());
-        inner.set_body(body.peel());
         Ok(Self { inner })
     }
     /// Create a new wrapper from a reader
@@ -91,10 +90,6 @@ impl EncryptedChunk {
     pub fn header(&self) -> Encrypted {
         Encrypted::wrap(self.inner.get_header())
     }
-    /// Get access to the encrypted body
-    pub fn body(&self) -> Encrypted {
-        Encrypted::wrap(self.inner.get_body())
-    }
 }
 
 /// Encrypted record index structure
@@ -107,11 +102,10 @@ pub struct RecordIndex {
 
 impl RecordIndex {
     /// Create a new encrypted record index from an encrypted header and child list
-    pub fn new(header: Encrypted, chunks: Encrypted) -> Self {
+    pub fn new(list: Encrypted) -> Self {
         let mut inner = proto::RecordIndex::new();
         inner.set_version(crate::io::cfg::VERSION);
-        inner.set_header(header.peel());
-        inner.set_chunks(chunks.peel());
+        inner.set_list(list.peel());
         Self { inner }
     }
     /// Create a new wrapper from a reader
@@ -124,12 +118,8 @@ impl RecordIndex {
         self.inner.write_length_delimited_to_writer(writer)?;
         Ok(())
     }
-    /// Get access to the encrypted header
-    pub fn header(&self) -> Encrypted {
-        Encrypted::wrap(self.inner.get_header())
-    }
-    /// Get access to the chunk list
-    pub fn chunks(&self) -> Encrypted {
-        Encrypted::wrap(self.inner.get_chunks())
+    /// Get access to the encrypted chunk list
+    pub fn list(&self) -> Encrypted {
+        Encrypted::wrap(self.inner.get_list())
     }
 }

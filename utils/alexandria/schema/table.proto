@@ -1,0 +1,30 @@
+// This schema file contains types associated with table record
+// parsing, and sequential row parsing.  As such there is no
+// containing data type which might have to be read into memory at
+// once.
+
+syntax = "proto3";
+
+// This type encodes the table header
+message TableHeader {
+        uint32 version = 1;
+        uint64 rows = 2;
+        repeated string cols = 3;
+        repeated bytes col_types = 4;
+}
+
+// This type encodes a row header.  After reading the row header, a
+// row may be skipped by seeking by the provided row length.
+message RowHeader {
+        uint32 version = 1;
+        uint64 index = 2;
+        uint64 length = 3;
+}
+
+// This type encodes a single row.  Column data is specific
+// per-version (so any parser MUST read the version and match on the
+// parsing strategy).
+message RowData {
+        uint32 version = 1;
+        repeated bytes cols = 2;
+}
