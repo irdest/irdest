@@ -1,8 +1,7 @@
+use id::Identity;
+
 use crate::{
-    crypto::{
-        pkcry::{PubKey, SecKey},
-        Hid,
-    },
+    crypto::pkcry::{PubKey, SecKey},
     Locked,
 };
 use std::{collections::BTreeMap, sync::Arc};
@@ -11,9 +10,9 @@ pub(crate) struct KeyStore {
     /// The root keypair for a database
     root: (PubKey, SecKey),
     /// Per-user public key store
-    pubs: Locked<BTreeMap<Hid, PubKey>>,
+    pubs: Locked<BTreeMap<Identity, Arc<PubKey>>>,
     /// Pur-user secret key store
-    subs: Locked<BTreeMap<Hid, SecKey>>,
+    subs: Locked<BTreeMap<Identity, Arc<SecKey>>>,
 }
 
 impl KeyStore {
@@ -26,13 +25,9 @@ impl KeyStore {
         })
     }
 
-    // /// Get access to a secret key
-    // pub(crate) async fn get_seckey(self: &Arc<Self>, id: &Hid) -> Option<&SecKey> {
-    //     self.subs.read().await.get(id)
-    // }
-
-    // /// Get access to a public key
-    // pub(crate) async fn get_pubkey(self: &Arc<Self>, id: &Hid) -> Option<&PubKey> {
-    //     self.pubs.read().await.get(id)
-    // }
+    pub async fn get_pair(self: &Arc<Self>, user: &Identity) -> Option<(Arc<PubKey>, Arc<SecKey>)> {
+        let pubkey = Arc::clone(self.pubs.read().await.get(user).as_ref()?);
+        let seckey = Arc::clone(self.subs.read().await.get(user).as_ref()?);
+        Some((pubkey, seckey))
+    }
 }

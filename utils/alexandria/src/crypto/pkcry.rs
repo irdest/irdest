@@ -32,10 +32,7 @@ pub struct SecKey {
 }
 
 impl SecKey {
-    pub(crate) fn open<T>(&self, data: &CipherText, auth: &PubKey) -> Result<T>
-    where
-        T: Decode<T> + Serialize,
-    {
+    pub(crate) fn open(&self, data: &CipherText, auth: &PubKey) -> Result<Vec<u8>> {
         let CipherText {
             ref nonce,
             ref data,
@@ -47,7 +44,7 @@ impl SecKey {
         let clear = box_::open(data.as_slice(), &nonce, &auth.inner, &self.inner)
             .map_err(|_| Error::internal("Failed to decrypt data"))?;
 
-        Ok(T::decode(&clear)?)
+        Ok(clear)
     }
 }
 
@@ -55,9 +52,10 @@ impl SecKey {
 fn seal_and_open_string() {
     let (p, s) = keypair();
     let data1: String = "Encrypting repo. A little, secure horse cry. at the perfect bowl".into();
-    
+
     let ct = p.seal(&data1.encode().unwrap(), &s);
-    let data2: String = s.open(&ct, &p).unwrap();
+    let buf: Vec<u8> = s.open(&ct, &p).unwrap();
+    let data2 = String::decode(&buf).unwrap();
 
     assert_eq!(data1, data2);
 }
