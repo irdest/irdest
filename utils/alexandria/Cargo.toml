@@ -16,6 +16,7 @@ alexandria-tags = { version = "0.2", path = "../alexandria-tags" }
 async-std = { version = "1.0", features = ["unstable", "attributes"] }
 async-trait = "0.1"
 bincode = "1.0"
+byteorder = "1.0"
 protobuf = "2.19"
 chrono = { version = "0.4", features = ["serde"] }
 thiserror = "1.0"

@@ -2,10 +2,13 @@
 
 use protobuf::Message;
 
-use crate::io::{error::Result, proto::table as proto};
+use crate::io::{error::Result, proto::table as proto, wire};
 use std::io::{Read, Write};
 
+use super::read_with_length;
+
 /// Un-encrypted table header containing column name and type data
+#[derive(Debug, PartialEq)]
 pub struct TableHeader {
     inner: proto::TableHeader,
 }
@@ -29,9 +32,23 @@ impl TableHeader {
         let r = self.inner.get_rows() + 1;
         self.inner.set_rows(r);
     }
+    /// Create a new RowHeader wrapper from a reader
+    pub fn from_reader<T: Read>(reader: &mut T) -> Result<Self> {
+        let buf = wire::read_with_length(reader)?;
+        let inner = proto::TableHeader::parse_from_bytes(&buf)?;
+        Ok(Self { inner })
+    }
+
+    /// Write length-prepended encoding to writer stream
+    pub fn to_writer<T: Write>(&self, writer: &mut T) -> Result<()> {
+        let buf = self.inner.write_to_bytes()?;
+        wire::write_with_length(writer, &buf)?;
+        Ok(())
+    }
 }
 
 /// Wrapper for an unencrypted row header
+#[derive(Debug, PartialEq)]
 pub struct RowHeader {
     inner: proto::RowHeader,
 }
@@ -50,19 +67,21 @@ impl RowHeader {
     }
     /// Create a new RowHeader wrapper from a reader
     pub fn from_reader<T: Read>(reader: &mut T) -> Result<Self> {
-        let inner = proto::RowHeader::parse_from_reader(reader)?;
+        let buf = wire::read_with_length(reader)?;
+        let inner = proto::RowHeader::parse_from_bytes(&buf)?;
         Ok(Self { inner })
     }
 
     /// Write length-prepended encoding to writer stream
     pub fn to_writer<T: Write>(&self, writer: &mut T) -> Result<()> {
-        self.inner.write_length_delimited_to_writer(writer)?;
+        let buf = self.inner.write_to_bytes()?;
+        wire::write_with_length(writer, &buf)?;
         Ok(())
     }
-
 }
 
 /// Wrapper for an unencrypted row data section
+#[derive(Debug, PartialEq)]
 pub struct RowData {
     inner: proto::RowData,
 }
@@ -78,14 +97,15 @@ impl RowData {
 
     /// Create a new RowHeader wrapper from a reader
     pub fn from_reader<T: Read>(reader: &mut T) -> Result<Self> {
-        let inner = proto::RowData::parse_from_reader(reader)?;
+        let buf = wire::read_with_length(reader)?;
+        let inner = proto::RowData::parse_from_bytes(&buf)?;
         Ok(Self { inner })
     }
 
     /// Write length-prepended encoding to writer stream
     pub fn to_writer<T: Write>(&self, writer: &mut T) -> Result<()> {
-        self.inner.write_length_delimited_to_writer(writer)?;
+        let buf = self.inner.write_to_bytes()?;
+        wire::write_with_length(writer, &buf)?;
         Ok(())
     }
-
 }

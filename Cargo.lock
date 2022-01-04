@@ -73,6 +73,7 @@ dependencies = [
  "async-std",
  "async-trait",
  "bincode",
+ "byteorder",
  "chrono",
  "ed25519-dalek",
  "hex",
