@@ -78,41 +78,6 @@ impl<'r> Encrypted<'r> {
     }
 }
 
-/// Basic encrypted chunk structure
-///
-/// Both the encrypted header and body can be accessed via this type
-/// and should be turned into a [Chunk](crate::io::Chunk) instance by
-/// consuming this type
-pub struct EncryptedChunk {
-    inner: proto::Chunk,
-}
-
-impl EncryptedChunk {
-    /// Create a new encrypted chunk from a set of encrypted fields
-    pub fn new(header: Encrypted) -> Result<Self> {
-        let mut inner = proto::Chunk::new();
-        inner.set_version(crate::io::cfg::VERSION);
-        inner.set_header(header.peel());
-        Ok(Self { inner })
-    }
-
-    /// Get access to the encrypted header
-    pub fn header(&self) -> Encrypted {
-        Encrypted::wrap(self.inner.get_header())
-    }
-}
-
-impl ToWriter for EncryptedChunk {
-    fn to_bytes(&self) -> Result<Vec<u8>> {
-        Ok(self.inner.write_to_bytes()?)
-    }
-}
-impl FromReader for EncryptedChunk {
-    fn new_from_bytes(buf: &Vec<u8>) -> Result<Self> {
-        Ok(proto::Chunk::parse_from_bytes(buf).map(|inner| Self { inner })?)
-    }
-}
-
 /// Encrypted record index structure
 ///
 /// This type has an encrypted header, as well as a list of chunks
