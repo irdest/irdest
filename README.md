@@ -26,19 +26,15 @@ project are contained in this repository.
 Following is an overview of the available components.  Components have
 additional information in their respective README files.
 
-| Component     | Description                                                                                                                              |
-|---------------|------------------------------------------------------------------------------------------------------------------------------------------|
-| [clients]     | irdest end-user applications for various platforms                                                                                       |
-| [docs]        | Manuals (for both users and developers), and tools to build and deploy documentation                                                     |
-| [irdest-core] | Core library of the irdest ecosystem.  Provides networking abstractions, user management and discovery                                   |
-| [licenses]    | Set of license texts that are in use in this repository                                                                                  |
-| [netmods]     | Platform-specific networking interface drivers                                                                                           |
-| [nix]         | [Nix](https://nixos.org) related build utilities                                                                                         |
-| [ratman]      | A decentralised and modular userspace frame router                                                                                       |
-| [rpc-core]    | Core components of the qrpc development system                                                                                           |
-| [sdk]         | Software Development Kit libraries for third-party developers                                                                            |
-| [services]    | A collection of services that use irdest as their network backend.  Some are part of the irdest clients, others are development examples |
-| [utils]       | Various utilities in use all over the repository that don't fit in anywhere else                                                         |
+| Component  | Description                                                                                                                                               |
+|------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [clients]  | Various end-user applications using irdest as a networking layer.  These include both shims to traditional networking, as well as apps written for irdest |
+| [docs]     | Manuals (for both users and developers), and tools to build and deploy documentation                                                                      |
+| [licenses] | Set of license texts that are in use in this repository                                                                                                   |
+| [netmods]  | Platform-specific networking interface drivers                                                                                                            |
+| [nix]      | [Nix](https://nixos.org) related build utilities                                                                                                          |
+| [ratman]   | A decentralised and modular userspace frame router                                                                                                        |
+| [utils]    | Various utilities in use all over the repository that don't fit in anywhere else                                                                          |
 
 [clients]: ./clients
 [docs]: ./docs
