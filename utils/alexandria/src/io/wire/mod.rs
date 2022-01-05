@@ -4,15 +4,19 @@
 //! to read and write data to disk.
 
 mod encrypted;
+pub(super) use encrypted::{Encrypted, EncryptedChunk};
 
 mod chunk;
-pub use chunk::*;
+pub(super) use chunk::*;
 
 mod table;
 use id::Identity;
-pub use table::*;
+pub(super) use table::*;
 
-use crate::io::{error::Result, wire::encrypted::EncryptedChunk};
+mod traits;
+pub(super) use traits::{FromEncrypted, FromReader, ToEncrypted, ToWriter};
+
+use crate::io::error::Result;
 use byteorder::{BigEndian, ByteOrder};
 use std::io::{Read, Write};
 
@@ -95,7 +99,7 @@ fn write_and_read() {
 async fn single_encrypted_cycle() {
     use crate::{
         crypto::{pkcry::keypair, CryEngine},
-        io::wire::encrypted::Encrypted,
+        io::wire::{Encrypted, ToWriter},
         meta::KeyStore,
     };
     use std::{
@@ -119,8 +123,10 @@ async fn single_encrypted_cycle() {
     let chunk = ChunkHeader::new(1024);
     let enc = chunk.to_encrypted(user, cry.clone()).await.unwrap();
     let enc_chunk = EncryptedChunk::new(enc).unwrap();
-    
-    let chunk2 = ChunkHeader::from_encrypted(enc_chunk, user, cry).await.unwrap();
+
+    let chunk2 = ChunkHeader::from_encrypted(enc_chunk, user, cry)
+        .await
+        .unwrap();
     assert_eq!(chunk, chunk2);
 }
 
@@ -129,7 +135,6 @@ async fn single_encrypted_cycle() {
 async fn write_and_read_encrypted() {
     use crate::{
         crypto::{pkcry::keypair, CryEngine},
-        io::wire::encrypted::Encrypted,
         meta::KeyStore,
     };
     use std::{
