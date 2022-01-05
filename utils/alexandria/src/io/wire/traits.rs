@@ -37,10 +37,9 @@ pub(crate) trait ToWriter {
     fn to_bytes(&self) -> Result<Vec<u8>>;
 
     /// Blanket implementation for length delimited writing
-    fn to_writer<T: Write>(&self, writer: &mut T) -> Result<()> {
+    fn to_writer<T: Write>(&self, writer: &mut T) -> Result<usize> {
         let buf = self.to_bytes()?;
-        write_with_length(writer, &buf)?;
-        Ok(())
+        Ok(write_with_length(writer, &buf)?)
     }
 }
 

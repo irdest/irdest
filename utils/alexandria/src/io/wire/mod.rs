@@ -21,12 +21,12 @@ use byteorder::{BigEndian, ByteOrder};
 use std::io::{Read, Write};
 
 /// First write the length as big-endian u64, then write the provided buffer
-pub(self) fn write_with_length<T: Write>(t: &mut T, buf: &Vec<u8>) -> Result<()> {
+pub(self) fn write_with_length<T: Write>(t: &mut T, buf: &Vec<u8>) -> Result<usize> {
     let mut len = vec![0; 8];
     BigEndian::write_u64(&mut len, buf.len() as u64);
     t.write_all(&len)?;
     t.write_all(&buf)?;
-    Ok(())
+    Ok(len.len() + buf.len())
 }
 
 /// First read a big-endian u64, then read the number of bytes

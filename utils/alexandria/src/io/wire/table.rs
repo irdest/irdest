@@ -3,11 +3,13 @@
 use crate::{
     crypto::{CipherText, CryEngineHandle, CryReqPayload, CryRespPayload, ResponsePayload},
     io::{
+        chunk::Chunk,
         error::Result,
         proto::table as proto,
         wire::traits::{FromEncrypted, FromReader, ToEncrypted, ToWriter},
     },
 };
+use id::Identity;
 use protobuf::Message;
 
 /// Un-encrypted table header containing column name and type data
@@ -69,6 +71,10 @@ impl RowHeader {
         inner.set_length(len);
         Self { inner }
     }
+
+    pub(crate) fn set_len(&mut self, len: u64) {
+        self.inner.set_length(len);
+    }
 }
 
 impl ToWriter for RowHeader {
@@ -114,3 +120,34 @@ impl FromReader for RowData {
 
 impl ToEncrypted for RowData {}
 impl FromEncrypted for RowData {}
+
+/// A utility to write a RowHeader and RowData in the correct order,
+/// but with forward pointing size
+pub(crate) struct Row(RowHeader, RowData);
+
+impl Row {
+    pub(crate) fn new(h: RowHeader, d: RowData) -> Self {
+        Self(h, d)
+    }
+
+    /// Write the whole group in the correct order, updating the RowHeader length
+    pub(crate) async fn append_group(
+        mut self,
+        user: Identity,
+        cry: CryEngineHandle,
+        chunk: &mut Chunk,
+    ) -> Result<()> {
+        // Encrypt and then encode data section
+        let data_enc = self.1.to_encrypted(user, cry.clone()).await?;
+        let mut data_buf = vec![];
+        data_enc.to_writer(&mut data_buf)?;
+
+        // Set the header->length field
+        self.0.set_len(data_buf.len() as u64);
+
+        // Then append header and data section to chunk
+        chunk.append(self.0).await?;
+        chunk.append_raw(&data_buf)?;
+        Ok(())
+    }
+}

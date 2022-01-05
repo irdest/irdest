@@ -51,6 +51,7 @@ mod util;
 mod cfg;
 mod error;
 mod wire;
+mod chunk;
 
 pub use cfg::legacy as versions;
 pub use cfg::Config;

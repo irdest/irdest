@@ -7,6 +7,7 @@ use std::{
 
 /// The current version of the library
 pub const VERSION: u32 = 0;
+pub const DEFAULT_CHUNK_SIZE: u64 = 4096;
 
 /// A module with older version numbers to match against
 pub mod legacy {
@@ -22,11 +23,15 @@ pub mod legacy {
 #[derive(Serialize, Deserialize)]
 pub struct Config {
     pub version: u32,
+    pub chunk_size: u64,
 }
 
 impl Config {
-    pub(crate) fn init() -> Self {
-        Self { version: VERSION }
+    pub(crate) fn new() -> Self {
+        Self {
+            version: VERSION,
+            chunk_size: DEFAULT_CHUNK_SIZE,
+        }
     }
 
     pub(crate) fn load(d: &Dirs) -> Result<Self> {
