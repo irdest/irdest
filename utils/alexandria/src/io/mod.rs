@@ -49,10 +49,12 @@ pub(self) mod proto {
 mod util;
 
 mod cfg;
-mod error;
-mod wire;
 mod chunk;
+mod error;
+mod record;
+mod wire;
 
 pub use cfg::legacy as versions;
 pub use cfg::Config;
 pub(crate) use util::{Decode, Encode};
+pub(self) use chunk::Chunk;

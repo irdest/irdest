@@ -14,25 +14,7 @@ use std::{
     io::{Seek, SeekFrom, Write},
 };
 
-/// Panicing wrapper to get the size of a file
-fn file_size(f: &File) -> u64 {
-    f.metadata().expect("Failed to get file metadata").len() as u64
-}
-
-/// This test mostly ensures that the relationship between input
-/// buffers and file metadata is correct.  This is as much a test of
-/// the filesystem we are running on as checking the invariant of
-/// misaligned file lengths in this code.
-#[test]
-fn test_file_size() {
-    use std::io::Write;
-    let data = (0..20).into_iter().map(|b| b as u8).collect::<Vec<u8>>();
-    let mut tmp = tempfile::tempfile().unwrap();
-    tmp.write_all(&data).unwrap();
-
-    let len = file_size(&tmp);
-    assert_eq!(len as usize, data.len());
-}
+use super::wire::ChunkHeader;
 
 /// Handle reads and writes to a single chunk
 ///
@@ -48,6 +30,7 @@ pub(crate) struct Chunk {
     user: Identity,
     cry: CryEngineHandle,
     f: File,
+    header: ChunkHeader,
     max_len: u64,
     cur_len: u64,
 }
@@ -59,20 +42,32 @@ impl Chunk {
             user,
             cry,
             f,
+            header: ChunkHeader::new(cfg.chunk_size),
             max_len: cfg.chunk_size,
             cur_len: 0,
         }
     }
 
     /// Load an existing chunk file into this lazy representation
-    pub(crate) fn load(cfg: &Config, user: Identity, cry: CryEngineHandle, f: File) -> Self {
-        Self {
+    pub(crate) async fn load(
+        cfg: &Config,
+        user: Identity,
+        cry: CryEngineHandle,
+        mut f: File,
+    ) -> Result<Self> {
+        // Read the chunk header from file
+        f.seek(SeekFrom::Start(0))?;
+        let e = Encrypted::from_reader(&mut f)?;
+        let header = ChunkHeader::from_encrypted(e, user, cry.clone()).await?;
+
+        Ok(Self {
             max_len: cfg.chunk_size,
-            cur_len: file_size(&f),
+            cur_len: header.usage(),
+            header,
             user,
             cry,
             f,
-        }
+        })
     }
 
     /// Indicate whether this chunk should be considered "full"
@@ -92,6 +87,7 @@ impl Chunk {
         self.f.seek(SeekFrom::Start(self.cur_len))?;
         let len = e.to_writer(&mut self.f)? as u64;
         self.cur_len += len;
+        self.header.add_usage(len);
         Ok(len as usize)
     }
 
@@ -100,6 +96,7 @@ impl Chunk {
         self.f.seek(SeekFrom::Start(self.cur_len));
         self.f.write_all(data)?;
         self.cur_len += data.len() as u64;
+        self.header.add_usage(data.len() as u64);
         Ok(())
     }
 

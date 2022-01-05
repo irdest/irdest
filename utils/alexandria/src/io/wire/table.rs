@@ -82,6 +82,7 @@ impl ToWriter for RowHeader {
         Ok(self.inner.write_to_bytes()?)
     }
 }
+
 impl FromReader for RowHeader {
     fn new_from_bytes(buf: &Vec<u8>) -> Result<Self> {
         Ok(proto::RowHeader::parse_from_bytes(buf).map(|inner| Self { inner })?)
