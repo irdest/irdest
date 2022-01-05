@@ -9,7 +9,7 @@ use tracing::callsite::Identifier;
 /// Take any wire type and turn it into an `Encrypted` type with some
 /// async cryptographic magic.
 #[async_trait::async_trait]
-pub(crate) trait ToEncrypted: ToWriter {
+pub(crate) trait ToEncrypted: ToWriter + Send + Sync + Sized {
     async fn to_encrypted(&self, user: Identity, cry: CryEngineHandle) -> Result<Encrypted> {
         let mut payload = vec![];
         self.to_writer(&mut payload)?;
@@ -47,7 +47,7 @@ pub(crate) trait ToWriter {
 /// Take an encrypted wire type and turn it into any other type with
 /// some async cryptographic magic
 #[async_trait::async_trait]
-pub(crate) trait FromEncrypted: FromReader + Sized {
+pub(crate) trait FromEncrypted: FromReader + Send + Sync + Sized {
     async fn from_encrypted(
         e: Encrypted<'_>,
         user: Identity,
