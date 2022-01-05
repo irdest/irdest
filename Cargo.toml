@@ -4,17 +4,6 @@ members = [
     "utils/alexandria",
     "utils/alexandria-tags",
 
-    # Main qaul identity & storage library
-    "irdest-core",
-    "irdest-core/types",
-
-    # RPC core utilities
-    "rpc-core/irpc-broker",
-    "rpc-core/irpc-sdk",
-
-    # qaul developer SDKs
-    "sdk/irdest-sdk",
-
     # The decentralised router
     "ratman",
     "ratman/configure",
@@ -36,17 +25,9 @@ members = [
     "netmods/netmod-udp",
     "netmods/netmod-wd",
 
-    # Set of services in irdest
-    "services/chat",
-    "services/chat/types",
-    "services/ping",
-    "services/webui",
-
     # End-user applications
-    "clients/hubd",
-    "clients/irdest-gtk",
-    "clients/irpc-client",
-    "utils/android-support",
-    "utils/android-tracing"
-
+    # "clients/hubd",
+    # "clients/irdest-gtk",
+    # "utils/android-support",
+    # "utils/android-tracing"
 ]

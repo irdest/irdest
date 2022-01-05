@@ -18,7 +18,6 @@ log = "*"
 tempfile = "3.0"
 tracing = { version = "0.1" }
 
-irdest-core = { path = "../../irdest-core", features = ["ffi-java"] }
 netmod-wd = { path = "../../netmods/netmod-wd" }
 netmod-tcp = { path = "../../netmods/netmod-tcp" }        
 ratman = { path = "../../ratman" }

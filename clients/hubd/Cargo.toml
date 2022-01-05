@@ -7,8 +7,6 @@ license = "AGPL-3.0-or-later"
 edition = "2018"
 
 [dependencies]
-irdest-core = { path = "../../irdest-core" }
-irpc-broker = { path = "../../rpc-core/irpc-broker" }
 netmod-tcp = { path = "../../netmods/netmod-tcp" }
 netmod-udp = { path = "../../netmods/netmod-udp" }
 ratman = { path = "../../ratman" }
