@@ -20,3 +20,43 @@ pub struct Header {
 pub struct Table {
     
 }
+
+/// Some piece of data found in the leaf position of a record
+pub enum LeafType {
+    /// A boolean `true` or `false` value
+    Bool(bool),
+    /// A 64-bit signed integer number
+    Integer(i64),
+    /// A double-precision floating point number
+    Double(f64),
+    /// A UTF-8 string
+    String(String),
+    /// Any kind of arbitrary binary data
+    Binary(Vec<u8>),
+}
+
+/// A single row of data
+pub struct Row {
+    /// The index of this row
+    idx: u64,
+    cols: Vec<LeafType>,
+}
+
+/// Provide a simple iterator over a set of rows
+pub struct RowIterator {
+}
+
+///
+impl RowIterator {
+    pub fn new() -> Self {
+        todo!()
+    }
+
+    pub fn next(&self) -> () {
+        ()
+    }
+
+    pub fn to_index(&self, idx: u64) {
+        
+    }
+}

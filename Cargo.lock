@@ -18,6 +18,7 @@ dependencies = [
  "alexandria-tags",
  "async-std",
  "async-trait",
+ "atomptr",
  "bincode",
  "byteorder",
  "chrono",
@@ -222,6 +223,12 @@ name = "atomic-waker"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "065374052e7df7ee4047b1160cca5e1467a12351a40b3da123c870ba0b8eda2a"
+
+[[package]]
+name = "atomptr"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "118dafe9abf76bec183f12a1c477783622ee6745ae441f5660add46fde8c07d5"
 
 [[package]]
 name = "atty"

@@ -15,19 +15,20 @@ alexandria-tags = { version = "0.2", path = "../alexandria-tags" }
 
 async-std = { version = "1.0", features = ["unstable", "attributes"] }
 async-trait = "0.1"
+atomptr = "1.0"
 bincode = "1.0"
 byteorder = "1.0"
-protobuf = "2.19"
 chrono = { version = "0.4", features = ["serde"] }
-thiserror = "1.0"
 hex = "0.4"
 keybob = "0.4"
-serde = { version = "1.0", features = ["derive", "rc"] } ## Is this still needed?
-sodiumoxide = "0.2.5"
-tracing = "0.1"
-toml = "0.5"
+protobuf = "2.19"
 rand = "0.7"
 regex = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+sodiumoxide = "0.2.5"
+thiserror = "1.0"
+toml = "0.5"
+tracing = "0.1"
 
 [build-dependencies]
 protoc-rust = "2.19"

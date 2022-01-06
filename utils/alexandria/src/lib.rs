@@ -16,13 +16,13 @@
 // FIXME: THIS MUST BE REMOVED AGAIN!
 #![allow(unused, deprecated)]
 
-
 #[macro_use]
 extern crate tracing;
 
 pub(crate) mod crypto;
 pub(crate) mod delta;
 pub(crate) mod dir;
+pub(crate) mod gc;
 pub(crate) mod io;
 pub(crate) mod meta;
 pub(crate) mod notify;

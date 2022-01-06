@@ -27,10 +27,10 @@ naersk.buildPackage rec {
   };
 
   nativeBuildInputs = [
-    capnproto
+    protobuf
     cmake
     pkg-config
-
+    
     # Required for irdest-gtk
     glib
     gtk3
