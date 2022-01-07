@@ -2,6 +2,7 @@
 
 use crate::utils::{Id, TagSet};
 use chrono::{DateTime, Utc};
+use id::Identity;
 
 // pub struct Record {
 //     header: Header,
@@ -17,9 +18,7 @@ pub struct Header {
 }
 
 /// A cached version of a table
-pub struct Table {
-    
-}
+pub struct Table {}
 
 /// Some piece of data found in the leaf position of a record
 pub enum LeafType {
@@ -33,20 +32,23 @@ pub enum LeafType {
     String(String),
     /// Any kind of arbitrary binary data
     Binary(Vec<u8>),
+    /// A reference to another table entry
+    InternalRef(u64),
+    /// Reference to an entry in a different table
+    ExternalRef(Identity, u64),
 }
 
 /// A single row of data
 pub struct Row {
     /// The index of this row
     idx: u64,
+    /// Column data
     cols: Vec<LeafType>,
 }
 
 /// Provide a simple iterator over a set of rows
-pub struct RowIterator {
-}
+pub struct RowIterator {}
 
-///
 impl RowIterator {
     pub fn new() -> Self {
         todo!()
@@ -56,7 +58,5 @@ impl RowIterator {
         ()
     }
 
-    pub fn to_index(&self, idx: u64) {
-        
-    }
+    pub fn jump_to(&self, idx: u64) {}
 }

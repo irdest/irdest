@@ -56,5 +56,6 @@ mod wire;
 
 pub use cfg::legacy as versions;
 pub use cfg::Config;
-pub(crate) use util::{Decode, Encode};
 pub(self) use chunk::Chunk;
+pub(crate) use record::Record;
+pub(crate) use util::{Decode, Encode};

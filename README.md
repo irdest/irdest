@@ -6,54 +6,38 @@
 
 [![Built with Nix](https://builtwithnix.org/badge.svg)](https://builtwithnix.org)
 
-**irdest** is a decentralised networking project, aiming to create
-easy-to-use solutions for ad-hoc wireless communication.  It supports
-many common desktop operating systems (Linux, Windows, MacOS, BSD, …),
-and Android mobile phones.  iOS support is on the roadmap.
+**Irdest** is a decentralised networking project, aiming to create
+easy-to-use solutions for ad-hoc wireless, and mesh networks.  It
+supports many common desktop operating systems (Linux, Windows, MacOS,
+NetBSD, …), and Android mobile phones.  iOS support is on the roadmap.
 
-**irdest** is both a cross-platform application, implementing
-**messaging**, **filesharing**, and **voice calls**, but also a
-**development toolkit** to create fully decentralised third-party
-applications.
-
-In order to be able to run on unpriviledged mobile platforms irdest
-implements **decentralised routing protocols** and utilities entirely
-in userspace.  The codebase is largely written in
-[Rust](https://rustlang.org), with only a few compatibility components
-being written in more platform specific languages.  All parts of the
-project are contained in this repository.
+The core component of the Irdest project is **Ratman**, a
+decentralised, peer-to-peer packet router (following the [gossip
+protocol] approach), written in [Rust].  With Ratman you can create
+private overlay networks (similar to VPNs), connect to a wider
+community mesh of existing overlay networks, plug into specific
+wireless drivers for fully off-the-grid routing, or do all of them at
+the same time.
 
 Following is an overview of the available components.  Components have
 additional information in their respective README files.
 
-| Component  | Description                                                                                                                                               |
-|------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [clients]  | Various end-user applications using irdest as a networking layer.  These include both shims to traditional networking, as well as apps written for irdest |
-| [docs]     | Manuals (for both users and developers), and tools to build and deploy documentation                                                                      |
-| [licenses] | Set of license texts that are in use in this repository                                                                                                   |
-| [netmods]  | Platform-specific networking interface drivers                                                                                                            |
-| [nix]      | [Nix](https://nixos.org) related build utilities                                                                                                          |
-| [ratman]   | A decentralised and modular userspace frame router                                                                                                        |
-| [utils]    | Various utilities in use all over the repository that don't fit in anywhere else                                                                          |
-
-[clients]: ./clients
-[docs]: ./docs
-[irdest-core]: ./irdest-core
-[licenses]: ./licenses
-[netmods]: ./netmods
-[nix]: ./nix
-[ratman]: ./ratman
-[rpc-core]: ./rpc-core
-[sdk]: ./sdk
-[tests]: ./tests
-[utils]: ./utils
+| Component  | Description                                                                                                                                |
+|------------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| [clients]  | End-user applications using Irdest.  These include both shims to traditional networking, as well as apps written specificically for Irdest |
+| [docs]     | Manuals (for both users and developers), and tools to build and deploy documentation                                                       |
+| [licenses] | Set of license texts that are in use in this repository                                                                                    |
+| [netmods]  | Platform-specific networking interface drivers                                                                                             |
+| [nix]      | [Nix](https://nixos.org) related build utilities                                                                                           |
+| [ratman]   | A decentralised and modular userspace frame router                                                                                         |
+| [utils]    | Various utilities in use all over the repository that don't fit in anywhere else                                                           |
 
 
 ## Overview
 
 Most traditional networking infrastructure (both the transmission
 layer, as well as applications) operate in a centralised way.  Clients
-connect to servers, and devices to towers.  This makes the
+connect to servers, and devices to [ISP]()s.  This makes the
 infrastructure vulnerable to attacks.  Natural disasters or opressive
 governments can easily shut down communication for millions of people,
 potentially putting them at risk, and slowing down or disrupting any
@@ -61,42 +45,38 @@ organisation or activist movement.
 
 Irdest aims to solve this issue by creating decentralised circuits
 between devices directly.  These direct device-to-device connections
-can be imperfect and unstable.  irdest's routing approach takes these
+can be imperfect and unstable.  Irdest's routing approach takes these
 issues into account by caching undelivered messages, and carrying them
 towards their destination until the receipient comes back online.
 
-Routing in a irdest network is done via a user's ed25519 public keys,
-creating a 32 byte large address space.  Connecting devices together
-happens via channel-specific drivers (for example the tcp internet
-overlay). Therefore when creating a circuit, roaming between different
-connection types is normal, and no single technology has to work on
-all possible devices.
+Routing in an Irdest network is done via a user's **ed25519 public
+keys**, creating a 32 byte large address space (twice as lange as
+IPv6).  Connecting devices together happens via channel-specific
+drivers (for example the tcp internet overlay). Therefore when
+creating a circuit, roaming between different connection types is
+normal, and no single connection technology has to work on all
+possible devices or platforms.
 
-To learn more about the technical side of irdest, check out the
+To learn more about the technical side of Irdest, check out the
 [developer manual].
+
 
 ## How to use
 
-There's no single way to use irdest.  Various platforms support
-different clients, and an irdest network can consist of many different
-components interacting with each other.  To get started, check out the
-[user manual]!
-
-[user manual]: https://docs.irde.st/user/
+The easiest way to get started using Irdest is to download [Ratman]
+and [irdest-mblog] (a fully decentralised micro-blogging application).
+To get started, check out the [user manual]!
 
 
 ## Contributing
 
 Social processes, code, and design guidelines are outlined in the
-[developer manual].  We have a developer chat hosted on [Matrix]
-where we would be happy to answer any questions you have.
+[developer manual].  We have a developer chat hosted on [Matrix] where
+we would be happy to answer any questions you have.
 
 If you want some inspiration for what you can do with irdest, check
-out the [services] section.
+out the [clients] section.
 
-[developer manual]: https://docs.irde.st/developer/
-[Matrix]: https://matrix.to/#/#irdest:fairydust.space?via=ontheblueplanet.com&via=matrix.org&via=fairydust.space
-[services]: ./services
 
 ## License
 
@@ -117,3 +97,19 @@ version 2.0.
 A copy of both the AGPL-3.0 and MPL-2.0 license texts are included in
 this repository, along other external licenses for third-party code,
 and can be found in the [licenses](licenses) directory.
+
+
+[Matrix]: https://matrix.to/#/#irdest:fairydust.space?via=ontheblueplanet.com&via=matrix.org&via=fairydust.space
+[Ratman]: ratman.irde.st
+[Rust]: https://rust-lang.org
+[clients]: ./clients
+[developer manual]: https://docs.irde.st/developer/
+[docs]: ./docs
+[gossip protocol]: https://en.wikipedia.org/wiki/Gossip_protocol
+[irdest-mblog]: mblog.irde.st
+[licenses]: ./licenses
+[netmods]: ./netmods
+[nix]: ./nix
+[ratman]: ./ratman
+[user manual]: https://docs.irde.st/user/
+[utils]: ./utils
