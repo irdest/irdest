@@ -153,7 +153,8 @@ impl Server {
                         .await
                 }
                 (_, Ack) => trace!("Received ACK packet on wrong i/o stream. woops"),
-                (state, packet) => panic!(format!("state={:?}, packet={:?}", state, packet)),
+                #[allow(unreachable_patterns)]
+                (state, packet) => panic!("state={:?}, packet={:?}", state, packet),
             }
         }
 
