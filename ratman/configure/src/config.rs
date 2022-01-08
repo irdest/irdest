@@ -31,7 +31,7 @@ pub enum Params {
     /// network need to be running on the same port.  This means that
     /// two udp endpoints can't be running on the same computer at the
     /// same time for testing purposes, without network namespaces.
-    LocalUpd { addr: String },
+    LocalUpd { iface: String, port: u16 },
     /// Android wifi direct support
     #[cfg(feature = "android")]
     WifiDirect,
@@ -87,9 +87,9 @@ impl Network {
             .fold(Router::new(), |router, (_, ep)| {
                 match ep.params {
                     // FIXME: Figure out what the udp module actually needs
-                    Params::LocalUpd { addr: _ } => {
+                    Params::LocalUpd { iface, port } => {
                         use netmod_udp::Endpoint;
-                        let ep = Endpoint::spawn(9000);
+                        let ep = Endpoint::spawn(&iface, port);
                         block_on(async { router.add_endpoint(ep).await });
                     }
                     Params::Tcp {

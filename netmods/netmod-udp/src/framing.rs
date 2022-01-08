@@ -25,29 +25,6 @@ pub(crate) enum Envelope {
 }
 
 impl Envelope {
-    pub(crate) fn frame(f: &Frame) -> Vec<u8> {
-        let inner = bincode::serialize(f).unwrap();
-        let env = Envelope::Data(inner);
-        bincode::serialize(&env).unwrap()
-    }
-
-    pub(crate) fn get_frame(&self) -> Frame {
-        match self {
-            Self::Data(ref vec) => bincode::deserialize(vec).unwrap(),
-            _ => unreachable!(),
-        }
-    }
-
-    pub(crate) fn announce() -> Vec<u8> {
-        let env = Envelope::Announce;
-        bincode::serialize(&env).unwrap()
-    }
-
-    pub(crate) fn reply() -> Vec<u8> {
-        let env = Envelope::Reply;
-        bincode::serialize(&env).unwrap()
-    }
-
     pub(crate) fn as_bytes(&self) -> Vec<u8> {
         bincode::serialize(self).unwrap()
     }

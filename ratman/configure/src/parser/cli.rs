@@ -17,8 +17,8 @@ pub fn parse_peer(id: &mut Id, p: &str) -> Option<(Id, Endpoint)> {
             Some(EpBuilder::tcp(addr, port, dynamic).build(id))
         }
         &"udp" => {
-            let addr = split.get(1)?.to_string();
-            Some(EpBuilder::local_udp(addr).build(id))
+            let iface = split.get(1)?.to_string();
+            Some(EpBuilder::local_udp(iface, 9000).build(id))
         }
         _ => return None,
     }

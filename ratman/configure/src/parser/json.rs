@@ -99,10 +99,14 @@ fn parse_endpoints(eps: Value) -> BTreeMap<usize, Endpoint> {
                         Some("local-udp") => {
                             match hash.get("params").expect("Endpoint has no `params` field") {
                                 Value::Object(params) => Params::LocalUpd {
-                                    addr: params
-                                        .get("addr")
-                                        .and_then(|addr| addr.as_str().map(|s| s.to_owned()))
-                                        .expect("Missing endpoint `addr` param"),
+                                    iface: params
+                                        .get("iface")
+                                        .and_then(|iface| iface.as_str().map(|s| s.to_owned()))
+                                        .expect("Missing endpoint `iface` param"),
+                                    port: params
+                                        .get("port")
+                                        .and_then(|addr| addr.as_u64().map(|port| port as u16))
+                                        .expect("Missing endpoint `port` param"),
                                 },
                                 _ => unimplemented!(),
                             }

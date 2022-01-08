@@ -67,9 +67,9 @@ impl EpBuilder {
         }
     }
 
-    pub fn local_udp(addr: String) -> Self {
+    pub fn local_udp(iface: String, port: u16) -> Self {
         Self {
-            p: Params::LocalUpd { addr },
+            p: Params::LocalUpd { iface, port },
         }
     }
 
