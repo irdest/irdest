@@ -170,6 +170,7 @@ use netmod::Endpoint;
 /// set of endpoints gets locked and can't be changed during runtime.
 ///
 /// [`run`]: struct.Router.html#method.run
+#[derive(Clone)]
 pub struct Router {
     inner: Arc<Core>,
     proto: Arc<Protocol>,
@@ -181,11 +182,10 @@ impl Router {
     /// It's currently not possible to restore a router from stored
     /// state, which means that all routing tables are lost when the
     /// router is stopped.
-    pub fn new() -> Arc<Self> {
+    pub fn new() -> Self {
         let proto = Protocol::new();
         let inner = Arc::new(Core::init());
-
-        Arc::new(Self { inner, proto })
+        Self { inner, proto }
     }
 
     /// Add a new endpoint to this router

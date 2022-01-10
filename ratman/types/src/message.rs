@@ -23,3 +23,24 @@ pub fn new(
     inner.set_signature(signature);
     inner
 }
+
+pub fn received(
+    id: Identity,
+    sender: Identity,
+    recipient: Option<Identity>,
+    payload: Vec<u8>,
+    timesig: String,
+    sign: Vec<u8>,
+) -> Message {
+    let mut inner = Message::new();
+    inner.set_id(id.as_bytes().to_vec());
+    inner.set_sender(sender.as_bytes().to_vec());
+    if let Some(r) = recipient {
+        inner.set_recipients(vec![r.as_bytes().to_vec()].into());
+    }
+    inner.set_time(timesig);
+    inner.set_payload(payload);
+    inner.set_signature(sign);
+
+    inner
+}
