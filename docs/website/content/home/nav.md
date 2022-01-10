@@ -1,8 +1,9 @@
 ---
 Title: Decentralised ad-hoc wireless mesh communication
-Tagline: "**irdest** is building tools for the next internet"
+Tagline: "**Irdest** is building tools for the next internet"
 Download: Download
 Community: Community
+Announcements: Announcements
 Learn: Learn
 ---
 

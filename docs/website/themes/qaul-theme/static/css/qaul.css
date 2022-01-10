@@ -1,5 +1,6 @@
 body {
     display: flex;
+    font-size: 1.35em;
     flex-direction: column;
     margin: 0;
     font-family: sans-serif;
@@ -22,7 +23,7 @@ p,li {
 }
 
 .wrap {
-    width: 650px;
+    width: 70ch;
     max-width: 100%;
 }
 
@@ -150,4 +151,10 @@ header.block, footer.block {
 .sponsor {
     padding: 1em;
     height: 8em;
+}
+
+th {
+    border-bottom: 1.5px solid black;
+    text-align: start;
+    padding-right: 45px;
 }

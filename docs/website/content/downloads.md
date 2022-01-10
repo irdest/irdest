@@ -3,17 +3,38 @@ Title: Downloads
 layout: page
 ---
 
-Most user-facing irdest applications and tools are still very
-work-in-progress.  Target platforms include Linux, MacOS, Windows,
-Android, and iOS.  However currently only Linux and Android are
-supported!
+Before downloading, please beware that this is **alpha stage
+software** and as such it will have bugs and produce crashes.  Please
+do not expect to be able to rely on this software in production
+setups.
 
-Following are instructions on how to build the main irdest router
-daemon on Linux, which enables you to join a irdest network over the
-internet.
+That being said: we want to improve Irdest for everyone so if you
+experience a crash, please report the issue to our issue tracker or
+our [community mailing
+ist](https://lists.irde.st/archives/list/community@lists.irde.st/)
 
 
-## irdest-hubd
+## Ratman
+
+The main way to use Irdest at the moment is by installing and
+configuring the *Ratman* decentralised peer-to-peer routing daemon.
+
+### Distribution packages
+
+You can find pre-made packages for several Linux and BSD
+distributions.  Consult the following table for details.
+
+| Distribution | Channel                       | Version |
+|--------------|-------------------------------|---------|
+| Arch Linux   | AUR                           | `0.3.0` |
+| NixOS        | nixpkgs unstable (2022-01-10) | `0.3.0` |
+| NetBSD       | pkgsrc                        | `0.3.0` |
+| MacOS        | homebrew                      | `0.3.0` |
+
+### Building from source
+
+If your platform does not yet have a package, you can build Ratman
+from source.
 
 
 1. Clone https://git.irde.st/we/irdest with git
@@ -29,49 +50,17 @@ internet.
    
    - rustup (you need rustc `v1.42` or higher)
    - libsodium
+   - protobuf (with support for `proto3`)
    - pkg-config
    - llvm
    - clang
 
-3. Now you can build the `irdest-hubd` target with `cargo`:
+3. Now you can build the `ratmand` target with `cargo`:
 
    ```console
-   $ cargo build --bin irdest-hubd --release
-   $ ./target/release/irdest-hubd
+   $ cargo build --bin ratmand --release
+   $ ./target/release/ratmand
    ```
 
 Congratulations!  Now consult the [users manual](/learn#manuals) on
 how to configure the daemon!
-
-
-## irdestdroid
-
-The irdest Android app is currently still a prototype and not
-intended for end-users.  Building it requires a full Android
-development setup installed on your system.  To make the Rust
-cross-compilation easier, we created a [docker build
-environment][docker]!
-
-[docker]: https://hub.docker.com/r/qaulnet/android-build-env
-
-
-1. Clone the main irdest repo as before:
-
-   ```console
-   $ git clone https://git.irde.st/we/irdest
-   $ cd irdest/clients/android
-   ```
-   
-2. Cross-compile the Rust libraries via docker:
-
-   ```console
-   $ ./build.sh
-   ```
-   
-   This will take a while!
-   
-3. Now you can build the main Android application with gradle:
-
-   ```console
-   $ ./gradlew dist
-   ```
