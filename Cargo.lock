@@ -1136,13 +1136,19 @@ version = "0.2.2"
 dependencies = [
  "async-std",
  "bincode",
+ "byteorder",
  "chrono",
  "clockctrl",
  "netmod-mem",
+ "netmod-tcp",
+ "netmod-udp",
+ "protobuf",
  "ratman-identity",
  "ratman-netmod",
+ "ratman-types",
  "serde",
  "task-notify",
+ "thiserror",
  "tracing",
  "tracing-futures",
  "twox-hash",
@@ -1190,6 +1196,15 @@ dependencies = [
  "ratman-identity",
  "serde",
  "twox-hash",
+]
+
+[[package]]
+name = "ratman-types"
+version = "0.1.0"
+dependencies = [
+ "protobuf",
+ "protoc-rust",
+ "ratman-identity",
 ]
 
 [[package]]

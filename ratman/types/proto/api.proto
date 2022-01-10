@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+import "proto/message.proto";
+
+/// A wrapper type for all API messages
+message ApiMessage {
+        oneof inner {
+                Send send = 1;
+                Receive recv = 2;
+                Setup setup = 3;
+                Peers peers = 5;
+        }
+}
+
+/// API payload to send messages
+message Send {
+        enum Type {
+                DEFAULT = 0;
+                FLOOD = 1;
+        }
+
+        Type type = 1;
+        Message msg = 2;
+}
+
+/// API payload to receive messages
+message Receive {
+        enum Type {
+                DEFAULT = 0;
+                FLOOD = 1;
+        }
+        Type type = 1;
+        Message msg = 2;
+}
+
+/// API payload to configure Ratman session
+message Setup {
+        enum Type {
+                ONLINE = 0;
+                OFFLINE = 1;
+                /// Response type sent for a previous Setup message
+                ACK = 2;
+        }
+        Type type = 1;
+        optional bytes id = 2;
+        optional bytes token = 3;
+}
+
+// API payload to request and fetch current peer list
+message Peers {
+        enum Type {
+                REQ = 0;
+                RESP = 1;
+                DISCOVER = 2;
+        }
+        Type type = 1;
+        repeated bytes peers = 2;
+}

@@ -1,0 +1,14 @@
+[package]
+name = "ratman-types"
+description = "Encoding types for the Ratman API"
+author = ["Katharina Fey <kookie@spacekookie.de"]
+version = "0.1.0"
+edition = "2018"
+license = "GPL-3.0-or-later"
+
+[dependencies]
+ratman-identity = { version ="0.6", path = "../identity" }
+protobuf = "2.19"
+
+[build-dependencies]
+protoc-rust = "2.19"

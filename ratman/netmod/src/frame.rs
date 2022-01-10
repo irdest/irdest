@@ -14,7 +14,7 @@ pub enum Recipient {
     /// Addressed to a single user ID on the network
     User(Identity),
     /// Spreading a `Frame` to the whole network
-    Flood,
+    Flood, // TODO: add flood namespace here
 }
 
 /// Describes an endpoint's send target

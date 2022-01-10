@@ -37,7 +37,7 @@ additional information in their respective README files.
 
 Most traditional networking infrastructure (both the transmission
 layer, as well as applications) operate in a centralised way.  Clients
-connect to servers, and devices to [ISP]()s.  This makes the
+connect to servers, and devices to [ISP]s.  This makes the
 infrastructure vulnerable to attacks.  Natural disasters or opressive
 governments can easily shut down communication for millions of people,
 potentially putting them at risk, and slowing down or disrupting any
@@ -100,8 +100,9 @@ and can be found in the [licenses](licenses) directory.
 
 
 [Matrix]: https://matrix.to/#/#irdest:fairydust.space?via=ontheblueplanet.com&via=matrix.org&via=fairydust.space
-[Ratman]: ratman.irde.st
+[Ratman]: https://irde.st/downloads
 [Rust]: https://rust-lang.org
+[ISP]: https://en.wikipedia.org/wiki/ISP
 [clients]: ./clients
 [developer manual]: https://docs.irde.st/developer/
 [docs]: ./docs

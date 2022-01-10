@@ -6,20 +6,34 @@ version = "0.2.2"
 authors = ["Katharina Fey <kookie@spacekookie.de>", "Leonora Tindall <nora@nora.codes>"]
 edition = "2018"
 
+[features]
+default = ["tcp", "udp", "daemon"]
+tcp = ["netmod-tcp"]
+udp = ["netmod-udp"]
+daemon = ["types"]
+
 [dependencies]
 async-std = { version = "1.0", features = ["std", "unstable"] }
 bincode = "1.0"
+byteorder = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
+protobuf = "2.19"
 serde = { version = "1.0", features = ["derive"] }
+thiserror = "1.0"
 tracing = "0.1"
 tracing-futures = "0.2"
 twox-hash = "1.5"
 
-# Sub-components
+# Sub-componentsz
+clockctrl = { version = "0.1", path = "../utils/clockctrl" }
 identity = { version ="0.6", path = "identity", package = "ratman-identity", features = ["digest", "random"] }
 netmod = { version ="0.5.0", path = "netmod", package = "ratman-netmod"}
-clockctrl = { version = "0.1", path = "../utils/clockctrl" }
 task-notify = { version = "0.1", path = "../utils/task-notify" }
+types = { version = "0.1", path = "types", package = "ratman-types", optional = true }
+
+# Network modules loaded by default
+netmod-tcp = { path = "../netmods/netmod-tcp", version = "0.4", optional = true }
+netmod-udp = { path = "../netmods/netmod-udp", version = "0.2", optional = true }
 
 [dev-dependencies]
 netmod-mem = { path = "../netmods/netmod-mem", version = "0.4" }
