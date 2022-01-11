@@ -405,6 +405,7 @@ dependencies = [
  "atty",
  "bitflags",
  "strsim",
+ "term_size",
  "textwrap",
  "unicode-width",
  "vec_map",
@@ -1138,6 +1139,7 @@ dependencies = [
  "bincode",
  "byteorder",
  "chrono",
+ "clap",
  "clockctrl",
  "netmod-mem",
  "netmod-tcp",
@@ -1151,6 +1153,7 @@ dependencies = [
  "thiserror",
  "tracing",
  "tracing-futures",
+ "tracing-subscriber",
  "twox-hash",
 ]
 
@@ -1441,6 +1444,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "term_size"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e4129646ca0ed8f45d09b929036bafad5377103edd06e50bf574b353d2b08d9"
+dependencies = [
+ "libc",
+ "winapi",
+]
+
+[[package]]
 name = "termcolor"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1455,6 +1468,7 @@ version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060"
 dependencies = [
+ "term_size",
  "unicode-width",
 ]
 

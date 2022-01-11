@@ -11,10 +11,31 @@ use crate::{Message, Recipient, Router};
 use async_std::{net::TcpListener, task::spawn};
 use error::Result;
 use state::{DaemonState, OnlineMap};
+use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
 
-pub(crate) fn elog<S: Into<String>>(msg: S, code: u16) -> ! {
-    error!("[FATAL!] {}", msg.into());
+pub fn elog<S: Into<String>>(msg: S, code: u16) -> ! {
+    error!("{}", msg.into());
     std::process::exit(code.into());
+}
+
+pub fn setup_logging(lvl: &str) {
+    let filter = EnvFilter::default()
+        .add_directive(match lvl {
+            "trace" => LevelFilter::TRACE.into(),
+            "debug" => LevelFilter::DEBUG.into(),
+            "info" => LevelFilter::INFO.into(),
+            "warn" => LevelFilter::WARN.into(),
+            "error" => LevelFilter::ERROR.into(),
+            _ => unreachable!(),
+        })
+        .add_directive("async_std=error".parse().unwrap())
+        .add_directive("async_io=error".parse().unwrap())
+        .add_directive("polling=error".parse().unwrap())
+        .add_directive("mio=error".parse().unwrap());
+
+    // Initialise the logger
+    fmt().with_env_filter(filter).init();
+    info!("Initialised logger: welcome to ratmand!");
 }
 
 async fn run_relay(r: Router, online: OnlineMap) {
@@ -61,7 +82,7 @@ async fn run_relay(r: Router, online: OnlineMap) {
 }
 
 /// Run the daemon!
-pub(crate) async fn run(r: Router, addr: SocketAddr) -> Result<()> {
+pub async fn run(r: Router, addr: SocketAddr) -> Result<()> {
     info!("Listening for API connections on socket {:?}", addr);
     let listener = TcpListener::bind(addr).await?;
     let mut state = DaemonState::new(&listener);

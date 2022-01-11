@@ -1,4 +1,4 @@
-use ratman::{Message, MsgId, Recipient, TimePair};
+use crate::{Message, MsgId, Recipient, TimePair};
 use identity::Identity;
 use types::api::{Send, Send_Type};
 
@@ -31,4 +31,3 @@ pub(crate) fn send_to_message(s: Send) -> Vec<Message> {
         })
         .collect()
 }
-

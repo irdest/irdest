@@ -143,6 +143,9 @@ mod error;
 mod protocol;
 mod slicer;
 
+#[cfg(feature = "daemon")]
+pub mod daemon;
+
 // Provide exports to the rest of the crate
 pub(crate) use {data::Payload, protocol::Protocol, slicer::Slicer};
 pub(crate) type IoPair<T> = (Sender<T>, Receiver<T>);
