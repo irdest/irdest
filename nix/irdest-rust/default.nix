@@ -3,7 +3,7 @@
 , naersk
 , buildPackages
 , atk
-, capnproto
+, protobuf
 , cmake
 , glib
 , gtk3
