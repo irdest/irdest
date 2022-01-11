@@ -1,9 +1,9 @@
 # `Triggers` a child pipeline that builds `irdest-android-client`, the irdest-droid
 # The script that runs the pipeline is from path provided to `include`
 
-irdest-android-app:
-  stage: build
-  trigger:
-    include: 
-    - '**/*/irdest-android-app-ci.yml'
-    strategy: depend
+# irdest-android-app:
+#   stage: build
+#   trigger:
+#     include: 
+#     - '**/*/irdest-android-app-ci.yml'
+#     strategy: depend
