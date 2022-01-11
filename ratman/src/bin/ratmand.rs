@@ -6,14 +6,13 @@ extern crate tracing;
 pub(crate) use ratman::*;
 
 use clap::{App, Arg, ArgMatches};
-use ratman::daemon::elog;
 use std::{fs::File, io::Read};
 
 pub fn build_cli() -> ArgMatches<'static> {
     App::new("ratmand")
         .about("Decentralised and delay tolerant peer-to-peer packet router.  Part of the Irdest project: https://irde.st")
         .version(env!("CARGO_PKG_VERSION"))
-        .after_help("This is ALPHA level software and will include bugs and cause crashes.  If you encounter a reproducable issue, please report it in our issue tracker (https://git.irde.st/we/irdest) or our mailing list: https://lists.irde.st/archive/community")
+        .after_help("This is ALPHA level software and will include bugs and cause crashes.  If you encounter a reproducable issue, please report it in our issue tracker (https://git.irde.st/we/irdest) or our mailing list: https://lists.irde.st/archives/list/community@lists.irde.st")
         .max_term_width(120)
         .arg(
             Arg::with_name("VERBOSITY")

@@ -6,14 +6,6 @@ rust-components:
     include: '**/*/rust-components-ci.yml'
     strategy: depend
 
-android-components:
-  stage: build
-  trigger:
-    include: 
-    - '**/*/android-support-crate.yml'
-    - '**/*/irdest-android-app.yml'
-    strategy: depend
-
 docs: 
   stage: build
   trigger:

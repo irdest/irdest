@@ -32,7 +32,7 @@ pub fn sec10() -> Duration {
 
 /// Initialise a network with some application state
 pub trait Initialize<T> {
-    fn init_with<'a, F: Fn(&'a str, Arc<Router>) -> T>(&'a mut self, cb: F);
+    fn init_with<'a, F: Fn(&'a str, Router) -> T>(&'a mut self, cb: F);
 }
 
 /// A very simple three-point network
@@ -42,9 +42,9 @@ pub trait Initialize<T> {
 /// Only A and B are exposed from this struct, and initialised under
 /// the hood.
 pub struct ThreePoint<T> {
-    pub a: (Arc<Router>, Option<T>),
-    pub b: (Arc<Router>, Option<T>),
-    _middle: Arc<Router>,
+    pub a: (Router, Option<T>),
+    pub b: (Router, Option<T>),
+    _middle: Router,
 }
 
 impl<T> ThreePoint<T> {
@@ -83,8 +83,8 @@ impl<T> ThreePoint<T> {
 }
 
 impl<T> Initialize<T> for ThreePoint<T> {
-    fn init_with<'a, F: Fn(&'a str, Arc<Router>) -> T>(&'a mut self, cb: F) {
-        self.a.1 = Some(cb("a", Arc::clone(&self.a.0)));
-        self.b.1 = Some(cb("b", Arc::clone(&self.b.0)));
+    fn init_with<'a, F: Fn(&'a str, Router) -> T>(&'a mut self, cb: F) {
+        self.a.1 = Some(cb("a", self.a.0.clone()));
+        self.b.1 = Some(cb("b", self.b.0.clone()));
     }
 }

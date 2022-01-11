@@ -3,16 +3,15 @@ name = "ratman"
 description = "A delay tolerant, journaled, and distributed userspace packet router"
 license = "AGPL-3.0"
 version = "0.2.2"
-authors = ["Katharina Fey <kookie@spacekookie.de>", "Leonora Tindall <nora@nora.codes>"]
+authors = ["Katharina Fey <kookie@spacekookie.de>"]
 edition = "2018"
 
 [[bin]]
 name = "ratmand"
-features = ["daemon"]
-
+required-features = ["daemon"]
 
 [features]
-default = ["tcp", "udp", "daemon"]
+default = ["tcp", "udp"]
 tcp = ["netmod-tcp"]
 udp = ["netmod-udp"]
 daemon = ["types", "clap", "tracing-subscriber"]

@@ -81,7 +81,7 @@ impl Network {
     }
 
     /// Consume the `Network` instance to initialise a Router
-    pub fn into_router(self) -> Arc<Router> {
+    pub fn into_router(self) -> Router {
         let _p = self.patches;
 
         self.endpoints
