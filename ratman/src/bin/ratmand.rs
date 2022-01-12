@@ -87,11 +87,14 @@ async fn main() {
     };
 
     // Setup the Endpoints
-    let tcp = match TcpEp::new(m.value_of("TCP_BIND").unwrap(), Mode::Static).await {
-        Ok(tcp) => match daemon::attach_peers(&tcp, peers).await {
-            Ok(()) => tcp,
-            Err(e) => daemon::elog(format!("failed to parse peer data: {}", e), 1),
-        },
+    let tcp = match TcpEp::new(m.value_of("TCP_BIND").unwrap(), "ratmand", Mode::Static).await {
+        Ok(tcp) => {
+            let peers = peers.iter().map(|s| s.as_str()).collect();
+            match daemon::attach_peers(&tcp, peers).await {
+                Ok(()) => tcp,
+                Err(e) => daemon::elog(format!("failed to parse peer data: {}", e), 1),
+            }
+        }
         Err(e) => daemon::elog(format!("failed to initialise TCP endpoint: {}", e), 1),
     };
 
