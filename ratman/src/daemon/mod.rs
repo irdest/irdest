@@ -2,6 +2,7 @@
 
 mod error;
 mod parse;
+mod peers;
 mod state;
 mod transform;
 
@@ -12,6 +13,8 @@ use async_std::{net::TcpListener, task::spawn};
 use error::Result;
 use state::{DaemonState, OnlineMap};
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
+
+pub use peers::{attach_peers, parse_udp_bind};
 
 pub fn elog<S: Into<String>>(msg: S, code: u16) -> ! {
     error!("{}", msg.into());

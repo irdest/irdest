@@ -8,6 +8,8 @@ pub(crate) use ratman::*;
 use clap::{App, Arg, ArgMatches};
 use std::{fs::File, io::Read};
 
+use netmod_tcp::{Endpoint as TcpEp, Mode};
+
 pub fn build_cli() -> ArgMatches<'static> {
     App::new("ratmand")
         .about("Decentralised and delay tolerant peer-to-peer packet router.  Part of the Irdest project: https://irde.st")
@@ -30,6 +32,20 @@ pub fn build_cli() -> ArgMatches<'static> {
                 .short("b")
                 .help("Specify the API socket bind address")
                 .default_value("127.0.0.1:9020"),
+        )
+        .arg(
+            Arg::with_name("TCP_BIND")
+                .takes_value(true)
+                .long("tcp")
+                .help("Specify the tcp socket bind address")
+                .default_value("[::]:9000"),
+        )
+        .arg(
+            Arg::with_name("UDP_BIND")
+                .takes_value(true)
+                .long("udp")
+                .help("Specify the udp socket bind address")
+                .default_value("[::]:9001"),
         )
         .arg(
             Arg::with_name("PEERS")
@@ -70,9 +86,17 @@ async fn main() {
         None => daemon::elog("Failed to initialise ratmand: missing peers data!", 2),
     };
 
-    // Now parse them!
+    // Setup the Endpoints
+    let tcp = match TcpEp::new(m.value_of("TCP_BIND").unwrap(), Mode::Static).await {
+        Ok(tcp) => match daemon::attach_peers(&tcp, peers).await {
+            Ok(()) => tcp,
+            Err(e) => daemon::elog(format!("failed to parse peer data: {}", e), 1),
+        },
+        Err(e) => daemon::elog(format!("failed to initialise TCP endpoint: {}", e), 1),
+    };
 
     let r = Router::new();
+    r.add_endpoint(tcp).await;
 
     let api_bind = match m.value_of("API_BIND").unwrap().parse() {
         Ok(addr) => addr,

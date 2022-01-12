@@ -20,7 +20,7 @@ pub(crate) use ptr::AtomPtr;
 pub(crate) use routes::Routes;
 pub(crate) use server::{LockedStream, Server};
 
-use async_std::sync::Arc;
+use async_std::{net::SocketAddr, sync::Arc};
 use async_trait::async_trait;
 use netmod::{self, Endpoint as EndpointExt, Frame, Target};
 use serde::{Deserialize, Serialize};
@@ -69,11 +69,12 @@ pub struct Endpoint {
 impl Endpoint {
     /// Create a new endpoint on an interface and port
     #[tracing::instrument(level = "info")]
-    pub async fn new(addr: &str, port: u16, name: &str, mode: Mode) -> Result<Arc<Self>> {
+    pub async fn new(bind: &str, name: &str, mode: Mode) -> Result<Arc<Self>> {
         info!("Initialising Tcp backend");
 
-        let routes = Routes::new(port);
-        let server = Server::new(Arc::clone(&routes), addr, port, mode).await?;
+        let socket: SocketAddr = bind.parse().map_err(|_| Error::InvalidAddr)?;
+        let routes = Routes::new(socket.port());
+        let server = Server::new(Arc::clone(&routes), socket, socket.port(), mode).await?;
 
         server.run();
         Ok(Arc::new(Self { server, routes }))

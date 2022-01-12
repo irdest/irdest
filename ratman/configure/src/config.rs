@@ -1,9 +1,7 @@
-//!
-
 use async_std::task::block_on;
 use ratman::Router;
 use std::collections::BTreeMap;
-use std::{ops::Deref, sync::Arc};
+use std::ops::Deref;
 
 pub type Id = usize;
 

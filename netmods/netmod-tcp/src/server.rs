@@ -3,7 +3,7 @@
 use crate::{IoPair, LinkType, Mode, Packet, PacketBuilder, PeerState, Result, Routes, SourceAddr};
 use async_std::{
     io::prelude::*,
-    net::{TcpListener, TcpStream},
+    net::{SocketAddr, TcpListener, TcpStream},
     stream::StreamExt,
     sync::{Arc, RwLock},
     task,
@@ -23,8 +23,8 @@ pub(crate) struct Server {
     alive: Arc<AtomicBool>,
     inner: TcpListener,
     routes: Arc<Routes>,
-    _port: u16,
     mode: Mode,
+    _port: u16,
     incoming: IoPair<(Frame, usize)>,
 }
 
@@ -32,22 +32,20 @@ impl Server {
     /// Create a new tcp listening server, without running it
     pub(crate) async fn new(
         routes: Arc<Routes>,
-        addr: &str,
+        bind: SocketAddr,
         _port: u16,
         mode: Mode,
     ) -> Result<Arc<Self>> {
-        Ok(TcpListener::bind(format!("{}:{}", addr, _port))
-            .await
-            .map(|inner| {
-                Arc::new(Self {
-                    alive: Arc::new(true.into()),
-                    incoming: IoPair::default(),
-                    inner,
-                    routes,
-                    _port,
-                    mode,
-                })
-            })?)
+        Ok(TcpListener::bind(bind).await.map(|inner| {
+            Arc::new(Self {
+                alive: Arc::new(true.into()),
+                incoming: IoPair::default(),
+                inner,
+                routes,
+                _port,
+                mode,
+            })
+        })?)
     }
 
     fn alive(self: &Arc<Self>) -> bool {

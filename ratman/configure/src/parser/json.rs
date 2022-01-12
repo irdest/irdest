@@ -107,7 +107,7 @@ fn parse_endpoints(eps: Value) -> BTreeMap<usize, Endpoint> {
                                 _ => unimplemented!(),
                             }
                         }
-                        tt => panic!(format!("Unknown type state: {:?}", tt)),
+                        tt => panic!("Unknown type state: {:?}", tt),
                     },
                 },
                 _ => unimplemented!(),

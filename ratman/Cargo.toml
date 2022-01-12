@@ -14,7 +14,7 @@ required-features = ["daemon"]
 default = ["tcp", "udp"]
 tcp = ["netmod-tcp"]
 udp = ["netmod-udp"]
-daemon = ["types", "clap", "tracing-subscriber"]
+daemon = ["types", "clap", "tracing-subscriber", "tcp", "udp"]
 
 [dependencies]
 async-std = { version = "1.0", features = ["std", "unstable"] }

@@ -7,7 +7,8 @@
 //! configuration language parser, or via the pure code API.
 
 mod parser;
-pub use parser::parse_json;
+pub use parser::json::parse_json;
+pub use parser::cli::parse_peer;
 
 pub mod config;
 
