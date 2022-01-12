@@ -1,6 +1,5 @@
 //! Module only loaded when Ratman is running as a daemon
 
-mod error;
 mod parse;
 mod peers;
 mod state;
@@ -10,11 +9,11 @@ use std::net::SocketAddr;
 
 use crate::{Message, Recipient, Router};
 use async_std::{net::TcpListener, task::spawn};
-use error::Result;
 use state::{DaemonState, OnlineMap};
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
+use types::Result;
 
-pub use peers::{attach_peers, parse_udp_bind};
+pub use peers::attach_peers;
 
 pub fn elog<S: Into<String>>(msg: S, code: u16) -> ! {
     error!("{}", msg.into());

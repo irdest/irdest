@@ -2,55 +2,14 @@ use crate::{
     daemon::{state::ShareIo, transform},
     Result, Router,
 };
-use async_std::{
-    io::{Read, Write},
-    prelude::*,
-};
-use byteorder::{BigEndian, ByteOrder};
+
+use async_std::io::{Read, Write};
 use identity::Identity;
 use protobuf::Message;
-use std::{io, sync::Arc};
-use types::api::{
-    ApiMessage, ApiMessageEnum, Peers, Receive, Send, Setup, Setup_Type, Setup_oneof__id,
+use types::{
+    api::{ApiMessageEnum, Peers, Receive, Send, Setup, Setup_Type, Setup_oneof__id},
+    parse_message, read_with_length, write_with_length, Error as ParseError, Result as ParseResult,
 };
-
-pub(crate) type ParseResult<T> = std::result::Result<T, ParseError>;
-
-#[derive(Debug, thiserror::Error)]
-pub(crate) enum ParseError {
-    #[error("failed to perform system i/o operation: {}", 0)]
-    Io(#[from] io::Error),
-    #[error("failed to parse base encoding: {}", 0)]
-    Proto(#[from] protobuf::ProtobufError),
-    #[error("failed to provide correct authentication in handshake")]
-    InvalidAuth,
-}
-
-/// First write the length as big-endian u64, then write the provided buffer
-async fn write_with_length<T: Write + Unpin>(t: &mut T, buf: &Vec<u8>) -> ParseResult<usize> {
-    let mut len = vec![0; 8];
-    BigEndian::write_u64(&mut len, buf.len() as u64);
-    t.write_all(len.as_slice()).await?;
-    t.write_all(buf.as_slice()).await?;
-    Ok(len.len() + buf.len())
-}
-
-/// First read a big-endian u64, then read the number of bytes
-async fn read_with_length<T: Read + Unpin>(r: &mut T) -> ParseResult<Vec<u8>> {
-    let mut len_buf = vec![0; 8];
-    r.read_exact(&mut len_buf).await?;
-    let len = BigEndian::read_u64(&len_buf);
-
-    let mut vec = vec![0; len as usize]; // FIXME: this might break on 32bit systems
-    r.read_exact(&mut vec).await?;
-    Ok(vec)
-}
-
-/// Parse a single message from a reader stream
-async fn parse_message<R: Read + Unpin>(r: &mut R) -> ParseResult<ApiMessage> {
-    let vec = read_with_length(r).await?;
-    Ok(ApiMessage::parse_from_bytes(&vec)?)
-}
 
 async fn handle_send(r: &Router, send: Send) -> Result<()> {
     for msg in transform::send_to_message(send) {

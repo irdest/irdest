@@ -1,22 +1,26 @@
-pub fn parse_peer(id: &mut Id, p: &str) -> Option<(Id, Endpoint)> {
-    let split: Vec<_> = p.split('#').collect();
+use netmod_tcp::{Endpoint as TcpEp, Result as TcpResult};
 
-    let nmtt = split.get(0)?;
-    match nmtt {
-        &"tcp" => {
-            let data: Vec<_> = split.get(1)?.split(':').collect();
-            let addr = data.get(0)?.to_string();
-            let port = data.get(1)?.parse().ok()?;
-            let dynamic = data
-                .get(2)
-                .and_then(|d| if d == &"true" { Some(true) } else { None })
-                .unwrap_or(false);
-            Some(EpBuilder::tcp(addr, port, dynamic).build(id))
+/// Parse a peer and introduce it to the appropriate netmod metadata
+pub async fn attach_peers(ep: &TcpEp, p: Vec<&str>) -> TcpResult<()> {
+    let mut tcp = vec![];
+    for peer in p {
+        let split: Vec<_> = peer.split('#').collect();
+        let nmtt = match split.get(0) {
+            Some(tt) => tt,
+            None => continue,
+        };
+
+        match nmtt {
+            &"tcp" => tcp.push(match split.get(1).map(Clone::clone) {
+                Some(tt) => tt.to_string(),
+                None => continue,
+            }),
+            tt => {
+                warn!("Unknown peer type: {}", tt);
+                continue;
+            }
         }
-        &"udp" => {
-            let addr = split.get(1)?.to_string();
-            Some(EpBuilder::local_udp(addr).build(id))
-        }
-        _ => return None,
     }
+
+    ep.add_peers(tcp).await
 }
