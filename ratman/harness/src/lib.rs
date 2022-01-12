@@ -11,7 +11,7 @@
 
 use netmod_mem::MemMod;
 use ratman::Router;
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 use tempfile::{tempdir, TempDir};
 
 pub fn temp() -> TempDir {

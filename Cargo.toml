@@ -6,6 +6,7 @@ members = [
 
     # The decentralised router
     "ratman",
+    "ratman/client-lib",
     "ratman/configure",
     "ratman/harness",
     "ratman/identity",

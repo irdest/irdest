@@ -65,17 +65,6 @@ impl MemMod {
         pair.set_io_async(their_io);
     }
 
-    /// Establish a link to an `Io` module
-    ///
-    /// # Panics
-    /// Panics if this MemMod is already linked.
-    pub(crate) fn link_raw(&mut self, io: io::Io) {
-        if self.linked() {
-            panic!("Attempted to link an already linked MemMod.");
-        }
-        self.set_io_async(io);
-    }
-
     /// Remove the connection between MemMods.
     pub fn split(&self) {
         // The previous value in here will now be dropped,

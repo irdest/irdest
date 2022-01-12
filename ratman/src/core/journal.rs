@@ -24,6 +24,7 @@ impl Journal {
     pub(crate) async fn queue(&self, _: Frame) {}
 
     /// Save a FrameID in the known journal page
+    #[allow(unused)]
     pub(crate) async fn save(&self, fid: &SeqId) {
         self.known.write().await.insert(fid.clone());
     }
