@@ -101,9 +101,8 @@ impl Network {
                         use netmod_tcp::{Endpoint, Mode};
                         block_on(async {
                             let ep = Endpoint::new(
-                                &addr,
-                                port,
-                                "qauld",
+                                &format!("{}:{}", addr, port),
+                                "irdest",
                                 if dynamic { Mode::Dynamic } else { Mode::Static },
                             )
                             .await
