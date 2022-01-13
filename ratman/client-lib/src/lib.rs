@@ -185,7 +185,7 @@ async fn send_message() {
 
     sleep(Duration::from_secs(1)).await;
 
-    let client = RatmanIpc::default();
+    let client = RatmanIpc::default().await.unwrap();
     let msg = vec![1, 3, 1, 2];
     info!("Sending message: {:?}", msg);
     client.send_to(client.address(), msg).await.unwrap();
