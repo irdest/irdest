@@ -42,8 +42,12 @@ impl Core {
         let routes = RouteTable::new();
         let _journal = Journal::new();
 
-        let dispatch = Dispatch::new(Arc::clone(&routes), Arc::clone(&drivers));
         let collector = Collector::new();
+        let dispatch = Dispatch::new(
+            Arc::clone(&routes),
+            Arc::clone(&drivers),
+            Arc::clone(&collector),
+        );
 
         let switch = Switch::new(
             Arc::clone(&routes),

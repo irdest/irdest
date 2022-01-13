@@ -1,7 +1,7 @@
 //! Asynchronous Ratman routing core
 
 use crate::{
-    core::{DriverMap, EpTargetPair, RouteTable},
+    core::{Collector, DriverMap, EpTargetPair, RouteTable},
     Message, Result, Slicer,
 };
 use async_std::{sync::Arc, task};
@@ -10,12 +10,21 @@ use netmod::{Frame, Recipient, Target};
 pub(crate) struct Dispatch {
     routes: Arc<RouteTable>,
     drivers: Arc<DriverMap>,
+    collector: Arc<Collector>,
 }
 
 impl Dispatch {
     /// Create a new frame dispatcher
-    pub(crate) fn new(routes: Arc<RouteTable>, drivers: Arc<DriverMap>) -> Arc<Self> {
-        Arc::new(Self { routes, drivers })
+    pub(crate) fn new(
+        routes: Arc<RouteTable>,
+        drivers: Arc<DriverMap>,
+        collector: Arc<Collector>,
+    ) -> Arc<Self> {
+        Arc::new(Self {
+            routes,
+            drivers,
+            collector,
+        })
     }
 
     pub(crate) async fn send_msg(&self, msg: Message) -> Result<()> {
@@ -37,14 +46,26 @@ impl Dispatch {
 
     /// Dispatch a single frame across the network
     pub(crate) async fn send_one(&self, frame: Frame) -> Result<()> {
-        let EpTargetPair(epid, trgt) = self
+        let EpTargetPair(epid, trgt) = match self
             .routes
             .resolve(match frame.recipient {
                 Recipient::User(id) => id,
                 Recipient::Flood => unreachable!(),
             })
             .await
-            .unwrap();
+        {
+            Some(resolve) => resolve,
+
+            // FIXME: "local address" needs to be handled in a
+            // much more robust manner than this!  Previously this
+            // issue was caught on a different layer, but we can't
+            // rely on this anymore.  So: differentiate between
+            // local and remote addresses and route accordingly.
+            None => {
+                self.collector.queue_and_spawn(frame.seqid(), frame).await;
+                return Ok(());
+            }
+        };
 
         let ep = self.drivers.get(epid as usize).await;
         Ok(ep.send(frame, trgt).await?)

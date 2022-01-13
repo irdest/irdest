@@ -54,6 +54,7 @@ impl Collector {
     /// This function can spawn new workers when needed
     #[cfg(test)]
     pub(crate) async fn queue(&self, seq: SeqId, f: Frame) {
+        trace!("Queuing frame for collection");
         self.state.queue(seq, f).await;
 
         let mut map = self.workers.lock().await;
@@ -65,11 +66,11 @@ impl Collector {
     /// Queue the work, and spawn a worker if required
     #[instrument(skip(self, f), level = "trace")]
     pub(crate) async fn queue_and_spawn(&self, seq: SeqId, f: Frame) {
-        info!("Queuing work");
         self.state.queue(seq, f).await;
 
         let mut map = self.workers.lock().await;
         if !map.contains_key(&seq) {
+            debug!("Spawning new collector thread");
             map.insert(seq, Arc::new(Worker::new(seq, Arc::clone(&self.state))));
             drop(map);
 
@@ -111,7 +112,7 @@ impl Collector {
 
         task::spawn(
             async move {
-                info!("Spawning worker");
+                trace!("Spawning worker");
 
                 // This loop breaks when the worker is done
                 while let Some(()) = worker.poll().await {}
@@ -120,7 +121,7 @@ impl Collector {
                 let mut map = workers.lock().await;
                 map.remove(&seq).unwrap();
             }
-            .instrument(info_span!("Worker", seq = seq.to_string().as_str())),
+            .instrument(trace_span!("Worker", seq = seq.to_string().as_str())),
         );
     }
 }
