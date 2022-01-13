@@ -74,6 +74,7 @@ pub fn build_cli() -> ArgMatches<'static> {
 #[async_std::main]
 async fn main() {
     let m = build_cli();
+    let dynamic = m.is_present("ACCEPT_UNKNOWN_PEERS");
 
     // Setup logging
     daemon::setup_logging(m.value_of("VERBOSITY").unwrap());
@@ -94,18 +95,15 @@ async fn main() {
             None
         }) {
         Some(peer_str) => peer_str.split("\n").map(|s| s.trim().to_owned()).collect(),
-        None => daemon::elog("Failed to initialise ratmand: missing peers data!", 2),
+        None if !dynamic => daemon::elog("Failed to initialise ratmand: missing peers data!", 2),
+        None => vec![],
     };
 
     // Setup the Endpoints
     let tcp = match TcpEp::new(
         m.value_of("TCP_BIND").unwrap(),
         "ratmand",
-        if m.is_present("ACCEPT_UNKNOWN_PEERS") {
-            Mode::Dynamic
-        } else {
-            Mode::Static
-        },
+        if dynamic { Mode::Dynamic } else { Mode::Static },
     )
     .await
     {

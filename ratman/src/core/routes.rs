@@ -94,7 +94,7 @@ impl RouteTable {
     /// returns `None` if the specified ID isn't remote.  To get more
     /// control over how the table is queried, use `reachable` instead
     pub(crate) async fn resolve(&self, id: Identity) -> Option<EpTargetPair> {
-        match self.routes.lock().await.get(&id).cloned().unwrap() {
+        match self.routes.lock().await.get(&id).cloned()? {
             RouteType::Remote(ep) => Some(ep),
             RouteType::Local => None,
         }

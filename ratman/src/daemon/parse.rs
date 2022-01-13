@@ -73,6 +73,7 @@ pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
                 (None, None) => {
                     let id = Identity::random();
                     r.add_user(id).await.unwrap();
+                    r.online(id).await.unwrap();
                     send_online_ack(io, id).await?;
                     Ok((id, vec![]))
                 }
