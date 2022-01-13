@@ -67,6 +67,7 @@ pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
                 (Some(Setup_oneof__id::id(id)), Some(_)) => {
                     let id = Identity::from_bytes(id.as_slice());
                     r.online(id).await.unwrap();
+                    send_online_ack(io, id).await?;
                     Ok((id, vec![]))
                 }
                 (None, None) => {
@@ -98,7 +99,8 @@ pub(crate) async fn parse_stream(router: Router, mut io: Io) {
                 continue;
             }
             Err(e) => {
-                info!("Parse stream terminated: `{}`", e);
+                trace!("Error: {:?}", e);
+                info!("Stream was dropped by client");
                 break;
             }
         }

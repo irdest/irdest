@@ -30,17 +30,16 @@ pub struct RatmanIpc {
     recv: Receiver<Message>,
 }
 
-impl Default for RatmanIpc {
-    /// Create a `DEFAULT` variant will always register a new address
-    fn default() -> Self {
-        match task::block_on(RatmanIpc::connect("127.0.0.1:9020", None)) {
-            Ok(ipc) => ipc,
-            Err(e) => panic!("Failed to initialise RatmanIpc: {}", e),
-        }
-    }
-}
-
 impl RatmanIpc {
+    /// Create a `DEFAULT` variant will always register a new address
+    pub async fn default() -> Result<Self> {
+        Self::connect("127.0.0.1:9020", None).await
+    }
+
+    pub async fn default_with_addr(addr: Identity) -> Result<Self> {
+        Self::connect("127.0.0.1:920", Some(addr)).await
+    }
+
     /// Connect to a Ratman IPC backend with an optional address
     ///
     /// `socket_addr` refers to the local address the Ratman daemon is
