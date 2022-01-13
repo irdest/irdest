@@ -6,9 +6,8 @@ extern crate tracing;
 pub(crate) use ratman::*;
 
 use clap::{App, Arg, ArgMatches};
-use std::{fs::File, io::Read};
-
 use netmod_tcp::{Endpoint as TcpEp, Mode};
+use std::{fs::File, io::Read};
 
 pub fn build_cli() -> ArgMatches<'static> {
     App::new("ratmand")
@@ -26,10 +25,11 @@ pub fn build_cli() -> ArgMatches<'static> {
                 .help("Specify the verbosity level at which ratmand logs interactions"),
         )
         .arg(
-            Arg::with_name("NO_PEERING")
-                .long("no-peering")
-                .help("Disable peering for this router -- used for local testing!")
-                .hidden(true)
+            Arg::with_name("ACCEPT_UNKNOWN_PEERS")
+                .long("accept-unknown-peers")
+                .short("d")
+                .required_unless_one(&["PEERS", "PEER_FILE"])
+                .help("Configure ratmand to peer with any incoming connection it may encounter")
         )
         .arg(
             Arg::with_name("API_BIND")
@@ -98,7 +98,17 @@ async fn main() {
     };
 
     // Setup the Endpoints
-    let tcp = match TcpEp::new(m.value_of("TCP_BIND").unwrap(), "ratmand", Mode::Static).await {
+    let tcp = match TcpEp::new(
+        m.value_of("TCP_BIND").unwrap(),
+        "ratmand",
+        if m.is_present("ACCEPT_UNKNOWN_PEERS") {
+            Mode::Dynamic
+        } else {
+            Mode::Static
+        },
+    )
+    .await
+    {
         Ok(tcp) => {
             let peers = peers.iter().map(|s| s.as_str()).collect();
             match daemon::attach_peers(&tcp, peers).await {
