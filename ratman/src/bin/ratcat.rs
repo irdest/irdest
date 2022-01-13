@@ -1,6 +1,6 @@
 use clap::{App, Arg};
 use directories::ProjectDirs;
-use ratman_client::RatmanIpc;
+use ratman_client::{Identity, RatmanIpc, Receive_Type};
 use serde::{Deserialize, Serialize};
 use std::{
     fs::{create_dir, File},
@@ -8,7 +8,6 @@ use std::{
     os::unix::prelude::AsRawFd,
     path::PathBuf,
 };
-use types::Identity;
 
 pub fn build_cli() -> App<'static, 'static> {
     App::new("ratcat")
@@ -117,10 +116,14 @@ async fn handle_receives(ipc: &RatmanIpc, num: usize) -> Result<(), Box<dyn std:
     let is_tty = nix::unistd::isatty(stdout.as_raw_fd()).unwrap_or(false);
 
     for _ in 0..num {
-        let mut msg = match ipc.next().await {
+        let (tt, mut msg) = match ipc.next().await {
             Some(msg) => msg,
             None => break,
         };
+
+        if tt == Receive_Type::FLOOD {
+            continue;
+        }
 
         let payload: Vec<_> = msg.take_payload();
         if is_tty {
@@ -142,7 +145,10 @@ async fn main() {
     let m = app.clone().get_matches();
 
     //// Resolve collision between RECIPIENT and RECEIVE default value
-    if !m.is_present("RECIPIENT") && m.value_of("RECEIVE") == Some("infer") {
+    if !m.is_present("RECIPIENT")
+        && !m.is_present("REGISTER")
+        && m.value_of("RECEIVE") == Some("infer")
+    {
         app.print_help().unwrap();
         std::process::exit(2);
     }

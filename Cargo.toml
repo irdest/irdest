@@ -28,6 +28,7 @@ members = [
     "netmods/netmod-wd",
 
     # End-user applications
+    "clients/irdest-echo",
     # "clients/hubd",
     # "clients/irdest-gtk",
     # "utils/android-support",

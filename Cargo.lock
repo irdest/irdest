@@ -700,6 +700,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "irdest-echo"
+version = "0.1.0"
+dependencies = [
+ "async-std",
+ "ratman-client",
+]
+
+[[package]]
 name = "itoa"
 version = "0.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"

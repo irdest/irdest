@@ -16,18 +16,16 @@ use async_std::{
     net::TcpStream,
     task,
 };
+pub use types::{api::Receive_Type, message::Message, Error, Identity, Result};
 use types::{
     api::{self, ApiMessageEnum, Setup_Type::ACK},
-    encode_message, message,
-    message::Message,
-    parse_message, read_with_length, write_with_length, Identity,
+    encode_message, message, parse_message, read_with_length, write_with_length,
 };
-pub use types::{Error, Result};
 
 pub struct RatmanIpc {
     socket: TcpStream,
     addr: Identity,
-    recv: Receiver<Message>,
+    recv: Receiver<(Receive_Type, Message)>,
 }
 
 impl RatmanIpc {
@@ -112,12 +110,12 @@ impl RatmanIpc {
     }
 
     /// Receive a message sent to this address
-    pub async fn next(&self) -> Option<Message> {
+    pub async fn next(&self) -> Option<(Receive_Type, Message)> {
         self.recv.recv().await.ok()
     }
 }
 
-async fn run_receive(mut socket: TcpStream, tx: Sender<Message>) {
+async fn run_receive(mut socket: TcpStream, tx: Sender<(Receive_Type, Message)>) {
     loop {
         trace!("Reading message from stream...");
         let msg = match read_with_length(&mut socket).await {
@@ -132,8 +130,11 @@ async fn run_receive(mut socket: TcpStream, tx: Sender<Message>) {
         match types::decode_message(&msg).map(|m| m.inner) {
             Ok(Some(one_of)) => match one_of {
                 ApiMessageEnum::recv(mut msg) => {
+                    let tt = msg.field_type;
+                    let msg = msg.take_msg();
+
                     debug!("Forwarding message to IPC wrapper");
-                    if let Err(e) = tx.send(msg.take_msg()).await {
+                    if let Err(e) = tx.send((tt, msg)).await {
                         error!("Failed to forward received message: {}", e);
                     }
                 }
