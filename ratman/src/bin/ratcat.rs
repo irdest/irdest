@@ -36,20 +36,13 @@ pub fn build_cli() -> App<'static, 'static> {
         .arg(
             Arg::with_name("RECEIVE")
                 .long("recv")
-                .takes_value(true)
-                .default_value("infer")
-                .hide_default_value(true)
-                .help("Set your computer to receive data via ratcat.  If `--recv` is provided in addition to sending a message, ratcat will wait until it received replies to your messages.  When not provided with an argument `--recv` will infer that message count from the sent number of messages.  When calling ratcat with `--recv` without sending a message, an argument is always required, since there is no way to infer the number of messages to wait for")
+                .help("Set your computer to receive data via ratcat.")
         )
-        // .arg(
-        //     Arg::with_name("VERBOSITY")
-        //         .takes_value(true)
-        //         .short("v")
-        //         .long("verbosity")
-        //         .possible_values(&["trace", "debug", "info", "warn", "error", "fatal"])
-        //         .default_value("info")
-        //         .help("Specify the verbosity level at which ratmand logs interactions"),
-        // )
+        .arg(
+            Arg::with_name("RECV_COUNT")
+                .long("count")
+                .help("Specify the number of messages that `--recv` should wait for.  Default value is to wait forever.")
+        )
         .arg(
             Arg::with_name("API_BIND")
                 .takes_value(true)
@@ -76,6 +69,7 @@ async fn register(path: PathBuf, bind: &str) -> Result<(), Box<dyn std::error::E
     };
     let cfg_str = serde_json::to_string_pretty(&cfg)?;
     f.write_all(cfg_str.as_bytes())?;
+    eprintln!("Registered address: {}", ipc.address());
     Ok(())
 }
 
@@ -115,7 +109,7 @@ async fn handle_receives(ipc: &RatmanIpc, num: usize) -> Result<(), Box<dyn std:
     let mut stdout = stdout();
     let is_tty = nix::unistd::isatty(stdout.as_raw_fd()).unwrap_or(false);
 
-    for _ in 0..num {
+    for _ in if num == 0 { 0..std::usize::MAX } else { 0..num } {
         let (tt, mut msg) = match ipc.next().await {
             Some(msg) => msg,
             None => break,
@@ -144,20 +138,20 @@ async fn main() {
     let mut app = build_cli();
     let m = app.clone().get_matches();
 
-    //// Resolve collision between RECIPIENT and RECEIVE default value
-    if !m.is_present("RECIPIENT")
-        && !m.is_present("REGISTER")
-        && m.value_of("RECEIVE") == Some("infer")
-    {
-        app.print_help().unwrap();
-        std::process::exit(2);
-    }
-
     //// Setup the application config directory
     let dirs = ProjectDirs::from("org", "irdest", "ratcat")
         .expect("Failed to initialise project directories for this platform!");
     let cfg_dir = PathBuf::from(dirs.config_dir());
     let _ = create_dir(&cfg_dir);
+
+    let num: usize = match m.value_of("RECV_COUNT").map(|c| c.parse().ok()) {
+        Some(Some(num)) => num,
+        Some(None) => {
+            eprintln!("Failed to parse `--count` as a number!");
+            std::process::exit(2);
+        }
+        None => 0,
+    };
 
     //// To register is a bit special because we terminate afterwards
     let api_addr = m.value_of("API_BIND").unwrap();
@@ -215,13 +209,7 @@ async fn main() {
     }
 
     //// If we were given the --recv flag we try to receive some data
-    if let Some(recv) = m.value_of("RECEIVE") {
-        let num = if recv == "infer" {
-            num_msgs
-        } else {
-            recv.parse().expect("Failed to parse --recv as number!")
-        };
-
+    if m.is_present("RECEIVE") {
         match handle_receives(&ipc, num).await {
             Ok(()) => {}
             Err(e) => {
