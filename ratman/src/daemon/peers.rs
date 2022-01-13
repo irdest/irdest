@@ -4,6 +4,10 @@ use netmod_tcp::{Endpoint as TcpEp, Result as TcpResult};
 pub async fn attach_peers(ep: &TcpEp, p: Vec<&str>) -> TcpResult<()> {
     let mut tcp = vec![];
     for peer in p {
+        if peer == "" {
+            continue;
+        }
+
         let split: Vec<_> = peer.split('#').collect();
         let nmtt = match split.get(0) {
             Some(tt) => tt,

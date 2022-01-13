@@ -50,6 +50,7 @@ async fn run_relay(r: Router, online: OnlineMap) {
             timesig,
             sign,
         } = r.next().await;
+        debug!("Receiving message for {:?}", recipient);
         let recv = types::api::receive_default(types::message::received(
             id,
             sender,
@@ -64,16 +65,15 @@ async fn run_relay(r: Router, online: OnlineMap) {
 
         match recipient {
             Recipient::User(ref id) => {
-                if let Some(io) = online.lock().await.get(id) {
-                    let mut io = io.lock().await;
+                if let Some(ref mut io) = online.lock().await.get(id).map(Clone::clone) {
+                    info!("Forwarding message to online client!");
                     if let Err(e) = parse::forward_recv(io.as_io(), recv).await {
                         error!("Failed to forward received message: {}", e);
                     }
                 }
             }
             Recipient::Flood => {
-                for (_, io) in online.lock().await.iter_mut() {
-                    let mut io = io.lock().await;
+                for (_, ref mut io) in online.lock().await.iter_mut() {
                     if let Err(e) = parse::forward_recv(io.as_io(), recv.clone()).await {
                         error!("Failed to forward received message: {}", e);
                     }
@@ -87,7 +87,7 @@ async fn run_relay(r: Router, online: OnlineMap) {
 pub async fn run(r: Router, addr: SocketAddr) -> Result<()> {
     info!("Listening for API connections on socket {:?}", addr);
     let listener = TcpListener::bind(addr).await?;
-    let mut state = DaemonState::new(&listener);
+    let mut state = DaemonState::new(&listener, r.clone());
     let online = state.get_online().await;
 
     let relay = spawn(run_relay(r.clone(), online));
@@ -98,7 +98,8 @@ pub async fn run(r: Router, addr: SocketAddr) -> Result<()> {
             None => continue,
         };
 
-        spawn(parse::parse_stream(r.clone(), io));
+        info!("Established new client connection");
+        spawn(parse::parse_stream(r.clone(), io.clone()));
     }
 
     relay.cancel().await;

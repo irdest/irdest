@@ -72,6 +72,13 @@ pub fn offline(id: Identity, token: Vec<u8>) -> Setup {
     setup
 }
 
+pub fn online_ack(id: Identity) -> Setup {
+    let mut setup = Setup::new();
+    setup.set_field_type(Setup_Type::ACK);
+    setup.set_id(id.as_bytes().to_vec());
+    setup
+}
+
 //////////// PEERS type
 
 /// Create a new discovery message

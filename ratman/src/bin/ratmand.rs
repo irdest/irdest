@@ -26,6 +26,12 @@ pub fn build_cli() -> ArgMatches<'static> {
                 .help("Specify the verbosity level at which ratmand logs interactions"),
         )
         .arg(
+            Arg::with_name("NO_PEERING")
+                .long("no-peering")
+                .help("Disable peering for this router -- used for local testing!")
+                .hidden(true)
+        )
+        .arg(
             Arg::with_name("API_BIND")
                 .takes_value(true)
                 .long("bind")
@@ -81,7 +87,12 @@ async fn main() {
             let mut buf = String::new();
             f.read_to_string(&mut buf).ok()?;
             Some(buf)
-        })) {
+        }))
+        .or(if m.is_present("NO_PEERING") {
+            Some("".into())
+        } else {
+            None
+        }) {
         Some(peer_str) => peer_str.split("\n").map(|s| s.trim().to_owned()).collect(),
         None => daemon::elog("Failed to initialise ratmand: missing peers data!", 2),
     };

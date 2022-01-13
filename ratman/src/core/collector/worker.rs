@@ -26,14 +26,14 @@ impl Worker {
     }
 
     /// Poll for new frames to assemble from the frame pool
-    #[instrument(skip(self), level = "info")]
+    #[instrument(skip(self), level = "trace")]
     pub(crate) async fn poll(&self) -> Option<()> {
-        info!("Polling for new work to be done");
+        trace!("Polling for new work to be done");
         let frame = self.parent.get(&self.seq).await;
         let mut buf = self.buf.lock().await;
 
-        info!("Joining frames");
         if let Some(msg) = join_frames(&mut buf, frame) {
+            debug!("Joining frames");
             self.parent.finish(msg).await;
             None
         } else {

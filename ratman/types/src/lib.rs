@@ -42,11 +42,17 @@ pub async fn read_with_length<T: Read + Unpin>(r: &mut T) -> Result<Vec<u8>> {
 /// Parse a single message from a reader stream
 pub async fn parse_message<R: Read + Unpin>(r: &mut R) -> Result<ApiMessage> {
     let vec = read_with_length(r).await?;
-    Ok(ApiMessage::parse_from_bytes(&vec)?)
+    decode_message(&vec)
+}
+
+#[inline]
+pub fn decode_message(vec: &Vec<u8>) -> Result<ApiMessage> {
+    Ok(ApiMessage::parse_from_bytes(vec)?)
 }
 
 /// Encode an ApiMessage into a binary payload you can then pass to
 /// `write_with_length`
+#[inline]
 pub fn encode_message(msg: ApiMessage) -> Result<Vec<u8>> {
     let mut buf = vec![];
     msg.write_to_vec(&mut buf)?;

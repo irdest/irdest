@@ -1,14 +1,16 @@
 use crate::{
-    daemon::{state::ShareIo, transform},
+    daemon::{state::Io, transform},
     Result, Router,
 };
 
 use async_std::io::{Read, Write};
 use identity::Identity;
-use protobuf::Message;
 use types::{
-    api::{ApiMessageEnum, Peers, Receive, Send, Setup, Setup_Type, Setup_oneof__id},
-    parse_message, read_with_length, write_with_length, Error as ParseError, Result as ParseResult,
+    api::{
+        api_setup, online_ack, ApiMessageEnum, Peers, Receive, Send, Setup, Setup_Type,
+        Setup_oneof__id,
+    },
+    encode_message, parse_message, write_with_length, Error as ParseError, Result as ParseResult,
 };
 
 async fn handle_send(r: &Router, send: Send) -> Result<()> {
@@ -18,10 +20,18 @@ async fn handle_send(r: &Router, send: Send) -> Result<()> {
     Ok(())
 }
 
-async fn handle_setup(r: &Router, setup: Setup) -> Result<()> {
+async fn handle_setup(_r: &Router, s: Setup) -> Result<()> {
+    trace!("Handle setup message: {:?}", s);
     Ok(())
 }
-async fn handle_peers(r: &Router, peers: Peers) -> Result<()> {
+
+async fn handle_peers(_: &Router, _: Peers) -> Result<()> {
+    Ok(())
+}
+
+async fn send_online_ack<Io: Write + Unpin>(io: &mut Io, id: Identity) -> ParseResult<()> {
+    let ack = encode_message(api_setup(online_ack(id)))?;
+    write_with_length(io, &ack).await?;
     Ok(())
 }
 
@@ -38,7 +48,10 @@ async fn handle_peers(r: &Router, peers: Peers) -> Result<()> {
 /// 3. Any other payload is invalid
 pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
     io: &mut Io,
+    r: &Router,
 ) -> ParseResult<(Identity, Vec<u8>)> {
+    trace!("Handle authentication request for new connection");
+
     let one_of = parse_message(io)
         .await
         .map(|msg| msg.inner)?
@@ -52,9 +65,16 @@ pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
             match (id, token) {
                 // FIXME: validate token
                 (Some(Setup_oneof__id::id(id)), Some(_)) => {
-                    Ok((Identity::from_bytes(id.as_slice()), vec![]))
+                    let id = Identity::from_bytes(id.as_slice());
+                    r.online(id).await.unwrap();
+                    Ok((id, vec![]))
                 }
-                (None, None) => Ok((Identity::random(), vec![])),
+                (None, None) => {
+                    let id = Identity::random();
+                    r.add_user(id).await.unwrap();
+                    send_online_ack(io, id).await?;
+                    Ok((id, vec![]))
+                }
                 _ => Err(ParseError::InvalidAuth),
             }
         }
@@ -63,10 +83,8 @@ pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
 }
 
 /// Parse messages from a stream until it terminates
-pub(crate) async fn parse_stream(router: Router, io: ShareIo) {
+pub(crate) async fn parse_stream(router: Router, mut io: Io) {
     loop {
-        let mut io = io.lock().await;
-
         // Match on the msg type and call the appropriate handler
         match parse_message(io.as_io()).await.map(|msg| msg.inner) {
             Ok(Some(one_of)) => match one_of {
@@ -85,15 +103,14 @@ pub(crate) async fn parse_stream(router: Router, io: ShareIo) {
             }
         }
         .unwrap_or_else(|e| error!("Failed to execute command: {:?}", e));
-
-        drop(io);
-        async_std::task::sleep(std::time::Duration::from_micros(100)).await;
     }
 }
 
 pub(crate) async fn forward_recv<Io: Write + Unpin>(io: &mut Io, r: Receive) -> ParseResult<()> {
-    let mut buf = vec![];
-    r.write_to_vec(&mut buf)?;
-    write_with_length(io, &buf).await?;
+    let api = types::api::api_recv(r);
+    trace!("Encoding received message...");
+    let msg = types::encode_message(api)?;
+    trace!("Forwarding payload through stream");
+    write_with_length(io, &msg).await?;
     Ok(())
 }

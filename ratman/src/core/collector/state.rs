@@ -33,7 +33,7 @@ impl State {
             match unsafe { Pin::new_unchecked(lock).poll(ctx) } {
                 Poll::Ready(ref mut not) => match not.pop_front() {
                     Some(f) => {
-                        info!("Received new message for local service");
+                        trace!("Received new message for local service");
                         Poll::Ready(f)
                     }
                     None => {
@@ -74,7 +74,7 @@ impl State {
     /// Yield a finished message to the state
     #[tracing::instrument(skip(self), level = "trace")]
     pub(super) async fn finish(&self, msg: Message) {
-        info!("Finishing up message collection");
+        debug!("Finishing up message collection");
         let mut done = self.done.lock().await;
         done.push_back(msg);
         Notify::wake(&mut *done);
