@@ -57,7 +57,7 @@ pub fn build_cli() -> ArgMatches<'static> {
             Arg::with_name("PEERS")
                 .long("peers")
                 .short("p")
-                .help("Specify a set of peers via the PEER SYNTAX: <netmod-id>#<address>[:<port>].  Incompatible with `-f`/ `-peer-file`")
+                .help("Specify a set of peers via the PEER SYNTAX: <netmod-id>#<address>:<port>.  Incompatible with `-f`/ `-peer-file`. Valid netmod-ids are tcp. Example: tcp#10.0.0.10:9000")
                 .takes_value(true)
                 .multiple(true),
         )
