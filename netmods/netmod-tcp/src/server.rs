@@ -198,11 +198,6 @@ impl Server {
         use PeerState::*;
         let _self = Arc::clone(self);
         match (state, self.mode, maybe_id) {
-            // A peer we didn't know before, while running in static mode
-            (_, Mode::Static, None) => {
-                debug!("{} Running STATIC: dropping packet!", upm);
-                return;
-            }
             // A peer we didn't know before, while running in dynamic mode
             (RxOnly, Mode::Dynamic, None) => {
                 let id = self.routes.upgrade(rx_peer, port, s).await;
@@ -218,6 +213,11 @@ impl Server {
             (TxOnly, _, Some(id)) => {
                 self.routes.add_src(id, *src).await;
                 self.send_hello(id, stream).await;
+            }
+            // A peer we didn't know before, while running in static mode
+            (_, Mode::Static, None) => {
+                debug!("{} Running STATIC: dropping packet!", upm);
+                return;
             }
             (link, mode, id) => panic!("{:?} {:?} {:?}", link, mode, id),
         }

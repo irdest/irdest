@@ -14,6 +14,7 @@ use types::{
 };
 
 async fn handle_send(r: &Router, send: Send) -> Result<()> {
+    debug!("Queuing message to send");
     for msg in transform::send_to_message(send) {
         r.send(msg).await?;
     }
