@@ -1,5 +1,11 @@
 //! # Ratman
 //!
+//! **Note** most likely you are interested in the
+//! [ratman-client](https://docs.rs/ratman-client) crate, which allows
+//! you to connect to a Ratman daemon via an IPC socket.
+//! 
+//! ## Technical overview
+//! 
 //! A modular userspace frame router, implementing distance vector
 //! routing, and delay tolerance.  Handles topology updates and user
 //! discovery via flood heartbeats, and provides a non-namespaced view
@@ -20,9 +26,7 @@
 //! The interface that binds the Ratman router to underlying drivers
 //! is called `netmod`, which handles sending and receiving frames.  A
 //! frame is a piece of data, with a checksum, which may be part of a
-//! larger mesage.  In the qaul repository, you can find several
-//! driver implementations for various platforms.  If you need to
-//! write your own, don't hesitate to ask for help.
+//! larger mesage.
 //!
 //! Routing is then done by mapping a user ID to an interface (plus
 //! some target data that's left to the driver to interpret).  This
@@ -54,11 +58,6 @@
 //!
 //! [`ratman-netmod`]: https://crates.io/crate/ratman-netmod
 //! [`ratman-identity`]: https://crates.io/crate/ratman-identity
-//!
-//! Following is a small example.  Check out the [`tests`] directory
-//! for more!
-//!
-//! [`tests`]: https://git.qaul.org/qaul/qaul/blob/develop/ratman/tests
 //!
 //! ```rust
 //! # use async_std::task;
@@ -104,33 +103,13 @@
 //! users, more hops, and more delay between marking a user as
 //! "online" and being able to sense their presence.
 //!
-//! ## Clocking
-//!
-//! Generally, Ratman handles scheduling and internal clocking for
-//! you.  There's no need to call update functions to make poll's
-//! work, or to actually dispatch messages.  During initialisation the
-//! constructor spawns several long running tasks, that deal with
-//! various tasks in the router stack in a loop.  The downside to this
-//! is that the user of the library (your app) has no control over how
-//! this code is called.
-//!
-//! This is where the Router API adds clock points, and the `clock`
-//! submodule, enabling you to reduce data rates in low power
-//! settings, without having to teach Ratman about your platform
-//! specifics.
-//!
-//! Check out the [clockctrl] crate for more details!
-//!
-//! [clockctrl]: https://docs.rs/clockctrl/0.1.0/clockctrl/
-//!
-//!
 //! ## License
 //!
-//! Ratman is part of the qaul project, and licensed under the
-//! [GNU Affero General Public License version 3 or
+//! Ratman is part of the Irdest project, and licensed under the [GNU
+//! Affero General Public License version 3 or
 //! later](../licenses/agpl-3.0.md).
 //!
-//! See the main qaul repository README for additional permissions
+//! See the Irdest repository README for additional permissions
 //! granted by the authors for this code.
 
 #[macro_use]
