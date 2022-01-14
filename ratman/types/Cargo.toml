@@ -1,7 +1,6 @@
 [package]
 name = "ratman-types"
 description = "Encoding types for the Ratman API"
-author = ["Katharina Fey <kookie@spacekookie.de"]
 version = "0.1.0"
 edition = "2018"
 license = "GPL-3.0-or-later"

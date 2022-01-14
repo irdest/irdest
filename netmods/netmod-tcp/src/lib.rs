@@ -99,11 +99,10 @@ impl Endpoint {
     /// peer doesn't know the local IP or is rejecting unknown
     /// connections.
     pub async fn add_peers(&self, peers: Vec<String>) -> Result<()> {
-        let r = Resolver::new().await;
         for p in peers.into_iter() {
             if &p == "" && continue {}
 
-            let peer = match r.resolve_peer(&p).await {
+            let peer = match Resolver::resolve(&p).await {
                 Some(p) => p,
                 None => {
                     warn!("Failed to parse peer: '{}'... skipping", p);

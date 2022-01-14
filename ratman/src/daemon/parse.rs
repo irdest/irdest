@@ -7,8 +7,8 @@ use async_std::io::{Read, Write};
 use identity::Identity;
 use types::{
     api::{
-        all_peers, api_setup, online_ack, ApiMessageEnum, Peers, Peers_Type, Receive, Send, Setup,
-        Setup_Type, Setup_oneof__id,
+        all_peers, api_peers, api_setup, online_ack, ApiMessageEnum, Peers, Peers_Type, Receive,
+        Send, Setup, Setup_Type, Setup_oneof__id,
     },
     encode_message, parse_message, write_with_length, Error as ParseError, Result as ParseResult,
 };
@@ -31,9 +31,9 @@ async fn handle_peers(io: &mut Io, r: &Router, peers: Peers) -> Result<()> {
         return Ok(()); // Ignore all other messages
     }
 
-    let all = r.known_addresses().await?;
-    let response = encode_message(all_peers(all))?;
-    write_with_length(io, &response).await?;
+    let all = r.known_addresses().await;
+    let response = encode_message(api_peers(all_peers(all))).unwrap();
+    write_with_length(io.as_io(), &response).await.unwrap(); // baaaaad
     Ok(())
 }
 
@@ -102,7 +102,7 @@ pub(crate) async fn parse_stream(router: Router, mut io: Io) {
             Ok(Some(one_of)) => match one_of {
                 ApiMessageEnum::send(send) => handle_send(&router, send).await,
                 ApiMessageEnum::setup(setup) => handle_setup(&mut io, &router, setup).await,
-                ApiMessageEnum::peers(peers) => handle_peers(&router, peers).await,
+                ApiMessageEnum::peers(peers) => handle_peers(&mut io, &router, peers).await,
                 ApiMessageEnum::recv(_) => continue, // Ignore "Receive" messages
             },
             Ok(None) => {

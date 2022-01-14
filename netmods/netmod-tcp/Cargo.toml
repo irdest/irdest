@@ -11,7 +11,6 @@ identity = { version = "0.6", path = "../../ratman/identity", package = "ratman-
 netmod = { version ="0.5.0", path = "../../ratman/netmod", package = "ratman-netmod" }
 
 async-std = { version = "1.0", features = ["attributes", "unstable"] }
-async-std-resolver = "0.20"
 async-trait = "0.1"
 bincode = "1.0"
 byteorder = "1.0"
