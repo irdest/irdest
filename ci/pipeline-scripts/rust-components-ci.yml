@@ -18,3 +18,16 @@ build-ratman-static:
   artifacts:
     paths:
       - result-ratman/*
+
+build-ratman-static-aarch64:
+  tags: [ irdest-nix ]
+  stage: build
+  script:
+    - nix-env -iA cachix -f https://cachix.org/api/v1/install
+    - cachix use irdest
+    - nix-build nix -A pkgsCross.aarch64-multiplatform.pkgsStatic.stdenv -A pkgsCross.aarch64-multiplatform.pkgsStatic.buildPackages.rustc -A pkgsCross.aarch64-multiplatform.pkgsStatic.buildPackages.cargo -o toolchain
+    - cachix push irdest ./toolchain* || echo "couldn't push"
+    - nix-build nix -A pkgsCross.aarch64-multiplatform.pkgsStatic.ratman -o result-ratman
+  artifacts:
+    paths:
+      - result-ratman/*
