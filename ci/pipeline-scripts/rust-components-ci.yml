@@ -5,3 +5,16 @@ build-ratman:
   stage: build
   script:
     - nix-build nix -A ratman
+
+build-ratman-static:
+  tags: [ irdest-nix ]
+  stage: build
+  script:
+    - nix-env -iA cachix -f https://cachix.org/api/v1/install
+    - cachix use irdest
+    - nix-build nix -A pkgsStatic.buildPackages.rustc -A pkgsStatic.buildPackages.cargo -o toolchain
+    - cachix push irdest ./toolchain* || echo "couldn't push"
+    - nix-build nix -A pkgsStatic.ratman -o result-ratman
+  artifacts:
+    paths:
+      - result-ratman/*
