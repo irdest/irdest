@@ -8,6 +8,7 @@ mod io;
 mod peer;
 mod proto;
 mod ptr;
+mod resolve;
 mod routes;
 mod server;
 
@@ -17,6 +18,7 @@ pub(crate) use io::IoPair;
 pub(crate) use peer::{DstAddr, Peer, PeerState, SourceAddr};
 pub(crate) use proto::{Packet, PacketBuilder};
 pub(crate) use ptr::AtomPtr;
+pub(crate) use resolve::Resolver;
 pub(crate) use routes::Routes;
 pub(crate) use server::{LockedStream, Server};
 
@@ -97,34 +99,20 @@ impl Endpoint {
     /// peer doesn't know the local IP or is rejecting unknown
     /// connections.
     pub async fn add_peers(&self, peers: Vec<String>) -> Result<()> {
+        let r = Resolver::new().await;
         for p in peers.into_iter() {
             if &p == "" && continue {}
 
-            let parts: Vec<_> = p.split(|x| x == ' ').collect();
-            let _type = parts.get(1);
-            let peer = match parts[0].parse().ok() {
-                Some(s) => s,
+            let peer = match r.resolve_peer(&p).await {
+                Some(p) => p,
                 None => {
-                    error!("Failed to parse peer info `{}`", parts[0]);
+                    warn!("Failed to parse peer: '{}'... skipping", p);
                     continue;
                 }
             };
 
-            let t = match _type {
-                Some(&"limited") => LinkType::Limited,
-                _ => LinkType::Bidirect,
-            };
-
-            trace!(
-                "Adding peer: {} ({})",
-                peer,
-                match t {
-                    LinkType::Limited => "limited",
-                    LinkType::Bidirect => "",
-                }
-            );
-
-            self.routes.add_via_dst(peer, t).await;
+            trace!("Adding peer: {} ({})", peer, "",);
+            self.routes.add_via_dst(peer, LinkType::Bidirect).await;
         }
 
         Ok(())

@@ -16,6 +16,10 @@ required-features = ["daemon"]
 name = "ratcat"
 required-features = ["ratcat"]
 
+[[bin]]
+name = "ratctl"
+required-features = ["ratcat"]
+
 [features]
 default = []
 tcp = ["netmod-tcp"]

@@ -33,6 +33,8 @@ pub fn setup_logging(lvl: &str) {
         .add_directive("async_std=error".parse().unwrap())
         .add_directive("async_io=error".parse().unwrap())
         .add_directive("polling=error".parse().unwrap())
+        .add_directive("trust_dns_proto=error".parse().unwrap())
+        .add_directive("trust_dns_resolver=warn".parse().unwrap())
         .add_directive("mio=error".parse().unwrap());
 
     // Initialise the logger
