@@ -40,6 +40,7 @@ message Setup {
                 OFFLINE = 1;
                 /// Response type sent for a previous Setup message
                 ACK = 2;
+                ANONYMOUS = 3;
         }
         Type type = 1;
         optional bytes id = 2;

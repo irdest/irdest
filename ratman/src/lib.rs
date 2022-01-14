@@ -296,9 +296,9 @@ impl Router {
         self.inner.next().await
     }
 
-    #[cfg(test)]
-    pub async fn get_users(&self) -> Vec<Identity> {
-        self.inner.get_users().await
+    /// Return a list of all known addresses
+    pub async fn known_addresses(&self) -> Vec<Identity> {
+        self.inner.all_addrs().await
     }
 }
 

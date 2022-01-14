@@ -78,6 +78,18 @@ impl RatmanIpc {
         Ok(Self { socket, addr, recv })
     }
 
+    /// Connect to the daemon without providing or wanting an address
+    pub async fn anonymous(socket_addr: &str) -> Result<Self> {
+        let mut socket = TcpStream::connect(socket_addr).await?;
+
+        let introduction = api::api_setup(api::anonymous());
+        write_with_length(&mut socket, &encode_message(introduction)?).await?;
+        
+        let addr = Identity::random(); // Never used
+        let (_, recv) = unbounded(); // Never used
+        Ok(Self { socket, addr, recv })
+    }
+
     /// Return the currently assigned address
     pub fn address(&self) -> Identity {
         self.addr

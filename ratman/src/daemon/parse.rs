@@ -7,8 +7,8 @@ use async_std::io::{Read, Write};
 use identity::Identity;
 use types::{
     api::{
-        api_setup, online_ack, ApiMessageEnum, Peers, Receive, Send, Setup, Setup_Type,
-        Setup_oneof__id,
+        all_peers, api_setup, online_ack, ApiMessageEnum, Peers, Peers_Type, Receive, Send, Setup,
+        Setup_Type, Setup_oneof__id,
     },
     encode_message, parse_message, write_with_length, Error as ParseError, Result as ParseResult,
 };
@@ -21,12 +21,19 @@ async fn handle_send(r: &Router, send: Send) -> Result<()> {
     Ok(())
 }
 
-async fn handle_setup(_r: &Router, s: Setup) -> Result<()> {
+async fn handle_setup(_io: &mut Io, _r: &Router, s: Setup) -> Result<()> {
     trace!("Handle setup message: {:?}", s);
     Ok(())
 }
 
-async fn handle_peers(_: &Router, _: Peers) -> Result<()> {
+async fn handle_peers(io: &mut Io, r: &Router, peers: Peers) -> Result<()> {
+    if peers.field_type != Peers_Type::REQ {
+        return Ok(()); // Ignore all other messages
+    }
+
+    let all = r.known_addresses().await?;
+    let response = encode_message(all_peers(all))?;
+    write_with_length(io, &response).await?;
     Ok(())
 }
 
@@ -50,7 +57,7 @@ async fn send_online_ack<Io: Write + Unpin>(io: &mut Io, id: Identity) -> ParseR
 pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
     io: &mut Io,
     r: &Router,
-) -> ParseResult<(Identity, Vec<u8>)> {
+) -> ParseResult<Option<(Identity, Vec<u8>)>> {
     trace!("Handle authentication request for new connection");
 
     let one_of = parse_message(io)
@@ -69,18 +76,20 @@ pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
                     let id = Identity::from_bytes(id.as_slice());
                     r.online(id).await.unwrap();
                     send_online_ack(io, id).await?;
-                    Ok((id, vec![]))
+                    Ok(Some((id, vec![])))
                 }
                 (None, None) => {
                     let id = Identity::random();
                     r.add_user(id).await.unwrap();
                     r.online(id).await.unwrap();
                     send_online_ack(io, id).await?;
-                    Ok((id, vec![]))
+                    Ok(Some((id, vec![])))
                 }
                 _ => Err(ParseError::InvalidAuth),
             }
         }
+        // If the client wants to remain anonymous we don't return an ID/token pair
+        ApiMessageEnum::setup(setup) if setup.field_type == Setup_Type::ANONYMOUS => Ok(None),
         _ => Err(ParseError::InvalidAuth),
     }
 }
@@ -92,7 +101,7 @@ pub(crate) async fn parse_stream(router: Router, mut io: Io) {
         match parse_message(io.as_io()).await.map(|msg| msg.inner) {
             Ok(Some(one_of)) => match one_of {
                 ApiMessageEnum::send(send) => handle_send(&router, send).await,
-                ApiMessageEnum::setup(setup) => handle_setup(&router, setup).await,
+                ApiMessageEnum::setup(setup) => handle_setup(&mut io, &router, setup).await,
                 ApiMessageEnum::peers(peers) => handle_peers(&router, peers).await,
                 ApiMessageEnum::recv(_) => continue, // Ignore "Receive" messages
             },

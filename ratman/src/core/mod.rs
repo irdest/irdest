@@ -134,8 +134,8 @@ impl Core {
         self.routes.delete(id).await
     }
 
-    #[cfg(test)]
-    pub(crate) async fn get_users(&self) -> Vec<Identity> {
+    /// Return all known addresses
+    pub(crate) async fn all_addrs(&self) -> Vec<Identity> {
         self.routes.all().await
     }
 }

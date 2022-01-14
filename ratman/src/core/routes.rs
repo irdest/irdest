@@ -83,7 +83,6 @@ impl RouteTable {
     }
 
     /// Get all users in the routing table
-    #[cfg(test)]
     pub(crate) async fn all(&self) -> Vec<Identity> {
         self.routes.lock().await.iter().map(|(i, _)| *i).collect()
     }

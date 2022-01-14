@@ -49,10 +49,14 @@ impl<'a> DaemonState<'a> {
             let mut stream = stream?;
 
             let (id, _) = match parse::handle_auth(&mut stream, &self.router).await {
-                Ok(pair) => {
+                Ok(Some(pair)) => {
                     debug!("Successfully authenticated: {:?}", pair.0);
                     pair
                 }
+                // An anonymous client doesn't need an entry in the
+                // lookup table because no message will ever be
+                // addressed to it
+                Ok(None) => continue,
                 Err(e) => {
                     error!("Encountered error during auth: {}", e);
                     break;

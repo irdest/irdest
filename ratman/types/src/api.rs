@@ -79,6 +79,12 @@ pub fn online_ack(id: Identity) -> Setup {
     setup
 }
 
+pub fn anonymous() -> Setup {
+    let mut setup = Setup::new();
+    setup.set_field_type(Setup_Type::ANONYMOUS);
+    setup
+}
+
 //////////// PEERS type
 
 /// Create a new discovery message
@@ -88,6 +94,19 @@ pub fn discovery(id: Identity) -> Peers {
     peers.set_peers(
         vec![id]
             .iter()
+            .map(|id| id.as_bytes().to_vec())
+            .collect::<Vec<_>>()
+            .into(),
+    );
+    peers
+}
+
+/// Construct a response including "all peers"
+pub fn all_peers(ids: Vec<Identity>) -> Peers {
+    let mut peers = Peers::new();
+    peers.set_field_type(Peers_Type::RESP);
+    peers.set_peers(
+        ids.into_iter()
             .map(|id| id.as_bytes().to_vec())
             .collect::<Vec<_>>()
             .into(),
