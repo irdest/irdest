@@ -84,7 +84,7 @@ impl RatmanIpc {
 
         let introduction = api::api_setup(api::anonymous());
         write_with_length(&mut socket, &encode_message(introduction)?).await?;
-        
+
         let addr = Identity::random(); // Never used
         let (_, recv) = unbounded(); // Never used
         Ok(Self { socket, addr, recv })
@@ -203,7 +203,7 @@ async fn send_message() {
     info!("Sending message: {:?}", msg);
     client.send_to(client.address(), msg).await.unwrap();
 
-    let recv = client.next().await.unwrap();
+    let (_, recv) = client.next().await.unwrap();
     info!("Receiving message: {:?}", recv);
     assert_eq!(recv.get_payload(), &[1, 3, 1, 2]);
 
