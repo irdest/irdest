@@ -1,16 +1,4 @@
 {
-    "naersk": {
-        "branch": "feature/cargo-doc-pr",
-        "description": "Build rust crates in Nix. No configuration, no code generation, no IFD. Sandbox friendly.",
-        "homepage": "",
-        "owner": "petabyteboy",
-        "repo": "naersk",
-        "rev": "3774f713226f2331287a6b92f8f38ed1c32f7f4f",
-        "sha256": "0i7f6lijdsig6flxf7599g293whbxyyqdyhqlybyl50xmfzcl1qd",
-        "type": "tarball",
-        "url": "https://github.com/petabyteboy/naersk/archive/3774f713226f2331287a6b92f8f38ed1c32f7f4f.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
     "niv": {
         "branch": "master",
         "description": "Easy dependency management for Nix projects",

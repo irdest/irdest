@@ -1,13 +1,5 @@
 # Top level ci file that `triggers` the pipelines as per the structure defined
 
-rust-components:
-  stage: build
-  trigger: 
-    include: '**/*/rust-components-ci.yml'
-    strategy: depend
-
-docs: 
-  stage: build
-  trigger:
-    include: '**/*/docs-website-ci.yml'
-    strategy: depend
+include:
+  - ci/pipeline-scripts/docs-website-ci.yml
+  - ci/pipeline-scripts/rust-components-ci.yml
