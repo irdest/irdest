@@ -12,9 +12,7 @@ use std::{
 pub fn build_cli() -> App<'static, 'static> {
     App::new("ratcat")
         .about("Client management program not unlike cat, but for ratman")
-        .after_help("")
         .version(env!("CARGO_PKG_VERSION"))
-        // Should this be XDG_DATA or XDG_STATE ? Destroy the state imo
         .after_help("ratcat(1) stores current address information in $XDG_CONFIG_DIR/ratcat/config\n\nThis is ALPHA level software and will include bugs and cause crashes.  If you encounter a reproducable issue, please report it in our issue tracker (https://git.irde.st/we/irdest) or our mailing list: https://lists.irde.st/archives/list/community@lists.irde.st")
         .max_term_width(120)
         .arg(
