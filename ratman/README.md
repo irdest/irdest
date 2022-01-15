@@ -1,63 +1,58 @@
 # Ratman
 
-A modular userspace frame router, implementing distance vector
-routing, and delay tolerance.  Handles topology updates and user
-discovery via flood heartbeats, and provides a non-namespaced view
-into a network via ed25519 keyed user IDs.
+A modular userspace packet router, providing decentralised distance
+vector routing and delay tolerance.  Both a Rust library and
+stand-alone and zero-config application daemon.
+
+Ratman provides a 256-bit address space via ed25519 public keys.  This
+means that messages are end-to-end encrypted and authenticated at the
+transport level (not currently implemented!).  Fundamentally Ratman
+exists outside the OSI layer scopes.  On one side it binds to
+different transport layers (for example IP, or BLE) via "net module"
+drivers.  On the other side it provides a simple protobuf API on a
+local TCP socket for applications to interact with this network.
 
 One of the core principles of Ratman is to make network roaming
 easier, building a general abstraction over a network, leaving it up
-to drivers to interface with implementation specifics.
+to drivers to interface with implementation specifics.  This also
+means that connections in a Ratman network can be ephemeral and can
+sustain long periods of inactivity because of the delay-tolerant
+nature of this routing approach.
 
-As such, the Ratman routing tables, and user IDs don't use IPs and one
-device on the network could potentially be home to many user IDs.  The
-decoupling of users and devices, making it impossible to track a user
-back to a specific device, is by design.
-
-
-## Usage
-
-To use Ratman, you need to create a Router.  This type exposes an
-async API to interact with various network abstractions.  A networking
-endpoint and basic datagram types are defined in the `ratman-netmod`
-crate, and the routing identities are defined in the `ratman-identity`
-crate.
+This software is currently in ALPHA!
 
 
-## Interface routing
+## How to install
 
-The interface that binds the Ratman router to underlying drivers is
-called `netmod`, which handles sending and receiving frames.  A frame
-is a piece of data, whith a checksum, which may be part of a larger
-message.  In the qaul repository, you can find several driver
-implementations for various platforms.  If you need to write your own,
-don't hesitate to ask for help.
+It's recommended to install Ratman via a distribution package, if one
+is available to you!  Check https://irde.st/downloads for details.
 
-Routing is then done by mapping a user ID to an interface (plus some
-target data that's left to the driver to interpret).  This way Ratman
-is able to route across network boundries, and on unpriviledged
-hardware (such as phones).
+Alternatively you can build and install Ratman from source.  You need
+the following dependencies installed:
+
+ - Rust (rustc `v1.42` or higher)
+ - protobuf (with support for `proto3`)
+ - pkg-config
+ - libsodium
+ - llvm
+ - clang
 
 
-## Clocking
+## How to use
 
-Generally, Ratman handles scheduling and internal clocking for you.
-There's no need to call update functions to make poll's work, or to
-actually dispatch messages.  During initialisation the constructor
-spawns several long running tasks, that deal with various tasks in the
-router stack in a loop.  The downside to this is that the user of the
-library (your app) has no control over how this code is called.
+Ratman includes two binaries: `ratmand`, the stand-alone router
+daemon, and `ratman-gen`, a command-line utility to interact with the
+daemon.  If you are writing an application _specifically_ for Irdest/
+Ratman, you can also check out the [ratman-client] Rust library docs!
 
-This is where the Router API adds clock points, and the `clock`
-submodule, enabling you to reduce data rates in low power settings,
-without having to teach Ratman about your platform specifics.
-
+[ratman-client]: https://docs.rs/ratman-client
 
 ## License
 
-Ratman is part of the qaul project, and licensed under the [GNU
+Ratman is part of the Irdest project, and licensed under the [GNU
 Affero General Public License version 3 or
 later](../licenses/agpl-3.0.md).
 
-See the main qaul repository README for additional permissions
+See the main Irdest repository README for additional permissions
 granted by the authors for this code.
+g
