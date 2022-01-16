@@ -25,7 +25,7 @@ async fn main() -> Result<()> {
 
     let path = PathBuf::new().join("test.ax");
 
-    let lib = Library::create(path)?;
+    let _lib = Library::create(path)?;
 
     // let lib = Builder::new().offset(path.as_path()).build();
     // lib.sync().await?;
