@@ -52,7 +52,7 @@ clap = { version = "2.0", optional = true, features = ["wrap_help", "color", "su
 tracing-subscriber = { version = "0.2", optional = true, features = ["fmt"] }
 directories = { version = "4.0.1", optional = true }
 serde_json = { version = "1.0", optional = true }
-ratman-client = { version = "0.1", path = "client-lib", optional = true }
+ratman-client = { version = "0.3.0", path = "client-lib", optional = true }
 nix = { version = "0.23", optional = true }
 
 # Bundled network modules are all optional dependencies
