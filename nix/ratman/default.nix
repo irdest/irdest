@@ -9,7 +9,14 @@ rustPlatform.buildRustPackage rec {
   pname = "ratman";
   version = "development";
 
-  src = lib.cleanSource ../..;
+  src = lib.cleanSourceWith {
+    filter = name: type:
+      !(lib.hasPrefix "${toString ../../.}/docs" name) &&
+      !(lib.hasPrefix "${toString ../../.}/target" name) &&
+      !(lib.hasPrefix "${toString ../../.}/nix" name)
+    ;
+    src = ../../.;
+  };
 
   nativeBuildInputs = [
     protobuf
