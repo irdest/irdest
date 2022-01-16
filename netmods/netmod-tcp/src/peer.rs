@@ -50,7 +50,7 @@ pub(crate) type SourceAddr = SocketAddr;
 pub(crate) type DstAddr = SocketAddr;
 
 /// Encode the different states a `Peer` can be in
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub(crate) enum PeerState {
     /// Only a receiving channel exists
     ///
@@ -113,6 +113,7 @@ impl Peer {
     /// exiting until `stop()` is called on this peer
     #[tracing::instrument(level = "trace")]
     pub(crate) fn open(dst: DstAddr, port: u16, _type: LinkType) -> Arc<Self> {
+        trace!("Start peer handler for {:?}", dst);
         let p = Arc::new(Self {
             id: id::next(),
             dst: Some(dst),
@@ -120,6 +121,18 @@ impl Peer {
             _type,
             ..Default::default()
         });
+
+        // Start a timeout that will check whether this connection was
+        // fully opened in 10 seconds
+        {
+            let p = Arc::clone(&p);
+            task::spawn(async move {
+                task::sleep(Duration::from_secs(10)).await;
+                if p.state() != PeerState::Duplex {
+                    warn!("[10 second timeout] Peering with '{:?}' has not resulted in a DUPLEX link.  Is a valid connection present?", p.dst);
+                }
+            });
+        }
 
         // Start sender loop and send a hello
         Arc::clone(&p).run_io_sender(port, _type);
@@ -148,7 +161,7 @@ impl Peer {
             (Some(_), Some(_)) => PeerState::Duplex,
             (Some(_), None) => PeerState::RxOnly,
             (None, Some(_)) => PeerState::TxOnly,
-            (None, None) => unreachable!(),
+            (None, None) => PeerState::Invalid,
         }
     }
 
@@ -279,7 +292,7 @@ impl Peer {
     /// There's currently no way to get diagnostics from failed sends
     /// back to ratman.  **FIXME**: implement this!
     pub(crate) fn run_io_sender(self: Arc<Self>, port: u16, _type: LinkType) {
-        trace!("Running IO sender");
+        debug!("Running IO sender");
         task::spawn(async move {
             while let Ok(p) = self.io.rx.recv().await {
                 trace!("Queued packet {:?}", p);
@@ -290,7 +303,7 @@ impl Peer {
                 }
             }
 
-            trace!("Shutting down packet sender for peer {}", self.id);
+            debug!("Shutting down packet sender for peer {}", self.id);
         });
     }
 
@@ -311,7 +324,7 @@ impl Peer {
 
             // Exit if we are already connected
             if sender.read().await.is_some() {
-                trace!(
+                debug!(
                     "Peer `{}` (ID: {}) is already connected!",
                     dst.to_string(),
                     id
@@ -319,7 +332,7 @@ impl Peer {
                 break;
             }
 
-            trace!(
+            debug!(
                 "{}: Attempting to connect to peer `{}`",
                 pre,
                 dst.to_string()
@@ -341,7 +354,7 @@ impl Peer {
 
             s.set_nodelay(true).unwrap();
 
-            trace!("Successfully connected to peer `{}`", &dst);
+            info!("Successfully connected to peer `{}`", &dst);
             let mut sender = sender.write().await;
             *sender = Some(s);
             break;
