@@ -4,7 +4,7 @@ use async_std::{
     net::{Incoming, TcpListener, TcpStream},
     stream::StreamExt,
     sync::{Arc, Mutex},
-    task::spawn_blocking,
+    task::{block_on, spawn_blocking},
 };
 use directories::ProjectDirs;
 use identity::Identity;
@@ -30,15 +30,7 @@ impl Io {
     }
 }
 
-/// Keep track of current connections to stream messages to
-pub(crate) struct DaemonState<'a> {
-    router: Router,
-    online: OnlineMap,
-    listen: Incoming<'a>,
-    dirs: ProjectDirs,
-}
-
-fn load_users(path: PathBuf) -> Vec<Identity> {
+async fn load_users(router: &Router, path: PathBuf) -> Vec<Identity> {
     debug!("Loading registered users from file {:?}", path);
     let mut f = match File::open(path) {
         Ok(f) => f,
@@ -53,7 +45,16 @@ fn load_users(path: PathBuf) -> Vec<Identity> {
 
     match serde_json::from_str::<Vec<Identity>>(&json) {
         Ok(vec) => {
-            vec.iter().for_each(|id| trace!("Loading addr {}", id));
+            for addr in &vec {
+                trace!("Loading addr {}", addr);
+                let e1 = router.add_user(*addr).await;
+                let e2 = router.online(*addr).await;
+
+                if e1.is_err() || e2.is_err() {
+                    warn!("Failed to load address: {}", addr);
+                }
+            }
+
             vec
         }
         Err(_) => vec![],
@@ -67,17 +68,31 @@ fn data_path(dirs: &ProjectDirs) -> PathBuf {
     PathBuf::new().join(data_dir).join("users.json")
 }
 
+/// Keep track of current connections to stream messages to
+pub(crate) struct DaemonState<'a> {
+    router: Router,
+    online: OnlineMap,
+    listen: Incoming<'a>,
+    dirs: ProjectDirs,
+}
+
 impl<'a> DaemonState<'a> {
     pub(crate) fn new(l: &'a TcpListener, router: Router) -> Self {
         let dirs = ProjectDirs::from("org", "irdest", "ratmand")
             .expect("Failed to initialise project directories");
+
+        let path = data_path(&dirs);
+        let r2 = router.clone();
+        let online = block_on(async move {
+            load_users(&r2, path)
+                .await
+                .into_iter()
+                .map(|id| (id, None))
+                .collect()
+        });
+
         Self {
-            online: Arc::new(Mutex::new(
-                load_users(data_path(&dirs))
-                    .into_iter()
-                    .map(|id| (id, None))
-                    .collect(),
-            )),
+            online: Arc::new(Mutex::new(online)),
             listen: l.incoming(),
             router,
             dirs,
