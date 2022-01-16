@@ -7,7 +7,7 @@ license = "GPL-3.0-or-later"
 
 [dependencies]
 async-std = { version = "1.0", features = ["attributes"] }
-types = { path = "../types", version = "0.1.0", package = "ratman-types" }
+types = { path = "../types", version = "0.3.0", package = "ratman-types" }
 thiserror = "1.0"
 futures-lite = "1.0"
 tracing = "0.1"
