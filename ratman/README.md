@@ -47,6 +47,11 @@ the following dependencies installed:
  - llvm
  - clang
 
+Then Ratman can be build with
+```
+cargo build --bin=ratmand --features="daemon"
+cargo build --bin=ratcat --features="ratcat"
+```
 
 ## How to use
 
