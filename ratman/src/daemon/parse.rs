@@ -74,6 +74,7 @@ pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
                 // FIXME: validate token
                 (Some(Setup_oneof__id::id(id)), Some(_)) => {
                     let id = Identity::from_bytes(id.as_slice());
+                    let _ = r.add_user(id).await;
                     r.online(id).await.unwrap();
                     send_online_ack(io, id).await?;
                     Ok(Some((id, vec![])))

@@ -24,12 +24,7 @@ configuring the *Ratman* decentralised peer-to-peer routing daemon.
 You can find pre-made packages for several Linux and BSD
 distributions.  Consult the following table for details.
 
-| Distribution | Channel                       | Version |
-|--------------|-------------------------------|---------|
-| Arch Linux   | AUR                           | `0.3.0` |
-| NixOS        | nixpkgs unstable (2022-01-10) | `0.3.0` |
-| NetBSD       | pkgsrc                        | `0.3.0` |
-| MacOS        | homebrew                      | `0.3.0` |
+[![Packaging status](https://repology.org/badge/vertical-allrepos/ratman.svg)](https://repology.org/project/ratman/versions)
 
 ### Building from source
 

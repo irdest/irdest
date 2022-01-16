@@ -39,6 +39,7 @@ pub(crate) struct DaemonState<'a> {
 }
 
 fn load_users(path: PathBuf) -> Vec<Identity> {
+    debug!("Loading registered users from file {:?}", path);
     let mut f = match File::open(path) {
         Ok(f) => f,
         Err(_) => return vec![],
@@ -50,14 +51,20 @@ fn load_users(path: PathBuf) -> Vec<Identity> {
         Err(_) => return vec![],
     }
 
-    match serde_json::from_str(&json) {
-        Ok(vec) => vec,
+    match serde_json::from_str::<Vec<Identity>>(&json) {
+        Ok(vec) => {
+            vec.iter().for_each(|id| trace!("Loading addr {}", id));
+            vec
+        }
         Err(_) => vec![],
     }
 }
 
 fn data_path(dirs: &ProjectDirs) -> PathBuf {
-    PathBuf::new().join(dirs.data_dir()).join("users.json")
+    let data_dir = dirs.data_dir();
+    trace!("Ensure data directory exists: {:?}", data_dir);
+    let _ = std::fs::create_dir(&data_dir);
+    PathBuf::new().join(data_dir).join("users.json")
 }
 
 impl<'a> DaemonState<'a> {
@@ -81,7 +88,12 @@ impl<'a> DaemonState<'a> {
     /// remember them next time
     pub(crate) async fn sync_users(&self) -> Result<()> {
         fn sync_blocking(path: PathBuf, users: Vec<Identity>) -> Result<()> {
-            let mut f = OpenOptions::new().create(true).truncate(true).open(path)?;
+            let mut f = OpenOptions::new()
+                .create(true)
+                .truncate(true)
+                .write(true)
+                .read(true)
+                .open(path)?;
             let mut map = BTreeSet::new();
 
             users.iter().for_each(|id| {
@@ -124,10 +136,7 @@ impl<'a> DaemonState<'a> {
             };
 
             let io = Io::Tcp(stream);
-            let on = self.online.lock().await;
-            if !on.contains_key(&id) {
-                self.online.lock().await.insert(id, Some(io.clone()));
-            }
+            self.online.lock().await.insert(id, Some(io.clone()));
 
             if let Err(e) = self.sync_users().await {
                 error!("Failed to sync known addresses: {}", e);

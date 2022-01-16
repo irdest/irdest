@@ -33,7 +33,9 @@ Ratman is developed as part of the [Irdest](https://irde.st) project!
 ## How to install
 
 It's recommended to install Ratman via a distribution package, if one
-is available to you!  Check https://irde.st/downloads for details.
+is available to you!
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/ratman.svg)](https://repology.org/project/ratman/versions)
 
 Alternatively you can build and install Ratman from source.  You need
 the following dependencies installed:

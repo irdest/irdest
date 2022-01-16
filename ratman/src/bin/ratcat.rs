@@ -39,6 +39,7 @@ pub fn build_cli() -> App<'static, 'static> {
         .arg(
             Arg::with_name("RECV_COUNT")
                 .long("count")
+                .takes_value(true)
                 .help("Specify the number of messages that `--recv` should wait for.  Default value is to wait forever.")
         )
         .arg(
