@@ -114,6 +114,12 @@ pub fn all_peers(ids: Vec<Identity>) -> Peers {
     peers
 }
 
+pub fn peers_req() -> Peers {
+    let mut peers = Peers::new();
+    peers.set_field_type(Peers_Type::REQ);
+    peers
+}
+
 //////////// APIMESAGE type
 
 pub fn api_send(s: Send) -> ApiMessage {

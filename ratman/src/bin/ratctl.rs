@@ -1,5 +1,5 @@
 use clap::{App, Arg};
-use ratman_client::{Identity, RatmanIpc, Receive_Type};
+use ratman_client::{Identity, RatmanIpc};
 
 const ASCII: &str = r#"      ,     .             
       (\,;,/)                    (\,/)
@@ -46,7 +46,9 @@ async fn connect_ipc(bind: &str) -> Result<RatmanIpc, Box<dyn std::error::Error>
     Ok(RatmanIpc::anonymous(bind).await?)
 }
 
-async fn get_peers(ipc: &RatmanIpc) -> Result<Vec<Identity>> {}
+async fn get_peers(ipc: &RatmanIpc) -> Result<Vec<Identity>, Box<dyn std::error::Error>> {
+    Ok(ipc.get_peers().await?)
+}
 
 #[async_std::main]
 async fn main() {
@@ -76,6 +78,8 @@ async fn main() {
 
         peers.into_iter().for_each(|p| println!("{}", p));
     } else if m.is_present("SUBSCRIBE_PEERS") {
-        todo!()
+        while let Some(peer) = ipc.discover().await {
+            println!("Discovered {}", peer);
+        }
     }
 }

@@ -15,8 +15,6 @@ members = [
 
     # Various utility crates
     "utils/clockctrl",
-    "utils/libopus-sys",
-    "utils/opus-rs",
     "utils/permute",
     "utils/task-notify",
     "utils/visn",
@@ -29,8 +27,4 @@ members = [
 
     # End-user applications
     "clients/irdest-echo",
-    # "clients/hubd",
-    # "clients/irdest-gtk",
-    # "utils/android-support",
-    # "utils/android-tracing"
 ]

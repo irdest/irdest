@@ -133,7 +133,7 @@ async fn handle_receives(ipc: &RatmanIpc, num: usize) -> Result<(), Box<dyn std:
 
 #[async_std::main]
 async fn main() {
-    let mut app = build_cli();
+    let app = build_cli();
     let m = app.clone().get_matches();
 
     //// Setup the application config directory
@@ -189,15 +189,10 @@ async fn main() {
         }
     };
 
-    //// The number of messages we want to infer to be receiving by
-    //// default is 1.  This is important when only using --recv flag
-    //// without first having sent anything.  How confusing.
-    let mut num_msgs = 1;
-
     //// If we were given a recipient we send try to send some data
     if let Some(recipient) = m.value_of("RECIPIENT") {
         let message = m.value_of("MESSAGE");
-        num_msgs = match send(&ipc, recipient, message).await {
+        match send(&ipc, recipient, message).await {
             Ok(num) => num,
             Err(e) => {
                 eprintln!("An error occured during sending: {:?}", e);

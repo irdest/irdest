@@ -9,7 +9,7 @@ license = "GPL-3.0-or-later"
 async-std = "1.0"
 byteorder = "1.0"
 protobuf = "2.19"
-ratman-identity = { version ="0.6", path = "../identity" }
+ratman-identity = { version ="0.6", path = "../identity", features = ["random"] }
 thiserror = "1.0"
 
 [build-dependencies]

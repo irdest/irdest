@@ -18,7 +18,11 @@ use async_std::{
 };
 pub use types::{api::Receive_Type, message::Message, Error, Identity, Result};
 use types::{
-    api::{self, ApiMessageEnum, Setup_Type::ACK},
+    api::{
+        self, ApiMessageEnum,
+        Peers_Type::{DISCOVER, RESP},
+        Setup_Type::ACK,
+    },
     encode_message, message, parse_message, read_with_length, write_with_length,
 };
 
@@ -26,6 +30,7 @@ pub struct RatmanIpc {
     socket: TcpStream,
     addr: Identity,
     recv: Receiver<(Receive_Type, Message)>,
+    disc: Receiver<Identity>,
 }
 
 impl RatmanIpc {
@@ -73,9 +78,15 @@ impl RatmanIpc {
 
         // TODO: spawn receive daemon here
         let (tx, recv) = unbounded();
-        task::spawn(run_receive(socket.clone(), tx));
+        let (dtx, disc) = unbounded();
+        task::spawn(run_receive(socket.clone(), tx, dtx));
 
-        Ok(Self { socket, addr, recv })
+        Ok(Self {
+            socket,
+            addr,
+            recv,
+            disc,
+        })
     }
 
     /// Connect to the daemon without providing or wanting an address
@@ -87,7 +98,13 @@ impl RatmanIpc {
 
         let addr = Identity::random(); // Never used
         let (_, recv) = unbounded(); // Never used
-        Ok(Self { socket, addr, recv })
+        let (_, disc) = unbounded(); // Never used
+        Ok(Self {
+            socket,
+            addr,
+            recv,
+            disc,
+        })
     }
 
     /// Return the currently assigned address
@@ -125,9 +142,37 @@ impl RatmanIpc {
     pub async fn next(&self) -> Option<(Receive_Type, Message)> {
         self.recv.recv().await.ok()
     }
+
+    /// Listen for the next address discovery event
+    pub async fn discover(&self) -> Option<Identity> {
+        self.disc.recv().await.ok()
+    }
+
+    /// Get all currently known peers for this router
+    pub async fn get_peers(&self) -> Result<Vec<Identity>> {
+        let msg = api::api_peers(api::peers_req());
+        write_with_length(&mut self.socket.clone(), &encode_message(msg)?).await?;
+
+        match parse_message(&mut self.socket.clone())
+            .await
+            .map(|m| m.inner)
+        {
+            Ok(Some(one_of)) => match one_of {
+                ApiMessageEnum::peers(s) if s.field_type == RESP => {
+                    Ok(s.peers.iter().map(|p| Identity::from_bytes(p)).collect())
+                }
+                _ => unreachable!(),
+            },
+            _ => unreachable!(),
+        }
+    }
 }
 
-async fn run_receive(mut socket: TcpStream, tx: Sender<(Receive_Type, Message)>) {
+async fn run_receive(
+    mut socket: TcpStream,
+    tx: Sender<(Receive_Type, Message)>,
+    dtx: Sender<Identity>,
+) {
     loop {
         trace!("Reading message from stream...");
         let msg = match read_with_length(&mut socket).await {
@@ -148,6 +193,18 @@ async fn run_receive(mut socket: TcpStream, tx: Sender<(Receive_Type, Message)>)
                     debug!("Forwarding message to IPC wrapper");
                     if let Err(e) = tx.send((tt, msg)).await {
                         error!("Failed to forward received message: {}", e);
+                    }
+                }
+                ApiMessageEnum::peers(peers) if peers.get_field_type() == DISCOVER => {
+                    match peers.peers.get(0) {
+                        Some(p) => match dtx.send(Identity::from_bytes(p)).await {
+                            Ok(_) => {}
+                            _ => {
+                                error!("Failed to send discovery to client poller...");
+                                continue;
+                            }
+                        },
+                        None => continue,
                     }
                 }
                 _ => {} // This might be a problem idk
