@@ -27,6 +27,13 @@ pub fn build_cli() -> App<'static, 'static> {
                 .help("Provide a message to send across the network.  If no <MESSAGE> is provided ratcat will read a message from standard input!")
         )
         .arg(
+            Arg::with_name("SENDER")
+                .long("sender")
+                .short("s")
+                .takes_value(true)
+                .help("Specify the sender address instead of using the default one stored in $XDG_CONFIG_HOME")
+        )
+        .arg(
             Arg::with_name("REGISTER")
                 .long("register")
                 .help("Register a new address on the network with the Ratman daemon")
@@ -168,17 +175,22 @@ async fn main() {
     }
 
     //// Open the configuration a previous us left behind :)
-    let cfg = match File::open(cfg_dir.join("config")) {
+    let mut cfg = match File::open(cfg_dir.join("config")) {
         Ok(mut f) => {
             let mut s = String::new();
             f.read_to_string(&mut s).unwrap();
-            serde_json::from_str(s.as_str()).unwrap()
+            serde_json::from_str::<Config>(s.as_str()).expect("failed to parse config!")
         }
         Err(_) => {
             eprintln!("No configuration found!  Run `ratcat --register` first!");
             std::process::exit(2);
         }
     };
+
+    //// Check if a sender address was provided via CLI options
+    if let Some(addr) = m.value_of("SENDER") {
+        cfg.addr = Identity::from_string(&addr.to_owned());
+    }
 
     //// We always need to connect to the IPC backend with our address
     eprintln!("Connecting to IPC backend...");
