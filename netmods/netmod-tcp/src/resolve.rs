@@ -1,4 +1,4 @@
-use std::net::*;
+use async_std::net::*;
 
 pub struct Resolver;
 
@@ -10,14 +10,15 @@ impl Resolver {
             Some(s) => Some(s),
             // If we have a resolver, try to resolve this payload to
             // an IP address (splitting off the port)
-            None => ToSocketAddrs::to_socket_addrs(peer).ok()?.into_iter().fold(
-                None,
-                |acc, addr| match (acc, addr) {
+            None => ToSocketAddrs::to_socket_addrs(peer)
+                .await
+                .ok()?
+                .into_iter()
+                .fold(None, |acc, addr| match (acc, addr) {
                     (None, addr) => Some(addr),
                     (_, maybe_v6) if maybe_v6.is_ipv6() => Some(maybe_v6),
                     (addr, _) => addr,
-                },
-            ),
+                }),
         }
     }
 }
