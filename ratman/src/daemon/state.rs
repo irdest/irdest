@@ -4,11 +4,18 @@ use async_std::{
     net::{Incoming, TcpListener, TcpStream},
     stream::StreamExt,
     sync::{Arc, Mutex},
+    task::spawn_blocking,
 };
+use directories::ProjectDirs;
 use identity::Identity;
-use std::collections::BTreeMap;
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fs::{File, OpenOptions},
+    io::{Read, Write},
+    path::PathBuf,
+};
 
-pub(crate) type OnlineMap = Arc<Mutex<BTreeMap<Identity, Io>>>;
+pub(crate) type OnlineMap = Arc<Mutex<BTreeMap<Identity, Option<Io>>>>;
 
 #[derive(Clone)]
 pub(crate) enum Io {
@@ -28,15 +35,68 @@ pub(crate) struct DaemonState<'a> {
     router: Router,
     online: OnlineMap,
     listen: Incoming<'a>,
+    dirs: ProjectDirs,
+}
+
+fn load_users(path: PathBuf) -> Vec<Identity> {
+    let mut f = match File::open(path) {
+        Ok(f) => f,
+        Err(_) => return vec![],
+    };
+
+    let mut json = String::new();
+    match f.read_to_string(&mut json) {
+        Ok(_) => {}
+        Err(_) => return vec![],
+    }
+
+    match serde_json::from_str(&json) {
+        Ok(vec) => vec,
+        Err(_) => vec![],
+    }
+}
+
+fn data_path(dirs: &ProjectDirs) -> PathBuf {
+    PathBuf::new().join(dirs.data_dir()).join("users.json")
 }
 
 impl<'a> DaemonState<'a> {
     pub(crate) fn new(l: &'a TcpListener, router: Router) -> Self {
+        let dirs = ProjectDirs::from("org", "irdest", "ratmand")
+            .expect("Failed to initialise project directories");
         Self {
-            online: Default::default(),
+            online: Arc::new(Mutex::new(
+                load_users(data_path(&dirs))
+                    .into_iter()
+                    .map(|id| (id, None))
+                    .collect(),
+            )),
             listen: l.incoming(),
             router,
+            dirs,
         }
+    }
+
+    /// Call this function after new user registrations to ensure we
+    /// remember them next time
+    pub(crate) async fn sync_users(&self) -> Result<()> {
+        fn sync_blocking(path: PathBuf, users: Vec<Identity>) -> Result<()> {
+            let mut f = OpenOptions::new().create(true).truncate(true).open(path)?;
+            let mut map = BTreeSet::new();
+
+            users.iter().for_each(|id| {
+                map.insert(id);
+            });
+            let json = serde_json::to_string_pretty(&map)?;
+
+            f.write_all(json.as_bytes())?;
+            Ok(())
+        }
+
+        let path = data_path(&self.dirs);
+        let ids: Vec<_> = self.online.lock().await.iter().map(|(k, _)| *k).collect();
+        spawn_blocking(move || sync_blocking(path, ids)).await?;
+        Ok(())
     }
 
     pub(crate) async fn get_online(&self) -> OnlineMap {
@@ -64,7 +124,15 @@ impl<'a> DaemonState<'a> {
             };
 
             let io = Io::Tcp(stream);
-            self.online.lock().await.insert(id, io.clone());
+            let on = self.online.lock().await;
+            if !on.contains_key(&id) {
+                self.online.lock().await.insert(id, Some(io.clone()));
+            }
+
+            if let Err(e) = self.sync_users().await {
+                error!("Failed to sync known addresses: {}", e);
+            }
+
             return Ok(Some(io));
         }
 

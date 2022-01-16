@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 /// configuration to get you started.  Alternatively, you can also use
 /// the `config` types directly.
 ///
-/// ```rust
+/// ```rust,no_run
 /// # let json = r#"
 /// {
 ///   "endpoints": [

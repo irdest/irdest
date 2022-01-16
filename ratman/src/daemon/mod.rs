@@ -67,7 +67,7 @@ async fn run_relay(r: Router, online: OnlineMap) {
 
         match recipient {
             Recipient::User(ref id) => {
-                if let Some(ref mut io) = online.lock().await.get(id).map(Clone::clone) {
+                if let Some(Some(ref mut io)) = online.lock().await.get(id).map(Clone::clone) {
                     info!("Forwarding message to online client!");
                     if let Err(e) = parse::forward_recv(io.as_io(), recv).await {
                         error!("Failed to forward received message: {}", e);
@@ -76,7 +76,10 @@ async fn run_relay(r: Router, online: OnlineMap) {
             }
             Recipient::Flood => {
                 for (_, ref mut io) in online.lock().await.iter_mut() {
-                    if let Err(e) = parse::forward_recv(io.as_io(), recv.clone()).await {
+                    if io.is_none() && continue {}
+                    if let Err(e) =
+                        parse::forward_recv(io.as_mut().unwrap().as_io(), recv.clone()).await
+                    {
                         error!("Failed to forward received message: {}", e);
                     }
                 }

@@ -25,8 +25,8 @@ default = []
 tcp = ["netmod-tcp"]
 udp = ["netmod-udp"]
 daemon = ["cli", "tcp", "udp"]
-ratcat = ["cli", "directories", "serde_json", "ratman-client"]
-cli = ["types", "clap", "tracing-subscriber", "nix"]
+ratcat = ["cli", "ratman-client"]
+cli = ["types", "clap", "directories", "nix", "serde_json", "tracing-subscriber"]
 
 [dependencies]
 async-std = { version = "1.0", features = ["std", "unstable"] }
