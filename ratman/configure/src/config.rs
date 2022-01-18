@@ -88,7 +88,7 @@ impl Network {
                 match ep.params {
                     // FIXME: Figure out what the udp module actually needs
                     Params::LocalUpd { iface, port } => {
-                        use netmod_udp::Endpoint;
+                        use netmod_lan::Endpoint;
                         let ep = Endpoint::spawn(&iface, port);
                         block_on(async { router.add_endpoint(ep).await });
                     }
@@ -98,7 +98,7 @@ impl Network {
                         peers,
                         dynamic,
                     } => {
-                        use netmod_tcp::{Endpoint, Mode};
+                        use netmod_inet::{Endpoint, Mode};
                         block_on(async {
                             let ep = Endpoint::new(
                                 &format!("{}:{}", addr, port),
