@@ -145,36 +145,37 @@ async fn main() {
         None => vec![],
     };
 
-    // Setup the Endpoints
-    let tcp = match Inet::new(
-        m.value_of("INET_BIND").unwrap(),
-        "ratmand",
-        if dynamic { Mode::Dynamic } else { Mode::Static },
-    )
-    .await
-    {
-        Ok(tcp) => {
-            // Open the UPNP port if the user enabled this feature
-            if m.is_present("USE_UPNP") {
-                if let Err(e) = daemon::upnp::open_port(tcp.port()) {
-                    error!("UPNP setup failed: {}", e);
+    let r = Router::new();
+    if !m.is_present("NO_INET") {
+        let tcp = match Inet::new(
+            m.value_of("INET_BIND").unwrap(),
+            "ratmand",
+            if dynamic { Mode::Dynamic } else { Mode::Static },
+        )
+            .await
+        {
+            Ok(tcp) => {
+                // Open the UPNP port if the user enabled this feature
+                if m.is_present("USE_UPNP") {
+                    if let Err(e) = daemon::upnp::open_port(tcp.port()) {
+                        error!("UPNP setup failed: {}", e);
+                    }
+                }
+
+                let peers = peers.iter().map(|s| s.as_str()).collect();
+                match daemon::attach_peers(&tcp, peers).await {
+                    Ok(()) => tcp,
+                    Err(e) => daemon::elog(format!("failed to parse peer data: {}", e), 1),
                 }
             }
+            Err(e) => daemon::elog(format!("failed to initialise TCP endpoint: {}", e), 1),
+        };
 
-            let peers = peers.iter().map(|s| s.as_str()).collect();
-            match daemon::attach_peers(&tcp, peers).await {
-                Ok(()) => tcp,
-                Err(e) => daemon::elog(format!("failed to parse peer data: {}", e), 1),
-            }
-        }
-        Err(e) => daemon::elog(format!("failed to initialise TCP endpoint: {}", e), 1),
-    };
-
-    let r = Router::new();
-    r.add_endpoint(tcp).await;
-
+        r.add_endpoint(tcp).await;
+    }
+    
     // If local-discovery is enabled
-    if !m.is_present("NO_LOCAL_DISCOVERY") {
+    if !m.is_present("NO_DISCOVERY") {
         match setup_local_discovery(&r, &m).await {
             Ok((iface, port)) => debug!(
                 "Local peer discovery running on interface {}, port {}",
