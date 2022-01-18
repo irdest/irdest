@@ -1,0 +1,149 @@
+.\" SPDX-FileCopyrightText: 2022 Alyssa Ross <hi@alyssa.is>
+.\" SPDX-FileCopyrightText: 2022 Katharina Fey <kookie@spacekookie.de>
+.\" SPDX-License-Identifier: CC-BY-SA-4.0
+.Dd January 18, 2022
+.UT RATMAND 1
+.Os
+.Sh NAME
+.Rm ratmand
+.Nd decentralised, peer-to-peer packet router
+.Sh SYNOPSIS
+.Nm
+.Op Fl d
+.Op Fl p | f
+.Op Fl v Ar verbosity
+.Op Fl b Ar addr
+.Op Fl \-no-inet
+.Op Fl \-inet Ar addr
+.Op Fl \-no-discovery
+.Op Fl \-discovery-iface Ar iface
+.Op Fl \-discovery-port Ar port
+.Sh DESCRIPTION
+.Nm
+is a stand-alone, decentralised routing daemon, and the core component
+behind the Irdest project.  Ratman provides an alternative address
+space via 256bit cryptographic keys, while peering with different
+Ratman instances over a variety of transport mechanisms.
+.Pp
+The arguments are as follows:
+.Bl -tag -width Ds
+.It Fl d , \-accept-unknown-peers
+By default Ratman rejects unknown incoming peer requests.  To disable
+this functionality you need to pass this flag.
+.Pp
+Note that if you want to run Ratman
+.Em without
+having to provide a set of peers to begin with (for example to purely
+act as a peering server) then you
+.Em must also
+provide this flag.
+.It Fl p , \-peers Ar PEERS
+This multi-parameter flag allows you to specify an initial set of
+peers to connect to.  The syntax used for this is called PEER_SYNTAX
+and used across various components in Irdest.
+.Pp
+A peer is expressed as follows:
+.Bd -literal -offset indent
+<netmod>#<address>:<port>
+.Ed
+.Bl -inset
+.It Va netmod
+refers to name of the netmod that the peer should be introduced to.
+Currently the only valid netmod-identifier is
+.Dv inet .
+.It Va address
+contains the main address part.  Domain names (provided you have a
+working DNS setup) are also accepted.
+.It Va port
+to connect to.
+.El
+.It Fl f , \-peer-file Ar PEER_FILE
+Similar parameter to
+.Fl p
+but pointing to a file instead.  This file must then contain a peer
+formatted in PEER_SYNTAX on each line.
+.It Fl v , \-verbosity Ar verbosity
+Ratman can be configured to log more or less, depending on your needs.
+Following is a breakdown of available log levels and how they are
+generally used.
+.Bl -hang
+.It Dv error
+Only print unexpected behaviour that has caused some operation to
+fail.  This does not mean that the whole router is crashing, but may
+be an early indicator of a fault
+.It Dv warn
+Only print for unexpected behaviour that doesn't
+otherwise impact the operation of the router.
+.It Dv info
+Print at most one statement for each high-level component
+action.  It is possible to gauge the general operation of the
+router from just these messages
+.It Dv debug
+Print at most two statements for each operation (for
+example "start" and "finish").  Debug messages are plenty because
+all components emit them, but limit their re-occurrence in each
+component.
+.It Dv trace
+Includes individual step to each operation with no real limit on
+recurrence.
+.El
+.It Fl b , \-bind Ar addr
+Override the default listening port for Ratman IPC connections.  This
+is useful in case you want to run multiple routers on the same
+machine, but will cause issue with applications that don't allow you
+to specify the IPC connection socket address, e.g.
+.Xr irdest-echo 1 .
+.It Fl \-no-inet
+Disable the inet overlay driver.
+.It Fl \-inet Ar addr
+Specify the bind address and port for the netmod-inet overlay driver.
+It supports both
+.Xr ipv6 7
+and
+.Xr ip 7
+address schemas.
+.It Fl \-no-discovery
+By default Ratman runs a local
+.Xr ipv6 7
+multicast discovery driver which will find other Ratman instances on
+your local network to peer with.  This flag disables that
+functionality.
+.It Fl \-discovery-iface Ar iface
+Bind to
+.Ar iface
+for local peer discovery.  If none is provided
+.Nm
+will attempt to guess the correct interface.
+.It Fl \-discovery-port Ar port
+Bind to
+.Ar port
+for local peer discovery.  Make sure this port is open in your
+firewall.  The default port is 9001.
+.Pp
+.Em Warning :
+it's not recommended to change this unless you know this is what you
+want!
+.El
+.Sh EXIT STATUS
+.Ex -std
+.Sh EXAMPLES
+.Bd -literal
+# Start router daemon without connecting to any pre-defined peers,
+# but accepting any incoming peering requests.
+ratmand --accept-unknown-peers
+.Ed
+.Sh BUGS
+Currently Ratman can only peer over an existing internet connection
+but this will not always be the case.
+.Pp
+This is
+.Em alpha
+level software and will include bugs and cause crashes.  If you
+encounter a reproducible issue, please report it!
+.Bl -ohang
+.It Issue tracker
+.Lk https://git.irde.st/we/irdest/-/issues
+.It Mailing list
+.Lk https://lists.irde.st/archives/list/community@lists.irde.st
+.It Matrix
+.Lk https://matrix.to/#/#chat:irde.st
