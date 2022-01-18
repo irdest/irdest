@@ -44,7 +44,7 @@ pub fn build_cli() -> ArgMatches<'static> {
             Arg::with_name("INET_BIND")
                 .takes_value(true)
                 .long("inet")
-                .help("Specify the inet-driver socket bind address")
+                .help("Specify the inet-driver socket bind address.  Make sure this port is open in your firewall")
                 .default_value("[::]:9000"),
         )
         .arg(
@@ -58,7 +58,7 @@ pub fn build_cli() -> ArgMatches<'static> {
                 .long("discovery-port")
                 .takes_value(true)
                 .default_value("9001")
-                .help("Specify the port used for local peer discovery.  WARNING: it's not recommended to change this unless you know this is what you want!")
+                .help("Specify the port used for local peer discovery.  Make sure this port is open in your firewall.  WARNING: it's not recommended to change this unless you know this is what you want!")
         )
         .arg(
             Arg::with_name("DISCOVERY_IFACE")
@@ -68,7 +68,7 @@ pub fn build_cli() -> ArgMatches<'static> {
         )
         .arg(
             Arg::with_name("NO_LOCAL_DISCOVERY")
-                .long("no-local-discovery")
+                .long("no-discovery")
                 .help("Disable the local multicast peer discovery mechanism")
         )
         .arg(
@@ -85,6 +85,11 @@ pub fn build_cli() -> ArgMatches<'static> {
                 .short("f")
                 .help("Provide a set of initial peers to connect to.  Incompatible with `-p`")
                 .takes_value(true)
+        )
+        .arg(
+            Arg::with_name("USE_UPNP")
+                .long("upnp")
+                .help("Attempt to open the port used by the inet driver in your local gateway")
         )
         .get_matches()
 }

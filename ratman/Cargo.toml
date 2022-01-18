@@ -25,7 +25,7 @@ default = []
 inet = ["netmod-inet"]
 lan = ["netmod-lan"]
 upnp = ["igd", "ipnetwork", "pnet"]
-daemon = ["cli", "inet", "lan", "upnp"]
+daemon = ["cli", "inet", "lan"]
 util = ["cli", "ratman-client"]
 cli = ["types", "clap", "directories", "nix", "serde_json", "tracing-subscriber"]
 
