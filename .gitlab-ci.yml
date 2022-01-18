@@ -1,5 +1,9 @@
 # Top level ci file that `triggers` the pipelines as per the structure defined
 
 include:
-  - ci/pipeline-scripts/docs-website-ci.yml
-  - ci/pipeline-scripts/rust-components-ci.yml
+  - ci/pipeline-scripts/*
+
+stages:
+  - build
+  - test
+  - bundle

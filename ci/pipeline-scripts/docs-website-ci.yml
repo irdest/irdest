@@ -8,3 +8,12 @@ build-website:
   artifacts:
     paths:
       - result/*
+
+build-manual:
+  tags: [ irdest-nix ]
+  stage: build
+  script:
+    - nix-build nix -A irdest-manual-user -o result-manual-user
+  artifacts:
+    paths:
+      - result-manual-user/*
