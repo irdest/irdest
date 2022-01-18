@@ -44,6 +44,8 @@ impl Socket {
         let sock = UdpSocket::bind((SELF, port)).await.unwrap();
         sock.join_multicast_v6(&MULTI, scope)
             .expect("Failed to join multicast. Error");
+        sock.set_multicast_loop_v6(false)
+            .expect("Failed to set_multicast_loop_v6. Error");
 
         let arc = Arc::new(Self {
             port,
