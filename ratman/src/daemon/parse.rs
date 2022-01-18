@@ -58,7 +58,7 @@ pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
     io: &mut Io,
     r: &Router,
 ) -> ParseResult<Option<(Identity, Vec<u8>)>> {
-    trace!("Handle authentication request for new connection");
+    debug!("Handle authentication request for new connection");
 
     let one_of = parse_message(io)
         .await
@@ -77,6 +77,7 @@ pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
                     let _ = r.add_user(id).await;
                     r.online(id).await.unwrap();
                     send_online_ack(io, id).await?;
+                    debug!("Authorisation for known client");
                     Ok(Some((id, vec![])))
                 }
                 (None, None) => {
@@ -84,13 +85,20 @@ pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
                     r.add_user(id).await.unwrap();
                     r.online(id).await.unwrap();
                     send_online_ack(io, id).await?;
+                    debug!("Authorisation for new client");
                     Ok(Some((id, vec![])))
                 }
-                _ => Err(ParseError::InvalidAuth),
+                _ => {
+                    debug!("Failed to authenticate client");
+                    Err(ParseError::InvalidAuth)
+                }
             }
         }
         // If the client wants to remain anonymous we don't return an ID/token pair
-        ApiMessageEnum::setup(setup) if setup.field_type == Setup_Type::ANONYMOUS => Ok(None),
+        ApiMessageEnum::setup(setup) if setup.field_type == Setup_Type::ANONYMOUS => {
+            debug!("Authorisation for anonymous client");
+            Ok(None)
+        }
         _ => Err(ParseError::InvalidAuth),
     }
 }

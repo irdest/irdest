@@ -1,3 +1,0 @@
-# irdest-gtk
-
-TODO

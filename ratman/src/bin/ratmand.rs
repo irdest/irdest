@@ -49,7 +49,6 @@ pub fn build_cli() -> ArgMatches<'static> {
         )
         .arg(
             Arg::with_name("NO_INET")
-                .hidden(true)
                 .long("no-inet")
                 .help("Disable the inet overlay driver")
         )
@@ -89,6 +88,7 @@ pub fn build_cli() -> ArgMatches<'static> {
         .arg(
             Arg::with_name("USE_UPNP")
                 .long("upnp")
+                .hidden(true)
                 .help("Attempt to open the port used by the inet driver in your local gateway")
         )
         .get_matches()

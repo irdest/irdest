@@ -1,3 +1,0 @@
-# Irdest Android
-
-TODO

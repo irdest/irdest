@@ -33,7 +33,9 @@ fn setup_cli() -> App<'static, 'static> {
                 .help("Request the currently known list of peers from the router")
         )
         .arg(
+            // Doesn't currently work :(
             Arg::with_name("SUBSCRIBE_PEERS")
+                .hidden(true)
                 .long("subscribe-peers")
                 .required_unless("GET_PEERS")
                 .conflicts_with("GET_PEERS")

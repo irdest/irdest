@@ -143,7 +143,7 @@ impl<'a> DaemonState<'a> {
                 // An anonymous client doesn't need an entry in the
                 // lookup table because no message will ever be
                 // addressed to it
-                Ok(None) => continue,
+                Ok(None) => return Ok(Some(Io::Tcp(stream))),
                 Err(e) => {
                     error!("Encountered error during auth: {}", e);
                     break;
