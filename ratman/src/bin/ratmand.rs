@@ -97,7 +97,7 @@ async fn setup_local_discovery(
 ) -> std::result::Result<(String, u16), String> {
     let iface = m.value_of("DISCOVERY_IFACE")
         .map(Into::into)
-        .or(default_iface().map(|iface| {
+        .or_else(|| default_iface().map(|iface| {
             info!("Auto-selected interface '{}' for local peer discovery.  Is this wrong?  Pass --discovery-iface to ratmand instead!", iface);
             iface
         })).ok_or("failed to determine interface to bind on".to_string())?;
