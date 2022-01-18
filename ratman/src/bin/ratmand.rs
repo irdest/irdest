@@ -29,7 +29,7 @@ pub fn build_cli() -> ArgMatches<'static> {
             Arg::with_name("ACCEPT_UNKNOWN_PEERS")
                 .long("accept-unknown-peers")
                 .short("d")
-                .required_unless_one(&["PEERS", "PEER_FILE"])
+                .required_unless_one(&["PEERS", "PEER_FILE", "NO_INET"])
                 .help("Configure ratmand to peer with any incoming connection it may encounter")
         )
         .arg(
@@ -41,12 +41,17 @@ pub fn build_cli() -> ArgMatches<'static> {
                 .default_value("127.0.0.1:9020"),
         )
         .arg(
-            // TODO: rename this?  Is `--inet` descriptive enough?
-            Arg::with_name("TCP_BIND")
+            Arg::with_name("INET_BIND")
                 .takes_value(true)
-                .long("tcp")
+                .long("inet")
                 .help("Specify the inet-driver socket bind address")
                 .default_value("[::]:9000"),
+        )
+        .arg(
+            Arg::with_name("NO_INET")
+                .hidden(true)
+                .long("no-inet")
+                .help("Disable the inet overlay driver")
         )
         .arg(
             Arg::with_name("DISCOVERY_PORT")
@@ -137,7 +142,7 @@ async fn main() {
 
     // Setup the Endpoints
     let tcp = match Inet::new(
-        m.value_of("TCP_BIND").unwrap(),
+        m.value_of("INET_BIND").unwrap(),
         "ratmand",
         if dynamic { Mode::Dynamic } else { Mode::Static },
     )

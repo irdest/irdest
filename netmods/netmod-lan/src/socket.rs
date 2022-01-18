@@ -39,7 +39,6 @@ fn if_nametoindex(name: &str) -> std::io::Result<u32> {
 
 impl Socket {
     /// Create a new socket handler and return a management reference
-    #[instrument(skip(table), level = "trace")]
     pub(crate) async fn new(iface: &str, port: u16, table: Arc<AddrTable>) -> Arc<Self> {
         let scope = if_nametoindex(iface).unwrap(); // FIXME: is this blocking?
         let sock = UdpSocket::bind((SELF, port)).await.unwrap();
@@ -68,7 +67,6 @@ impl Socket {
     }
 
     /// Send a multicast with an Envelope
-    #[instrument(skip(self, env), level = "trace")]
     pub(crate) async fn multicast(&self, env: &Envelope) {
         self.sock
             .send_to(
