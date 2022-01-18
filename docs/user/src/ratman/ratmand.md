@@ -36,6 +36,12 @@ Note: if you want to run Ratman **without** having to provide a set of
 peers to begin with (for example to purely act as a peering server)
 then you **must also** provide this flag.
 
+### `--no-inet`
+
+By default Ratman tries to bind the inet overlay driver to connect to
+peers across the internet.  To disable this functionality you can pass
+this flag.
+
 ### `--no-discovery`
 
 By default Ratman runs a local IPv6 multicast discovery driver which

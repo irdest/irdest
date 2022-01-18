@@ -1,7 +1,7 @@
 //! `netmod-mem` is an in-memory `netmod` endpoint
 //!
 //! This aims to make testing any structure that binds against
-//! `netmod` easier and reproducable.
+//! `netmod` easier and reproducible.
 
 #![doc(html_favicon_url = "https://qaul.org/favicon.ico")]
 #![doc(html_logo_url = "https://qaul.org/img/qaul_icon-128.png")]
