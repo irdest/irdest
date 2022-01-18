@@ -26,7 +26,7 @@ Devs: |
     The developer manual gives a broad overview of concepts, 
     components, and protocols in use by irdest internals.
     
-    * [Rust API docs](https://docs.irde.st/api/irdest_core/)
+    * [Ratman API docs](https://docs.rs/ratman-client/)
     * [Developer Manual](https://docs.irde.st/developer/)
 ---
 

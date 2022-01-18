@@ -63,9 +63,9 @@ To learn more about the technical side of Irdest, check out the
 
 ## How to use
 
-The easiest way to get started using Irdest is to download [Ratman]
-and [irdest-mblog] (a fully decentralised micro-blogging application).
-To get started, check out the [user manual]!
+The easiest way to get started using Irdest is to download
+[Ratman][Downloads] and its associated utilities.  To learn how, check
+out the [user manual]!
 
 
 ## Contributing
@@ -100,7 +100,7 @@ and can be found in the [licenses](licenses) directory.
 
 
 [Matrix]: https://matrix.to/#/#irdest:fairydust.space?via=ontheblueplanet.com&via=matrix.org&via=fairydust.space
-[Ratman]: https://irde.st/downloads
+[Downloads]: https://irde.st/downloads
 [Rust]: https://rust-lang.org
 [ISP]: https://en.wikipedia.org/wiki/ISP
 [clients]: ./clients
