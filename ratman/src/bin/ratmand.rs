@@ -6,7 +6,8 @@ extern crate tracing;
 pub(crate) use ratman::*;
 
 use clap::{App, Arg, ArgMatches};
-use netmod_tcp::{Endpoint as TcpEp, Mode};
+use netmod_inet::{Endpoint as Inet, Mode};
+use netmod_lan::{default_iface, Endpoint as LanDiscovery};
 use std::{fs::File, io::Read};
 
 pub fn build_cli() -> ArgMatches<'static> {
@@ -40,24 +41,36 @@ pub fn build_cli() -> ArgMatches<'static> {
                 .default_value("127.0.0.1:9020"),
         )
         .arg(
+            // TODO: rename this?  Is `--inet` descriptive enough?
             Arg::with_name("TCP_BIND")
                 .takes_value(true)
                 .long("tcp")
-                .help("Specify the tcp socket bind address")
+                .help("Specify the inet-driver socket bind address")
                 .default_value("[::]:9000"),
         )
         .arg(
-            Arg::with_name("UDP_BIND")
+            Arg::with_name("DISCOVERY_PORT")
+                .long("discovery-port")
                 .takes_value(true)
-                .long("udp")
-                .help("Specify the udp socket bind address")
-                .default_value("[::]:9001"),
+                .default_value("9001")
+                .help("Specify the port used for local peer discovery.  WARNING: it's not recommended to change this unless you know this is what you want!")
+        )
+        .arg(
+            Arg::with_name("DISCOVERY_IFACE")
+                .takes_value(true)
+                .long("discovery-iface")
+                .help("Specify the interface on which to bind for local peer discovery.  If none is provided the default interface will be attempted to be determined")
+        )
+        .arg(
+            Arg::with_name("NO_LOCAL_DISCOVERY")
+                .long("no-local-discovery")
+                .help("Disable the local multicast peer discovery mechanism")
         )
         .arg(
             Arg::with_name("PEERS")
                 .long("peers")
                 .short("p")
-                .help("Specify a set of peers via the PEER SYNTAX: <netmod-id>#<address>:<port>.  Incompatible with `-f`/ `-peer-file`. Valid netmod-ids are tcp. Example: tcp#10.0.0.10:9000")
+                .help("Specify a set of peers via the PEER SYNTAX: <netmod-id>#<address>:<port>.  Incompatible with `-f`. Valid netmod-ids are tcp. Example: tcp#10.0.0.10:9000")
                 .takes_value(true)
                 .multiple(true),
         )
@@ -65,10 +78,33 @@ pub fn build_cli() -> ArgMatches<'static> {
             Arg::with_name("PEER_FILE")
                 .long("peer-file")
                 .short("f")
-                .help("Provide a set of initial peers to connect to.  Incompatible with `-p`/ `-peers`")
+                .help("Provide a set of initial peers to connect to.  Incompatible with `-p`")
                 .takes_value(true)
         )
         .get_matches()
+}
+
+// Ok(()) -> all good
+// Err(_) -> emit warning but keep going
+async fn setup_local_discovery(
+    r: &Router,
+    m: &ArgMatches<'_>,
+) -> std::result::Result<(String, u16), String> {
+    let iface = m.value_of("DISCOVERY_IFACE")
+        .map(Into::into)
+        .or(default_iface().map(|iface| {
+            info!("Auto-selected interface '{}' for local peer discovery.  Is this wrong?  Pass --discovery-iface to ratmand instead!", iface);
+            iface
+        })).ok_or("failed to determine interface to bind on".to_string())?;
+
+    let port = m
+        .value_of("DISCOVERY_PORT")
+        .unwrap()
+        .parse()
+        .map_err(|e| format!("failed to parse discovery port: {}", e))?;
+
+    r.add_endpoint(LanDiscovery::spawn(&iface, port)).await;
+    Ok((iface, port))
 }
 
 #[async_std::main]
@@ -100,7 +136,7 @@ async fn main() {
     };
 
     // Setup the Endpoints
-    let tcp = match TcpEp::new(
+    let tcp = match Inet::new(
         m.value_of("TCP_BIND").unwrap(),
         "ratmand",
         if dynamic { Mode::Dynamic } else { Mode::Static },
@@ -126,6 +162,17 @@ async fn main() {
 
     let r = Router::new();
     r.add_endpoint(tcp).await;
+
+    // If local-discovery is enabled
+    if !m.is_present("NO_LOCAL_DISCOVERY") {
+        match setup_local_discovery(&r, &m).await {
+            Ok((iface, port)) => debug!(
+                "Local peer discovery running on interface {}, port {}",
+                iface, port
+            ),
+            Err(e) => warn!("Failed to setup local peer discovery: {}", e),
+        }
+    }
 
     let api_bind = match m.value_of("API_BIND").unwrap().parse() {
         Ok(addr) => addr,

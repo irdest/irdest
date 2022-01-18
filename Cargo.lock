@@ -857,17 +857,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "netmod-mem"
-version = "0.4.0"
-dependencies = [
- "async-std",
- "async-trait",
- "ratman-identity",
- "ratman-netmod",
-]
-
-[[package]]
-name = "netmod-tcp"
+name = "netmod-inet"
 version = "0.4.0"
 dependencies = [
  "async-std",
@@ -882,18 +872,29 @@ dependencies = [
 ]
 
 [[package]]
-name = "netmod-udp"
+name = "netmod-lan"
 version = "0.2.0"
 dependencies = [
  "async-std",
  "async-trait",
  "bincode",
  "libc",
+ "pnet",
  "ratman-identity",
  "ratman-netmod",
  "serde",
  "task-notify",
  "tracing",
+]
+
+[[package]]
+name = "netmod-mem"
+version = "0.4.0"
+dependencies = [
+ "async-std",
+ "async-trait",
+ "ratman-identity",
+ "ratman-netmod",
 ]
 
 [[package]]
@@ -1285,9 +1286,9 @@ dependencies = [
  "directories",
  "igd",
  "ipnetwork",
+ "netmod-inet",
+ "netmod-lan",
  "netmod-mem",
- "netmod-tcp",
- "netmod-udp",
  "nix",
  "pnet",
  "protobuf",
@@ -1322,8 +1323,8 @@ name = "ratman-configure"
 version = "0.1.0"
 dependencies = [
  "async-std",
- "netmod-tcp",
- "netmod-udp",
+ "netmod-inet",
+ "netmod-lan",
  "ratman",
  "serde",
  "serde_json",

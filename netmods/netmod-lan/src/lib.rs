@@ -16,6 +16,7 @@ pub(crate) use framing::{Envelope, FrameExt};
 use async_std::{sync::Arc, task};
 use async_trait::async_trait;
 use netmod::{Endpoint as EndpointExt, Frame, Recipient, Result, Target};
+use pnet::datalink::interfaces;
 use std::net::ToSocketAddrs;
 
 #[derive(Clone)]
@@ -70,4 +71,12 @@ impl EndpointExt for Endpoint {
         let fe = self.socket.next().await;
         Ok((fe.0, fe.1))
     }
+}
+
+/// Try to get a "default" interface for LAN discovery
+pub fn default_iface() -> Option<String> {
+    let all = interfaces();
+    all.into_iter()
+        .find(|e| e.is_up() && !e.is_loopback() && !e.ips.is_empty())
+        .map(|iface| iface.name)
 }

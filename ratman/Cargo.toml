@@ -22,10 +22,10 @@ required-features = ["util"]
 
 [features]
 default = []
-tcp = ["netmod-tcp"]
-udp = ["netmod-udp"]
+inet = ["netmod-inet"]
+lan = ["netmod-lan"]
 upnp = ["igd", "ipnetwork", "pnet"]
-daemon = ["cli", "tcp", "udp", "upnp"]
+daemon = ["cli", "inet", "lan", "upnp"]
 util = ["cli", "ratman-client"]
 cli = ["types", "clap", "directories", "nix", "serde_json", "tracing-subscriber"]
 
@@ -60,8 +60,8 @@ ipnetwork = { version = "=0.16", optional = true } # older version becuase we do
 pnet = { version = "=0.26", optional = true }      # to update to the 2021-edition yet
 
 # Bundled network modules are all optional dependencies
-netmod-tcp = { path = "../netmods/netmod-tcp", version = "0.4", optional = true }
-netmod-udp = { path = "../netmods/netmod-udp", version = "0.2", optional = true }
+netmod-inet = { path = "../netmods/netmod-inet", version = "0.4", optional = true }
+netmod-lan = { path = "../netmods/netmod-lan", version = "0.2", optional = true }
 
 [dev-dependencies]
 netmod-mem = { path = "../netmods/netmod-mem", version = "0.4" }

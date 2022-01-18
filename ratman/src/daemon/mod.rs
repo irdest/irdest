@@ -8,6 +8,13 @@ mod transform;
 #[cfg(feature = "upnp")]
 pub mod upnp;
 
+#[cfg(not(feature = "upnp"))]
+pub mod upnp {
+    pub fn open_port(_: u16) -> Result<(), String> {
+        Ok(())
+    }
+}
+
 use std::net::SocketAddr;
 
 use crate::{Message, Recipient, Router};

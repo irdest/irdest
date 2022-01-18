@@ -21,8 +21,8 @@ members = [
 
     # Available netmod drivers
     "netmods/netmod-mem",
-    "netmods/netmod-tcp",
-    "netmods/netmod-udp",
+    "netmods/netmod-inet",
+    "netmods/netmod-lan",
     "netmods/netmod-wd",
 
     # End-user applications
