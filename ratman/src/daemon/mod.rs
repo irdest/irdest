@@ -5,6 +5,9 @@ mod peers;
 mod state;
 mod transform;
 
+#[cfg(feature = "upnp")]
+pub mod upnp;
+
 use std::net::SocketAddr;
 
 use crate::{Message, Recipient, Router};

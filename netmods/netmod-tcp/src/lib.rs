@@ -26,6 +26,7 @@ use async_std::{net::SocketAddr, sync::Arc};
 use async_trait::async_trait;
 use netmod::{self, Endpoint as EndpointExt, Frame, Target};
 use serde::{Deserialize, Serialize};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 /// Define the runtime mode for this endpount
 ///
@@ -48,6 +49,7 @@ pub enum Mode {
 /// `Limited` will open connections to peers with a special flag that
 /// makes it use a different reverse-channel strategy.  The server
 /// won't try to create full reverse channels, and instead use the
+/// incoming message stream.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum LinkType {
     /// Default connection type
@@ -64,6 +66,7 @@ impl Default for LinkType {
 
 #[derive(Clone)]
 pub struct Endpoint {
+    pessimistic: Arc<AtomicBool>,
     server: Arc<Server>,
     routes: Arc<Routes>,
 }
@@ -74,17 +77,44 @@ impl Endpoint {
     pub async fn new(bind: &str, name: &str, mode: Mode) -> Result<Arc<Self>> {
         info!("Initialising Tcp backend");
 
+        let pessimistic = Arc::new(false.into());
         let socket: SocketAddr = bind.parse().map_err(|_| Error::InvalidAddr)?;
         let routes = Routes::new(socket.port());
-        let server = Server::new(Arc::clone(&routes), socket, socket.port(), mode).await?;
+        let server = Server::new(
+            Arc::clone(&routes),
+            socket,
+            socket.port(),
+            mode,
+            Arc::clone(&pessimistic),
+        )
+        .await?;
 
         server.run();
-        Ok(Arc::new(Self { server, routes }))
+        Ok(Arc::new(Self {
+            pessimistic,
+            server,
+            routes,
+        }))
     }
 
     /// Get the current runtime mode
     pub fn mode(&self) -> Mode {
         self.server.mode()
+    }
+
+    /// Get the port this netmod is bound to
+    pub fn port(&self) -> u16 {
+        self.server.port()
+    }
+
+    /// Mark this endpoint as "pessimistic"
+    ///
+    /// The "pessimistic" flag determines whether the default
+    /// connection logic for peers should fall-back to a Limited
+    /// connection type after a short timeout during which no reverse
+    /// connection was established.
+    pub fn pessimistic(&self) {
+        self.pessimistic.fetch_or(true, Ordering::Relaxed);
     }
 
     pub async fn stop(&self) {

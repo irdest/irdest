@@ -108,6 +108,13 @@ async fn main() {
     .await
     {
         Ok(tcp) => {
+            // Open the UPNP port if the user enabled this feature
+            if m.is_present("USE_UPNP") {
+                if let Err(e) = daemon::upnp::open_port(tcp.port()) {
+                    error!("UPNP setup failed: {}", e);
+                }
+            }
+
             let peers = peers.iter().map(|s| s.as_str()).collect();
             match daemon::attach_peers(&tcp, peers).await {
                 Ok(()) => tcp,
