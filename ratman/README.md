@@ -29,7 +29,6 @@ with name query services (such as GNS).
 
 Ratman is developed as part of the [Irdest](https://irde.st) project!
 
-
 ## How to install
 
 It's recommended to install Ratman via a distribution package, if one
@@ -47,10 +46,13 @@ the following dependencies installed:
  - llvm
  - clang
 
-Then Ratman can be build with
+
+Afterwards various ratman targets can be built with `cargo`:
+
 ```
-cargo build --bin=ratmand --features="daemon"
-cargo build --bin=ratcat --features="ratcat"
+$ cargo build --bin=ratmand --features="daemon"
+$ cargo build --bin=ratcat --features="utils"
+$ cargo build --bin=ratctl --features="utils"
 ```
 
 ## How to use
@@ -58,12 +60,14 @@ cargo build --bin=ratcat --features="ratcat"
 Ratman includes three binaries: `ratmand`, the stand-alone router
 daemon, `ratcat`, a command-line utility to interact with a Ratman
 network (analogous to `netcat`), and `ratctl`, a command-line utility
-to manage Ratman peer states. If you are writing an application
-_specifically_ for Irdest/ Ratman, you can also check out the
-[ratman-client] Rust library docs!
+to manage Ratman peer states.  Each is documented in the [user
+manual]!
+
+If you are writing an application _specifically_ for Irdest/ Ratman,
+you can also check out the [ratman-client] Rust library docs!
 
 [ratman-client]: https://docs.rs/ratman-client
-
+[user manual]: docs.irde.st/user/
 
 ## License
 

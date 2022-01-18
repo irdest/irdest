@@ -1,20 +1,26 @@
 ---
 Introduction_Title: What is irdest?
 Introduction: |
-    **irdest** is a set of tools, that allows devices like laptops 
-    and smartphones to create a **wireless mesh network** over Bluetooth 
-    and direct WiFi connections, rather than relying on internet access
-    via a mobile network.  This **decentralised and open network** extends
-    across any irdest-enabled device, so that if two people aren't close
-    enough to each other for their devices to connect directly, data can
-    be sent via other devices in the middle, without those devices being
-    able to read or change the messages passing through it.
 
-    It supports instant messaging, voice calls, social media, radio
-    broadcast, and file sharing — all in a single app.  Additionally it is
-    a suite of **free software libraries**, meaning that anyone can study
-    and modify it, and use it to create their own apps that can operate on
-    a irdest network, independent of the internet.
+    **Irdest** is a research project that aims to create tools for the
+    next internet.  These tools allow devices like laptops and
+    smartphones to create dynamic **mesh networks** over Bluetooth and
+    direct WiFi connections, rather than relying on internet access
+    via a mobile network.  This **decentralised and open network**
+    extends across any irdest-enabled device, so that if two people
+    aren't close enough to each other for their devices to connect
+    directly, data can be sent via other devices in the middle,
+    without those devices being able to read or change the messages
+    passing through it.
+
+    The main component of Irdest is **Ratman**, a decentralised and
+    peer-to-peer packet router.  Ratman provides applications with a
+    simple API to interact with a mesh network, without having to
+    solve a lot of complicated routing problems, or configuring large
+    amount of software.  In the backend Ratman connects to other
+    Ratman instances via network channel specific drivers, which
+    allows the network to grow easily across network boundaries.
+
 Meshing_Title: What is a mesh network?
 Meshing: |
     In traditional network infrastructure there is a centralised point
