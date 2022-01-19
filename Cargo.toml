@@ -23,4 +23,5 @@ members = [
 
     # End-user applications
     "clients/irdest-echo",
+    "clients/irdest-proxy",
 ]

@@ -28,7 +28,7 @@ dependencies = [
  "protobuf",
  "protoc-rust",
  "rand 0.7.3",
- "ratman-identity",
+ "ratman-identity 0.6.2",
  "regex",
  "serde",
  "sodiumoxide",
@@ -379,11 +379,26 @@ dependencies = [
  "ansi_term 0.11.0",
  "atty",
  "bitflags",
- "strsim",
+ "strsim 0.8.0",
  "term_size",
- "textwrap",
+ "textwrap 0.11.0",
  "unicode-width",
  "vec_map",
+]
+
+[[package]]
+name = "clap"
+version = "3.0.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a30c3bf9ff12dfe5dae53f0a96e0febcd18420d1c0e7fad77796d9d5c4b5375"
+dependencies = [
+ "atty",
+ "bitflags",
+ "indexmap",
+ "os_str_bytes",
+ "strsim 0.10.0",
+ "termcolor",
+ "textwrap 0.14.2",
 ]
 
 [[package]]
@@ -629,6 +644,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "hashbrown"
+version = "0.11.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab5ef0d4909ef3724cc8cce6ccc8572c5c817592e9285f5464f8e86f8bd3726e"
+
+[[package]]
 name = "hermit-abi"
 version = "0.1.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -689,6 +710,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "indexmap"
+version = "1.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "282a6247722caba404c065016bbfa522806e51714c34f5dfc3e4a3a46fcb4223"
+dependencies = [
+ "autocfg",
+ "hashbrown",
+]
+
+[[package]]
 name = "instant"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -711,7 +742,16 @@ name = "irdest-echo"
 version = "0.1.0"
 dependencies = [
  "async-std",
- "ratman-client",
+ "ratman-client 0.3.0",
+]
+
+[[package]]
+name = "irdest-proxy"
+version = "0.1.0"
+dependencies = [
+ "clap 3.0.10",
+ "libc",
+ "ratman-client 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -840,7 +880,7 @@ dependencies = [
  "async-trait",
  "bincode",
  "byteorder",
- "ratman-identity",
+ "ratman-identity 0.6.2",
  "ratman-netmod",
  "serde",
  "thiserror",
@@ -856,7 +896,7 @@ dependencies = [
  "bincode",
  "libc",
  "pnet",
- "ratman-identity",
+ "ratman-identity 0.6.2",
  "ratman-netmod",
  "serde",
  "task-notify",
@@ -869,7 +909,7 @@ version = "0.4.0"
 dependencies = [
  "async-std",
  "async-trait",
- "ratman-identity",
+ "ratman-identity 0.6.2",
  "ratman-netmod",
 ]
 
@@ -935,6 +975,15 @@ name = "opaque-debug"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
+
+[[package]]
+name = "os_str_bytes"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8e22443d1643a904602595ba1cd8f7d896afe56d26712531c5ff73a15b2fbf64"
+dependencies = [
+ "memchr",
+]
 
 [[package]]
 name = "parking"
@@ -1252,7 +1301,7 @@ dependencies = [
  "bincode",
  "byteorder",
  "chrono",
- "clap",
+ "clap 2.33.3",
  "clockctrl",
  "directories",
  "igd",
@@ -1263,10 +1312,10 @@ dependencies = [
  "nix",
  "pnet",
  "protobuf",
- "ratman-client",
- "ratman-identity",
+ "ratman-client 0.3.0",
+ "ratman-identity 0.6.2",
  "ratman-netmod",
- "ratman-types",
+ "ratman-types 0.3.0",
  "serde",
  "serde_json",
  "task-notify",
@@ -1283,10 +1332,23 @@ version = "0.3.0"
 dependencies = [
  "async-std",
  "futures-lite",
- "ratman-types",
+ "ratman-types 0.3.0",
  "thiserror",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "ratman-client"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "660d141e2dd3e823891889688f05cc32d7569ee388ce6e044e071919ce6547e2"
+dependencies = [
+ "async-std",
+ "futures-lite",
+ "ratman-types 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "thiserror",
+ "tracing",
 ]
 
 [[package]]
@@ -1303,11 +1365,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "ratman-identity"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0bc9f8b25b194886b851aae2fc8f95d8e1caab2fc3c8edac3418042f44c5c10e"
+dependencies = [
+ "cfg-if 1.0.0",
+ "hex",
+ "rand 0.7.3",
+ "serde",
+]
+
+[[package]]
 name = "ratman-netmod"
 version = "0.5.1"
 dependencies = [
  "async-trait",
- "ratman-identity",
+ "ratman-identity 0.6.2",
  "serde",
  "twox-hash",
 ]
@@ -1320,7 +1394,21 @@ dependencies = [
  "byteorder",
  "protobuf",
  "protoc-rust",
- "ratman-identity",
+ "ratman-identity 0.6.2",
+ "thiserror",
+]
+
+[[package]]
+name = "ratman-types"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09b6dac6aa029241cd7323f015ad3ac90185143d76c4651c9efbef1a3c45ea89"
+dependencies = [
+ "async-std",
+ "byteorder",
+ "protobuf",
+ "protoc-rust",
+ "ratman-identity 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "thiserror",
 ]
 
@@ -1509,6 +1597,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a"
 
 [[package]]
+name = "strsim"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
+
+[[package]]
 name = "subtle"
 version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1566,6 +1660,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "termcolor"
+version = "1.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2dfed899f0eb03f32ee8c6a0aabdb8a7949659e3466561fc0adf54e26d88c5f4"
+dependencies = [
+ "winapi-util",
+]
+
+[[package]]
 name = "textwrap"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1574,6 +1677,12 @@ dependencies = [
  "term_size",
  "unicode-width",
 ]
+
+[[package]]
+name = "textwrap"
+version = "0.14.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0066c8d12af8b5acd21e00547c3797fde4e8677254a7ee429176ccebbe93dd80"
 
 [[package]]
 name = "thiserror"
@@ -1941,6 +2050,15 @@ name = "winapi-i686-pc-windows-gnu"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6"
+
+[[package]]
+name = "winapi-util"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "70ec6ce85bb158151cae5e5c87f95a8e97d2c0c4b001223f33a334e3ce5de178"
+dependencies = [
+ "winapi",
+]
 
 [[package]]
 name = "winapi-x86_64-pc-windows-gnu"
