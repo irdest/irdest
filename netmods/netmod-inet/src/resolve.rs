@@ -5,6 +5,12 @@ pub struct Resolver;
 impl Resolver {
     /// Turn a peer line into a SocketAddr via magic
     pub(crate) async fn resolve(peer: &str) -> Option<SocketAddr> {
+        let peer = if peer.ends_with("L") {
+            &peer[0..peer.len()]
+        } else {
+            &peer[..]
+        };
+
         match peer.parse().ok() {
             // First attempt to use it as a regular IP address string
             Some(s) => Some(s),
