@@ -2,8 +2,7 @@
 name = "ratman"
 description = "A decentralised and peer-to-peer packet router"
 license = "AGPL-3.0"
-version = "0.3.0"
-authors = ["Katharina Fey <kookie@spacekookie.de>"]
+version = "0.3.1"
 edition = "2018"
 
 # Stand-alone ratman daemon binary
