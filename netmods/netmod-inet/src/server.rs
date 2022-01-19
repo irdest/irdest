@@ -21,7 +21,7 @@ fn locked_stream(s: TcpStream) -> LockedStream {
 /// The listening server part of the tcp driver
 pub(crate) struct Server {
     alive: Arc<AtomicBool>,
-    pessimistic: Arc<AtomicBool>,
+    _pessimistic: Arc<AtomicBool>,
     inner: TcpListener,
     routes: Arc<Routes>,
     mode: Mode,
@@ -36,13 +36,13 @@ impl Server {
         bind: SocketAddr,
         _port: u16,
         mode: Mode,
-        pessimistic: Arc<AtomicBool>,
+        _pessimistic: Arc<AtomicBool>,
     ) -> Result<Arc<Self>> {
         Ok(TcpListener::bind(bind).await.map(|inner| {
             Arc::new(Self {
                 alive: Arc::new(true.into()),
                 incoming: IoPair::default(),
-                pessimistic,
+                _pessimistic,
                 inner,
                 routes,
                 _port,

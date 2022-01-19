@@ -7,17 +7,13 @@ members = [
     # The decentralised router
     "ratman",
     "ratman/client-lib",
-    "ratman/configure",
-    "ratman/harness",
     "ratman/identity",
     "ratman/netmod",
     "ratman/types",
 
     # Various utility crates
     "utils/clockctrl",
-    "utils/permute",
     "utils/task-notify",
-    "utils/visn",
 
     # Available netmod drivers
     "netmods/netmod-mem",

@@ -2,10 +2,6 @@
 name = "ratman-netmod"
 description = "Interface and framing abstraction for Ratman network drivers"
 version = "0.5.1"
-authors = [
-  "Katharina Fey <kookie@spacekookie.de>",
-  "Leonora Tindall <nora@nora.codes>"
-]
 edition = "2018"
 license = "AGPL-3.0"
 

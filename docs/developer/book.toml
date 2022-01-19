@@ -1,5 +1,4 @@
 [book]
-authors = ["Katharina Fey <kookie@spacekookie.de>", "Irdest developers"]
 multilingual = false
 src = "src"
 title = "Irdest developer manual"

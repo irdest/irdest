@@ -1,16 +1,15 @@
 # Irdest clients
 
-This directory contains different irdest user applications.  For a more
-detailed write-up on supported platforms, install instructions, and
-client capabilities, check out the [user
-manual](https://docs.irde.st/user/)!
+As part of the Irdest project we develop several applications to go
+with the core networking router [Ratman](../ratman).  Some of these
+should be considered tech-demos, while others enable you to use
+existing networking applications (for example curl or your favourite
+XMPP client) across an Irdest mesh network!
 
-- [irdest-hubd](./hubd) -- a daemon that accepts connections via the
-  irdest RPC interface.  Comes with TCP, UDP, and UPnP support.
-- [irdest-gtk](./irdest-gtk) -- a native Gtk+ irdest client, supporting
-  text messaging and file sharing (prototype state)
-- [irpc-client](./irpc-client) -- a simple RPC client that takes json
-  inputs and connects to an irdest backend (such as `irdest-hubd`) to
-  execute user-commands.
-- [irdest-droid](./android) -- an integrated Android app with wireless
-  capabilities, and a native user interface (prototype state)
+Following is a short list of available clients and their aproximate
+state of usability.
+
+| Client name                    | Last release version | Status    | Description                                                                      |
+|--------------------------------|----------------------|-----------|----------------------------------------------------------------------------------|
+| [irdest-echo](./irdest-echo)   | 0.1.0                | Done      | A small example application showing how to use the Ratman client SDK             |
+| [irdest-proxy](./irdest-proxy) | -                    | Prototype | A local socket proxy allowing you to tunnel IP traffic through an Irdest network |

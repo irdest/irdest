@@ -2,7 +2,6 @@
 name = "netmod-wd"
 description = "A native network driver that binds wifi direct"
 version = "0.2.0"
-authors = ["Katharina Fey <kookie@spacekookie.de>"]
 edition = "2018"
 license = "AGPL-3.0-or-later"
 

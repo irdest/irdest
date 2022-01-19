@@ -2,7 +2,6 @@
 name = "netmod-mem"
 description = "A fully in-memory implementation of a netmod endpoint"
 version = "0.4.0"
-authors = ["Katharina Fey <kookie@spacekookie.de>", "Leonora Tindall <nora@nora.codes>"]
 edition = "2018"
 license = "AGPL-3.0"
 
