@@ -36,8 +36,8 @@ As part of our CI pipeline we build static binaries for Ratman and
 associated tools.  You can grab the latest successful build of the
 Ratman release branch below
 
-- Ratman [x86_64 binaries](https://git.irde.st/we/irdest/-/jobs/artifacts/ratman-0.3.0/raw/ratman-bundle-x86_64.tar.gz?job=bundle-ratman)!
-- Ratman [aarch64 binaries](https://git.irde.st/we/irdest/-/jobs/artifacts/ratman-0.3.0/raw/ratman-bundle-aarch64.tar.gz?job=bundle-ratman-aarch64)
+- Ratman [x86_64 binaries](https://git.irde.st/we/irdest/-/jobs/artifacts/ratman-0.3.1/raw/ratman-bundle-x86_64.tar.gz?job=bundle-ratman)!
+- Ratman [aarch64 binaries](https://git.irde.st/we/irdest/-/jobs/artifacts/ratman-0.3.1/raw/ratman-bundle-aarch64.tar.gz?job=bundle-ratman-aarch64)
 
 
 ### Building from source
