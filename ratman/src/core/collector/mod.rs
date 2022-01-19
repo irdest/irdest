@@ -167,6 +167,11 @@ fn queue_one() {
     });
 }
 
+// This test has produced some weird behaviour on aarch64-darwin.
+// Generally we should re-evaluate this test in terms of scope and
+// functionality, i.e. we should switch to a different encoding
+// mechanism, etc.
+#[ignore]
 #[test]
 fn queue_many() {
     use crate::{Slicer, TimePair};
