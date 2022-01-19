@@ -70,7 +70,7 @@ and used across various companents in Irdest.
 A peer is expressed as follows: 
 
 ```
-<netmod>#<address>:<port>
+<netmod>#<address>:<port>[L]
 ```
 
  - `<netmod>` refers to name of the netmod that the peer should be
@@ -79,6 +79,7 @@ A peer is expressed as follows:
  - `<address>` contains the main address part.  Domain names (provided
    you have a working DNS setup) are also accepted.
  - `<port>` finally the port to connect to
+ - `L` indicates whether the peer should use a "limited" connection
  
 ### `-f`, `--peer-file`
 
