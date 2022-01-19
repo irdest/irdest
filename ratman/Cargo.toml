@@ -55,9 +55,9 @@ directories = { version = "4.0.1", optional = true }
 serde_json = { version = "1.0", optional = true }
 ratman-client = { version = "0.3.0", path = "client-lib", optional = true }
 nix = { version = "0.23", optional = true }
-igd = { version = "=0.11", optional = true }       # These three crates are bound to an
-ipnetwork = { version = "=0.16", optional = true } # older version becuase we don't want
-pnet = { version = "=0.26", optional = true }      # to update to the 2021-edition yet
+igd = { version = "=0.12", optional = true }       # These three crates are bound to an
+ipnetwork = { version = "=0.18", optional = true } # older version becuase we don't want
+pnet = { version = "=0.28", optional = true }      # to update to the 2021-edition yet
 
 # Bundled network modules are all optional dependencies
 netmod-inet = { path = "../netmods/netmod-inet", version = "0.4", optional = true }
