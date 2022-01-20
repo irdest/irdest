@@ -11,3 +11,12 @@ pub enum Error {
     #[error("failed to provide correct authentication in handshake")]
     InvalidAuth,
 }
+
+impl From<Error> for io::Error {
+    fn from(e: Error) -> Self {
+        match e {
+            Error::Io(e) => e,
+            e => panic!("unexpected IPC error: {}", e),
+        }
+    }
+}

@@ -45,6 +45,12 @@ use types::{
     encode_message, message, parse_message, read_with_length, write_with_length,
 };
 
+/// An IPC handle for a particular address
+///
+/// This handle can be cloned safely.  An Ipc handle only refers to a
+/// single address connection.  Your application is encouraged to
+/// maintain many of these connections at the same time.
+#[derive(Clone)]
 pub struct RatmanIpc {
     socket: TcpStream,
     addr: Identity,
