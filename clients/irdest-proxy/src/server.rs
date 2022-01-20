@@ -2,14 +2,22 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use crate::config::{Config, InOrOut, IpSpace};
+use crate::{
+    config::{Config, InOrOut, IpSpace},
+    inlet::Inlet,
+    outlet::Outlet,
+};
 use async_std::{
     io::{self, ReadExt, WriteExt},
     net::{TcpListener, TcpStream},
     stream::StreamExt,
+    sync::{Arc, RwLock},
     task,
 };
-use ratman_client::{Identity, RatmanIpc};
+use ratman_client::Identity;
+use std::collections::BTreeMap;
+
+pub type SessionMap = Arc<RwLock<BTreeMap<Identity, TcpStream>>>;
 
 /// The main proxy server state
 pub struct Server {
@@ -89,11 +97,19 @@ async fn spawn_outwards(
 }
 
 impl Server {
-    pub async fn new(cfg: Config, bind: Option<&str>) -> Self {
-        for (ip, (io, addr)) in cfg.map.iter() {
+    pub fn new(cfg: Config) -> Self {
+        Self {
+            cfg,
+            map: SessionMap::default(),
+        }
+    }
+
+    /// Run this server
+    pub async fn run(&self, bind: Option<&str>) {
+        for (ip, (io, addr)) in self.cfg.map.iter() {
             if let Err(e) = match io {
-                InOrOut::In => spawn_inwards(&cfg, bind, ip, *addr).await,
-                InOrOut::Out => spawn_outwards(&cfg, bind, ip, *addr).await,
+                InOrOut::In => Inlet::new(bind, ip, *addr),
+                InOrOut::Out => Outlet::new(&self.map, bind, ip, *addr),
             } {
                 error!(
                     "failed to initialise {}: {}",
@@ -106,11 +122,6 @@ impl Server {
             }
         }
 
-        Self { cfg }
-    }
-
-    /// Run this server
-    pub async fn run(&self) {
         // wowow this is a hack ;_;
         async_std::future::pending().await
     }

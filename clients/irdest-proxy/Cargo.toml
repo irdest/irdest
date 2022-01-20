@@ -11,6 +11,7 @@ edition = "2018"
 ratman-client = { path = "../../ratman/lib-client", version = "0.4.0" }
 
 async-std = { version = "1.0", features = ["attributes"] }
+bincode = "1.0"
 clap = "3.0.0"
 directories = "4.0"
 libc = "0.2"

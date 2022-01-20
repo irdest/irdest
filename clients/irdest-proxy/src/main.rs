@@ -20,6 +20,10 @@
 extern crate tracing;
 
 mod config;
+mod inlet;
+mod io;
+mod outlet;
+mod proto;
 mod server;
 
 use clap::{App, Arg, ArgMatches};
@@ -108,6 +112,5 @@ async fn main() {
         }
     };
 
-    let server = Server::new(cfg, bind).await;
-    server.run().await
+    Server::new(cfg).run(bind).await
 }

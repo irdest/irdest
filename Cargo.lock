@@ -1073,6 +1073,7 @@ name = "irdest-proxy"
 version = "0.1.0"
 dependencies = [
  "async-std",
+ "bincode",
  "clap 3.0.10",
  "directories",
  "libc",
