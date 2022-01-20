@@ -108,14 +108,59 @@ fn parse_line(line: &str) -> Option<(IpSpace, (InOrOut, Identity))> {
 
 fn parse_outgoing(line: &str) -> Option<(IpSpace, (InOrOut, Identity))> {
     let split: Vec<_> = line.split("->").collect();
-    let socket = IpSpace::Single(split.get(0)?.parse().ok()?);
-    let id = Identity::from_bytes(split.get(1)?.as_bytes());
+    let socket = IpSpace::Single(split.get(0)?.trim().parse().ok()?);
+    let id = Identity::from_string(&split.get(1)?.trim().to_string());
     Some((socket, (InOrOut::Out, id)))
 }
 
 fn parse_incoming(line: &str) -> Option<(IpSpace, (InOrOut, Identity))> {
     let split: Vec<_> = line.split("<-").collect();
-    let socket = IpSpace::Single(split.get(0)?.parse().ok()?);
-    let id = Identity::from_bytes(split.get(1)?.as_bytes());
+    let socket = IpSpace::Single(split.get(0)?.trim().parse().ok()?);
+    let id = Identity::from_string(&split.get(1)?.trim().to_string());
     Some((socket, (InOrOut::In, id)))
+}
+
+#[test]
+fn test_parse_line_out() {
+    let line = "0.0.0.0:8000 -> 7053-2C1D-15D9-4D30-4FC5-4663-28BD-2E0C-F33D-0D49-2E28-6C1F-5649-6922-7DA8-B7A5";
+    use std::net::*;
+
+    match parse_line(line) {
+        Some((ip, (io, id))) => {
+            assert_eq!(
+                IpSpace::Single(SocketAddr::V4(SocketAddrV4::new(
+                    Ipv4Addr::new(0, 0, 0, 0),
+                    8000
+                ))),
+                ip
+            );
+
+            assert_eq!(io, InOrOut::Out);
+            assert_eq!(id, Identity::from_string(&"7053-2C1D-15D9-4D30-4FC5-4663-28BD-2E0C-F33D-0D49-2E28-6C1F-5649-6922-7DA8-B7A5".to_owned()))
+        }
+        _ => panic!("invalid parse"),
+    }
+}
+
+
+#[test]
+fn test_parse_line_in() {
+    let line = "127.0.0.1:443 <- 7053-2C1D-15D9-4D30-4FC5-4663-28BD-2E0C-F33D-0D49-2E28-6C1F-5649-6922-7DA8-B7A5";
+    use std::net::*;
+
+    match parse_line(line) {
+        Some((ip, (io, id))) => {
+            assert_eq!(
+                IpSpace::Single(SocketAddr::V4(SocketAddrV4::new(
+                    Ipv4Addr::new(127, 0, 0, 1),
+                    443
+                ))),
+                ip
+            );
+
+            assert_eq!(io, InOrOut::In);
+            assert_eq!(id, Identity::from_string(&"7053-2C1D-15D9-4D30-4FC5-4663-28BD-2E0C-F33D-0D49-2E28-6C1F-5649-6922-7DA8-B7A5".to_owned()))
+        }
+        _ => panic!("invalid parse"),
+    }
 }

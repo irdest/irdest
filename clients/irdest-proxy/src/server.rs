@@ -14,15 +14,15 @@ use async_std::{
     sync::{Arc, RwLock},
     task,
 };
-use ratman_client::Identity;
+use ratman_client::{Identity, RatmanIpc};
 use std::collections::BTreeMap;
 
 pub type SessionMap = Arc<RwLock<BTreeMap<Identity, TcpStream>>>;
 
 /// The main proxy server state
 pub struct Server {
-    #[allow(unused)]
     cfg: Config,
+    map: SessionMap,
 }
 
 async fn connect_with_address(bind: Option<&str>, addr: Identity) -> io::Result<RatmanIpc> {

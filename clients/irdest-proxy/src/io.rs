@@ -44,7 +44,7 @@ pub async fn from_ratman(ipc: &RatmanIpc) -> Option<(Identity, Option<Vec<u8>>)>
         .await
         .filter(|(t, _)| t == &Receive_Type::DEFAULT)
         .map(|(_, msg)| {
-            let env = Envelope::decode(&msg.payload);
+            let env = Envelope::decode(&msg.get_payload());
             (env.session, env.data)
         })
 }
