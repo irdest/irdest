@@ -66,7 +66,7 @@ pub fn build_cli() -> ArgMatches<'static> {
                 .help("Specify the interface on which to bind for local peer discovery.  If none is provided the default interface will be attempted to be determined")
         )
         .arg(
-            Arg::with_name("NO_LOCAL_DISCOVERY")
+            Arg::with_name("NO_DISCOVERY")
                 .long("no-discovery")
                 .help("Disable the local multicast peer discovery mechanism")
         )
@@ -152,7 +152,7 @@ async fn main() {
             "ratmand",
             if dynamic { Mode::Dynamic } else { Mode::Static },
         )
-            .await
+        .await
         {
             Ok(tcp) => {
                 // Open the UPNP port if the user enabled this feature
@@ -162,7 +162,7 @@ async fn main() {
                     }
                 }
 
-                let peers = peers.iter().map(|s| s.as_str()).collect();
+                let peers: Vec<_> = peers.iter().map(|s| s.as_str()).collect();
                 match daemon::attach_peers(&tcp, peers).await {
                     Ok(()) => tcp,
                     Err(e) => daemon::elog(format!("failed to parse peer data: {}", e), 1),
@@ -173,7 +173,7 @@ async fn main() {
 
         r.add_endpoint(tcp).await;
     }
-    
+
     // If local-discovery is enabled
     if !m.is_present("NO_DISCOVERY") {
         match setup_local_discovery(&r, &m).await {

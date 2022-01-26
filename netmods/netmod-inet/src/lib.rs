@@ -66,6 +66,7 @@ impl Default for LinkType {
 
 #[derive(Clone)]
 pub struct Endpoint {
+    #[allow(unused)]
     pessimistic: Arc<AtomicBool>,
     server: Arc<Server>,
     routes: Arc<Routes>,
@@ -132,8 +133,8 @@ impl Endpoint {
         for p in peers.into_iter() {
             if &p == "" && continue {}
 
-            let peer = match Resolver::resolve(&p).await {
-                Some(p) => p,
+            let (peer, tt) = match Resolver::resolve(&p).await {
+                Some((p, tt)) => (p, tt),
                 None => {
                     warn!("Failed to parse peer: '{}'... skipping", p);
                     continue;
@@ -141,7 +142,7 @@ impl Endpoint {
             };
 
             trace!("Adding peer: {} ({})", peer, "",);
-            self.routes.add_via_dst(peer, LinkType::Bidirect).await;
+            self.routes.add_via_dst(peer, tt).await;
         }
 
         Ok(())

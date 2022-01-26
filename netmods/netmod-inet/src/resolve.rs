@@ -1,14 +1,15 @@
+use crate::LinkType;
 use async_std::net::*;
 
 pub struct Resolver;
 
 impl Resolver {
     /// Turn a peer line into a SocketAddr via magic
-    pub(crate) async fn resolve(peer: &str) -> Option<SocketAddr> {
-        let peer = if peer.ends_with("L") {
-            &peer[0..peer.len()]
+    pub(crate) async fn resolve(peer: &str) -> Option<(SocketAddr, LinkType)> {
+        let (peer, tt) = if peer.ends_with("L") {
+            (&peer[0..peer.len()], LinkType::Limited)
         } else {
-            &peer[..]
+            (&peer[..], LinkType::Bidirect)
         };
 
         match peer.parse().ok() {
@@ -26,5 +27,6 @@ impl Resolver {
                     (addr, _) => addr,
                 }),
         }
+        .map(|addr| (addr, tt))
     }
 }
