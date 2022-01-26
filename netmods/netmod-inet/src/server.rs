@@ -94,7 +94,7 @@ impl Server {
                     break;
                 }
 
-                trace!("Accepting new connection...");
+                debug!("Accepting new connection...");
                 let s = Arc::clone(&s);
                 task::spawn(async move { s.accept_connection(locked_stream(stream)).await });
             }
@@ -208,16 +208,17 @@ impl Server {
             // A peer we didn't know before, while running in dynamic mode
             (RxOnly, Mode::Dynamic, None) => {
                 let id = self.routes.upgrade(rx_peer, port, s).await;
-                trace!("Sending a hello...");
+                trace!("Upgrading RX stream by sending Hello packet...");
                 self.send_hello(id, stream).await;
             }
             // Reverse connection of a peer we have known before
             (RxOnly, _, Some(_id)) => {
                 let id = self.routes.upgrade(rx_peer, port, s).await;
-                trace!("Sending a hello...");
+                trace!("I don't really know what we are doing here...");
                 self.send_hello(id, stream).await;
             }
             (TxOnly, _, Some(id)) => {
+                trace!("Upgrading TX stream to BIDIRECT");
                 self.routes.add_src(id, *src).await;
                 self.send_hello(id, stream).await;
             }
@@ -226,7 +227,7 @@ impl Server {
                 debug!("{} Running STATIC: dropping packet!", upm);
                 return;
             }
-            (link, mode, id) => panic!("{:?} {:?} {:?}", link, mode, id),
+            (link, mode, id) => panic!("Invalid packet mode: {:?} {:?} {:?}", link, mode, id),
         }
     }
 
