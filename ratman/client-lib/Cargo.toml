@@ -4,6 +4,7 @@ description = "IPC library to interact with a Ratman daemon"
 version = "0.3.0"
 edition = "2018"
 license = "GPL-3.0-or-later"
+readme = "README.md"
 
 [dependencies]
 async-std = { version = "1.0", features = ["attributes"] }
