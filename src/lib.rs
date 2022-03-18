@@ -2,6 +2,8 @@ use blake2::{Blake2b, Blake2bMac, Digest, digest::consts::U32, digest::Update, d
 use chacha20::ChaCha20;
 use chacha20::cipher::{KeyIvInit, StreamCipher};
 use thiserror::Error as ThisError;
+use std::collections::HashMap;
+use async_trait::async_trait;
 
 #[derive(ThisError, Debug)]
 pub enum Error {
@@ -25,7 +27,7 @@ impl From<BlockSize> for usize {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct BlockReference([u8; 32]);
 
 impl From<[u8; 32]> for BlockReference {
@@ -44,6 +46,31 @@ impl From<[u8; 32]> for BlockKey {
 }
 
 pub type RKPair = (BlockReference, BlockKey);
+
+#[async_trait]
+pub trait BlockStorageRead {
+    async fn fetch_block(&self, reference: &BlockReference) -> std::io::Result<Option<Vec<u8>>>;
+}
+
+#[async_trait]
+pub trait BlockStorageWrite {
+    async fn store_block(&mut self, block: &[u8]) -> std::io::Result<()>;
+}
+
+#[async_trait]
+impl BlockStorageRead for HashMap<BlockReference, Vec<u8>> {
+    async fn fetch_block(&self, reference: &BlockReference) -> std::io::Result<Option<Vec<u8>>> {
+        Ok(self.get(reference).cloned())
+    }
+}
+
+#[async_trait]
+impl BlockStorageWrite for HashMap<BlockReference, Vec<u8>> {
+    async fn store_block(&mut self, block: &[u8]) -> std::io::Result<()> {
+        self.insert(block_reference(block), block.to_vec());
+        Ok(())
+    }
+}
 
 pub fn encode(content: &[u8], convergence_secret: &[u8; 32], block_size: BlockSize) -> (Vec<Vec<u8>>, RKPair) {
     let mut level = 0;
