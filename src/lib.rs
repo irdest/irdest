@@ -25,7 +25,27 @@ impl From<BlockSize> for usize {
     }
 }
 
-pub fn encode(content: &[u8], convergence_secret: [u8; 32], block_size: BlockSize) -> (Vec<Vec<u8>>, [u8; 32], [u8; 32]) {
+#[derive(Clone)]
+pub struct BlockReference([u8; 32]);
+
+impl From<[u8; 32]> for BlockReference {
+    fn from(arr: [u8; 32]) -> BlockReference {
+        BlockReference(arr)
+    }
+}
+
+#[derive(Clone)]
+pub struct BlockKey([u8; 32]);
+
+impl From<[u8; 32]> for BlockKey {
+    fn from(arr: [u8; 32]) -> BlockKey {
+        BlockKey(arr)
+    }
+}
+
+pub type RKPair = (BlockReference, BlockKey);
+
+pub fn encode(content: &[u8], convergence_secret: &[u8; 32], block_size: BlockSize) -> (Vec<Vec<u8>>, RKPair) {
     let mut level = 0;
 
     let (mut blocks, mut rk_pairs) = split_content(content, convergence_secret, block_size);
@@ -38,12 +58,12 @@ pub fn encode(content: &[u8], convergence_secret: [u8; 32], block_size: BlockSiz
         level += 1;
     }
 
-    let (root_reference, root_key) = rk_pairs[0];
+    let root = rk_pairs[0].clone();
 
-    (blocks, root_reference, root_key)
+    (blocks, root)
 }
 
-fn split_content(content: &[u8], convergence_secret: [u8; 32], block_size: BlockSize) -> (Vec<Vec<u8>>, Vec<([u8; 32], [u8; 32])>) {
+fn split_content(content: &[u8], convergence_secret: &[u8; 32], block_size: BlockSize) -> (Vec<Vec<u8>>, Vec<RKPair>) {
     let mut blocks = vec![];
     let mut rk_pairs = vec![];
 
@@ -54,38 +74,38 @@ fn split_content(content: &[u8], convergence_secret: [u8; 32], block_size: Block
     };
 
     for content_block in padded.chunks_exact(block_size.into()) {
-        let (encrypted_block, reference, key) = encrypt_block(content_block, convergence_secret);
+        let (encrypted_block, rk_pair) = encrypt_block(content_block, convergence_secret);
         blocks.push(encrypted_block);
-        rk_pairs.push((reference, key));
+        rk_pairs.push(rk_pair);
     }
 
     (blocks, rk_pairs)
 }
 
-fn collect_rk_pairs(mut input_rk_pairs: Vec<([u8; 32], [u8; 32])>, convergence_secret: [u8; 32], block_size: BlockSize) -> (Vec<Vec<u8>>, Vec<([u8; 32], [u8; 32])>) {
+fn collect_rk_pairs(mut input_rk_pairs: Vec<RKPair>, convergence_secret: &[u8; 32], block_size: BlockSize) -> (Vec<Vec<u8>>, Vec<RKPair>) {
     let arity = usize::from(block_size) / 64;
 
     let mut blocks = vec![];
     let mut output_rk_pairs = vec![];
 
     while input_rk_pairs.len() % arity != 0 {
-        input_rk_pairs.push(([0; 32], [0; 32]));
+        input_rk_pairs.push(([0; 32].into(), [0; 32].into()));
     }
 
     for rk_pairs_for_node in input_rk_pairs.chunks_exact(arity) {
         let node = {
             let mut buffer = vec![];
             for pair in rk_pairs_for_node {
-                buffer.extend_from_slice(&pair.0);
-                buffer.extend_from_slice(&pair.1);
+                buffer.extend_from_slice(&pair.0.0);
+                buffer.extend_from_slice(&pair.1.0);
             }
             buffer
         };
 
-        let (block, reference, key) = encrypt_block(&node, convergence_secret);
+        let (block, rk_pair) = encrypt_block(&node, convergence_secret);
 
         blocks.push(block);
-        output_rk_pairs.push((reference, key));
+        output_rk_pairs.push(rk_pair);
     }
 
     (blocks, output_rk_pairs)
@@ -93,9 +113,6 @@ fn collect_rk_pairs(mut input_rk_pairs: Vec<([u8; 32], [u8; 32])>, convergence_s
 
 fn pad(input: &mut Vec<u8>, block_size: BlockSize) {
     let block_size: usize = block_size.into();
-    /*if input.len() % block_size == 0 {
-        return;
-    }*/
     input.push(0x80);
     while input.len() % block_size != 0 {
         input.push(0x0);
@@ -116,26 +133,28 @@ fn unpad(input: &mut Vec<u8>, block_size: BlockSize) -> Result {
     }
 }
 
-fn encrypt_block(input: &[u8], convergence_secret: [u8; 32]) -> (Vec<u8>, [u8; 32], [u8; 32]) {
-    let key = {
-        let mut hasher = Blake2bMac::<U32>::new_from_slice(&convergence_secret).unwrap();
-        Update::update(&mut hasher, input);
-        hasher.finalize_fixed()
-    };
+fn block_key(input: &[u8], convergence_secret: &[u8; 32]) -> BlockKey {
+    let mut hasher = Blake2bMac::<U32>::new_from_slice(convergence_secret).unwrap();
+    Update::update(&mut hasher, input);
+    BlockKey(hasher.finalize_fixed().into())
+}
 
+fn block_reference(input: &[u8]) -> BlockReference {
+    let mut hasher = Blake2b::<U32>::new();
+    Digest::update(&mut hasher, &input);
+    BlockReference(hasher.finalize().into())
+}
+
+fn encrypt_block(input: &[u8], convergence_secret: &[u8; 32]) -> (Vec<u8>, RKPair) {
+    let key = block_key(input, convergence_secret);
     let encrypted_block = {
         let nonce = [0; 12];
-        let mut cipher = ChaCha20::new(&key.into(), &nonce.into());
+        let mut cipher = ChaCha20::new(&key.0.into(), &nonce.into());
         let mut buffer = input.to_vec();
         cipher.apply_keystream(&mut buffer);
         buffer
     };
+    let reference = block_reference(&encrypted_block);
 
-    let reference = {
-        let mut hasher = Blake2b::<U32>::new();
-        Digest::update(&mut hasher, &encrypted_block);
-        hasher.finalize()
-    };
-
-    (encrypted_block, reference.into(), key.into())
+    (encrypted_block, (reference, key))
 }
