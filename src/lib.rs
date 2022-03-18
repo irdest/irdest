@@ -1,17 +1,14 @@
-use blake2::{Blake2b, Blake2bMac, Digest, digest::consts::U32, digest::Update, digest::KeyInit, digest::FixedOutput};
+use blake2::{Blake2b, Digest, digest::consts::U32};
 use chacha20::ChaCha20;
 use chacha20::cipher::{KeyIvInit, StreamCipher};
-use thiserror::Error as ThisError;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::ops::Deref;
 
-#[derive(ThisError, Debug)]
-pub enum Error {
-    #[error("Invalid padding")]
-    Padding,
-}
-pub type Result<T = ()> = std::result::Result<T, Error>;
+mod encoder;
+pub use encoder::{Encoder, encode};
+mod decoder;
+pub use decoder::{Decoder, decode};
 
 #[derive(Clone, Copy, Debug)]
 pub enum BlockSize {
@@ -94,7 +91,7 @@ pub trait BlockStorageRead {
 
 #[async_trait]
 pub trait BlockStorageWrite {
-    async fn store(&mut self, block: Vec<u8>) -> std::io::Result<()>;
+    async fn store(&mut self, block: &[u8]) -> std::io::Result<()>;
 }
 
 #[async_trait]
@@ -106,25 +103,10 @@ impl BlockStorageRead for HashMap<BlockReference, Vec<u8>> {
 
 #[async_trait]
 impl BlockStorageWrite for HashMap<BlockReference, Vec<u8>> {
-    async fn store(&mut self, block: Vec<u8>) -> std::io::Result<()> {
-        self.insert(block_reference(&block), block);
+    async fn store(&mut self, block: &[u8]) -> std::io::Result<()> {
+        self.insert(block_reference(block), block.to_vec());
         Ok(())
     }
-}
-
-pub struct Encoder<'a, S: BlockStorageWrite> {
-    convergence_secret: [u8; 32],
-    block_size: BlockSize,
-    block_storage: &'a mut S,
-}
-
-pub async fn encode<S: BlockStorageWrite>(content: &[u8], convergence_secret: &[u8; 32], block_size: BlockSize, block_storage: &mut S) -> std::io::Result<ReadCapability> {
-    let mut encoder = Encoder {
-        convergence_secret: convergence_secret.clone(),
-        block_size,
-        block_storage,
-    };
-    encoder.encode(content).await
 }
 
 #[derive(Clone, Debug)]
@@ -135,116 +117,25 @@ pub struct ReadCapability {
     pub block_size: BlockSize,
 }
 
-impl<'a, S: BlockStorageWrite> Encoder<'a, S> {
-    pub async fn encode(&mut self, content: &[u8]) -> std::io::Result<ReadCapability> {
-        let mut level = 0;
-        let mut rk_pairs = self.split_content(content).await?;
-
-        while rk_pairs.len() > 1 {
-            let new_rk_pairs = self.collect_rk_pairs(rk_pairs).await?;
-            rk_pairs = new_rk_pairs;
-            level += 1;
-        }
-
-        let root = rk_pairs.remove(0);
-        Ok(ReadCapability {
-            root_reference: root.0,
-            root_key: root.1,
+impl ReadCapability {
+    pub(crate) fn from_rk_pair(rk_pair: RKPair, level: usize, block_size: BlockSize) -> ReadCapability {
+        ReadCapability {
+            root_reference: rk_pair.0,
+            root_key: rk_pair.1,
             level,
-            block_size: self.block_size,
-        })
-    }
-
-    async fn split_content(&mut self, content: &[u8]) -> std::io::Result<Vec<RKPair>> {
-        let mut rk_pairs = vec![];
-
-        let padded = {
-            let mut buffer = content.to_vec();
-            pad(&mut buffer, self.block_size);
-            buffer
-        };
-
-        for content_block in padded.chunks_exact(*self.block_size) {
-            let (encrypted_block, rk_pair) = encrypt_block(content_block, &self.convergence_secret);
-            self.block_storage.store(encrypted_block).await?;
-            rk_pairs.push(rk_pair);
-        }
-
-        Ok(rk_pairs)
-    }
-
-    async fn collect_rk_pairs(&mut self, mut input_rk_pairs: Vec<RKPair>) -> std::io::Result<Vec<RKPair>> {
-        let arity = *self.block_size / 64;
-
-        let mut output_rk_pairs = vec![];
-
-        while input_rk_pairs.len() % arity != 0 {
-            input_rk_pairs.push(([0; 32].into(), [0; 32].into()));
-        }
-
-        for rk_pairs_for_node in input_rk_pairs.chunks_exact(arity) {
-            let node = {
-                let mut buffer = vec![];
-                for pair in rk_pairs_for_node {
-                    buffer.extend_from_slice(&pair.0.0);
-                    buffer.extend_from_slice(&pair.1.0);
-                }
-                buffer
-            };
-
-            let (block, rk_pair) = encrypt_block(&node, &self.convergence_secret);
-
-            self.block_storage.store(block).await?;
-            output_rk_pairs.push(rk_pair);
-        }
-
-        Ok(output_rk_pairs)
-    }
-}
-
-fn pad(input: &mut Vec<u8>, block_size: BlockSize) {
-    input.push(0x80);
-    while input.len() % *block_size != 0 {
-        input.push(0x0);
-    }
-}
-
-fn unpad(input: &mut Vec<u8>, block_size: BlockSize) -> Result {
-    let old_len = input.len();
-    loop {
-        match input.pop() {
-            Some(0) => (),
-            Some(0x80) => return Ok(()),
-            _ => return Err(Error::Padding),
-        }
-        if old_len - input.len() > *block_size {
-            return Err(Error::Padding);
+            block_size,
         }
     }
 }
 
-fn block_key(input: &[u8], convergence_secret: &[u8; 32]) -> BlockKey {
-    let mut hasher = Blake2bMac::<U32>::new_from_slice(convergence_secret).unwrap();
-    Update::update(&mut hasher, input);
-    BlockKey(hasher.finalize_fixed().into())
-}
-
-fn block_reference(input: &[u8]) -> BlockReference {
+pub(crate) fn block_reference(input: &[u8]) -> BlockReference {
     let mut hasher = Blake2b::<U32>::new();
     Digest::update(&mut hasher, &input);
     BlockReference(hasher.finalize().into())
 }
 
-fn encrypt_block(input: &[u8], convergence_secret: &[u8; 32]) -> (Vec<u8>, RKPair) {
-    let key = block_key(input, convergence_secret);
-    let encrypted_block = {
-        let nonce = [0; 12];
-        let mut cipher = ChaCha20::new(&key.0.into(), &nonce.into());
-        let mut buffer = input.to_vec();
-        cipher.apply_keystream(&mut buffer);
-        buffer
-    };
-    let reference = block_reference(&encrypted_block);
-
-    (encrypted_block, (reference, key))
+pub(crate) fn chacha20(data: &mut [u8], key: &BlockKey) {
+    let nonce = [0; 12];
+    let mut cipher = ChaCha20::new(&(**key).into(), &nonce.into());
+    cipher.apply_keystream(data);
 }
