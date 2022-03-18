@@ -10,7 +10,7 @@ blake2 = "0.10"
 chacha20 = "0.9"
 thiserror = "1.0"
 async-trait = "0.1"
+base32 = "0.4"
 
 [dev-dependencies]
 async-std = { version = "1.10", features = [ "attributes" ] }
-base32 = "0.4"

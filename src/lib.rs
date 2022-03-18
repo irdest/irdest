@@ -13,7 +13,7 @@ pub enum Error {
 }
 pub type Result<T = ()> = std::result::Result<T, Error>;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum BlockSize {
     _1K,
     _32K,
@@ -29,7 +29,7 @@ impl Deref for BlockSize {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct BlockReference([u8; 32]);
 
 impl From<[u8; 32]> for BlockReference {
@@ -42,6 +42,18 @@ impl Deref for BlockReference {
     type Target = [u8; 32];
     fn deref(&self) -> &[u8; 32] {
         &self.0
+    }
+}
+
+impl std::fmt::Display for BlockReference {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", base32::encode(base32::Alphabet::RFC4648 { padding: false }, &**self))
+    }
+}
+
+impl std::fmt::Debug for BlockReference {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self)
     }
 }
 
@@ -61,7 +73,19 @@ impl Deref for BlockKey {
     }
 }
 
-pub type RKPair = (BlockReference, BlockKey);
+impl std::fmt::Display for BlockKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", base32::encode(base32::Alphabet::RFC4648 { padding: false }, &**self))
+    }
+}
+
+impl std::fmt::Debug for BlockKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+
+type RKPair = (BlockReference, BlockKey);
 
 #[async_trait]
 pub trait BlockStorageRead {
@@ -94,7 +118,7 @@ pub struct Encoder<'a, S: BlockStorageWrite> {
     block_storage: &'a mut S,
 }
 
-pub async fn encode<S: BlockStorageWrite>(content: &[u8], convergence_secret: &[u8; 32], block_size: BlockSize, block_storage: &mut S) -> std::io::Result<RKPair> {
+pub async fn encode<S: BlockStorageWrite>(content: &[u8], convergence_secret: &[u8; 32], block_size: BlockSize, block_storage: &mut S) -> std::io::Result<ReadCapability> {
     let mut encoder = Encoder {
         convergence_secret: convergence_secret.clone(),
         block_size,
@@ -103,8 +127,16 @@ pub async fn encode<S: BlockStorageWrite>(content: &[u8], convergence_secret: &[
     encoder.encode(content).await
 }
 
+#[derive(Clone, Debug)]
+pub struct ReadCapability {
+    pub root_reference: BlockReference,
+    pub root_key: BlockKey,
+    pub level: usize,
+    pub block_size: BlockSize,
+}
+
 impl<'a, S: BlockStorageWrite> Encoder<'a, S> {
-    pub async fn encode(&mut self, content: &[u8]) -> std::io::Result<RKPair> {
+    pub async fn encode(&mut self, content: &[u8]) -> std::io::Result<ReadCapability> {
         let mut level = 0;
         let mut rk_pairs = self.split_content(content).await?;
 
@@ -115,7 +147,12 @@ impl<'a, S: BlockStorageWrite> Encoder<'a, S> {
         }
 
         let root = rk_pairs.remove(0);
-        Ok(root)
+        Ok(ReadCapability {
+            root_reference: root.0,
+            root_key: root.1,
+            level,
+            block_size: self.block_size,
+        })
     }
 
     async fn split_content(&mut self, content: &[u8]) -> std::io::Result<Vec<RKPair>> {
