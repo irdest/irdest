@@ -94,7 +94,7 @@ pub trait BlockStorageRead {
 
 #[async_trait]
 pub trait BlockStorageWrite {
-    async fn store(&mut self, block: &[u8]) -> std::io::Result<()>;
+    async fn store(&mut self, block: Vec<u8>) -> std::io::Result<()>;
 }
 
 #[async_trait]
@@ -106,8 +106,8 @@ impl BlockStorageRead for HashMap<BlockReference, Vec<u8>> {
 
 #[async_trait]
 impl BlockStorageWrite for HashMap<BlockReference, Vec<u8>> {
-    async fn store(&mut self, block: &[u8]) -> std::io::Result<()> {
-        self.insert(block_reference(block), block.to_vec());
+    async fn store(&mut self, block: Vec<u8>) -> std::io::Result<()> {
+        self.insert(block_reference(&block), block);
         Ok(())
     }
 }
@@ -166,7 +166,7 @@ impl<'a, S: BlockStorageWrite> Encoder<'a, S> {
 
         for content_block in padded.chunks_exact(*self.block_size) {
             let (encrypted_block, rk_pair) = encrypt_block(content_block, &self.convergence_secret);
-            self.block_storage.store(&encrypted_block).await?;
+            self.block_storage.store(encrypted_block).await?;
             rk_pairs.push(rk_pair);
         }
 
@@ -194,7 +194,7 @@ impl<'a, S: BlockStorageWrite> Encoder<'a, S> {
 
             let (block, rk_pair) = encrypt_block(&node, &self.convergence_secret);
 
-            self.block_storage.store(&block).await?;
+            self.block_storage.store(block).await?;
             output_rk_pairs.push(rk_pair);
         }
 
