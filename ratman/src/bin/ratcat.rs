@@ -9,6 +9,10 @@ use std::{
     path::PathBuf,
 };
 
+pub(crate) fn env_xdg_config() -> Option<String> {
+    std::env::var("XDG_CONFIG_HOME").ok()
+}
+
 pub fn build_cli() -> App<'static, 'static> {
     App::new("ratcat")
         .about("Client management program not unlike cat, but for ratman")
@@ -147,7 +151,9 @@ async fn main() {
     //// Setup the application config directory
     let dirs = ProjectDirs::from("org", "irdest", "ratcat")
         .expect("Failed to initialise project directories for this platform!");
-    let cfg_dir = PathBuf::from(dirs.config_dir());
+    let cfg_dir = env_xdg_config()
+        .map(|path| PathBuf::new().join(path))
+        .unwrap_or_else(|| dirs.config_dir().to_path_buf());
     let _ = create_dir(&cfg_dir);
 
     let num: usize = match m.value_of("RECV_COUNT").map(|c| c.parse().ok()) {

@@ -30,7 +30,8 @@ additional information in their respective README files.
 | [netmods]  | Platform-specific networking interface drivers                                                                                             |
 | [nix]      | [Nix](https://nixos.org) related build utilities                                                                                           |
 | [ratman]   | A decentralised and modular userspace frame router                                                                                         |
-| [utils]    | Various utilities in use all over the repository that don't fit in anywhere else                                                           |
+| [tests]    | Integration tests over multiple components
+| [utils]    | Various utilities in use all over the repository that don't fit in anywhere else                                                           |                                                                                                                                           |
 
 
 ## Overview
@@ -112,5 +113,6 @@ and can be found in the [licenses](licenses) directory.
 [netmods]: ./netmods
 [nix]: ./nix
 [ratman]: ./ratman
+[tests]: ./tests
 [user manual]: https://docs.irde.st/user/
 [utils]: ./utils

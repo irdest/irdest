@@ -1,4 +1,7 @@
-use crate::{daemon::parse, Router};
+use crate::{
+    daemon::{env_xdg_data, parse},
+    Router,
+};
 use async_std::{
     io::Result,
     net::{Incoming, TcpListener, TcpStream},
@@ -62,7 +65,9 @@ async fn load_users(router: &Router, path: PathBuf) -> Vec<Identity> {
 }
 
 fn data_path(dirs: &ProjectDirs) -> PathBuf {
-    let data_dir = dirs.data_dir();
+    let data_dir = env_xdg_data()
+        .map(|path| PathBuf::new().join(path))
+        .unwrap_or_else(|| dirs.data_dir().to_path_buf());
     trace!("Ensure data directory exists: {:?}", data_dir);
     let _ = std::fs::create_dir(&data_dir);
     PathBuf::new().join(data_dir).join("users.json")
