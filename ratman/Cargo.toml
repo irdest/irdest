@@ -64,4 +64,5 @@ netmod-lan = { path = "../netmods/netmod-lan", version = "0.2", optional = true 
 
 [dev-dependencies]
 netmod-mem = { path = "../netmods/netmod-mem", version = "0.4" }
+netmod-inet = { path = "../netmods/netmod-inet", version = "*" }
 bincode = "1.2"
