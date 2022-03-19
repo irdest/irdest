@@ -90,8 +90,10 @@ pub trait BlockStorage {
     async fn fetch(&self, reference: &BlockReference) -> std::io::Result<Option<Vec<u8>>>;
 }
 
+pub type MemoryStorage = HashMap<BlockReference, Vec<u8>>;
+
 #[async_trait]
-impl BlockStorage for HashMap<BlockReference, Vec<u8>> {
+impl BlockStorage for MemoryStorage {
     async fn store(&mut self, block: &[u8]) -> std::io::Result<()> {
         self.insert(block_reference(block), block.to_vec());
         Ok(())

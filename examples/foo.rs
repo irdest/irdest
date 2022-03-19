@@ -1,11 +1,10 @@
-use eris::{BlockReference, BlockSize};
-use std::collections::HashMap;
+use eris::{BlockSize, MemoryStorage};
 
 #[async_std::main]
 async fn main() {
     let content = b"Hello, world!";
     let key = [0; 32];
-    let mut blocks = HashMap::<BlockReference, Vec<u8>>::new();
+    let mut blocks = MemoryStorage::new();
     let read_capability = eris::encode(content, &key, BlockSize::_1K, &mut blocks).await.unwrap();
     println!("{:?}", read_capability);
     println!("blocks:");
