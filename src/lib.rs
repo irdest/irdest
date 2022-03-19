@@ -1,105 +1,35 @@
-use blake2::{Blake2b, Digest, digest::consts::U32};
-use chacha20::ChaCha20;
-use chacha20::cipher::{KeyIvInit, StreamCipher};
-use async_trait::async_trait;
-use std::collections::HashMap;
-use std::ops::{Deref, DerefMut};
-
 mod enc;
 pub use enc::{Encoder, encode, encode_const, BlockSize};
 mod dec;
 pub use dec::{decode, decode_const, Error, Result};
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+use blake2::{Blake2b, Digest, digest::consts::U32};
+use chacha20::ChaCha20;
+use chacha20::cipher::{KeyIvInit, StreamCipher};
+use async_trait::async_trait;
+use derive_more::{Deref, DerefMut, From, Display, DebugCustom};
+use std::collections::HashMap;
+
+fn display_base32(bytes: &[u8]) -> String {
+    base32::encode(base32::Alphabet::RFC4648 { padding: false }, bytes)
+}
+
+#[derive(Clone, PartialEq, Eq, Hash, Deref, From, Display, DebugCustom)]
+#[display(fmt = "{}", "display_base32(&self.0)")]
+#[debug(fmt = "{}", "self")]
 pub struct BlockReference([u8; 32]);
 
-impl From<[u8; 32]> for BlockReference {
-    fn from(arr: [u8; 32]) -> BlockReference {
-        BlockReference(arr)
-    }
-}
-
-impl Deref for BlockReference {
-    type Target = [u8; 32];
-    fn deref(&self) -> &[u8; 32] {
-        &self.0
-    }
-}
-
-impl std::fmt::Display for BlockReference {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", base32::encode(base32::Alphabet::RFC4648 { padding: false }, &**self))
-    }
-}
-
-impl std::fmt::Debug for BlockReference {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self)
-    }
-}
-
-#[derive(Clone)]
+#[derive(Clone, Deref, From, Display, DebugCustom)]
+#[display(fmt = "{}", "display_base32(&self.0)")]
+#[debug(fmt = "{}", "self")]
 pub struct BlockKey([u8; 32]);
-
-impl From<[u8; 32]> for BlockKey {
-    fn from(arr: [u8; 32]) -> BlockKey {
-        BlockKey(arr)
-    }
-}
-
-impl Deref for BlockKey {
-    type Target = [u8; 32];
-    fn deref(&self) -> &[u8; 32] {
-        &self.0
-    }
-}
-
-impl std::fmt::Display for BlockKey {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", base32::encode(base32::Alphabet::RFC4648 { padding: false }, &**self))
-    }
-}
-
-impl std::fmt::Debug for BlockKey {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self)
-    }
-}
 
 type RKPair = (BlockReference, BlockKey);
 
+#[derive(Deref, DerefMut, From, Display, DebugCustom)]
+#[display(fmt = "{}", "display_base32(&self.0)")]
+#[debug(fmt = "{}", "self")]
 pub struct Block<const BS: usize>([u8; BS]);
-
-impl<const BS: usize> From<[u8; BS]> for Block<BS> {
-    fn from(arr: [u8; BS]) -> Block<BS> {
-        Block(arr)
-    }
-}
-
-impl<const BS: usize> Deref for Block<BS> {
-    type Target = [u8; BS];
-    fn deref(&self) -> &[u8; BS] {
-        &self.0
-    }
-}
-
-impl<const BS: usize> DerefMut for Block<BS> {
-    fn deref_mut(&mut self) -> &mut [u8; BS] {
-        &mut self.0
-    }
-}
-
-impl<const BS: usize> std::fmt::Display for Block<BS> {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", base32::encode(base32::Alphabet::RFC4648 { padding: false }, &**self))
-    }
-}
-
-impl<const BS: usize> std::fmt::Debug for Block<BS> {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self)
-    }
-}
 
 #[async_trait]
 pub trait BlockStorage<const BS: usize> {
