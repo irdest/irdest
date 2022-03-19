@@ -13,6 +13,8 @@ pub enum Error {
     BlockNotFound,
     #[error("Non-standard block size")]
     NonstandardBlockSize,
+    #[error("Unexpected block size")]
+    UnexpectedBlockSize,
 }
 
 pub type Result<T = ()> = std::result::Result<T, Error>;
@@ -38,6 +40,8 @@ pub async fn decode<S: BlockStorage<1024> + BlockStorage<{32 * 1024}>, W: AsyncW
     }
 }
 pub async fn decode_const<S: BlockStorage<BS>, W: AsyncWrite + Unpin, const BS: usize>(target: &mut W, read_capability: &ReadCapability, block_storage: &S) -> Result<()> {
+    if read_capability.block_size != BS { return Err(Error::UnexpectedBlockSize); }
+
     let mut subtrees = VecDeque::new();
     subtrees.push_back(read_capability.clone());
 
