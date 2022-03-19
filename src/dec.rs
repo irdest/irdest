@@ -1,4 +1,4 @@
-use crate::{ReadCapability, BlockStorage, BlockKey, BlockReference, chacha20};
+use crate::{ReadCapability, BlockStorage, BlockKey, BlockReference};
 use thiserror::Error as ThisError;
 use std::collections::VecDeque;
 use futures_lite::io::{AsyncWrite, AsyncWriteExt};
@@ -47,10 +47,10 @@ pub async fn decode_const<S: BlockStorage<BS>, W: AsyncWrite + Unpin, const BS: 
 
     while let Some(tree) = subtrees.pop_front() {
         let mut block = block_storage.fetch(&tree.root_reference).await?.ok_or(Error::BlockNotFound)?;
-        chacha20(&mut block, &tree.root_key);
+        block.chacha20(&tree.root_key);
 
         if tree.level == 0 {
-            let mut block = block.as_slice();
+            let mut block = (*block).as_slice();
             if subtrees.len() == 0 {
                 // this is the last block, unpad
                 unpad(&mut block, read_capability.block_size)?;

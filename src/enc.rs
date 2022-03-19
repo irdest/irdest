@@ -1,19 +1,20 @@
 use blake2::{Blake2bMac, digest::consts::U32, digest::Update, digest::KeyInit, digest::FixedOutput};
-use crate::{RKPair, ReadCapability, BlockStorage, BlockKey, chacha20, block_reference};
+use crate::{RKPair, ReadCapability, BlockStorage, BlockKey, Block};
 use futures_lite::io::{AsyncRead, AsyncReadExt};
 
-fn encrypt_block(block: &mut [u8], convergence_secret: &[u8; 32]) -> RKPair {
-    let key = block_key(block, convergence_secret);
-    chacha20(block, &key);
-    let reference = block_reference(&block);
+impl<const BS: usize> Block<BS> {
+    fn encrypt(&mut self, convergence_secret: &[u8; 32]) -> RKPair {
+        let key = self.derive_key(convergence_secret);
+        self.chacha20(&key);
+        let reference = self.reference();
+        (reference, key)
+    }
 
-    (reference, key)
-}
-
-fn block_key(input: &[u8], convergence_secret: &[u8; 32]) -> BlockKey {
-    let mut hasher = Blake2bMac::<U32>::new_from_slice(convergence_secret).unwrap();
-    Update::update(&mut hasher, input);
-    BlockKey(hasher.finalize_fixed().into())
+    fn derive_key(&self, convergence_secret: &[u8; 32]) -> BlockKey {
+        let mut hasher = Blake2bMac::<U32>::new_from_slice(convergence_secret).unwrap();
+        Update::update(&mut hasher, &**self);
+        BlockKey(hasher.finalize_fixed().into())
+    }
 }
 
 pub struct Encoder<'a, S: BlockStorage<BS>, const BS: usize> {
@@ -59,7 +60,7 @@ impl<'a, S: BlockStorage<BS>, const BS: usize> Encoder<'a, S, BS> {
 
     async fn split_content<R: AsyncRead + Unpin>(&mut self, content: &mut R) -> std::io::Result<Vec<RKPair>> {
         let mut rk_pairs = vec![];
-        let mut buf = [0u8; BS];
+        let mut buf = Block([0u8; BS]);
         let mut pos;
         loop {
             pos = 0;
@@ -76,7 +77,7 @@ impl<'a, S: BlockStorage<BS>, const BS: usize> Encoder<'a, S, BS> {
                 buf[pos] = 0x80;
             }
 
-            let rk_pair = encrypt_block(&mut buf, &self.convergence_secret);
+            let rk_pair = buf.encrypt(&self.convergence_secret);
             self.block_storage.store(&buf).await?;
             rk_pairs.push(rk_pair);
             if pos != BS { break; };
@@ -91,13 +92,13 @@ impl<'a, S: BlockStorage<BS>, const BS: usize> Encoder<'a, S, BS> {
         let mut output_rk_pairs = vec![];
 
         for rk_pairs_for_node in input_rk_pairs.chunks(arity) {
-            let mut node = [0u8; BS];
+            let mut node = Block([0u8; BS]);
             for (x, pair) in rk_pairs_for_node.iter().enumerate() {
                 node[64*x..64*x+32].copy_from_slice(&pair.0.0);
                 node[64*x+32..64*x+64].copy_from_slice(&pair.1.0);
             }
 
-            let rk_pair = encrypt_block(&mut node, &self.convergence_secret);
+            let rk_pair = node.encrypt(&self.convergence_secret);
 
             self.block_storage.store(&node).await?;
             output_rk_pairs.push(rk_pair);

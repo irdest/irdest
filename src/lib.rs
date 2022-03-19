@@ -3,7 +3,7 @@ use chacha20::ChaCha20;
 use chacha20::cipher::{KeyIvInit, StreamCipher};
 use async_trait::async_trait;
 use std::collections::HashMap;
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
 mod enc;
 pub use enc::{Encoder, encode, encode_const, BlockSize};
@@ -68,26 +68,62 @@ impl std::fmt::Debug for BlockKey {
 
 type RKPair = (BlockReference, BlockKey);
 
+pub struct Block<const BS: usize>([u8; BS]);
+
+impl<const BS: usize> From<[u8; BS]> for Block<BS> {
+    fn from(arr: [u8; BS]) -> Block<BS> {
+        Block(arr)
+    }
+}
+
+impl<const BS: usize> Deref for Block<BS> {
+    type Target = [u8; BS];
+    fn deref(&self) -> &[u8; BS] {
+        &self.0
+    }
+}
+
+impl<const BS: usize> DerefMut for Block<BS> {
+    fn deref_mut(&mut self) -> &mut [u8; BS] {
+        &mut self.0
+    }
+}
+
+impl<const BS: usize> std::fmt::Display for Block<BS> {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", base32::encode(base32::Alphabet::RFC4648 { padding: false }, &**self))
+    }
+}
+
+impl<const BS: usize> std::fmt::Debug for Block<BS> {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+
 #[async_trait]
 pub trait BlockStorage<const BS: usize> {
-    async fn store(&mut self, block: &[u8; BS]) -> std::io::Result<()>;
-    async fn fetch(&self, reference: &BlockReference) -> std::io::Result<Option<[u8; BS]>>;
+    async fn store(&mut self, block: &Block<BS>) -> std::io::Result<()>;
+    async fn fetch(&self, reference: &BlockReference) -> std::io::Result<Option<Block<BS>>>;
 }
 
 pub type MemoryStorage = HashMap<BlockReference, Vec<u8>>;
 
 #[async_trait]
 impl<const BS: usize> BlockStorage<BS> for MemoryStorage {
-    async fn store(&mut self, block: &[u8; BS]) -> std::io::Result<()> {
-        self.insert(block_reference(block), block.to_vec());
+    async fn store(&mut self, block: &Block<BS>) -> std::io::Result<()> {
+        self.insert(block.reference(), block.0.to_vec());
         Ok(())
     }
 
-    async fn fetch(&self, reference: &BlockReference) -> std::io::Result<Option<[u8; BS]>> {
-        let arr = self.get(reference).map(|x| {
-            x.clone().try_into()
-        }).transpose().map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Block has unexpected size"))?;
-        Ok(arr)
+    async fn fetch(&self, reference: &BlockReference) -> std::io::Result<Option<Block<BS>>> {
+        self.get(reference)
+            .map(|x| -> std::io::Result<_> {
+                let arr: [u8; BS] = x.clone().try_into()
+                    .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Block has unexpected size"))?;
+                Ok(arr.into())
+            })
+            .transpose()
     }
 }
 
@@ -110,14 +146,16 @@ impl ReadCapability {
     }
 }
 
-pub(crate) fn block_reference(input: &[u8]) -> BlockReference {
-    let mut hasher = Blake2b::<U32>::new();
-    Digest::update(&mut hasher, &input);
-    BlockReference(hasher.finalize().into())
-}
+impl<const BS: usize> Block<BS> {
+    pub(crate) fn reference(&self) -> BlockReference {
+        let mut hasher = Blake2b::<U32>::new();
+        Digest::update(&mut hasher, &**self);
+        BlockReference(hasher.finalize().into())
+    }
 
-pub(crate) fn chacha20(data: &mut [u8], key: &BlockKey) {
-    let nonce = [0; 12];
-    let mut cipher = ChaCha20::new(&(**key).into(), &nonce.into());
-    cipher.apply_keystream(data);
+    pub(crate) fn chacha20(&mut self, key: &BlockKey) {
+        let nonce = [0; 12];
+        let mut cipher = ChaCha20::new(&(**key).into(), &nonce.into());
+        cipher.apply_keystream(&mut **self);
+    }
 }
