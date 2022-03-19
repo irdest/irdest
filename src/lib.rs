@@ -6,33 +6,9 @@ use std::collections::HashMap;
 use std::ops::Deref;
 
 mod enc;
-pub use enc::{Encoder, encode};
+pub use enc::{Encoder, encode, BlockSize};
 mod dec;
-pub use dec::{decode};
-
-#[derive(Clone, Copy, Debug)]
-pub enum BlockSize {
-    _1K,
-    _32K,
-}
-
-pub(crate) const fn block_size_from_usize(block_size: usize) -> BlockSize {
-    match block_size {
-        1024 => BlockSize::_1K,
-        32768 => BlockSize::_32K,
-        _ => panic!("Invalid block size"),
-    }
-}
-
-impl Deref for BlockSize {
-    type Target = usize;
-    fn deref(&self) -> &usize {
-        match self {
-            BlockSize::_1K => &1024,
-            BlockSize::_32K => &(32 * 1024),
-        }
-    }
-}
+pub use dec::{decode, Error, Result};
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct BlockReference([u8; 32]);
@@ -117,11 +93,11 @@ pub struct ReadCapability {
     pub root_reference: BlockReference,
     pub root_key: BlockKey,
     pub level: usize,
-    pub block_size: BlockSize,
+    pub block_size: usize,
 }
 
 impl ReadCapability {
-    pub(crate) fn from_rk_pair(rk_pair: RKPair, level: usize, block_size: BlockSize) -> ReadCapability {
+    pub(crate) fn from_rk_pair(rk_pair: RKPair, level: usize, block_size: usize) -> ReadCapability {
         ReadCapability {
             root_reference: rk_pair.0,
             root_key: rk_pair.1,

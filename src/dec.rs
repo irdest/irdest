@@ -1,35 +1,30 @@
-use crate::{ReadCapability, BlockSize, BlockStorage, BlockKey, BlockReference, chacha20};
+use crate::{ReadCapability, BlockStorage, BlockKey, BlockReference, chacha20};
 use thiserror::Error as ThisError;
 use std::collections::VecDeque;
 use futures_lite::io::{AsyncWrite, AsyncWriteExt};
 
 #[derive(ThisError, Debug)]
-pub enum DecodeError {
+pub enum Error {
     #[error("Invalid padding")]
     Padding,
-}
-#[derive(ThisError, Debug)]
-pub enum Error {
-    #[error("{0}")]
-    Decode(#[from] DecodeError),
     #[error("{0}")]
     Io(#[from] std::io::Error),
     #[error("Block not found in storage")]
     BlockNotFound,
 }
-pub type DecodeResult<T = ()> = std::result::Result<T, DecodeError>;
+
 pub type Result<T = ()> = std::result::Result<T, Error>;
 
-fn unpad(input: &mut Vec<u8>, block_size: BlockSize) -> DecodeResult {
+fn unpad(input: &mut Vec<u8>, block_size: usize) -> Result {
     let old_len = input.len();
     loop {
         match input.pop() {
             Some(0) => (),
             Some(0x80) => return Ok(()),
-            _ => return Err(DecodeError::Padding),
+            _ => return Err(Error::Padding),
         }
-        if old_len - input.len() > *block_size {
-            return Err(DecodeError::Padding);
+        if old_len - input.len() > block_size {
+            return Err(Error::Padding);
         }
     }
 }

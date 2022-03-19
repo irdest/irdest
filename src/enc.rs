@@ -1,5 +1,5 @@
 use blake2::{Blake2bMac, digest::consts::U32, digest::Update, digest::KeyInit, digest::FixedOutput};
-use crate::{RKPair, ReadCapability, BlockSize, BlockStorage, BlockKey, chacha20, block_reference, block_size_from_usize};
+use crate::{RKPair, ReadCapability, BlockStorage, BlockKey, chacha20, block_reference};
 use futures_lite::io::{AsyncRead, AsyncReadExt};
 
 fn encrypt_block(block: &mut [u8], convergence_secret: &[u8; 32]) -> RKPair {
@@ -19,6 +19,12 @@ fn block_key(input: &[u8], convergence_secret: &[u8; 32]) -> BlockKey {
 pub struct Encoder<'a, S: BlockStorage, const BS: usize> {
     pub convergence_secret: [u8; 32],
     pub block_storage: &'a mut S,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum BlockSize {
+    _1K,
+    _32K,
 }
 
 pub async fn encode<S: BlockStorage, R: AsyncRead + Unpin>(content: &mut R, convergence_secret: &[u8; 32], block_size: BlockSize, block_storage: &mut S) -> std::io::Result<ReadCapability> {
@@ -46,7 +52,7 @@ impl<'a, S: BlockStorage, const BS: usize> Encoder<'a, S, BS> {
         }
 
         let root = rk_pairs.remove(0);
-        Ok(ReadCapability::from_rk_pair(root, level, block_size_from_usize(BS)))
+        Ok(ReadCapability::from_rk_pair(root, level, BS))
     }
 
     async fn split_content<R: AsyncRead + Unpin>(&mut self, content: &mut R) -> std::io::Result<Vec<RKPair>> {
