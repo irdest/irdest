@@ -1,4 +1,4 @@
-use crate::{ReadCapability, BlockSize, BlockStorageRead, BlockKey, BlockReference, chacha20};
+use crate::{ReadCapability, BlockSize, BlockStorage, BlockKey, BlockReference, chacha20};
 use thiserror::Error as ThisError;
 use std::collections::VecDeque;
 
@@ -33,11 +33,11 @@ fn unpad(input: &mut Vec<u8>, block_size: BlockSize) -> DecodeResult {
     }
 }
 
-pub struct Decoder<'a, S: BlockStorageRead> {
+pub struct Decoder<'a, S: BlockStorage> {
     pub block_storage: &'a S,
 }
 
-impl<'a, S: BlockStorageRead> Decoder<'a, S> {
+impl<'a, S: BlockStorage> Decoder<'a, S> {
     async fn decode(&self, read_capability: &ReadCapability) -> Result<Vec<u8>> {
         let mut out = vec![];
 
@@ -66,7 +66,7 @@ impl<'a, S: BlockStorageRead> Decoder<'a, S> {
     }
 }
 
-pub async fn decode<S: BlockStorageRead>(read_capability: &ReadCapability, block_storage: &S) -> Result<Vec<u8>> {
+pub async fn decode<S: BlockStorage>(read_capability: &ReadCapability, block_storage: &S) -> Result<Vec<u8>> {
     let decoder = Decoder { block_storage };
     decoder.decode(read_capability).await
 }

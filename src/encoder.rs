@@ -1,5 +1,5 @@
 use blake2::{Blake2bMac, digest::consts::U32, digest::Update, digest::KeyInit, digest::FixedOutput};
-use crate::{RKPair, ReadCapability, BlockSize, BlockStorageWrite, BlockKey, chacha20, block_reference};
+use crate::{RKPair, ReadCapability, BlockSize, BlockStorage, BlockKey, chacha20, block_reference};
 
 fn pad(input: &mut Vec<u8>, block_size: BlockSize) {
     input.push(0x80);
@@ -22,13 +22,13 @@ fn block_key(input: &[u8], convergence_secret: &[u8; 32]) -> BlockKey {
     BlockKey(hasher.finalize_fixed().into())
 }
 
-pub struct Encoder<'a, S: BlockStorageWrite> {
+pub struct Encoder<'a, S: BlockStorage> {
     pub convergence_secret: [u8; 32],
     pub block_size: BlockSize,
     pub block_storage: &'a mut S,
 }
 
-pub async fn encode<S: BlockStorageWrite>(content: &[u8], convergence_secret: &[u8; 32], block_size: BlockSize, block_storage: &mut S) -> std::io::Result<ReadCapability> {
+pub async fn encode<S: BlockStorage>(content: &[u8], convergence_secret: &[u8; 32], block_size: BlockSize, block_storage: &mut S) -> std::io::Result<ReadCapability> {
     let mut encoder = Encoder {
         convergence_secret: convergence_secret.clone(),
         block_size,
@@ -37,7 +37,7 @@ pub async fn encode<S: BlockStorageWrite>(content: &[u8], convergence_secret: &[
     encoder.encode(content).await
 }
 
-impl<'a, S: BlockStorageWrite> Encoder<'a, S> {
+impl<'a, S: BlockStorage> Encoder<'a, S> {
     pub async fn encode(&mut self, content: &[u8]) -> std::io::Result<ReadCapability> {
         let mut level = 0;
         let mut rk_pairs = self.split_content(content).await?;

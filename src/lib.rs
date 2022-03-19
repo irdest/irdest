@@ -85,27 +85,20 @@ impl std::fmt::Debug for BlockKey {
 type RKPair = (BlockReference, BlockKey);
 
 #[async_trait]
-pub trait BlockStorageRead {
+pub trait BlockStorage {
+    async fn store(&mut self, block: &[u8]) -> std::io::Result<()>;
     async fn fetch(&self, reference: &BlockReference) -> std::io::Result<Option<Vec<u8>>>;
 }
 
 #[async_trait]
-pub trait BlockStorageWrite {
-    async fn store(&mut self, block: &[u8]) -> std::io::Result<()>;
-}
-
-#[async_trait]
-impl BlockStorageRead for HashMap<BlockReference, Vec<u8>> {
-    async fn fetch(&self, reference: &BlockReference) -> std::io::Result<Option<Vec<u8>>> {
-        Ok(self.get(reference).cloned())
-    }
-}
-
-#[async_trait]
-impl BlockStorageWrite for HashMap<BlockReference, Vec<u8>> {
+impl BlockStorage for HashMap<BlockReference, Vec<u8>> {
     async fn store(&mut self, block: &[u8]) -> std::io::Result<()> {
         self.insert(block_reference(block), block.to_vec());
         Ok(())
+    }
+
+    async fn fetch(&self, reference: &BlockReference) -> std::io::Result<Option<Vec<u8>>> {
+        Ok(self.get(reference).cloned())
     }
 }
 
