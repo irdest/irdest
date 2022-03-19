@@ -17,8 +17,7 @@ pub enum Error {
 
 pub type Result<T = ()> = std::result::Result<T, Error>;
 
-fn unpad(input: &mut &[u8], block_size: usize) -> Result {
-    let old_len = input.len();
+fn unpad(input: &mut &[u8]) -> Result {
     loop {
         if input.len() == 0 { return Err(Error::Padding); }
         let next = input[input.len()-1];
@@ -27,9 +26,6 @@ fn unpad(input: &mut &[u8], block_size: usize) -> Result {
             0 => (),
             0x80 => return Ok(()),
             _ => return Err(Error::Padding),
-        }
-        if old_len - input.len() > block_size {
-            return Err(Error::Padding);
         }
     }
 }
@@ -53,7 +49,7 @@ pub async fn decode_const<S: BlockStorage<BS>, W: AsyncWrite + Unpin, const BS: 
             let mut block = (*block).as_slice();
             if subtrees.len() == 0 {
                 // this is the last block, unpad
-                unpad(&mut block, read_capability.block_size)?;
+                unpad(&mut block)?;
             }
             target.write_all(block).await?;
         } else {
