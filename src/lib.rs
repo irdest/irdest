@@ -6,9 +6,9 @@ use std::collections::HashMap;
 use std::ops::Deref;
 
 mod enc;
-pub use enc::{Encoder, encode, BlockSize};
+pub use enc::{Encoder, encode, encode_const, BlockSize};
 mod dec;
-pub use dec::{decode, Error, Result};
+pub use dec::{decode, decode_const, Error, Result};
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct BlockReference([u8; 32]);
@@ -69,22 +69,25 @@ impl std::fmt::Debug for BlockKey {
 type RKPair = (BlockReference, BlockKey);
 
 #[async_trait]
-pub trait BlockStorage {
-    async fn store(&mut self, block: &[u8]) -> std::io::Result<()>;
-    async fn fetch(&self, reference: &BlockReference) -> std::io::Result<Option<Vec<u8>>>;
+pub trait BlockStorage<const BS: usize> {
+    async fn store(&mut self, block: &[u8; BS]) -> std::io::Result<()>;
+    async fn fetch(&self, reference: &BlockReference) -> std::io::Result<Option<[u8; BS]>>;
 }
 
 pub type MemoryStorage = HashMap<BlockReference, Vec<u8>>;
 
 #[async_trait]
-impl BlockStorage for MemoryStorage {
-    async fn store(&mut self, block: &[u8]) -> std::io::Result<()> {
+impl<const BS: usize> BlockStorage<BS> for MemoryStorage {
+    async fn store(&mut self, block: &[u8; BS]) -> std::io::Result<()> {
         self.insert(block_reference(block), block.to_vec());
         Ok(())
     }
 
-    async fn fetch(&self, reference: &BlockReference) -> std::io::Result<Option<Vec<u8>>> {
-        Ok(self.get(reference).cloned())
+    async fn fetch(&self, reference: &BlockReference) -> std::io::Result<Option<[u8; BS]>> {
+        let arr = self.get(reference).map(|x| {
+            x.clone().try_into()
+        }).transpose().map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Block has unexpected size"))?;
+        Ok(arr)
     }
 }
 

@@ -16,7 +16,7 @@ fn block_key(input: &[u8], convergence_secret: &[u8; 32]) -> BlockKey {
     BlockKey(hasher.finalize_fixed().into())
 }
 
-pub struct Encoder<'a, S: BlockStorage, const BS: usize> {
+pub struct Encoder<'a, S: BlockStorage<BS>, const BS: usize> {
     pub convergence_secret: [u8; 32],
     pub block_storage: &'a mut S,
 }
@@ -27,20 +27,22 @@ pub enum BlockSize {
     _32K,
 }
 
-pub async fn encode<S: BlockStorage, R: AsyncRead + Unpin>(content: &mut R, convergence_secret: &[u8; 32], block_size: BlockSize, block_storage: &mut S) -> std::io::Result<ReadCapability> {
+pub async fn encode<S: BlockStorage<1024> + BlockStorage<32768>, R: AsyncRead + Unpin>(content: &mut R, convergence_secret: &[u8; 32], block_size: BlockSize, block_storage: &mut S) -> std::io::Result<ReadCapability> {
     match block_size {
-        BlockSize::_1K => (Encoder::<S, 1024> {
-            convergence_secret: convergence_secret.clone(),
-            block_storage,
-        }).encode(content).await,
-        BlockSize::_32K => (Encoder::<S, {32 * 1024}> {
-            convergence_secret: convergence_secret.clone(),
-            block_storage,
-        }).encode(content).await,
+        BlockSize::_1K => encode_const::<_, _, 1024>(content, convergence_secret, block_storage).await,
+        BlockSize::_32K => encode_const::<_, _, 32768>(content, convergence_secret, block_storage).await,
     }
 }
 
-impl<'a, S: BlockStorage, const BS: usize> Encoder<'a, S, BS> {
+pub async fn encode_const<S: BlockStorage<BS>, R: AsyncRead + Unpin, const BS: usize>(content: &mut R, convergence_secret: &[u8; 32], block_storage: &mut S) -> std::io::Result<ReadCapability> {
+    let mut encoder = Encoder::<S, BS> {
+        convergence_secret: convergence_secret.clone(),
+        block_storage,
+    };
+    encoder.encode(content).await
+}
+
+impl<'a, S: BlockStorage<BS>, const BS: usize> Encoder<'a, S, BS> {
     pub async fn encode<R: AsyncRead + Unpin>(&mut self, content: &mut R) -> std::io::Result<ReadCapability> {
         let mut level = 0;
         let mut rk_pairs = self.split_content(content).await?;
@@ -83,24 +85,17 @@ impl<'a, S: BlockStorage, const BS: usize> Encoder<'a, S, BS> {
         Ok(rk_pairs)
     }
 
-    async fn collect_rk_pairs(&mut self, mut input_rk_pairs: Vec<RKPair>) -> std::io::Result<Vec<RKPair>> {
+    async fn collect_rk_pairs(&mut self, input_rk_pairs: Vec<RKPair>) -> std::io::Result<Vec<RKPair>> {
         let arity = BS / 64;
 
         let mut output_rk_pairs = vec![];
 
-        while input_rk_pairs.len() % arity != 0 {
-            input_rk_pairs.push(([0; 32].into(), [0; 32].into()));
-        }
-
-        for rk_pairs_for_node in input_rk_pairs.chunks_exact(arity) {
-            let mut node = {
-                let mut buffer = vec![];
-                for pair in rk_pairs_for_node {
-                    buffer.extend_from_slice(&pair.0.0);
-                    buffer.extend_from_slice(&pair.1.0);
-                }
-                buffer
-            };
+        for rk_pairs_for_node in input_rk_pairs.chunks(arity) {
+            let mut node = [0u8; BS];
+            for (x, pair) in rk_pairs_for_node.iter().enumerate() {
+                node[64*x..64*x+32].copy_from_slice(&pair.0.0);
+                node[64*x+32..64*x+64].copy_from_slice(&pair.1.0);
+            }
 
             let rk_pair = encrypt_block(&mut node, &self.convergence_secret);
 
