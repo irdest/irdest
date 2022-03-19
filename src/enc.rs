@@ -71,7 +71,7 @@ impl<'a, S: BlockStorage, const BS: usize> Encoder<'a, S, BS> {
             let rk_pair = encrypt_block(&mut buf, &self.convergence_secret);
             self.block_storage.store(&buf).await?;
             rk_pairs.push(rk_pair);
-            if pos == 0 { break; };
+            if pos != BS { break; };
         }
 
         Ok(rk_pairs)
