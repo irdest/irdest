@@ -57,22 +57,43 @@ impl<const BS: usize> BlockStorage<BS> for MemoryStorage {
     }
 }
 
+const fn num_bits<T>() -> usize { std::mem::size_of::<T>() * 8 }
+
+// replace with usize::log2 once its stable
+fn log_2(x: usize) -> u32 {
+    assert!(x > 0);
+    num_bits::<usize>() as u32 - x.leading_zeros() - 1
+}
+
 #[derive(Clone, Debug)]
 pub struct ReadCapability {
     pub root_reference: BlockReference,
     pub root_key: BlockKey,
-    pub level: usize,
+    pub level: u8,
     pub block_size: usize,
 }
 
 impl ReadCapability {
-    pub(crate) fn from_rk_pair(rk_pair: RKPair, level: usize, block_size: usize) -> ReadCapability {
+    pub(crate) fn from_rk_pair(rk_pair: RKPair, level: u8, block_size: usize) -> ReadCapability {
         ReadCapability {
             root_reference: rk_pair.0,
             root_key: rk_pair.1,
             level,
             block_size,
         }
+    }
+
+    pub fn binary(&self) -> Vec<u8> {
+        let mut out = vec![];
+        out.push(log_2(self.block_size) as u8);
+        out.push(self.level);
+        out.extend_from_slice(&*self.root_reference);
+        out.extend_from_slice(&*self.root_key);
+        out
+    }
+
+    pub fn urn(&self) -> String {
+        format!("urn:erisx2:{}", &display_base32(&self.binary()))
     }
 }
 
