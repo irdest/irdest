@@ -1,12 +1,6 @@
 use blake2::{Blake2bMac, digest::consts::U32, digest::Update, digest::KeyInit, digest::FixedOutput};
-use crate::{RKPair, ReadCapability, BlockSize, BlockStorage, BlockKey, chacha20, block_reference};
-
-fn pad(input: &mut Vec<u8>, block_size: BlockSize) {
-    input.push(0x80);
-    while input.len() % *block_size != 0 {
-        input.push(0x0);
-    }
-}
+use crate::{RKPair, ReadCapability, BlockSize, BlockStorage, BlockKey, chacha20, block_reference, block_size_from_usize};
+use futures_lite::io::{AsyncRead, AsyncReadExt};
 
 fn encrypt_block(block: &mut [u8], convergence_secret: &[u8; 32]) -> RKPair {
     let key = block_key(block, convergence_secret);
@@ -22,23 +16,26 @@ fn block_key(input: &[u8], convergence_secret: &[u8; 32]) -> BlockKey {
     BlockKey(hasher.finalize_fixed().into())
 }
 
-pub struct Encoder<'a, S: BlockStorage> {
+pub struct Encoder<'a, S: BlockStorage, const BS: usize> {
     pub convergence_secret: [u8; 32],
-    pub block_size: BlockSize,
     pub block_storage: &'a mut S,
 }
 
-pub async fn encode<S: BlockStorage>(content: &[u8], convergence_secret: &[u8; 32], block_size: BlockSize, block_storage: &mut S) -> std::io::Result<ReadCapability> {
-    let mut encoder = Encoder {
-        convergence_secret: convergence_secret.clone(),
-        block_size,
-        block_storage,
-    };
-    encoder.encode(content).await
+pub async fn encode<S: BlockStorage, R: AsyncRead + Unpin>(content: &mut R, convergence_secret: &[u8; 32], block_size: BlockSize, block_storage: &mut S) -> std::io::Result<ReadCapability> {
+    match block_size {
+        BlockSize::_1K => (Encoder::<S, 1024> {
+            convergence_secret: convergence_secret.clone(),
+            block_storage,
+        }).encode(content).await,
+        BlockSize::_32K => (Encoder::<S, {32 * 1024}> {
+            convergence_secret: convergence_secret.clone(),
+            block_storage,
+        }).encode(content).await,
+    }
 }
 
-impl<'a, S: BlockStorage> Encoder<'a, S> {
-    pub async fn encode(&mut self, content: &[u8]) -> std::io::Result<ReadCapability> {
+impl<'a, S: BlockStorage, const BS: usize> Encoder<'a, S, BS> {
+    pub async fn encode<R: AsyncRead + Unpin>(&mut self, content: &mut R) -> std::io::Result<ReadCapability> {
         let mut level = 0;
         let mut rk_pairs = self.split_content(content).await?;
 
@@ -49,29 +46,39 @@ impl<'a, S: BlockStorage> Encoder<'a, S> {
         }
 
         let root = rk_pairs.remove(0);
-        Ok(ReadCapability::from_rk_pair(root, level, self.block_size))
+        Ok(ReadCapability::from_rk_pair(root, level, block_size_from_usize(BS)))
     }
 
-    async fn split_content(&mut self, content: &[u8]) -> std::io::Result<Vec<RKPair>> {
+    async fn split_content<R: AsyncRead + Unpin>(&mut self, content: &mut R) -> std::io::Result<Vec<RKPair>> {
         let mut rk_pairs = vec![];
+        let mut buf = [0u8; BS];
+        let mut pos;
+        loop {
+            pos = 0;
+            while pos < BS {
+                match content.read(&mut buf[pos..]).await? {
+                    0 => break,
+                    n => {
+                        pos += n;
+                    },
+                };
+            }
+            if pos != BS {
+                buf[pos..].fill(0);
+                buf[pos] = 0x80;
+            }
 
-        let mut padded = {
-            let mut buffer = content.to_vec();
-            pad(&mut buffer, self.block_size);
-            buffer
-        };
-
-        for mut block in padded.chunks_exact_mut(*self.block_size) {
-            let rk_pair = encrypt_block(&mut block, &self.convergence_secret);
-            self.block_storage.store(block).await?;
+            let rk_pair = encrypt_block(&mut buf, &self.convergence_secret);
+            self.block_storage.store(&buf).await?;
             rk_pairs.push(rk_pair);
+            if pos == 0 { break; };
         }
 
         Ok(rk_pairs)
     }
 
     async fn collect_rk_pairs(&mut self, mut input_rk_pairs: Vec<RKPair>) -> std::io::Result<Vec<RKPair>> {
-        let arity = *self.block_size / 64;
+        let arity = BS / 64;
 
         let mut output_rk_pairs = vec![];
 

@@ -1,6 +1,7 @@
 use crate::{ReadCapability, BlockSize, BlockStorage, BlockKey, BlockReference, chacha20};
 use thiserror::Error as ThisError;
 use std::collections::VecDeque;
+use futures_lite::io::{AsyncWrite, AsyncWriteExt};
 
 #[derive(ThisError, Debug)]
 pub enum DecodeError {
@@ -33,9 +34,7 @@ fn unpad(input: &mut Vec<u8>, block_size: BlockSize) -> DecodeResult {
     }
 }
 
-pub async fn decode<S: BlockStorage>(read_capability: &ReadCapability, block_storage: &S) -> Result<Vec<u8>> {
-    let mut out = vec![];
-
+pub async fn decode<S: BlockStorage, W: AsyncWrite + Unpin>(target: &mut W, read_capability: &ReadCapability, block_storage: &S) -> Result<()> {
     let mut subtrees = VecDeque::new();
     subtrees.push_back(read_capability.clone());
 
@@ -44,7 +43,11 @@ pub async fn decode<S: BlockStorage>(read_capability: &ReadCapability, block_sto
         chacha20(&mut block, &tree.root_key);
 
         if tree.level == 0 {
-            out.append(&mut block);
+            if subtrees.len() == 0 {
+                // this is the last block
+                unpad(&mut block, read_capability.block_size)?;
+            }
+            target.write_all(&block).await?;
         } else {
             for rk_pair_raw in block.chunks_exact(64) {
                 let has_content = rk_pair_raw.iter().any(|x| *x != 0);
@@ -56,6 +59,5 @@ pub async fn decode<S: BlockStorage>(read_capability: &ReadCapability, block_sto
         }
     }
 
-    unpad(&mut out, read_capability.block_size)?;
-    Ok(out)
+    Ok(())
 }

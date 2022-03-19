@@ -16,6 +16,14 @@ pub enum BlockSize {
     _32K,
 }
 
+pub(crate) const fn block_size_from_usize(block_size: usize) -> BlockSize {
+    match block_size {
+        1024 => BlockSize::_1K,
+        32768 => BlockSize::_32K,
+        _ => panic!("Invalid block size"),
+    }
+}
+
 impl Deref for BlockSize {
     type Target = usize;
     fn deref(&self) -> &usize {

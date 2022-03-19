@@ -292,6 +292,7 @@ dependencies = [
  "base32",
  "blake2",
  "chacha20",
+ "futures-lite",
  "thiserror",
 ]
 
