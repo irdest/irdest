@@ -5,10 +5,10 @@ use async_trait::async_trait;
 use std::collections::HashMap;
 use std::ops::Deref;
 
-mod encoder;
-pub use encoder::{Encoder, encode};
-mod decoder;
-pub use decoder::{Decoder, decode};
+mod enc;
+pub use enc::{Encoder, encode};
+mod dec;
+pub use dec::{decode};
 
 #[derive(Clone, Copy, Debug)]
 pub enum BlockSize {
