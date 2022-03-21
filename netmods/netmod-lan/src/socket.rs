@@ -25,15 +25,22 @@ pub(crate) struct Socket {
 }
 
 fn if_nametoindex(name: &str) -> std::io::Result<u32> {
+    use std::io::{Error, ErrorKind};
+
     let name = match CString::new(name) {
         Ok(cstr) => cstr,
-        Err(_) => return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "interface name contained a null")),
+        Err(_) => {
+            return Err(Error::new(
+                ErrorKind::InvalidInput,
+                "interface name contained a null",
+            ))
+        }
     };
     let res = unsafe { libc::if_nametoindex(name.as_ptr()) };
     if res != 0 {
         Ok(res)
     } else {
-        Err(std::io::Error::last_os_error())
+        Err(Error::last_os_error())
     }
 }
 
@@ -62,10 +69,7 @@ impl Socket {
 
     /// Send a message to one specific client
     pub(crate) async fn send(&self, env: &Envelope, peer: SocketAddrV6) {
-        self.sock
-            .send_to(&env.as_bytes(), peer)
-            .await
-            .unwrap();
+        self.sock.send_to(&env.as_bytes(), peer).await.unwrap();
     }
 
     /// Send a multicast with an Envelope
@@ -110,8 +114,19 @@ impl Socket {
                             _ => {
                                 // ignoring IPv4 packets
                                 continue;
-                            },
+                            }
                         };
+
+                        // Skip this frame if it came from self --
+                        // this happens because multicast receives our
+                        // own messages too
+                        match arc.sock.local_addr() {
+                            Ok(SocketAddr::V6(local)) if local == peer => continue,
+                            _ => {
+                                warn!("failed to verify local-loop integrety.  this might cause issues!");
+                            }
+                        };
+
                         let env = Envelope::from_bytes(&buf);
                         match env {
                             Envelope::Announce => {
@@ -126,9 +141,9 @@ impl Socket {
                             Envelope::Data(vec) => {
                                 debug!("Recieved frame");
                                 let frame = bincode::deserialize(&vec).unwrap();
-                                info!(frame = format!("{:#?}", frame).as_str());
+                                debug!(frame = format!("{:#?}", frame).as_str());
 
-                                info!(peer = format!("{:#?}", peer).as_str());
+                                debug!(peer = format!("{:#?}", peer).as_str());
                                 let id = table.id(peer.into()).await.unwrap();
 
                                 // Append to the inbox and wake
