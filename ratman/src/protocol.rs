@@ -59,7 +59,7 @@ impl Protocol {
 
         task::spawn(async move {
             loop {
-                trace!("Sending announcement `{}`", id);
+                trace!("Sending announcement for {}", id);
                 core.raw_flood(Self::announce(id)).await.unwrap();
                 task::sleep(Duration::from_secs(2)).await;
 

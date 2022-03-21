@@ -122,8 +122,9 @@ impl Socket {
                         // own messages too
                         match arc.sock.local_addr() {
                             Ok(SocketAddr::V6(local)) if local == peer => continue,
-                            _ => {
-                                warn!("failed to verify local-loop integrety.  this might cause issues!");
+                            Ok(_) => {}
+                            data => {
+                                warn!("failed to verify local-loop integrety.  this might caus issues!");
                             }
                         };
 
@@ -139,12 +140,11 @@ impl Socket {
                                 table.set(peer).await;
                             }
                             Envelope::Data(vec) => {
-                                debug!("Recieved frame");
+                                debug!("Recieved data frame");
                                 let frame = bincode::deserialize(&vec).unwrap();
-                                debug!(frame = format!("{:#?}", frame).as_str());
-
-                                debug!(peer = format!("{:#?}", peer).as_str());
                                 let id = table.id(peer.into()).await.unwrap();
+                                trace!("{:?}", frame);
+                                trace!("{:?}", peer);
 
                                 // Append to the inbox and wake
                                 let mut inbox = arc.inbox.write().await;
