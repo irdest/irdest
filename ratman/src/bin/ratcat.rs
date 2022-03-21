@@ -1,13 +1,12 @@
+use async_std::{
+    fs::{create_dir, File},
+    io::{stdin, stdout, ReadExt, WriteExt},
+};
 use clap::{App, Arg};
 use directories::ProjectDirs;
 use ratman_client::{Identity, RatmanIpc, Receive_Type};
 use serde::{Deserialize, Serialize};
-use std::{
-    fs::{create_dir, File},
-    io::{stdin, stdout, Read, Write},
-    os::unix::prelude::AsRawFd,
-    path::PathBuf,
-};
+use std::{os::unix::prelude::AsRawFd, path::PathBuf};
 
 pub(crate) fn env_xdg_config() -> Option<String> {
     std::env::var("XDG_CONFIG_HOME").ok()
@@ -71,14 +70,14 @@ struct Config {
 
 async fn register(path: PathBuf, bind: &str) -> Result<(), Box<dyn std::error::Error>> {
     let ipc = RatmanIpc::connect(bind, None).await?;
-    let mut f = File::create(path.join("config"))?;
+    let mut f = File::create(path.join("config")).await?;
 
     let cfg = Config {
         addr: ipc.address(),
         token: vec![],
     };
     let cfg_str = serde_json::to_string_pretty(&cfg)?;
-    f.write_all(cfg_str.as_bytes())?;
+    f.write_all(cfg_str.as_bytes()).await?;
     eprintln!("Registered address: {}", ipc.address());
     Ok(())
 }
@@ -103,13 +102,16 @@ async fn send(
         }
         None => {
             let mut ctr = 0;
-            let mut stdin = stdin();
-            let mut vec = vec![0; 1024];
-            while let Ok(_) = stdin.read_exact(&mut vec) {
-                ipc.send_to(recp, vec.clone()).await?;
+            let stdin = stdin();
+            let mut buf = String::new();
+            while let Ok(num_read) = stdin.read_line(&mut buf).await {
+                if num_read == 0 {
+                    break;
+                }
+
+                ipc.send_to(recp, buf.clone().into_bytes()).await?;
                 ctr += 1;
             }
-
             Ok(ctr)
         }
     }
@@ -136,7 +138,7 @@ async fn handle_receives(ipc: &RatmanIpc, num: usize) -> Result<(), Box<dyn std:
                 String::from_utf8(payload).unwrap_or("<Unprintable data>".to_string())
             );
         } else {
-            stdout.write_all(&payload)?;
+            stdout.write_all(&payload).await?;
         }
     }
 
@@ -154,7 +156,7 @@ async fn main() {
     let cfg_dir = env_xdg_config()
         .map(|path| PathBuf::new().join(path))
         .unwrap_or_else(|| dirs.config_dir().to_path_buf());
-    let _ = create_dir(&cfg_dir);
+    let _ = create_dir(&cfg_dir).await;
 
     let num: usize = match m.value_of("RECV_COUNT").map(|c| c.parse().ok()) {
         Some(Some(num)) => num,
@@ -181,10 +183,10 @@ async fn main() {
     }
 
     //// Open the configuration a previous us left behind :)
-    let mut cfg = match File::open(cfg_dir.join("config")) {
+    let mut cfg = match File::open(cfg_dir.join("config")).await {
         Ok(mut f) => {
             let mut s = String::new();
-            f.read_to_string(&mut s).unwrap();
+            f.read_to_string(&mut s).await.unwrap();
             serde_json::from_str::<Config>(s.as_str()).expect("failed to parse config!")
         }
         Err(_) => {

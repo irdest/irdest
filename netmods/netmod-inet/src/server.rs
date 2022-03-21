@@ -10,7 +10,6 @@ use async_std::{
 };
 use netmod::{Frame, Target};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::Duration;
 
 pub(crate) type LockedStream = Arc<RwLock<Option<TcpStream>>>;
 
