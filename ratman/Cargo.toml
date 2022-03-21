@@ -63,6 +63,7 @@ netmod-inet = { path = "../netmods/netmod-inet", version = "0.4", optional = tru
 netmod-lan = { path = "../netmods/netmod-lan", version = "0.2", optional = true }
 
 [dev-dependencies]
-netmod-mem = { path = "../netmods/netmod-mem", version = "0.4" }
-netmod-inet = { path = "../netmods/netmod-inet", version = "*" }
 bincode = "1.2"
+netmod-inet = { path = "../netmods/netmod-inet", version = "*" }
+netmod-mem = { path = "../netmods/netmod-mem", version = "0.4" }
+tracing-subscriber = { version = "0.2", features = ["fmt"] }

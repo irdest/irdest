@@ -112,7 +112,7 @@ impl Peer {
     /// worker that will try to establish a connection to the peer,
     /// exiting until `stop()` is called on this peer
     #[tracing::instrument(level = "trace")]
-    pub(crate) fn open(dst: DstAddr, port: u16, _type: LinkType) -> Arc<Self> {
+    pub(crate) fn open(self_port: u16, dst: DstAddr, port: u16, _type: LinkType) -> Arc<Self> {
         trace!("Start peer handler for {:?}", dst);
         let p = Arc::new(Self {
             id: id::next(),
@@ -136,7 +136,14 @@ impl Peer {
 
         // Start sender loop and send a hello
         Arc::clone(&p).run_io_sender(port, _type);
-        task::block_on(async { Arc::clone(&p).send(Packet::Hello { port, _type }).await });
+        task::block_on(async {
+            Arc::clone(&p)
+                .send(Packet::Hello {
+                    port: self_port,
+                    _type,
+                })
+                .await
+        });
 
         return p;
     }
@@ -165,11 +172,6 @@ impl Peer {
         }
     }
 
-    /// Get the type for this link
-    pub(crate) fn link_type(&self) -> LinkType {
-        self._type
-    }
-
     /// Internal utility to verify that this peer is still alive
     pub(crate) fn alive(&self) -> bool {
         self._run.load(Ordering::Relaxed)
@@ -189,7 +191,7 @@ impl Peer {
                     }
                 };
 
-                // And woosh!
+                // Serialise and send off the packet
                 let buf = p.serialize();
                 if let Err(e) = stream.write_all(&buf).await {
                     error!("Failed to send message: {}!", e.to_string());
@@ -200,6 +202,7 @@ impl Peer {
                     return None;
                 }
 
+                // If the packet was a HELLO we do ?? because ????
                 match p {
                     Packet::Hello { .. } => {
                         trace!("Sending HELLO to {}", addr);

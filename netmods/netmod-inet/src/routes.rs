@@ -80,7 +80,7 @@ impl Routes {
     /// This function is called when adding a peer via the static set
     /// of peers to connect to.
     pub(crate) async fn add_via_dst(self: &Arc<Self>, dst: DstAddr, _type: LinkType) -> usize {
-        let p = Peer::open(dst.clone(), self.port, _type);
+        let p = Peer::open(self.port, dst.clone(), self.port, _type);
         let id = p.id;
 
         self.peers.write().await.insert(id, p);
@@ -146,7 +146,7 @@ impl Routes {
     ///
     ///    This is either a race-condition where the set of local
     ///    peers is large and no connection has been opened to the
-    ///    peer yet (rare).
+    ///    peer yet (probably rare?).
     ///
     ///    Alternatively, when the node is running in DYNAMIC mode,
     ///    this might be an entirely new peer all together.  In this
@@ -167,6 +167,7 @@ impl Routes {
     ///    wrong position in the accept loop.
     pub(crate) async fn upgrade(
         self: &Arc<Self>,
+        self_port: u16,
         id: usize,
         port: u16,
         stream: Option<LockedStream>,
@@ -208,7 +209,7 @@ impl Routes {
             }
             // If no such peer exists, we create one with SRC and DST addresses
             None => {
-                let p = Peer::open(dst, port, LinkType::Bidirect);
+                let p = Peer::open(self_port, dst, port, LinkType::Bidirect);
                 p.set_src(src);
                 if let Some(s) = stream {
                     p.set_stream(s).await;

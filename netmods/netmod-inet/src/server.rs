@@ -58,7 +58,7 @@ impl Server {
     pub(crate) fn port(&self) -> u16 {
         self._port
     }
-    
+
     pub(crate) fn mode(&self) -> Mode {
         self.mode.clone()
     }
@@ -128,6 +128,9 @@ impl Server {
                 });
             let peer = self.routes.get_peer(pid).await.unwrap();
 
+            // Lock the incoming stream and then read/ parse a packet
+            // from it.  If this step fails we skip this iteration of
+            // the accept loop.
             let f = {
                 let mut stream = stream.write().await;
 
@@ -140,6 +143,9 @@ impl Server {
                 match fb.build() {
                     Some(f) => f,
                     None => {
+                        // FIXME: keep track of how many times this
+                        // has happened and cancel the connection to
+                        // prevent a slow-lorris DOS attack in future
                         error!("Malformed frame; skipping!");
                         continue;
                     }
@@ -188,7 +194,7 @@ impl Server {
         _type: LinkType,
         stream: LockedStream,
     ) {
-        let maybe_id = self.routes.find_via_srcport(src, port).await;
+        let maybe_id = self.routes.find_via_srcport(dbg!(src), dbg!(port)).await;
         let upm = "Received HELLO from unknown peer.";
 
         let s = match _type {
@@ -202,28 +208,31 @@ impl Server {
             LinkType::Bidirect => None,
         };
 
+        // let peer_is_known = if self.mode == Mode::Static {}
+
         use PeerState::*;
         let _self = Arc::clone(self);
         match (state, self.mode, maybe_id) {
             // A peer we didn't know before, while running in dynamic mode
             (RxOnly, Mode::Dynamic, None) => {
-                let id = self.routes.upgrade(rx_peer, port, s).await;
-                trace!("Upgrading RX stream by sending Hello packet...");
-                self.send_hello(id, stream).await;
+                trace!("Upgrading (dynamic) RX stream by sending Hello packet...");
+                let id = self.routes.upgrade(self._port, rx_peer, port, s).await;
+                self.send_ack(id, stream).await;
             }
             // Reverse connection of a peer we have known before
             (RxOnly, _, Some(_id)) => {
-                let id = self.routes.upgrade(rx_peer, port, s).await;
-                trace!("I don't really know what we are doing here...");
-                self.send_hello(id, stream).await;
+                trace!("Upgrading RX stream by sending Hello packet...");
+                let id = self.routes.upgrade(self._port, rx_peer, port, s).await;
+                self.send_ack(id, stream).await;
             }
             (TxOnly, _, Some(id)) => {
                 trace!("Upgrading TX stream to BIDIRECT");
                 self.routes.add_src(id, *src).await;
-                self.send_hello(id, stream).await;
+                self.send_ack(id, stream).await;
             }
             // A peer we didn't know before, while running in static mode
             (_, Mode::Static, None) => {
+                println!("{:#?}", self.routes.all_dst().await);
                 debug!("{} Running STATIC: dropping packet!", upm);
                 return;
             }
@@ -231,21 +240,9 @@ impl Server {
         }
     }
 
-    async fn send_hello(self: &Arc<Self>, id: usize, stream: LockedStream) {
+    async fn send_ack(self: &Arc<Self>, _id: usize, stream: LockedStream) {
         let mut stream = stream.write().await;
         let buf = Packet::Ack.serialize();
         (*stream.as_mut().unwrap()).write_all(&buf).await.unwrap();
-
-        let s = Arc::clone(self);
-        task::spawn(async move {
-            if let Some(peer) = s.routes.get_peer(id).await {
-                task::sleep(Duration::from_secs(2)).await;
-                peer.send(Packet::Hello {
-                    port: s._port,
-                    _type: peer.link_type(),
-                })
-                .await;
-            }
-        });
     }
 }
