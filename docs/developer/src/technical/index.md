@@ -1,46 +1,39 @@
 # Technical Documentation
 
-This is an introduction to the irdest technical documentation.
-Following is an outline of the entire system, meant to give you a
-broad overview of what irdest does, and what it aims to achieve.
+Welcome to the Irdest technical documentation.  This tree of documents
+is meant to give you an overview into the various components that make
+up the Irdest project, as well as their inner workings.
 
-This manual is relevant for both **irdest hackers**, and **irdest
+This manual is relevant for both **Irdest hackers**, and **Irdest
 application developers**.
-
-**Note to future editors**: make sure every major component has an
-`internals` section, so to make it convenient to skip.
 
 
 ## Introduction
 
-Fundamentally, irdest is a highly distributed system.  It is not
-accountable to a single set of rules across all devices that are part
-of this system.  Each device can be home to many users, that can all
-send messages to each other, but have separate states.  Furthermore,
-connections in this system are not always real time.
+Irdest is a distributed routing system, creating an address space over
+_ed25519 keys_.  Each address on the network is a public key, backed
+by a corresponding private key.  This means that encryption and
+message authentication are built into the routing layer of the
+network.  Each physical device can be _home to many addresses_, used
+by different applications, and it is not possible from the outside to
+re-associate a specific device with a specific address.
 
-A lot of traditional networking infrastructe is built up in layers
+A lot of traditional networking infrastructures is built up in layers
 (see [OSI model][osi]).  Similarly, the irdest project replicates some
-of these layers.
-
-**Note** that the layers between the OSI model and irdest don't map
-perfectly onto each other and are rather meant to illustrate
-difference in scope!
-
-To give you a better understanding of what parts of the irdest project
-do what, here's an overview of the layers in a full irdest application
-stack.  Each layer has a short description below.
+of these layers.  Note however that the layers between the OSI model
+and Irdest don't map perfectly onto each other and are only meant to
+illustrate difference in hardware access, user access, and scope.
 
 [osi]: https://en.wikipedia.org/wiki/OSI_model
 
-| Layer                         | Component(s)                 |
-|-------------------------------|--------------------------------|
-| Network drivers (Layer 1 & 2) | `netmod`, `netmod-tcp`, ...    |
-| Irdest Router (Layer 3 & 4)   | `ratman`                       |
-| Service API core (Layer 5\*)  | `irdest-core`                  |
-| Irdest RPC/ SDK (N/A)         | `irdest-sdk`, `irpc-broker`    |
-| Services (Layer 5\* & 6)      | `irdest-chat`, `irdest-groups` |
-| Clients (Layer 6 & 7)         | `irdest-hubd`, `irdest-gtk`    |
+Following is a short overview of layers in Irdest.
+
+| OSI Layer            | Irdest Layer      | Component(s)                                 |
+|----------------------|-------------------|----------------------------------------------|
+| Physical & Data link | Network drivers   | `netmod-inet`, `netmod-lan`, ...             |
+| Network & Transport  | Ratman            | `ratman` (and the `ratmand` daemon)          |
+| Session              | Integration shims | `irdest-proxy`, `ratcat`, ...                |
+| Application          | Clients           | `irdest-ping`, `irdest-mblog`, ... your app? |
 
 
 ### Network drivers
@@ -55,106 +48,60 @@ Many different drivers can be active on the same device, as long as
 they are connected to the same router.  In the OSI model, this maps to
 layers 1 & 2.
 
+Currently a driver needs to be specifically added to `ratmand` and
+included at compile time.  We are working on a dynamic loading
+mechanism however (either via `.so` object loading or an IPC socket).
 
 ### Irdest router
 
-A decentralised packet router that uses cryptographic public keys as
-addresses for users.  One router is unique to a device and manages
-both I/O with network drivers, as well as message requests to the
-layers above.
+Ratman is a decentralised packet router daemon `ratmand`.  It comes
+with a small set of utilities such as `ratcat` (a `netcat` analogue),
+`ratctl` (a `batctl` analogue), and a simple management web UI.
 
-The irdest router announces itself to other routers on the network via
-the Mesh Router Command Protocol (MRCP), and updates its internal
-routing table according to a chosen routing strategy, neighbour network
-topology and link quality.
+Clients communicate with Ratman via a local TCP socket and protobuf
+envelope schema.  For most use-cases we recommend the
+[`ratman-client`] library.  Alternative implementations don't
+currently exist and this API is also extremely unstable (sorry in
+advance...)
 
 In the OSI model, this maps to layer 3 and 4.
 
 
-### Service API core
+### Integration shims
 
-The main irdest state handler, managing an encrypted database, user
-profiles, and service state.  It handles the user web of trust, and
-interactions of applications that use irdest as a networking backend.
+Currently only one (work in progress) shim exists: `irdest-proxy`.
+This layer aims to create interoperability layers between existing IP
+networks and an Irdest/ Ratman network.
 
-In the OSI model, this partially maps to layer 5.
+In future many different shims could exist, tunneling Tor traffic
+through Irdest, or providing apps on mobile devices to take advantage
+of the "VPN" functionality of the OS.
 
-
-### Irdest RPC core & SDKs
-
-A generic RPC protocol to connect different irdest services together.
-Since there can only be one router running per device, it needs to
-be possible for different applications to interact with this router at
-the same time.  This is done by running the irdest core and router in
-a background daemon and using an RPC protocol/ interface (called irpc)
-to issue commands and get live updates from the network.
-
-This layer is not represented in the OSI model and an implementation
-detail of the irdest userspace design.
+In the OSI model this maps to layer 5.  This is because in Ratman a
+connection is stateless, and thus no real session state exists.  This
+shim introduces the concept of sessions for the benefit of existing
+applications that rely on them.
 
 
-### Services
+### Clients
 
-A service is a micro-application (or [actor]) that communicates with
-other services via the irpc bus.  The scope of a service should be
-small, and re-usable.  For example, `irdest-chat` implements a very
-simple encrypted group chat system that can also easily be used by
-third-party services that wish to use messaging in their user
-experience.
-
-Functionality should be, if possible, implemented as a service so that
-other application developers can depend on it in their applications,
-instead of having to re-write the functionality.  The distinction
-between a service and a general development library is that a service
-has access, and actively uses the irdest network and the irdest-core
-API to perform tasks.
-
-A service that does not expose an API of its own for other services to
-use is called a "client service".  All end-user applications that use
-irdest are client services.
-
-In the OSI model this partially maps to layer 5 and 6.
-
-[actor]: https://en.wikipedia.org/wiki/Actor_(programming_language)
-
-
-### Clients/ Applications
-
-User facing applications that use a collection of services to provide
-users with a particular experience and implement different features.
-
-The irdest project develops and ships a set of core services and
-clients to demonstrate the functionality of the networking stack that
-we are developing, and to act as a test bed to tweak performance
-parameters in the lower layers.
-
-But this should by no means be taken as the final scope of what irdest
-can do.  Ideally, any application that requires some form of networked
-communication with other users of the application can be ported to run
-natively over an irdest network.
-
-For "legacy" applications, we also provide a TCP/IP [proxy service]()
-(work in progress).
+The Irdest project is mainly focused on developing Ratman and its
+associated drivers and shims.  We do however hope to provide some good
+examples of applications written _specifically_ for an Irdest network
+to inspire other developers, and showcase to users how these
+technologies can be used.  This also aims to make the on-boarding
+process less daunting.
 
 
 ## What next?
 
-### For irdest application developers
+If you are interested in writing an application for Irdest, or porting
+your existing application's networking to use Irdest in the
+background, these sections are for you.
 
-We recommend you familiarise yourself with the irdest SDKs and RPC
-system.  If you have further questions on how your users can see and
-interact with each other, the following sections of this manual may
-also be of interest to you.
+- [Ratman overview](./ratman/index.html)
+- [Ratman client lib](./ratman/client.html)
 
-- [Irdest APIs](./api/)
-- [Irdest RPC overview](./api/rpc.html)
-- [Routing basics](./ratman/basics.html)
-
-
-### For irdest hackers
-
-Depending on what part of the stack you want to work on, you should
-read the introduction to that chapter, as well as the internals
-section of each component.
-
-If you have further questions, please do not hesitate to contact us!
+If you want to work on a specific issue in Ratman or the drivers, we
+recommend you check out the [issue tracker], or come talk to us in our
+[Matrix channel]!

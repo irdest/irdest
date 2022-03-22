@@ -11,3 +11,5 @@ This document outlines the basic design guide for irdest components.
 
 
 ## Visual design
+
+To be figured out when we have visual design :')
