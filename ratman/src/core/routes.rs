@@ -48,6 +48,7 @@ impl RouteTable {
 
         // Only "announce" a new user if it was not known before
         if tbl.insert(id, route).is_none() {
+            info!("Discovered new address {}", id);
             let s = Arc::clone(&self);
             task::spawn(async move { s.new.0.send(id).await });
         }

@@ -51,7 +51,7 @@ impl Protocol {
             return Ok(());
         }
 
-        debug!("Marking user identity `{}` as online", id);
+        info!("Setting address {} to 'online'", id);
 
         let b = Arc::new(AtomicBool::new(true));
         map.insert(id, Arc::clone(&b));
@@ -59,7 +59,7 @@ impl Protocol {
 
         task::spawn(async move {
             loop {
-                trace!("Sending announcement for {}", id);
+                debug!("Sending announcement for {}", id);
                 core.raw_flood(Self::announce(id)).await.unwrap();
                 task::sleep(Duration::from_secs(2)).await;
 
@@ -74,7 +74,7 @@ impl Protocol {
     }
 
     pub(crate) async fn offline(&self, id: Identity) -> Result<()> {
-        debug!("Marking user identity `{}` as offline", id);
+        info!("Setting address {} to 'offline'", id);
         self.online
             .lock()
             .await

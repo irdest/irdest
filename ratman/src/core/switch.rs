@@ -77,7 +77,7 @@ impl Switch {
                     let seqid = f.seq.seqid;
                     if self.journal.unknown(&seqid).await {
                         if let Some(sender) = Protocol::is_announce(&f) {
-                            debug!("Receiving announcement for {}", sender);
+                            debug!("Received announcement for {}", sender);
                             self.routes.update(id as u8, t, sender).await;
                         } else {
                             self.collector.queue_and_spawn(f.seqid(), f.clone()).await;
