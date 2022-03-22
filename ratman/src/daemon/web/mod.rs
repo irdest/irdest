@@ -24,7 +24,7 @@ async fn draw_base(req: Request<Router>) -> tide::Result {
                 .known_addresses()
                 .await
                 .into_iter()
-                .map(|addr| format!("<li><pre>{}</pre></li>", addr))
+                .map(|(addr, local)| format!("<li><pre>{}{}</pre></li>", addr, if local { " (local)" } else { "" } ))
                 .collect::<Vec<String>>()
                 .join("\n")
         ))

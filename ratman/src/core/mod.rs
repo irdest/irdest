@@ -135,7 +135,13 @@ impl Core {
     }
 
     /// Return all known addresses
-    pub(crate) async fn all_addrs(&self) -> Vec<Identity> {
-        self.routes.all().await
+    pub(crate) async fn all_addrs(&self) -> Vec<(Identity, bool)> {
+        self.routes
+            .all()
+            .await
+            .into_iter()
+            // FIXME: this is horrible lol
+            .map(|(addr, tt)| (addr, if tt == RouteType::Local { true } else { false }))
+            .collect()
     }
 }

@@ -31,7 +31,12 @@ async fn handle_peers(io: &mut Io, r: &Router, peers: Peers) -> Result<()> {
         return Ok(()); // Ignore all other messages
     }
 
-    let all = r.known_addresses().await;
+    let all = r
+        .known_addresses()
+        .await
+        .into_iter()
+        .map(|(addr, _)| addr)
+        .collect();
     let response = encode_message(api_peers(all_peers(all))).unwrap();
     write_with_length(io.as_io(), &response).await.unwrap(); // baaaaad
     Ok(())

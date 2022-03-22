@@ -276,7 +276,7 @@ impl Router {
     }
 
     /// Return a list of all known addresses
-    pub async fn known_addresses(&self) -> Vec<Identity> {
+    pub async fn known_addresses(&self) -> Vec<(Identity, bool)> {
         self.inner.all_addrs().await
     }
 }

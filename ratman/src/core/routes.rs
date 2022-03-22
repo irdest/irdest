@@ -84,8 +84,13 @@ impl RouteTable {
     }
 
     /// Get all users in the routing table
-    pub(crate) async fn all(&self) -> Vec<Identity> {
-        self.routes.lock().await.iter().map(|(i, _)| *i).collect()
+    pub(crate) async fn all(&self) -> Vec<(Identity, RouteType)> {
+        self.routes
+            .lock()
+            .await
+            .iter()
+            .map(|(i, tt)| (*i, tt.clone()))
+            .collect()
     }
 
     /// Get the endpoint and target ID for a user Identity
