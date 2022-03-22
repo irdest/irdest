@@ -15,6 +15,17 @@ pub mod upnp {
     }
 }
 
+#[cfg(feature = "webui")]
+pub mod web;
+
+#[cfg(not(feature = "webui"))]
+pub mod web {
+    use crate::Router;
+    pub async fn start(_: Router, _: &str, _: u16) -> async_std::io::Result<()> {
+        Ok(())
+    }
+}
+
 use std::net::SocketAddr;
 
 use crate::{Message, Recipient, Router};
@@ -44,12 +55,13 @@ pub fn setup_logging(lvl: &str) {
             "error" => LevelFilter::ERROR.into(),
             _ => unreachable!(),
         })
-        .add_directive("async_std=error".parse().unwrap())
         .add_directive("async_io=error".parse().unwrap())
+        .add_directive("async_std=error".parse().unwrap())
+        .add_directive("mio=error".parse().unwrap())
         .add_directive("polling=error".parse().unwrap())
+        .add_directive("tide=warn".parse().unwrap())
         .add_directive("trust_dns_proto=error".parse().unwrap())
-        .add_directive("trust_dns_resolver=warn".parse().unwrap())
-        .add_directive("mio=error".parse().unwrap());
+        .add_directive("trust_dns_resolver=warn".parse().unwrap());
 
     // Initialise the logger
     fmt().with_env_filter(filter).init();

@@ -24,9 +24,10 @@ default = []
 inet = ["netmod-inet"]
 lan = ["netmod-lan"]
 upnp = ["igd", "ipnetwork", "pnet"]
-daemon = ["cli", "inet", "lan"]
+daemon = ["cli", "inet", "lan", "webui"]
 util = ["cli", "ratman-client"]
 cli = ["types", "clap", "directories", "nix", "serde_json", "tracing-subscriber"]
+webui = ["tide"]
 
 [dependencies]
 async-std = { version = "1.0", features = ["std", "unstable"] }
@@ -57,6 +58,7 @@ nix = { version = "0.23", optional = true }
 igd = { version = "=0.12", optional = true }       # These three crates are bound to an
 ipnetwork = { version = "=0.18", optional = true } # older version becuase we don't want
 pnet = { version = "=0.28", optional = true }      # to update to the 2021-edition yet
+tide = { version = "0.16", optional = true }
 
 # Bundled network modules are all optional dependencies
 netmod-inet = { path = "../netmods/netmod-inet", version = "0.4", optional = true }

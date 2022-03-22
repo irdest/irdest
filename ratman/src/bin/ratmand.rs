@@ -91,6 +91,11 @@ pub fn build_cli() -> ArgMatches<'static> {
                 .hidden(true)
                 .help("Attempt to open the port used by the inet driver in your local gateway")
         )
+        .arg(
+            Arg::with_name("NO_WEBUI")
+                .long("no-webui")
+                .help("Stop ratmand from serving a webui on port 8090")
+        )
         .get_matches()
 }
 
@@ -182,6 +187,14 @@ async fn main() {
                 iface, port
             ),
             Err(e) => warn!("Failed to setup local peer discovery: {}", e),
+        }
+    }
+
+    // If webui is enabled
+    if !m.is_present("NO_WEBUI") {
+        match daemon::web::start(r.clone(), "127.0.0.1", 8090).await {
+            Ok(_) => {}
+            Err(e) => warn!("Failed to setup webui bind {:?}", e),
         }
     }
 

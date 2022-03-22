@@ -131,20 +131,18 @@ impl Socket {
                         let env = Envelope::from_bytes(&buf);
                         match env {
                             Envelope::Announce => {
-                                debug!("Recieving announce");
+                                trace!("Recieving announce");
                                 table.set(peer).await;
                                 arc.multicast(&Envelope::Reply).await;
                             }
                             Envelope::Reply => {
-                                debug!("Recieving announce reply");
+                                trace!("Recieving announce reply");
                                 table.set(peer).await;
                             }
                             Envelope::Data(vec) => {
-                                debug!("Recieved data frame");
+                                trace!("Recieved data frame");
                                 let frame = bincode::deserialize(&vec).unwrap();
                                 let id = table.id(peer.into()).await.unwrap();
-                                trace!("{:?}", frame);
-                                trace!("{:?}", peer);
 
                                 // Append to the inbox and wake
                                 let mut inbox = arc.inbox.write().await;
