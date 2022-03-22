@@ -13,11 +13,6 @@ Users: |
     
     * [User Manual](https://docs.irde.st/user/)
 Devs: |
-    This [technical overview][overview] of irdest explains some of the
-    core concepts behind the router and network layout.
-    
-    [overview]: /learn/overview
-
     If you want to contribute to the irdest ecosystem, the following
     resources contain information on where to start.  The Rust docs
     outline the main library APIs and how to use various components
@@ -28,6 +23,7 @@ Devs: |
     
     * [Ratman API docs](https://docs.rs/ratman-client/)
     * [Developer Manual](https://docs.irde.st/developer/)
+    * [Bibliography](https://docs.irde.st/developer/technical/bib.html)
 ---
 
 
