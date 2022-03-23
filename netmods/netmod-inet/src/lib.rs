@@ -157,7 +157,7 @@ impl EndpointExt for Endpoint {
 
     async fn send(&self, frame: Frame, target: Target) -> netmod::Result<()> {
         match target {
-            Target::Flood => {
+            Target::Flood(_) => {
                 let dsts = self.routes.all_dst().await;
                 for peer in dsts {
                     peer.send(Packet::Frame(frame.clone())).await;

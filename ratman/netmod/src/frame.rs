@@ -14,7 +14,19 @@ pub enum Recipient {
     /// Addressed to a single user ID on the network
     User(Identity),
     /// Spreading a `Frame` to the whole network
-    Flood, // TODO: add flood namespace here
+    Flood(Identity),
+}
+
+impl Recipient {
+    /// Return the scope of this recipient
+    ///
+    /// This is either the target user identity or the flood scope
+    pub fn scope(&self) -> Identity {
+        match self {
+            Self::User(id) => *id,
+            Self::Flood(scope) => *scope,
+        }
+    }
 }
 
 /// Describes an endpoint's send target
@@ -31,7 +43,7 @@ pub enum Recipient {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Target {
     /// Send message to all reachable endpoints
-    Flood,
+    Flood(Identity),
     /// Encodes a specific target ID
     Single(u16),
 }
@@ -64,7 +76,7 @@ impl Frame {
     pub fn dummy() -> Self {
         SeqBuilder::new(
             Identity::from([0; ID_LEN]),
-            Recipient::Flood,
+            Recipient::Flood(Identity::random()),
             Identity::random(),
         )
         .add(vec![0xDE, 0xAD, 0xBE, 0xEF])
@@ -73,8 +85,8 @@ impl Frame {
     }
 
     /// Build a one-off frame with inline payload
-    pub fn inline_flood(sender: Identity, payload: Vec<u8>) -> Frame {
-        SeqBuilder::new(sender, Recipient::Flood, Identity::random())
+    pub fn inline_flood(sender: Identity, scope: Identity, payload: Vec<u8>) -> Frame {
+        SeqBuilder::new(sender, Recipient::Flood(scope), Identity::random())
             .add(payload)
             .build()
             .remove(0)

@@ -59,7 +59,7 @@ impl EndpointExt for Endpoint {
                     .send(&env, self.addrs.ip(*id).await.unwrap())
                     .await
             }
-            Target::Flood => {
+            Target::Flood(_) => {
                 self.socket.multicast(&env).await;
             }
         }

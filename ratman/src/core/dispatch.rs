@@ -39,7 +39,7 @@ impl Dispatch {
 
         frames.into_iter().fold(Ok(()), |res, f| match (res, r) {
             (Ok(()), Recipient::User(_)) => task::block_on(async move { self.send_one(f).await }),
-            (Ok(()), Recipient::Flood) => task::block_on(async move { self.flood(f).await }),
+
             (res, _) => res,
         })
     }
@@ -50,7 +50,7 @@ impl Dispatch {
             .routes
             .resolve(match frame.recipient {
                 Recipient::User(id) => id,
-                Recipient::Flood => unreachable!(),
+                Recipient::Flood(_) => unreachable!(),
             })
             .await
         {
@@ -74,7 +74,8 @@ impl Dispatch {
     pub(crate) async fn flood(&self, frame: Frame) -> Result<()> {
         for ep in self.drivers.get_all().await.into_iter() {
             let f = frame.clone();
-            ep.send(f, Target::Flood).await.unwrap();
+            let target = Target::Flood(frame.recipient.scope());
+            ep.send(f, target).await.unwrap();
         }
 
         Ok(())
@@ -84,7 +85,8 @@ impl Dispatch {
     pub(crate) async fn reflood(&self, frame: Frame, ep: usize) {
         for ep in self.drivers.get_without(ep).await.into_iter() {
             let f = frame.clone();
-            task::spawn(async move { ep.send(f, Target::Flood).await.unwrap() });
+            let target = Target::Flood(f.recipient.scope());
+            task::spawn(async move { ep.send(f, target).await.unwrap() });
         }
     }
 }

@@ -22,7 +22,9 @@ pub fn setup_logging(lvl: &str) {
         .add_directive("mio=error".parse().unwrap());
 
     // Initialise the logger
-    fmt().with_env_filter(filter).init();
+    if let Err(_) = fmt().with_env_filter(filter).try_init() {
+        println!("Re-initialising logger failed");
+    }
 }
 
 #[async_std::test]
@@ -63,4 +65,48 @@ async fn announce_over_inet() {
     // micro-network.  You can now poll for new user discoveries.
     assert_eq!(r1.discover().await, u3);
     assert_eq!(r3.discover().await, u1);
+}
+
+#[async_std::test]
+async fn flood_over_inet() {
+    setup_logging("trace");
+
+    // Device A
+    let ep1 = Endpoint::new("127.0.0.1:7200", "", Mode::Static)
+        .await
+        .unwrap();
+
+    // Device C
+    let ep3 = Endpoint::new("127.0.0.1:7201", "", Mode::Static)
+        .await
+        .unwrap();
+
+    // Make devices A and C connect to B
+    ep1.add_peers(vec!["127.0.0.1:7201".into()]).await.unwrap();
+    ep3.add_peers(vec!["127.0.0.1:7200".into()]).await.unwrap();
+
+    let r1 = Router::new();
+    let r3 = Router::new();
+
+    r1.add_endpoint(ep1).await;
+    r3.add_endpoint(ep3).await;
+
+    /////// Create some identities and announce people
+
+    let u1 = Identity::random();
+    r1.add_user(u1).await.unwrap();
+    r1.online(u1).await.unwrap();
+
+    let u3 = Identity::random();
+    r3.add_user(u3).await.unwrap();
+    r3.online(u3).await.unwrap();
+
+    let flood_ns = Identity::random();
+
+    r1.flood(u1, flood_ns, vec![1, 3, 1, 2], vec![])
+        .await
+        .unwrap();
+
+    let recv = r3.next().await;
+    assert_eq!(recv.payload, vec![1, 3, 1, 2]);
 }

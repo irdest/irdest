@@ -13,7 +13,7 @@ pub(crate) fn send_to_message(s: Send) -> Vec<Message> {
             .iter()
             .map(|r| Recipient::User(Identity::from_bytes(&r)))
             .collect(),
-        Send_Type::FLOOD => vec![Recipient::Flood],
+        Send_Type::FLOOD => vec![Recipient::Flood(Identity::from_bytes(s.scope.as_slice()))],
     };
     let timesig = TimePair::sending();
 

@@ -102,6 +102,7 @@ impl Protocol {
         })
         .unwrap();
 
-        Frame::inline_flood(sender, payload)
+        // Currently we just use the sender address as the "scope" of the
+        Frame::inline_flood(sender, sender, payload)
     }
 }

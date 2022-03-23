@@ -73,7 +73,7 @@ impl Switch {
             // Switch the traffic to the appropriate place
             use {Recipient::*, RouteType::*};
             match f.recipient {
-                Flood => {
+                Flood(_) => {
                     let seqid = f.seq.seqid;
                     if self.journal.unknown(&seqid).await {
                         if let Some(sender) = Protocol::is_announce(&f) {

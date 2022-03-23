@@ -3,9 +3,9 @@
 //! **Note** most likely you are interested in the
 //! [ratman-client](https://docs.rs/ratman-client) crate, which allows
 //! you to connect to a Ratman daemon via an IPC socket.
-//! 
+//!
 //! ## Technical overview
-//! 
+//!
 //! A modular userspace frame router, implementing distance vector
 //! routing, and delay tolerance.  Handles topology updates and user
 //! discovery via flood heartbeats, and provides a non-namespaced view
@@ -244,6 +244,29 @@ impl Router {
     /// Register a manual clock controller object for internal tasks
     pub fn clock(&self, _cc: ClockCtrl<Tasks>) -> Result<()> {
         unimplemented!()
+    }
+
+    /// Send a flood message into the network
+    pub async fn flood(
+        &self,
+        sender: Identity,
+        scope: Identity,
+        payload: Vec<u8>,
+        sign: Vec<u8>,
+    ) -> Result<MsgId> {
+        debug!("Sending flood to namespace {}", scope);
+        let id = MsgId::random();
+        self.inner
+            .send(Message {
+                id,
+                sender,
+                recipient: Recipient::Flood(scope),
+                payload,
+                timesig: TimePair::sending(),
+                sign,
+            })
+            .await
+            .map(|_| id)
     }
 
     /// Dispatch a message into a network

@@ -84,7 +84,7 @@ async fn run_relay(r: Router, online: OnlineMap) {
             sender,
             match recipient {
                 Recipient::User(id) => Some(id),
-                Recipient::Flood => None,
+                Recipient::Flood(_) => None,
             },
             payload,
             format!("{:?}", timesig),
@@ -100,7 +100,7 @@ async fn run_relay(r: Router, online: OnlineMap) {
                     }
                 }
             }
-            Recipient::Flood => {
+            Recipient::Flood(_) => {
                 for (_, ref mut io) in online.lock().await.iter_mut() {
                     if io.is_none() && continue {}
                     if let Err(e) =

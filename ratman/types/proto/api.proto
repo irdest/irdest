@@ -21,6 +21,7 @@ message Send {
 
         Type type = 1;
         Message msg = 2;
+        bytes scope = 3;
 }
 
 /// API payload to receive messages
