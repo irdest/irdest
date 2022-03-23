@@ -45,6 +45,7 @@ use types::{
     encode_message, message, parse_message, read_with_length, write_with_length,
 };
 
+#[derive(Clone)]
 pub struct RatmanIpc {
     socket: TcpStream,
     addr: Identity,
