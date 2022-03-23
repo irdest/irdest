@@ -1,0 +1,7 @@
+single-integration-ratman:
+  stage: test
+  script: |
+    cd tests/
+    single/router.sh &
+    single/recv.sh &
+    single/send.sh
