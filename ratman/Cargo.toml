@@ -20,11 +20,11 @@ name = "ratctl"
 required-features = ["util"]
 
 [features]
-default = []
+default = ["daemon", "util"]
 inet = ["netmod-inet"]
 lan = ["netmod-lan"]
 upnp = ["igd", "ipnetwork", "pnet"]
-daemon = ["cli", "inet", "lan", "webui"]
+daemon = ["cli", "inet", "lan", "webui", "upnp"]
 util = ["cli", "ratman-client"]
 cli = ["types", "clap", "directories", "nix", "serde_json", "tracing-subscriber"]
 webui = ["tide", "rust-embed"]

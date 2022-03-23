@@ -136,7 +136,7 @@ impl<'a> DaemonState<'a> {
     }
 
     /// Listen for new connections on a socket address
-    pub(crate) async fn listen_for_connections(&mut self) -> Result<Option<Io>> {
+    pub(crate) async fn listen_for_connections(&mut self) -> Result<Option<(Identity, Io)>> {
         while let Some(stream) = self.listen.next().await {
             let mut stream = stream?;
 
@@ -148,7 +148,7 @@ impl<'a> DaemonState<'a> {
                 // An anonymous client doesn't need an entry in the
                 // lookup table because no message will ever be
                 // addressed to it
-                Ok(None) => return Ok(Some(Io::Tcp(stream))),
+                Ok(None) => return Ok(Some((Identity::random(), Io::Tcp(stream)))),
                 Err(e) => {
                     error!("Encountered error during auth: {}", e);
                     break;
@@ -162,7 +162,7 @@ impl<'a> DaemonState<'a> {
                 error!("Failed to sync known addresses: {}", e);
             }
 
-            return Ok(Some(io));
+            return Ok(Some((id, io)));
         }
 
         Ok(None)

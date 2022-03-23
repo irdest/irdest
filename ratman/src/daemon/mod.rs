@@ -121,16 +121,21 @@ pub async fn run(r: Router, addr: SocketAddr) -> Result<()> {
     let mut state = DaemonState::new(&listener, r.clone());
     let online = state.get_online().await;
 
-    let relay = spawn(run_relay(r.clone(), online));
+    let relay = spawn(run_relay(r.clone(), online.clone()));
 
     while let Ok(io) = state.listen_for_connections().await {
-        let io = match io {
+        let (_self, io) = match io {
             Some(io) => io,
             None => continue,
         };
 
         info!("Established new client connection");
-        spawn(parse::parse_stream(r.clone(), io.clone()));
+        spawn(parse::parse_stream(
+            r.clone(),
+            online.clone(),
+            _self,
+            io.clone(),
+        ));
     }
 
     relay.cancel().await;

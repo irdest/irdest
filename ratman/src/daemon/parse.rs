@@ -1,10 +1,13 @@
 use crate::{
-    daemon::{state::Io, transform},
-    Result, Router,
+    daemon::{
+        state::{Io, OnlineMap},
+        transform,
+    },
+    Message, Result, Router,
 };
-
 use async_std::io::{Read, Write};
 use identity::Identity;
+use netmod::Recipient;
 use types::{
     api::{
         all_peers, api_peers, api_setup, online_ack, ApiMessageEnum, Peers, Peers_Type, Receive,
@@ -13,9 +16,42 @@ use types::{
     encode_message, parse_message, write_with_length, Error as ParseError, Result as ParseResult,
 };
 
-async fn handle_send(r: &Router, send: Send) -> Result<()> {
+async fn handle_send(r: &Router, online: &OnlineMap, _self: Identity, send: Send) -> Result<()> {
     debug!("Queuing message to send");
     for msg in transform::send_to_message(send) {
+        let Message {
+            ref id,
+            ref sender,
+            ref recipient,
+            ref payload,
+            ref timesig,
+            ref sign,
+        } = msg;
+
+        match msg.recipient {
+            Recipient::Flood(_) => {
+                let recv = types::api::receive_default(types::message::received(
+                    *id,
+                    *sender,
+                    match recipient {
+                        Recipient::User(id) => Some(*id),
+                        Recipient::Flood(_) => None,
+                    },
+                    payload.clone(),
+                    format!("{:?}", timesig),
+                    sign.clone(),
+                ));
+
+                for (id, ref mut io) in online.lock().await.iter_mut() {
+                    if io.is_none() && continue {}
+                    if id == &_self && continue {}
+                    if let Err(e) = forward_recv(io.as_mut().unwrap().as_io(), recv.clone()).await {
+                        error!("Failed to forward received message: {}", e);
+                    }
+                }
+            }
+            _ => {}
+        }
         r.send(msg).await?;
     }
     Ok(())
@@ -109,12 +145,12 @@ pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
 }
 
 /// Parse messages from a stream until it terminates
-pub(crate) async fn parse_stream(router: Router, mut io: Io) {
+pub(crate) async fn parse_stream(router: Router, online: OnlineMap, _self: Identity, mut io: Io) {
     loop {
         // Match on the msg type and call the appropriate handler
         match parse_message(io.as_io()).await.map(|msg| msg.inner) {
             Ok(Some(one_of)) => match one_of {
-                ApiMessageEnum::send(send) => handle_send(&router, send).await,
+                ApiMessageEnum::send(send) => handle_send(&router, &online, _self, send).await,
                 ApiMessageEnum::setup(setup) => handle_setup(&mut io, &router, setup).await,
                 ApiMessageEnum::peers(peers) => handle_peers(&mut io, &router, peers).await,
                 ApiMessageEnum::recv(_) => continue, // Ignore "Receive" messages
@@ -125,7 +161,7 @@ pub(crate) async fn parse_stream(router: Router, mut io: Io) {
             }
             Err(e) => {
                 trace!("Error: {:?}", e);
-                info!("Stream was dropped by client");
+                info!("API stream was dropped by client");
                 break;
             }
         }
