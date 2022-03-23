@@ -1,4 +1,4 @@
-![](/assets/ratman-banner.png)
+![](../../assets/ratman-banner.png)
 
 A modular userspace packet router, providing decentralised distance
 vector routing and message delay tolerance.  Ratman is both a Rust
