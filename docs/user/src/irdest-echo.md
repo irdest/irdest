@@ -46,4 +46,6 @@ $ cargo run --bin irdest-echo --release
 The Irdest project maintains an `irdest-echo` instance at the
 following addresses:
 
+To send a message to `irdest-echo` you can use `ratcat` and the following command:
+
  - `fill in address...`
