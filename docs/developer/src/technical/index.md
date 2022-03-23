@@ -66,6 +66,7 @@ advance...)
 
 In the OSI model, this maps to layer 3 and 4.
 
+[`ratman-client`]: https://crates.io/crates/ratman-client
 
 ### Integration shims
 
@@ -101,7 +102,11 @@ background, these sections are for you.
 
 - [Ratman overview](./ratman/index.html)
 - [Ratman client lib](./ratman/client.html)
+- [Bibliography](./bib.html)
 
 If you want to work on a specific issue in Ratman or the drivers, we
 recommend you check out the [issue tracker], or come talk to us in our
 [Matrix channel]!
+
+[issue tracker]: https://git.irde.st/we/irdest/-/issues
+[Matrix channel]: https://matrix.to/#/#chat:irde.st

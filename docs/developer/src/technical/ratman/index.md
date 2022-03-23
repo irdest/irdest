@@ -70,6 +70,7 @@ with each other even when no stable connections between them exist
 (for example via a [sneaker net]).  This does however require
 applications to be aware of long delays and handle them gracefully!
 
+[sneaker net]: https://en.wikipedia.org/wiki/Sneakernet
 
 ## Roaming
 
