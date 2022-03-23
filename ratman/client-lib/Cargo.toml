@@ -1,7 +1,7 @@
 [package]
 name = "ratman-client"
 description = "IPC library to interact with a Ratman daemon"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2018"
 license = "GPL-3.0-or-later"
 
