@@ -8,7 +8,22 @@ pub(crate) use ratman::*;
 use clap::{App, Arg, ArgMatches};
 use netmod_inet::InetEndpoint as Inet;
 use netmod_lan::{default_iface, Endpoint as LanDiscovery};
+use nix::sys::{
+    resource::{getrlimit, Resource},
+    signal::{signal, sigprocmask, SigHandler, SigSet, SigmaskHow, Signal},
+    stat,
+};
+use nix::unistd::{chdir, close, dup2, fork, pipe, read, setsid, write, ForkResult};
+use nix::{
+    env::clearenv,
+    errno::Errno,
+    fcntl::{open, OFlag},
+    libc,
+};
 use ratman::daemon::config::Config;
+use std::convert::TryInto;
+use std::os::unix::io::RawFd;
+use std::path::Path;
 use std::{fs::File, io::Read};
 
 pub fn build_cli() -> ArgMatches<'static> {
@@ -97,6 +112,18 @@ pub fn build_cli() -> ArgMatches<'static> {
                 .long("no-webui")
                 .help("Stop ratmand from serving a webui on port 8090")
         )
+        .arg(
+            Arg::with_name("DAEMONIZE")
+                .long("daemonize")
+                .help("Fork ratmand into the background and detach it from the current stdout/stderr/tty")
+        )
+        .arg(
+            Arg::with_name("PID_FILE")
+                .takes_value(true)
+                .long("pid-file")
+                .help("A file which the process PID is written into")
+                .default_value("/tmp/ratmand.pid"),
+        )
         .get_matches()
 }
 
@@ -124,20 +151,7 @@ async fn setup_local_discovery(
     Ok((iface, port))
 }
 
-#[async_std::main]
-async fn main() {
-    let configuration = match daemon::config::Config::load() {
-        Ok(cfg) => cfg,
-        Err(e) => {
-            error!(
-                "Failed to load/write configuration: {}. Resuming with default values.",
-                e
-            );
-            daemon::config::Config::new()
-        }
-    };
-
-    let m = build_cli();
+async fn run_app(m: ArgMatches<'static>, configuration: Config) -> std::result::Result<(), ()> {
     let dynamic = m.is_present("ACCEPT_UNKNOWN_PEERS") || configuration.accept_unknown_peers;
 
     // Setup logging
@@ -220,5 +234,150 @@ async fn main() {
     };
     if let Err(e) = daemon::run(r, api_bind).await {
         error!("Ratmand suffered fatal error: {}", e);
+    }
+    Ok(())
+}
+
+fn sysv_daemonize_app(
+    m: ArgMatches<'static>,
+    configuration: Config,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    //  1. Close all open file descriptors except standard input,
+    //     output, and error (i.e. the first three file descriptors 0,
+    //     1, 2). This ensures that no accidentally passed file
+    //     descriptor stays around in the daemon process. On Linux, this
+    //     is best implemented by iterating through /proc/self/fd, with
+    //     a fallback of iterating from file descriptor 3 to the value
+    //     returned by getrlimit() for RLIMIT_NOFILE.
+    if let (_, Some(max_fds)) = getrlimit(Resource::RLIMIT_NOFILE)? {
+        for i in 3..=(max_fds.try_into().unwrap_or(RawFd::MAX)) {
+            let _ = close(i);
+        }
+    }
+    let (read_pipe_fd, write_pipe_fd) = pipe()?;
+
+    //  2. Reset all signal handlers to their default. This is best done
+    //     by iterating through the available signals up to the limit of
+    //     _NSIG and resetting them to SIG_DFL.
+    for signum in Signal::iterator() {
+        if signum == Signal::SIGKILL || signum == Signal::SIGSTOP {
+            continue;
+        }
+        unsafe { signal(signum, SigHandler::SigDfl)? };
+    }
+
+    //  3. Reset the signal mask using sigprocmask().
+    sigprocmask(SigmaskHow::SIG_SETMASK, Some(&SigSet::empty()), None)?;
+
+    //  4. Sanitize the environment block, removing or resetting
+    //     environment variables that might negatively impact daemon
+    //     runtime.
+    unsafe { clearenv()? };
+
+    if let ForkResult::Parent { child: _ } = unsafe { fork()? } {
+        close(write_pipe_fd)?;
+        let mut buf = [0u8; 4];
+        read(read_pipe_fd, &mut buf)?;
+        let pid = i32::from_be_bytes(buf);
+        if pid < 0 {
+            if pid == -libc::EAGAIN {
+                println!("ratmand PID file is locked by another process.");
+            } else {
+                println!(
+                    "ratmand daemonization failed with errno {}.",
+                    Errno::from_i32(pid)
+                );
+            }
+        } else {
+            println!("ratmand PID: {}", pid);
+        }
+        return Ok(());
+    }
+    close(read_pipe_fd)?;
+
+    /* Become session leader */
+
+    setsid()?;
+    if let ForkResult::Parent { child: _ } = unsafe { fork()? } {
+        return Ok(());
+    }
+
+    //  9. In the daemon process, connect /dev/null to standard input,
+    //     output, and error.
+
+    let secondary_fd = open(Path::new("/dev/null"), OFlag::O_RDWR, stat::Mode::empty())?;
+
+    // assign stdin, stdout, stderr to the process
+    dup2(secondary_fd, libc::STDIN_FILENO)?;
+    dup2(secondary_fd, libc::STDOUT_FILENO)?;
+    dup2(secondary_fd, libc::STDERR_FILENO)?;
+
+    close(secondary_fd)?;
+
+    // 10. In the daemon process, reset the umask to 0, so that the file
+    //     modes passed to open(), mkdir() and suchlike directly control
+    //     the access mode of the created files and directories.
+
+    stat::umask(stat::Mode::empty());
+
+    // 11. In the daemon process, change the current directory to the
+    //     root directory (/), in order to avoid that the daemon
+    //     involuntarily blocks mount points from being unmounted.
+
+    chdir("/")?;
+
+    // 12. In the daemon process, write the daemon PID (as returned by
+    //     getpid()) to a PID file, for example /run/foobar.pid (for a
+    //     hypothetical daemon "foobar") to ensure that the daemon
+    //     cannot be started more than once. This must be implemented in
+    //     race-free fashion so that the PID file is only updated when
+    //     it is verified at the same time that the PID previously
+    //     stored in the PID file no longer exists or belongs to a
+    //     foreign process.
+    let pid_filepath = m.value_of("PID_FILE").unwrap();
+
+    let pid_file = match daemon::pidfile::PidFile::new(&pid_filepath).and_then(|f| f.write_pid()) {
+        Ok(v) => v,
+        Err(err) => {
+            let err = err as i32;
+            let error_bytes: [u8; 4] = (-err).to_be_bytes();
+            write(write_pipe_fd, &error_bytes)?;
+            close(write_pipe_fd)?;
+            return Ok(());
+        }
+    };
+
+    let pid_bytes: [u8; 4] = pid_file.0.to_be_bytes();
+    write(write_pipe_fd, &pid_bytes)?;
+    close(write_pipe_fd)?;
+
+    let _ = async_std::task::block_on(run_app(m, configuration));
+
+    // Unlock and close/delete pid file
+    drop(pid_file);
+    Ok(())
+}
+
+fn main() {
+    let configuration = match daemon::config::Config::load() {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            error!(
+                "Failed to load/write configuration: {}. Resuming with default values.",
+                e
+            );
+            daemon::config::Config::new()
+        }
+    };
+
+    let m = build_cli();
+    let daemonize = m.is_present("DAEMONIZE");
+    if daemonize {
+        if let Err(err) = sysv_daemonize_app(m, configuration) {
+            eprintln!("Ratmand suffered fatal error: {}", err);
+            std::process::exit(-1);
+        }
+    } else if let Err(()) = async_std::task::block_on(run_app(m, configuration)) {
+        std::process::exit(-1);
     }
 }

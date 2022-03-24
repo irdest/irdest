@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- `ratmand` supports `--daemonize` and `--pidfile` CLI arguments
 - Support socket activating `ratmand` on the API socket
 - `ratmand` now stores configuration values in
   `$XDG_CONFIG_HOME/ratmand/config.json` and can be launched without
