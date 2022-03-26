@@ -1,0 +1,14 @@
+# Script that triggers the pipeline for ratman's webui
+
+build-ratman-webui:
+  tags: [ irdest-nix ]
+  stage: build
+  script:
+    - nix-build nix -A ratman-webui
+
+test-ratman-webui:
+  tags: [ irdest-nix ]
+  stage: test
+  script:
+    - cd $(nix-build nix -A ratman-webui --no-out-link)
+    - nix-shell -p yarn firefox --command "yarn test"
