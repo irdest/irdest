@@ -7,7 +7,7 @@ impl Resolver {
     /// Turn a peer line into a SocketAddr via magic
     pub(crate) async fn resolve(peer: &str) -> Option<(SocketAddr, LinkType)> {
         let (peer, tt) = if peer.ends_with("L") {
-            (&peer[0..peer.len()], LinkType::Limited)
+            (&peer[0..peer.len() - 1], LinkType::Limited)
         } else {
             (&peer[..], LinkType::Bidirect)
         };
