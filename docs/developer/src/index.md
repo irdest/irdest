@@ -12,4 +12,4 @@ project.  Its source files are part of the main irdest [code repo].
 * [Website documentation](./website) -- working on the irdest website
 * [License information](./legal) -- licenses in use by irdest
 
-[code repo]: https://git.irdest.org/irdest/irdest/tree/develop/docs/developer
+[code repo]: https://git.irde.st/we/irdest
