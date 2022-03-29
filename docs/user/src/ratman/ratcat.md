@@ -50,5 +50,6 @@ You can also combine message sending with receiving (simply call
 
 ## State
 
-`ratcat` stores your last registered address in
-`$XDG_CONFIG_HOME/ratcat/config`.
+`ratcat` stores your last registered address in:
+    - XDG system: `$XDG_CONFIG_HOME/ratcat/config`.
+    - macOS: `/Users/[USER_NAME]/Library/Application Support/org.irdest.ratcat`.
