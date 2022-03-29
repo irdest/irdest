@@ -1,6 +1,8 @@
 use crate::Router;
 use tide::{Request, Response};
 
+pub mod v1;
+
 async fn draw_base(req: Request<Router>) -> tide::Result {
     Ok(Response::builder(200)
         .header("content-type", "text/html;charset=utf-8")
@@ -37,6 +39,7 @@ pub async fn start(router: Router, bind: &str, port: u16) -> tide::Result<()> {
 
     // Attach some routes to it
     app.at("/").get(draw_base);
+    app.at("/v1/addrs").get(v1::get_addrs);
 
     // Then asynchronously run the web server
     let fut = app.listen(format!("{}:{}", bind, port));
