@@ -1010,14 +1010,6 @@
       };
     }
     {
-      name = "_embroider_addon_shim___addon_shim_1.5.0.tgz";
-      path = fetchurl {
-        name = "_embroider_addon_shim___addon_shim_1.5.0.tgz";
-        url  = "https://registry.yarnpkg.com/@embroider/addon-shim/-/addon-shim-1.5.0.tgz";
-        sha512 = "5zgwA/wTYjgn2Oo6hKRQhF/5Gnwb+hGhj/WXhZQa5yA7fRRdBV1tVMS7b7SLawZcmOhuWkyPwFdgsYtGBvDB0w==";
-      };
-    }
-    {
       name = "_embroider_macros___macros_1.5.0.tgz";
       path = fetchurl {
         name = "_embroider_macros___macros_1.5.0.tgz";
@@ -4503,14 +4495,6 @@
         name = "ember_template_recast___ember_template_recast_6.1.3.tgz";
         url  = "https://registry.yarnpkg.com/ember-template-recast/-/ember-template-recast-6.1.3.tgz";
         sha512 = "45lkfjrWlrMPlOd5rLFeQeePZwAvcS//x1x15kaiQTlqQdYWiYNXwbpWHqV+p9fXY6bEjl6EbyPhG/zBkgh8MA==";
-      };
-    }
-    {
-      name = "ember_welcome_page___ember_welcome_page_6.2.0.tgz";
-      path = fetchurl {
-        name = "ember_welcome_page___ember_welcome_page_6.2.0.tgz";
-        url  = "https://registry.yarnpkg.com/ember-welcome-page/-/ember-welcome-page-6.2.0.tgz";
-        sha512 = "bDPgNgW0eRhLCHLaFK87p1mcP8hGwr0pXvPoskDeUGQzsOI3Pc3U/8WLpUSi2mNrmv0eNtfWqE+A1Wbx6F2l0Q==";
       };
     }
     {
