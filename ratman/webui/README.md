@@ -1,7 +1,21 @@
-# webui
+# ratman-webui
 
-This README outlines the details of collaborating on this Ember application.
-A short introduction of this app could easily go here.
+This is the admin dashboard for `ratmand`. When built with the `webui` feature
+enabled, it'll be accessible at `localhost:8090` by default.
+
+If making your own builds of `ratmand`, it has to be built manually, eg.:
+
+```
+$ env -C ratman/webui yarn build
+$ cargo run
+```
+
+To hack on web UI itself, remember to point it at your `ratmand` instance:
+
+```
+$ cd ratman/webui
+$ yarn start --proxy=http://localhost:8090
+```
 
 ## Prerequisites
 
