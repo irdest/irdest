@@ -16,7 +16,10 @@ Please refer to [the website](https://irde.st/downloads) on how to install Ratma
 
 ## State
 
-Ratman stores some amount of state in `$XDG_DATA_HOME/share/ratmand`.
+Ratman stores some amount of state in: 
+  - XDG system: `$XDG_DATA_HOME/share/ratmand`.
+  - macOS:  `/Users/[USER_NAME]/Library/Application Support/org.irdest.ratmand`.
+
 If you want to wipe all registered addresses simply delete the
 directory and restart `ratmand`.
 
