@@ -5,8 +5,7 @@ use tide::{prelude::*, Request, Response};
 
 #[derive(Debug, Serialize)]
 struct Addr {
-    pub id: usize,
-    pub addr: String,
+    pub id: String,
     pub is_local: bool,
 }
 
@@ -16,10 +15,8 @@ pub async fn get_addrs(req: Request<Router>) -> tide::Result {
         .known_addresses()
         .await
         .into_iter()
-        .enumerate()
-        .map(|(id, (addr, is_local))| Addr {
-            id: id + 1,
-            addr: format!("{:}", addr),
+        .map(|(addr, is_local)| Addr {
+            id: format!("{:}", addr),
             is_local,
         })
         .collect::<Vec<Addr>>();
