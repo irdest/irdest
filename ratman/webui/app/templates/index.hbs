@@ -1,7 +1,7 @@
 <h2>Currently known addresses</h2>
 <p>ratmand keeps track of any address it has encountered on the network before.  Following is a list of them.  Further diagnostics tools will follow!</p>
 <ul>
-  <li><pre>AAAA-AAAA-AAAA-AAAA-AAAA-AAAA-AAAA-AAAA-AAAA-AAAA-AAAA-AAAA-AAAA-AAAA-AAAA-AAAA (local)</pre></li>
-  <li><pre>BBBB-BBBB-BBBB-BBBB-BBBB-BBBB-BBBB-BBBB-BBBB-BBBB-BBBB-BBBB-BBBB-BBBB-BBBB-BBBB (local)</pre></li>
-  <li><pre>CCCC-CCCC-CCCC-CCCC-CCCC-CCCC-CCCC-CCCC-CCCC-CCCC-CCCC-CCCC-CCCC-CCCC-CCCC-CCCC</pre></li>
+  {{#each @model.addrs as |addr|}}
+    <li><pre>{{addr.id}}{{#if addr.isLocal}} (local){{/if}}</pre></li>
+  {{/each}}
 </ul>

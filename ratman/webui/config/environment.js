@@ -24,6 +24,9 @@ module.exports = function (environment) {
   };
 
   if (environment === 'development') {
+    // In development, talk to a separate ratmand instance on the default port.
+    ENV.apiHost = 'http://localhost:8090';
+
     // ENV.APP.LOG_RESOLVER = true;
     // ENV.APP.LOG_ACTIVE_GENERATION = true;
     // ENV.APP.LOG_TRANSITIONS = true;
