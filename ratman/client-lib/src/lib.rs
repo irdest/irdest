@@ -65,7 +65,7 @@ impl RatmanIpc {
     }
 
     pub async fn default_with_addr(addr: Identity) -> Result<Self> {
-        Self::connect("127.0.0.1:920", Some(addr)).await
+        Self::connect("127.0.0.1:9020", Some(addr)).await
     }
 
     /// Connect to a Ratman IPC backend with an optional address
