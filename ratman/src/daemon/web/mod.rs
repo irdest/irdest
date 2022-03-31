@@ -1,35 +1,36 @@
 use crate::Router;
-use tide::{Request, Response};
+use std::path::Path;
+use tide::{http::mime, prelude::*, utils::After, Request, Response};
 
 pub mod v1;
 
-async fn draw_base(req: Request<Router>) -> tide::Result {
+#[derive(rust_embed::RustEmbed)]
+#[folder = "webui/dist"]
+struct Assets;
+
+async fn serve_static(req: Request<Router>) -> tide::Result {
+    let path = {
+        let path = req.url().path();
+        if path == "/" {
+            "index.html"
+        } else {
+            path.strip_prefix('/').unwrap_or(path)
+        }
+    };
+    let asset = Assets::get(path)
+        .ok_or_else(|| tide::Error::from_str(404, format!("not found: /{:}", path)))?;
     Ok(Response::builder(200)
-        .header("content-type", "text/html;charset=utf-8")
-        .body(format!(
-            r#"<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <title>ratmand management UI</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-  </head>
-  <body>
-    <h2>Currently known addresses</h2>
-    <p>ratmand keeps track of any address it has encountered on the network before.  Following is a list of them.  Further diagnostics tools will follow!</p>
-    <ul>
-    {}
-    </ul>
-  </body>
-</html>"#,
-            req.state()
-                .known_addresses()
-                .await
-                .into_iter()
-                .map(|(addr, local)| format!("<li><pre>{}{}</pre></li>", addr, if local { " (local)" } else { "" } ))
-                .collect::<Vec<String>>()
-                .join("\n")
-        ))
+        .content_type(
+            mime::Mime::from_extension(
+                Path::new(&path)
+                    .extension()
+                    .unwrap_or_default()
+                    .to_str()
+                    .unwrap_or_default(),
+            )
+            .unwrap_or(mime::PLAIN),
+        )
+        .body(&asset.data[..])
         .build())
 }
 
@@ -37,8 +38,22 @@ pub async fn start(router: Router, bind: &str, port: u16) -> tide::Result<()> {
     // Create a new application with state
     let mut app = tide::with_state(router);
 
+    // Convert errors into a form Ember.js can understand.
+    app.with(After(|mut res: Response| async {
+        if let Some(err) = res.error() {
+            let status = err.status();
+            let body = json!({ "errors": [{"detail": format!("{:}", err)}] });
+
+            // The above are immutable borrows, here are the mutable ones.
+            res.set_status(status);
+            res.set_body(body);
+        }
+        Ok(res)
+    }));
+
     // Attach some routes to it
-    app.at("/").get(draw_base);
+    app.at("/").get(serve_static);
+    app.at("/assets/*").get(serve_static);
     app.at("/api/v1/addrs").get(v1::get_addrs);
 
     // Then asynchronously run the web server
