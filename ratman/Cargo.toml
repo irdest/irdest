@@ -27,7 +27,7 @@ upnp = ["igd", "ipnetwork", "pnet"]
 daemon = ["cli", "inet", "lan", "webui"]
 util = ["cli", "ratman-client"]
 cli = ["types", "clap", "directories", "nix", "serde_json", "tracing-subscriber"]
-webui = ["tide"]
+webui = ["tide", "rust-embed"]
 
 [dependencies]
 async-std = { version = "1.0", features = ["std", "unstable"] }
@@ -59,6 +59,7 @@ igd = { version = "=0.12", optional = true }       # These three crates are boun
 ipnetwork = { version = "=0.18", optional = true } # older version becuase we don't want
 pnet = { version = "=0.28", optional = true }      # to update to the 2021-edition yet
 tide = { version = "0.16", optional = true }
+rust-embed = { version = "6.3", optional = true }
 
 # Bundled network modules are all optional dependencies
 netmod-inet = { path = "../netmods/netmod-inet", version = "0.4", optional = true }
