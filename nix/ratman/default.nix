@@ -10,7 +10,7 @@ let
   #
   # This works around an issue where eg. `pkgsStatic.yarn2nix` fails to evaluate.
   # See: https://github.com/NixOS/nixpkgs/issues/116207
-  ratman-dashboard = (import <nixpkgs> { }).callPackage ../ratman-dashboard { };
+  inherit (import ../.) ratman-dashboard;
 in
 
 rustPlatform.buildRustPackage rec {
