@@ -25,23 +25,23 @@ You will need the following things properly installed on your computer.
 * [Node.js](https://nodejs.org/)
 * [Yarn](https://yarnpkg.com/)
 * [Ember CLI](https://cli.emberjs.com/release/)
-* [Google Chrome](https://google.com/chrome/)
+* [Firefox](https://getfirefox.com/)
 
-## Installation
+## Setup
 
 * `git clone <repository-url>` this repository
 * `cd dashboard`
-* `yarn install`
+* `yarn`
 
 ## Running / Development
 
-* `ember serve`
+* `yarn start --proxy=http://localhost:8090`
 * Visit your app at [http://localhost:4200](http://localhost:4200).
 * Visit your tests at [http://localhost:4200/tests](http://localhost:4200/tests).
 
 ### Code Generators
 
-Make use of the many generators for code, try `ember help generate` for more details
+Make use of the many generators for code, try `yarn exec ember help generate` for more details
 
 ### Running Tests
 
@@ -55,12 +55,15 @@ Make use of the many generators for code, try `ember help generate` for more det
 
 ### Building
 
-* `ember build` (development)
-* `ember build --environment production` (production)
+* `yarn exec ember build` (development)
+* `yarn build` (production)
 
 ### Deploying
 
-Specify what it takes to deploy your app.
+Make a production build, then build `ratmand` with the `webui` feature enabled.
+
+* `yarn build`
+* `cargo build --features=webui`
 
 ## Further Reading / Useful Links
 
