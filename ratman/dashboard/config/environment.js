@@ -2,7 +2,7 @@
 
 module.exports = function (environment) {
   let ENV = {
-    modulePrefix: 'webui',
+    modulePrefix: 'ratman-dashboard',
     environment,
     rootURL: '/',
     locationType: 'history',

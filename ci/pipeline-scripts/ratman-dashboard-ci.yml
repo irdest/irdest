@@ -1,0 +1,14 @@
+# Script that triggers the pipeline for ratman's dashboard
+
+build-ratman-dashboard:
+  tags: [ irdest-nix ]
+  stage: build
+  script:
+    - nix-build nix -A ratman-dashboard
+
+test-ratman-dashboard:
+  tags: [ irdest-nix ]
+  stage: test
+  script:
+    - cd $(nix-build nix -A ratman-dashboard --no-out-link)
+    - nix-shell -p yarn firefox --command "yarn test"

@@ -6,11 +6,11 @@
 }:
 
 let
-  # Build the webui assets natively on the builder, even when cross-compiling.
+  # Build the dashboard assets natively on the builder, even when cross-compiling.
   #
   # This works around an issue where eg. `pkgsStatic.yarn2nix` fails to evaluate.
   # See: https://github.com/NixOS/nixpkgs/issues/116207
-  ratman-webui = (import <nixpkgs> { }).callPackage ../ratman-webui { };
+  ratman-dashboard = (import <nixpkgs> { }).callPackage ../ratman-dashboard { };
 in
 
 rustPlatform.buildRustPackage rec {
@@ -22,7 +22,7 @@ rustPlatform.buildRustPackage rec {
       !(lib.hasPrefix "${toString ../../.}/docs" name) &&
       !(lib.hasPrefix "${toString ../../.}/target" name) &&
       !(lib.hasPrefix "${toString ../../.}/nix" name) &&
-      !(lib.hasPrefix "${toString ../../.}/ratman/webui" name)
+      !(lib.hasPrefix "${toString ../../.}/ratman/dashboard" name)
     ;
     src = ../../.;
   };
@@ -42,9 +42,9 @@ rustPlatform.buildRustPackage rec {
   SODIUM_USE_PKG_CONFIG = 1;
 
   # Pre-build and patch in Web UI frontend assets.
-  ratman_webui = ratman-webui;
+  ratman_dashboard = ratman-dashboard;
   preBuild = ''
-    ln -snf $ratman_webui ratman/webui
+    ln -snf $ratman_dashboard ratman/dashboard
   '';
 
   cargoLock.lockFile = ../../Cargo.lock;

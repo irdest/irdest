@@ -5,8 +5,8 @@ use tide::{http::mime, prelude::*, utils::After, Request, Response};
 pub mod v1;
 
 #[derive(rust_embed::RustEmbed)]
-#[folder = "webui/dist"]
-struct Assets;
+#[folder = "dashboard/dist"]
+struct DashboardAssets;
 
 async fn serve_static(req: Request<Router>) -> tide::Result {
     let path = {
@@ -17,7 +17,7 @@ async fn serve_static(req: Request<Router>) -> tide::Result {
             path.strip_prefix('/').unwrap_or(path)
         }
     };
-    let asset = Assets::get(path)
+    let asset = DashboardAssets::get(path)
         .ok_or_else(|| tide::Error::from_str(404, format!("not found: /{:}", path)))?;
     Ok(Response::builder(200)
         .content_type(
