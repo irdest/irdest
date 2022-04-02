@@ -1,5 +1,5 @@
-import Application from 'webui/app';
-import config from 'webui/config/environment';
+import Application from 'ratman-dashboard/app';
+import config from 'ratman-dashboard/config/environment';
 import * as QUnit from 'qunit';
 import { setApplication } from '@ember/test-helpers';
 import { setup } from 'qunit-dom';

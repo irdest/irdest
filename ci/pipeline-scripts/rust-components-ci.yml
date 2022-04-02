@@ -3,14 +3,14 @@
 build-ratman:
   tags: [ irdest-nix ]
   stage: build
-  needs: [ build-ratman-webui ]
+  needs: [ build-ratman-dashboard ]
   script:
     - nix-build nix -A ratman
 
 build-ratman-static:
   tags: [ irdest-nix ]
   stage: build
-  needs: [ build-ratman-webui ]
+  needs: [ build-ratman-dashboard ]
   script:
     - nix-env -iA cachix -f https://cachix.org/api/v1/install
     - cachix use irdest -O ~/.config/nix
@@ -24,7 +24,7 @@ build-ratman-static:
 build-ratman-static-aarch64:
   tags: [ irdest-nix ]
   stage: build
-  needs: [ build-ratman-webui ]
+  needs: [ build-ratman-dashboard ]
   script:
     - nix-env -iA cachix -f https://cachix.org/api/v1/install
     - cachix use irdest -O ~/.config/nix

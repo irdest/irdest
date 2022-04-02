@@ -1,4 +1,4 @@
-# ratman-webui
+# ratman-dashboard
 
 This is the admin dashboard for `ratmand`. When built with the `webui` feature
 enabled, it'll be accessible at `localhost:8090` by default.
@@ -6,14 +6,14 @@ enabled, it'll be accessible at `localhost:8090` by default.
 If making your own builds of `ratmand`, it has to be built manually, eg.:
 
 ```
-$ env -C ratman/webui yarn build
+$ env -C ratman/dashboard yarn build
 $ cargo run
 ```
 
 To hack on web UI itself, remember to point it at your `ratmand` instance:
 
 ```
-$ cd ratman/webui
+$ cd ratman/dashboard
 $ yarn start --proxy=http://localhost:8090
 ```
 
@@ -30,7 +30,7 @@ You will need the following things properly installed on your computer.
 ## Installation
 
 * `git clone <repository-url>` this repository
-* `cd webui`
+* `cd dashboard`
 * `yarn install`
 
 ## Running / Development

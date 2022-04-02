@@ -3,14 +3,14 @@
 }:
 
 mkYarnPackage {
-  name = "ratman-webui";
+  name = "ratman-dashboard";
   src = lib.cleanSourceWith {
     filter = name: type:
-      !(lib.hasPrefix "${toString ../../ratman/webui}/.eslintcache" name) &&
-      !(lib.hasPrefix "${toString ../../ratman/webui}/dist" name) &&
-      !(lib.hasPrefix "${toString ../../ratman/webui}/node_modules" name)
+      !(lib.hasPrefix "${toString ../../ratman/dashboard}/.eslintcache" name) &&
+      !(lib.hasPrefix "${toString ../../ratman/dashboard}/dist" name) &&
+      !(lib.hasPrefix "${toString ../../ratman/dashboard}/node_modules" name)
     ;
-    src = ../../ratman/webui;
+    src = ../../ratman/dashboard;
   };
 
   outputs = [ "out" "dist" ];
@@ -24,14 +24,14 @@ mkYarnPackage {
   '';
 
   installPhase = ''
-    cp -R ./deps/webui $out
+    cp -R ./deps/ratman-dashboard $out
     ln -snf $node_modules $out/node_modules
 
     mv $out/dist $dist
     ln -s $dist $out/dist
 
     # Nonsense link created by nix.
-    rm $out/webui
+    rm $out/ratman-dashboard
   '';
 
   # Don't generate a dist tarball for npm.

@@ -1,8 +1,8 @@
 {
-  "name": "webui",
+  "name": "ratman-dashboard",
   "version": "0.0.0",
   "private": true,
-  "description": "Small description for webui goes here",
+  "description": "Small description for ratman-dashboard goes here",
   "repository": "",
   "license": "MIT",
   "author": "",
