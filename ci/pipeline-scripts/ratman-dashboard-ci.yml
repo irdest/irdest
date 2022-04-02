@@ -10,5 +10,7 @@ test-ratman-dashboard:
   tags: [ irdest-nix ]
   stage: test
   script:
+    - nix-env -i $(nix-build nix -A yarn --no-out-link)
+    - nix-env -i $(nix-build nix -A firefox --no-out-link)
     - cd $(nix-build nix -A ratman-dashboard --no-out-link)
-    - nix-shell -p yarn firefox --command "yarn test"
+    - yarn test
