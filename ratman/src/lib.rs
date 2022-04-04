@@ -56,8 +56,8 @@
 //! [`ratman-netmod`] crate, and the routing identities are defined in
 //! the [`ratman-identity`] crate.
 //!
-//! [`ratman-netmod`]: https://crates.io/crate/ratman-netmod
-//! [`ratman-identity`]: https://crates.io/crate/ratman-identity
+//! [`ratman-netmod`]: https://crates.io/crates/ratman-netmod
+//! [`ratman-identity`]: https://crates.io/crates/ratman-identity
 //!
 //! ```rust
 //! # use async_std::task;
