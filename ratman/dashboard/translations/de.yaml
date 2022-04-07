@@ -1,0 +1,6 @@
+application:
+  title: ratmand
+index:
+  placeholder:
+    heading: Aktuell bekannte Addressen
+    greeting: ratmand trackt addressen welche es bereits im Netzwerk gefunden hat, die in der Liste unten aufgelistet sind. Weite diagnostische Werkzeuge werden in diesem interface hinzugefuegt werden!
