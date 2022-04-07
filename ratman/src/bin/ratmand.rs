@@ -155,7 +155,7 @@ async fn run_app(m: ArgMatches<'static>, configuration: Config) -> std::result::
     let dynamic = m.is_present("ACCEPT_UNKNOWN_PEERS") || configuration.accept_unknown_peers;
 
     // Setup logging
-    daemon::setup_logging(m.value_of("VERBOSITY").unwrap());
+    daemon::setup_logging(m.value_of("VERBOSITY").unwrap(), m.is_present("DAEMONIZE"));
 
     // Load peers or throw an error about missing cli data!
     let peers: Vec<_> = match m

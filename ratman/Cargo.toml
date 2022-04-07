@@ -24,10 +24,11 @@ default = ["daemon", "util"]
 inet = ["netmod-inet"]
 lan = ["netmod-lan"]
 upnp = ["igd", "ipnetwork", "pnet"]
-daemon = ["cli", "inet", "lan", "webui", "upnp"]
+daemon = ["cli", "inet", "lan", "webui", "upnp", "syslog"]
 util = ["cli", "ratman-client"]
 cli = ["types", "clap", "directories", "nix", "serde_json", "tracing-subscriber"]
 webui = ["tide", "rust-embed"]
+syslog = ["tracing-syslog"]
 
 [dependencies]
 async-std = { version = "1.0", features = ["std", "unstable"] }
@@ -51,6 +52,7 @@ task-notify = { version = "0.1", path = "../utils/task-notify" }
 types = { version = "0.3", path = "types", package = "ratman-types", optional = true }
 clap = { version = "2.0", optional = true, features = ["wrap_help", "color", "suggestions"] }
 tracing-subscriber = { version = "0.2", optional = true, features = ["fmt"] }
+tracing-syslog = { version = "0.1", path = "../utils/tracing-syslog", optional = true }
 directories = { version = "4.0.1", optional = true }
 serde_json = { version = "1.0", optional = true }
 ratman-client = { version = "0.3.0", path = "client-lib", optional = true }

@@ -47,7 +47,7 @@ pub(crate) fn env_xdg_data() -> Option<String> {
     std::env::var("XDG_DATA_HOME").ok()
 }
 
-pub fn setup_logging(lvl: &str) {
+pub fn setup_logging(lvl: &str, syslog: bool) {
     let filter = EnvFilter::default()
         .add_directive(match lvl {
             "trace" => LevelFilter::TRACE.into(),
@@ -66,7 +66,19 @@ pub fn setup_logging(lvl: &str) {
         .add_directive("trust_dns_resolver=warn".parse().unwrap());
 
     // Initialise the logger
-    fmt().with_env_filter(filter).init();
+    if syslog {
+        let identity = std::ffi::CStr::from_bytes_with_nul(b"ratmand\0").unwrap();
+        let facility = Default::default();
+        let syslog =
+            tracing_syslog::Syslog::new(identity, tracing_syslog::Options::LOG_PID, facility);
+        fmt()
+            .with_ansi(false)
+            .with_env_filter(filter)
+            .with_writer(syslog)
+            .init();
+    } else {
+        fmt().with_env_filter(filter).init();
+    }
     info!("Initialised logger: welcome to ratmand!");
 }
 
