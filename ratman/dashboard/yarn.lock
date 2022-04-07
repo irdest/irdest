@@ -4367,6 +4367,14 @@ ember-auto-import@^2.2.0, ember-auto-import@^2.2.4, ember-auto-import@^2.4.0:
     typescript-memoize "^1.0.0-alpha.3"
     walk-sync "^3.0.0"
 
+ember-best-language@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/ember-best-language/-/ember-best-language-3.0.0.tgz#034eefc972b6d060cc3f95ac1c6d36f55f590445"
+  integrity sha512-w5DzCg0xA/tlEu8VaUJHvE1b1e5PywGk9X+wZVgucLvDaP+Lq+7MCMxI/JGKyIEp/o2KVMXoNLPNoRjCEsR/7Q==
+  dependencies:
+    ember-cli-babel "^7.26.6"
+    ember-cli-typescript "^5.0.0"
+
 ember-cache-primitive-polyfill@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/ember-cache-primitive-polyfill/-/ember-cache-primitive-polyfill-1.0.1.tgz#a27075443bd87e5af286c1cd8a7df24e3b9f6715"
@@ -4607,6 +4615,22 @@ ember-cli-typescript@^4.0.0, ember-cli-typescript@^4.1.0:
   version "4.2.1"
   resolved "https://registry.yarnpkg.com/ember-cli-typescript/-/ember-cli-typescript-4.2.1.tgz#54d08fc90318cc986f3ea562f93ce58a6cc4c24d"
   integrity sha512-0iKTZ+/wH6UB/VTWKvGuXlmwiE8HSIGcxHamwNhEC5x1mN3z8RfvsFZdQWYUzIWFN2Tek0gmepGRPTwWdBYl/A==
+  dependencies:
+    ansi-to-html "^0.6.15"
+    broccoli-stew "^3.0.0"
+    debug "^4.0.0"
+    execa "^4.0.0"
+    fs-extra "^9.0.1"
+    resolve "^1.5.0"
+    rsvp "^4.8.1"
+    semver "^7.3.2"
+    stagehand "^1.0.0"
+    walk-sync "^2.2.0"
+
+ember-cli-typescript@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/ember-cli-typescript/-/ember-cli-typescript-5.0.0.tgz#52f53843082d0a0128f318809dadabf83a76bbff"
+  integrity sha512-UDKZlG7bInRo7eDsF3jvPz1Dxh1YvRhMw9wyj5rj2K3brw0xEh1IMTqPgWRbPESqjcWuwa8s0FCNuYWDc4PTfg==
   dependencies:
     ansi-to-html "^0.6.15"
     broccoli-stew "^3.0.0"
