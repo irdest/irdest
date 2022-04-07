@@ -2244,6 +2244,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "tracing-syslog"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "tracing",
+ "tracing-core",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "twox-hash"
 version = "1.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
