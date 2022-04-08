@@ -6,7 +6,7 @@ enabled, it'll be accessible at `localhost:8090` by default.
 If making your own builds of `ratmand`, it has to be built manually, eg.:
 
 ```
-$ env -C ratman/dashboard yarn build
+$ env -C ratman/dashboard yarn
 $ cargo run
 ```
 

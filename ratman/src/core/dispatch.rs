@@ -38,8 +38,8 @@ impl Dispatch {
         let frames = Slicer::slice(1312, msg);
 
         frames.into_iter().fold(Ok(()), |res, f| match (res, r) {
-            (Ok(()), Recipient::User(_)) => task::block_on(async move { self.send_one(f).await }),
-
+            (Ok(()), Recipient::User(_)) => task::block_on(self.send_one(f)),
+            (Ok(()), Recipient::Flood(_)) => task::block_on(self.flood(f)),
             (res, _) => res,
         })
     }
