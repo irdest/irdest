@@ -1,9 +1,5 @@
 [workspace]
 members = [
-    # Encrypted & async database engine
-    "utils/alexandria",
-    "utils/alexandria-tags",
-
     # The decentralised router
     "ratman",
     "ratman/client-lib",

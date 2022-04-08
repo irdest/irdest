@@ -1,7 +1,5 @@
 /** This shell derivation fetches all required dependencies to hack on Irdest
  * 
- * You may want to comment-out the bottom section to ignore Android
- * platform dependencies.
  */
 
 with import <nixpkgs> {
