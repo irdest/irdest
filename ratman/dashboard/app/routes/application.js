@@ -7,8 +7,11 @@ export default class ApplicationRoute extends Route {
 
   beforeModel() {
     super.beforeModel(...arguments);
+    this.setupIntl();
+  }
 
-    // Try to set a locale based on browser settings.
+  // Try to set a locale based on browser settings.
+  setupIntl() {
     let locales = this.intl.get('locales');
     let best = this.bestLanguage.bestLanguage(locales);
     if (best) {
