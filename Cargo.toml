@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2018-2022 Katharina Fey <kookie@spacekookie.de>
+#
+# SPDX-License-Identifier: CC0-1.0
+
 [workspace]
 members = [
     # The decentralised router

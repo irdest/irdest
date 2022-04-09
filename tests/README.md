@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2022 Katharina Fey <kookie@spacekookie.de>
+
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # Integration tests
 
 This directory contains integration tests (meaning tests that cover

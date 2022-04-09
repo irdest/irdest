@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 Katharina Fey <kookie@spacekookie.de>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 //! A utility wrapper type for notifying async tasks about mutation of data they're interested in.
 
 #![doc(html_favicon_url = "https://qaul.org/favicon.ico")]

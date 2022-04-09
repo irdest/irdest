@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 use ratman_netmod::Frame;
 /// A `Frame` tagged with an identifier and a time to live, for propagation through
 /// a simulated medium.

@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2021-2022 Katharina Fey <kookie@spacekookie.de>
+
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # Irdest clients
 
 As part of the Irdest project we develop several applications to go

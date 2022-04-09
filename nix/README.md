@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2021 Milan Pässler <milan@petabyte.dev>
+
+SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+-->
+
 # Nix packaging for irdest components
 
 From the [Nix Package Manager Guide](https://nixos.org/manual/nix/stable/#ch-about-nix):

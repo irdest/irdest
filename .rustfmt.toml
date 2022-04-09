@@ -1,1 +1,5 @@
+# SPDX-FileCopyrightText: 2019 Leonora Tindall <nora@nora.codes>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 edition = "2018"

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 Katharina Fey <kookie@spacekookie.de>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 use crate::config::{Config, InOrOut, IpSpace};
 use async_std::{
     io::{self, ReadExt, WriteExt},

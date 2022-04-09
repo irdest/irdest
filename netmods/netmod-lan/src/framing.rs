@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019-2021 Katharina Fey <kookie@spacekookie.de>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 //! UDP overlay protocol and framing
 
 use netmod::{Frame, Target};

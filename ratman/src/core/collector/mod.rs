@@ -1,3 +1,9 @@
+// SPDX-FileCopyrightText: 2020, 2022 Katharina Fey <kookie@spacekookie.de>
+// SPDX-FileCopyrightText: 2020 Jess 3Jane <me@jess.coffee>
+// SPDX-FileCopyrightText: 2020 Alyssa Ross <hi@alyssa.is>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 //! The frame/message collector module
 //!
 //! The collector module is a bit more complicated than other modules,

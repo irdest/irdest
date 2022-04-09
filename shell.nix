@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020-2021 Katharina Fey <kookie@spacekookie.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 /** This shell derivation fetches all required dependencies to hack on Irdest
  * 
  */

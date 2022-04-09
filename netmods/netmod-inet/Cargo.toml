@@ -1,9 +1,13 @@
+# SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 [package]
 name = "netmod-inet"
 description = "An internet overlay netmod endpoint driver"
 version = "0.4.0"
 edition = "2018"
-license = "AGPL-3.0"
+license = "AGPL-3.0-or-later"
 
 [dependencies]
 identity = { version = "0.6", path = "../../ratman/identity", package = "ratman-identity" }

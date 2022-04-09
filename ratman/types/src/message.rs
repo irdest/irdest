@@ -1,8 +1,12 @@
-/// A message is only ever addressed to a single node, or everyone on
-/// the network.  The signature is required to be present, if a
-/// payload is.  The payload can be empty, which can be used to create
-/// a ping, or using the 16 byte id as payload.  In these cases,
-/// the sigature can also be empty.
+// SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
+//! A message is only ever addressed to a single node, or everyone on
+//! the network.  The signature is required to be present, if a
+//! payload is.  The payload can be empty, which can be used to create
+//! a ping, or using the 16 byte id as payload.  In these cases,
+//! the sigature can also be empty.
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "proto")]

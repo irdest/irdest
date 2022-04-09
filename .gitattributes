@@ -1,2 +1,6 @@
+# SPDX-FileCopyrightText: 2020 Katharina Fey <kookie@spacekookie.de>
+#
+# SPDX-License-Identifier: CC0-1.0
+
 utils/libopus-sys/opus/**/* linguist-vendored
 

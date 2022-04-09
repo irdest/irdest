@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 Katharina Fey <kookie@spacekookie.de>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 //! Irdest Proxy allows you to send IP data through an Irdest network
 //!
 //! It uses (at some point in the future) a few different mechanisms

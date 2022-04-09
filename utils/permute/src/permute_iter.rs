@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2020 Leonora Tindall <nora@nora.codes>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 //! Combining ATCI and permute() to create efficient permutations
 use crate::arbitrary_tandem_control_iter::ArbitraryTandemControlIterator;
 use crate::permutations::permute;

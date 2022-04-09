@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2020 Leonora Tindall <nora@nora.codes>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 //! An iterator over a slice that uses another iterator to control the next element in
 //! the sequence.
 

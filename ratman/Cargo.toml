@@ -1,7 +1,12 @@
+# SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
+# SPDX-FileCopyrightText: 2022 embr <git@liclac.eu>
+#
+# SPDX-License-Identifier: CC0-1.0
+
 [package]
 name = "ratman"
 description = "A decentralised and peer-to-peer packet router"
-license = "AGPL-3.0"
+license = "AGPL-3.0-or-later"
 version = "0.4.0"
 edition = "2018"
 

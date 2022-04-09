@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2021 Alyssa Ross <hi@alyssa.is>
+#
+# SPDX-License-Identifier: CC0-1.0
+
 [bans]
 multiple-versions = "allow"
 

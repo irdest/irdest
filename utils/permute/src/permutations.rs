@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2020 Leonora Tindall <nora@nora.codes>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 //! Tools for generating permutations using Heap's algorithm
 
 fn heaps_inner<T: Clone>(k: usize, values: &mut [T]) -> Vec<Vec<T>> {
