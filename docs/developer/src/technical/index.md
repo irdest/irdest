@@ -103,6 +103,7 @@ background, these sections are for you.
 - [Ratman overview](./ratman/index.html)
 - [Ratman client lib](./ratman/client.html)
 - [Bibliography](./bib.html)
+- [Hacking on Irdest](./hacking.html)
 
 If you want to work on a specific issue in Ratman or the drivers, we
 recommend you check out the [issue tracker], or come talk to us in our

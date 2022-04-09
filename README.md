@@ -71,6 +71,9 @@ out the [user manual]!
 
 ## Contributing
 
+To get started to hack on Irdest, check out the [HACKING section] in
+the developer manual.
+
 Social processes, code, and design guidelines are outlined in the
 [developer manual].  We have a developer chat hosted on [Matrix] where
 we would be happy to answer any questions you have.
@@ -108,6 +111,7 @@ and can be found in the [licenses](licenses) directory.
 [developer manual]: https://docs.irde.st/developer/
 [docs]: ./docs
 [gossip protocol]: https://en.wikipedia.org/wiki/Gossip_protocol
+[HACKING section]: https://docs.irde.st/developer/technical/hacking.html
 [irdest-mblog]: mblog.irde.st
 [licenses]: ./licenses
 [netmods]: ./netmods
