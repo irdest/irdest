@@ -8,8 +8,8 @@ members = [
     "ratman/types",
 
     # Various utility crates
-    "utils/clockctrl",
     "utils/task-notify",
+    "utils/clockctrl",
     "utils/tracing-syslog",
 
     # Available netmod drivers
