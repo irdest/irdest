@@ -5,6 +5,7 @@
   - [Contributions](./social/contributions.md)
   - [Code of Conduct](./social/code-of-conduct.md)
 - [Technical overview](./technical/index.md)
+  - [Hacking](./technical/hacking.md)
   - [Ratman internals](./technical/ratman/index.md)
   - [ratman-client](./technical/ratman/client.md)
   - [Bibliography](./technical/bib.md)
