@@ -4,7 +4,9 @@
 extern crate tracing;
 
 mod peer;
+mod proto;
 mod routes;
+mod server;
 
 pub struct Endpoint {
     routes: routes::Routes,

@@ -1,4 +1,11 @@
-use async_std::net::{SocketAddr, TcpStream};
+use crate::{proto, routes::Target};
+use async_std::channel;
+use async_std::{
+    channel::{Receiver, Sender},
+    net::{SocketAddr, TcpStream},
+    sync::Arc,
+};
+use netmod::Frame;
 
 /// Represent another node running netmod-inet
 ///
@@ -6,9 +13,9 @@ use async_std::net::{SocketAddr, TcpStream};
 /// sockets.  A peer runs an incoming packet socket via `peer.run()`
 /// and can send messages via `peer.send(...)`
 ///
-/// When the connection drops the peer will automatically try to
-/// reconnect, or wait for an incoming connection.  After a specified
-/// timeout the peer is dropped.
+/// There are two peering modes: `standard` and `cross`.  They specify
+/// the way that connections are established, and how connection drops
+/// are handled.
 ///
 /// ## Types of guys
 ///
@@ -25,18 +32,107 @@ use async_std::net::{SocketAddr, TcpStream};
 ///
 ///    In this mode the peer creates a single outgoing connection, and
 ///    is upgraded with an incoming connection for receiving, which is
-///    established by the remote.  In this model there is no "server".
+///    established by the remote.  In this model there is no "server"
+///    and thus in the case of a connection drop, either side can
+///    re-establish the connection without causing a race-condition.
 ///
-/// 3. 
+/// The two inverse scenarios exist on the "server" side.
 pub struct Peer {
-    src_addr: SocketAddr,
+    id: Target,
+    src_addr: Option<SocketAddr>,
     dst_addr: Option<SocketAddr>,
-    tx: TcpStream,
-    rx: TcpStream,
+    tx: Option<TcpStream>,
+    rx: Option<TcpStream>,
+    receiver: Sender<(Target, Frame)>,
 }
 
 impl Peer {
-    pub fn outgoing() -> Self {
-        todo!()
+    /// Connect to a peer via "standard" connection
+    pub fn connect_standard(
+        id: Target,
+        dst_addr: SocketAddr,
+        stream: TcpStream,
+    ) -> (Self, Receiver<(Target, Frame)>) {
+        let (ftx, frx) = channel::bounded(64);
+        (
+            Self {
+                id,
+                src_addr: None, // irrelevant
+                dst_addr: Some(dst_addr),
+                tx: Some(stream.clone()),
+                rx: Some(stream),
+                receiver: ftx,
+            },
+            frx,
+        )
+    }
+
+    /// Connect to a peer via "cross" connection
+    pub fn connect_cross(
+        id: Target,
+        dst_addr: SocketAddr,
+        tx: TcpStream,
+    ) -> (Self, Receiver<(Target, Frame)>) {
+        let (ftx, frx) = channel::bounded(64);
+        (
+            Self {
+                id,
+                src_addr: None, // will be filled in
+                dst_addr: Some(dst_addr),
+                tx: Some(tx),
+                rx: None, // will be filled in
+                receiver: ftx,
+            },
+            frx,
+        )
+    }
+
+    /// Create a peer for an incoming standard connection
+    pub fn incoming_standard(
+        id: Target,
+        src_addr: SocketAddr,
+        stream: TcpStream,
+    ) -> (Self, Receiver<(Target, Frame)>) {
+        let (ftx, frx) = channel::bounded(64);
+        (
+            Self {
+                id,
+                src_addr: Some(src_addr),
+                dst_addr: None,
+                tx: Some(stream.clone()),
+                rx: Some(stream),
+                receiver: ftx,
+            },
+            frx,
+        )
+    }
+
+    /// Create a peer for an incoming cross connection
+    pub fn incoming_cross(
+        id: Target,
+        src_addr: SocketAddr,
+        dst_addr: SocketAddr,
+        tx: TcpStream,
+        rx: TcpStream,
+    ) -> (Self, Receiver<(Target, Frame)>) {
+        let (ftx, frx) = channel::bounded(64);
+        (
+            Self {
+                id,
+                src_addr: Some(src_addr),
+                dst_addr: Some(dst_addr),
+                tx: Some(tx),
+                rx: Some(rx),
+                receiver: ftx,
+            },
+            frx,
+        )
+    }
+
+    /// Spawn this function to receive messages from this peer
+    pub async fn run(self: &Arc<Self>) {
+        while let Some(ref rx) = self.rx {
+            let _f: Frame = proto::read(rx).await.unwrap();
+        }
     }
 }
