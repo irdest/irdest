@@ -4,6 +4,7 @@ mod parse;
 mod peers;
 mod state;
 mod transform;
+pub mod config;
 
 #[cfg(feature = "upnp")]
 pub mod upnp;

@@ -105,6 +105,15 @@ async fn setup_local_discovery(
     r: &Router,
     m: &ArgMatches<'_>,
 ) -> std::result::Result<(String, u16), String> {
+
+    let configuration = match daemon::config::Config::load() {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            error!("Failed to load/write configuration: {}. Resuming with default values.", e);
+            daemon::config::Config::new()
+        }
+    };
+
     let iface = m.value_of("DISCOVERY_IFACE")
         .map(Into::into)
         .or_else(|| default_iface().map(|iface| {
@@ -114,7 +123,7 @@ async fn setup_local_discovery(
 
     let port = m
         .value_of("DISCOVERY_PORT")
-        .unwrap()
+        .unwrap_or(configuration.netmod_lan_bind.as_str())
         .parse()
         .map_err(|e| format!("failed to parse discovery port: {}", e))?;
 
@@ -124,8 +133,18 @@ async fn setup_local_discovery(
 
 #[async_std::main]
 async fn main() {
+
+    let configuration = match daemon::config::Config::load() {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            error!("Failed to load/write configuration: {}. Resuming with default values.", e);
+            daemon::config::Config::new()
+        }
+    };
+
     let m = build_cli();
-    let dynamic = m.is_present("ACCEPT_UNKNOWN_PEERS");
+    let dynamic = m.is_present("ACCEPT_UNKNOWN_PEERS") || configuration.accept_unknown_peers;
+
 
     // Setup logging
     daemon::setup_logging(m.value_of("VERBOSITY").unwrap());
@@ -151,9 +170,9 @@ async fn main() {
     };
 
     let r = Router::new();
-    if !m.is_present("NO_INET") {
+    if !m.is_present("NO_INET") || configuration.netmod_inet_enabled {
         let tcp = match Inet::new(
-            m.value_of("INET_BIND").unwrap(),
+            m.value_of("INET_BIND").unwrap_or(configuration.netmod_inet_bind.as_str()),
             "ratmand",
             if dynamic { Mode::Dynamic } else { Mode::Static },
         )
@@ -180,7 +199,7 @@ async fn main() {
     }
 
     // If local-discovery is enabled
-    if !m.is_present("NO_DISCOVERY") {
+    if !m.is_present("NO_DISCOVERY") || configuration.netmod_lan_enabled {
         match setup_local_discovery(&r, &m).await {
             Ok((iface, port)) => debug!(
                 "Local peer discovery running on interface {}, port {}",
@@ -198,7 +217,7 @@ async fn main() {
         }
     }
 
-    let api_bind = match m.value_of("API_BIND").unwrap().parse() {
+    let api_bind = match m.value_of("API_BIND").unwrap_or(configuration.api_socket_bind.as_str()).parse() {
         Ok(addr) => addr,
         Err(e) => daemon::elog(format!("Failed to parse API_BIND address: {}", e), 2),
     };
