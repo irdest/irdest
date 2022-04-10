@@ -13,7 +13,7 @@ mod session;
 
 use peer::{FrameReceiver, FrameSender};
 use routes::{Routes, Target};
-use session::{start_connection, SessionData};
+use session::{setup_cleanuptask, start_connection, SessionData};
 use {resolve::Resolver, server::Server};
 
 use async_std::{channel::unbounded, io::WriteExt, net::TcpListener, sync::Arc, task};
@@ -118,8 +118,8 @@ impl InetEndpoint {
             {
                 let routes = Arc::clone(&self.routes);
                 let sender = self.channel.0.clone();
-                let restart_tx = match start_connection(session_data, routes, sender).await {
-                    Ok(tx) => tx,
+                match start_connection(session_data, Arc::clone(&routes), sender.clone()).await {
+                    Ok(rx) => setup_cleanuptask(rx, sender, &routes).await,
                     Err(e) => {
                         error!("failed to establish session with {}: {}", peer, e);
                         continue;
@@ -146,7 +146,6 @@ impl InetEndpoint {
                 // In case the connection was dropped, we remove the peer from the routing table
                 Err(_) => {
                     let peer = self.routes.remove_peer(target).await;
-                    peer.cancel().await;
                 }
                 _ => {}
             };
@@ -161,7 +160,6 @@ impl InetEndpoint {
             if let Err(e) = peer.send(&frame).await {
                 error!("failed to send frame to peer {}: {}", peer.id(), e);
                 self.routes.remove_peer(peer.id()).await;
-                peer.cancel().await;
             }
         }
 

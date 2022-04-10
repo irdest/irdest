@@ -59,6 +59,7 @@ impl Server {
         })
     }
 
+    /// Grab the port this socket is running on for diagnostics
     pub(crate) fn port(&self) -> u16 {
         self.ipv6_listen.local_addr().unwrap().port()
     }
@@ -68,7 +69,6 @@ impl Server {
         let mut inc = self.ipv6_listen.incoming();
 
         loop {
-            trace!("Waiting for incoming connection...");
             let stream = inc.next().await;
             debug!("New incoming connection!");
 
@@ -104,8 +104,7 @@ async fn handle_stream(s: TcpStream, sender: FrameSender, r: Arc<Routes>) {
     };
 
     // Spawn a task to listen for packets for this peer
-    let cancel = task::spawn(Arc::clone(&peer).run());
-    peer.insert_run(cancel).await;
+    task::spawn(Arc::clone(&peer).run());
 
     // Also add the peer to the routing table
     r.add_peer(peer.id(), peer).await;
@@ -139,6 +138,6 @@ async fn accept_connection(
     };
 
     proto::write(&mut s, &Handshake::Ack { tt }).await?;
-    info!("Successfully connected with peer :)");
+    info!("Successfully connected with new peer #{} :)", target);
     Ok(Peer::standard(data, sender, None, s))
 }

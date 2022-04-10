@@ -7,7 +7,7 @@ use crate::{
     PeerType,
 };
 use async_std::{
-    channel::{unbounded, Sender},
+    channel::{unbounded, Receiver, Sender},
     net::{SocketAddr, TcpStream},
     sync::Arc,
     task,
@@ -38,7 +38,7 @@ pub(crate) async fn start_connection(
     session_data: SessionData,
     routes: Arc<Routes>,
     sender: FrameSender,
-) -> Result<(), SessionError> {
+) -> Result<Receiver<SessionData>, SessionError> {
     let (tx, rx) = unbounded();
 
     let routes2 = Arc::clone(&routes);
@@ -59,12 +59,18 @@ pub(crate) async fn start_connection(
             }
         };
 
-        let cancel = task::spawn(Arc::clone(&peer).run());
-        peer.insert_run(cancel).await;
-
-        let buffer = routes2.add_peer(peer.id(), Arc::clone(&peer)).await;
+        task::spawn(Arc::clone(&peer).run());
+        routes2.add_peer(peer.id(), Arc::clone(&peer)).await;
     });
 
+    Ok(rx)
+}
+
+pub(crate) async fn setup_cleanuptask(
+    rx: Receiver<SessionData>,
+    sender: FrameSender,
+    routes: &Arc<Routes>,
+) {
     // We wait to be notified either by the peer itself, or the
     // sending context that the peer has died and needs to be
     // restarted.  Thus we call `cleanup_connection` to restart
@@ -76,6 +82,8 @@ pub(crate) async fn start_connection(
     task::spawn(async move {
         match rx.recv().await {
             Ok(session_data) => {
+                debug!("Restart hook notified!");
+
                 if let Err(e) = cleanup_connection(session_data, &routes, sender).await {
                     error!(
                         "Failed to re-establish connection for peer {}, cause: {}",
@@ -86,8 +94,6 @@ pub(crate) async fn start_connection(
             _ => {}
         }
     });
-
-    Ok(())
 }
 
 pub(crate) async fn cleanup_connection(
@@ -96,8 +102,9 @@ pub(crate) async fn cleanup_connection(
     sender: FrameSender,
 ) -> Result<(), SessionError> {
     let peer = routes.remove_peer(session_data.id).await;
-    peer.cancel().await;
     debug!("References to PEER left: {}", Arc::strong_count(&peer));
+
+    start_connection(session_data, Arc::clone(&routes), sender).await?;
     Ok(())
 }
 

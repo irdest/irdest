@@ -50,7 +50,6 @@ pub struct Peer {
     rx: Mutex<Option<TcpStream>>,
     receiver: FrameSender,
     restart: Option<Sender<SessionData>>,
-    cancel: Mutex<Option<JoinHandle<()>>>,
 }
 
 impl Peer {
@@ -67,7 +66,6 @@ impl Peer {
             rx: Mutex::new(Some(stream)),
             receiver,
             restart,
-            cancel: Mutex::new(None),
         })
     }
 
@@ -75,19 +73,6 @@ impl Peer {
     #[inline]
     pub(crate) fn id(&self) -> Target {
         self.session.id
-    }
-
-    /// Cancel the runtime of this peer
-    pub(crate) async fn cancel(self: &Arc<Self>) {
-        if let Some(c) = core::mem::replace(&mut *self.cancel.lock().await, None) {
-            c.cancel().await;
-        }
-    }
-
-    /// Prepare the cancelation of this peer
-    pub(crate) async fn insert_run(self: &Arc<Self>, join: JoinHandle<()>) {
-        let mut c = self.cancel.lock().await;
-        *c = Some(join);
     }
 
     /// Send a frame to this peer
@@ -105,9 +90,12 @@ impl Peer {
         match proto::write(&mut *tx, f).await {
             Ok(()) => Ok(()),
             Err(e) => {
+                warn!("Failed to send data for peer {}", self.session.id);
+
                 // If we are the outgoing side we signal to be restarted
                 if let Some(ref tx) = self.restart {
                     tx.send(self.session).await;
+                    debug!("Notify restart hook");
                     Ok(())
                 }
                 // Else we just inform the sending context that this
