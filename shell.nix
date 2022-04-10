@@ -9,7 +9,7 @@ stdenv.mkDerivation {
   buildInputs = [
     rustc cargo rustfmt rust-analyzer clangStdenv
     pkg-config protobuf 
-    cargo-watch binutils yarn reuse
+    cargo-watch binutils yarn reuse jq
   ]
   # Special dependencies for macOS builds
   ++ lib.optionals stdenv.isDarwin [
