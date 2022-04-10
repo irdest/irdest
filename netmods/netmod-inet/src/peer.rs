@@ -52,7 +52,7 @@ pub struct Peer {
 
 impl Peer {
     /// Connect to a peer via "standard" connection
-    pub(crate) fn outgoing_standard(
+    pub(crate) fn standard(
         session: SessionData,
         receiver: FrameSender,
         stream: TcpStream,
@@ -63,6 +63,11 @@ impl Peer {
             rx: Mutex::new(Some(stream)),
             receiver,
         })
+    }
+
+    /// Return this Peer's ID
+    pub(crate) fn id(&self) -> Target {
+        self.session.id
     }
 
     /// Send a frame to this peer
@@ -78,7 +83,7 @@ impl Peer {
     }
 
     /// Repeatedly attempt to read from the reading socket
-    pub(crate) async fn run(self: &Arc<Self>) {
+    pub(crate) async fn run(self: Arc<Self>) {
         loop {
             let mut rxg = self.rx.lock().await;
             let rx = match rxg.as_mut() {

@@ -25,13 +25,13 @@ impl From<io::Error> for ProtoError {
 pub(crate) async fn read_blocking<T: DeserializeOwned>(mut rx: &TcpStream) -> Result<T, io::Error> {
     let mut len_buf = [0; 8];
     rx.read_exact(&mut len_buf).await?;
-    let len = byteorder::BigEndian::read_u64(&len_buf);
+    let len = u64::from_be_bytes(len_buf);
 
     if len > 4196 {
         warn!("Receiving a message larger than 4169 bytes.  This might be a DOS attempt..");
     }
 
-    let mut buf = Vec::with_capacity(len as usize);
+    let mut buf = vec![0; len as usize];
     rx.read_exact(&mut buf).await?;
     Ok(bincode::deserialize(&buf).unwrap())
 }
@@ -50,11 +50,9 @@ pub(crate) async fn read<T: DeserializeOwned>(mut rx: &TcpStream) -> Result<T, P
 
 pub(crate) async fn write<T: Serialize>(mut tx: &TcpStream, f: &T) -> Result<(), io::Error> {
     let mut encode = bincode::serialize(f).unwrap();
-    let mut len_buf = Vec::with_capacity(8);
-    byteorder::BigEndian::write_u64(&mut len_buf, encode.len() as u64);
-
-    len_buf.append(&mut encode);
+    let mut len_buf = (encode.len() as u64).to_be_bytes();
     tx.write(&len_buf).await?;
+    tx.write(&encode).await?;
     Ok(())
 }
 

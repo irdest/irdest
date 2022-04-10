@@ -1,13 +1,14 @@
 //! Peer session management
 
 use crate::{
-    peer::{FrameReceiver, Peer},
+    peer::{FrameReceiver, FrameSender, Peer},
     proto::{self, Handshake},
     routes::Target,
     PeerType,
 };
 use async_std::{
     net::{SocketAddr, TcpStream},
+    sync::Arc,
     task,
 };
 use std::{io, time::Duration};
@@ -37,10 +38,12 @@ pub(crate) struct SessionManager;
 #[derive(Copy, Clone, Debug)]
 pub(crate) struct SessionData {
     pub(crate) id: Target,
-    tt: PeerType,
-    addr: SocketAddr,
-    self_port: u16,
+    pub(crate) tt: PeerType,
+    pub(crate) addr: SocketAddr,
+    pub(crate) self_port: u16,
 }
+
+
 
 impl SessionManager {
     /// Attempt to start a session with a peer
@@ -72,10 +75,13 @@ impl SessionManager {
                 PeerType::Cross if *ctr >= SESSION_TIMEOUT => {
                     break Err(SessionError::Refused(*addr, *ctr))
                 }
-                // For standard connections we just slow down our attempts up to once per hour
-                PeerType::Standard if *ctr >= SESSION_TIMEOUT && holdoff < 3600 => holdoff *= 2,
+                // For standard connections we just slow down our attempts up to ~69 minutes
+                PeerType::Standard if *ctr >= SESSION_TIMEOUT && holdoff < 4096 => holdoff *= 2,
                 // Limited connections are not implemented yet
-                PeerType::Limited(_) => todo!(),
+                PeerType::Limited(_) => {
+                    error!("APOLOGIES this feature is not yet implemented, despite what the documentation tells you");
+                    todo!()
+                }
                 // The match block does nothing
                 _ => {}
             }
@@ -100,8 +106,9 @@ impl SessionManager {
     /// connection again, and re-try to connect from the beginning.
     pub(crate) async fn handshake(
         data: &SessionData,
+        sender: FrameSender,
         mut stream: TcpStream,
-    ) -> Result<(Peer, FrameReceiver), SessionError> {
+    ) -> Result<Arc<Peer>, SessionError> {
         proto::write(
             &mut stream,
             &Handshake::Hello {
@@ -127,6 +134,6 @@ impl SessionManager {
             }
         }
 
-        Ok(Peer::outgoing_standard(*data, stream))
+        Ok(Peer::standard(*data, sender, stream))
     }
 }

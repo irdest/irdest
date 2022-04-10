@@ -3,8 +3,12 @@
 
 use std::time::Duration;
 
-use async_std::{io::WriteExt, net::TcpListener};
+use async_std::{channel::unbounded, io::WriteExt, net::TcpListener, task};
+use netmod::Frame;
+use routes::Routes;
 use serde::{Deserialize, Serialize};
+use server::Server;
+use session::{SessionData, SessionManager};
 
 #[macro_use]
 extern crate tracing;
@@ -39,24 +43,50 @@ pub struct InetEndpoint {
 
 #[async_std::test]
 async fn blorp() {
-    use async_std::net::{TcpListener, TcpStream};
-    use async_std::prelude::*;
+    ///////// "SERVER" SIDE
 
-    let listener = TcpListener::bind("0.0.0.0:7000").await.unwrap();
+    let server = Server::bind("[::]", 12000).await.unwrap();
+    let a_routes = Routes::new();
+    let (a_tx, a_rx) = unbounded();
 
-    async_std::task::spawn(async move {
-        async_std::task::sleep(Duration::from_millis(100)).await;
+    // Spawn the server to listen to connections
+    task::spawn(server.run(a_tx, a_routes.clone()));
 
-        let mut connection = TcpStream::connect("127.0.0.1:7000").await.unwrap();
-        connection.write(&vec![]).await.unwrap();
-    });
+    ////////// "CLIENT" SIDE
+    let b_routes = Routes::new();
+    let (b_tx, b_rx) = unbounded();
 
-    let mut inc = listener.incoming();
-    for stream in inc.next().await {
-        let s = stream.unwrap();
+    let session_data = SessionData {
+        id: b_routes.next_target(),
+        tt: PeerType::Standard,
+        addr: "[::1]:12000".parse().unwrap(),
+        self_port: 0,
+    };
 
-        let mut len_buf = [0; 8];
-        let peeked = s.peek(&mut len_buf).await.unwrap();
-        println!("Peeked {} bytes...", peeked);
+    let mut ctr = 0;
+    let tcp_stream = SessionManager::connect(&mut ctr, &session_data)
+        .await
+        .unwrap();
+    let peer = SessionManager::handshake(&session_data, b_tx.clone(), tcp_stream)
+        .await
+        .unwrap();
+    b_routes.add_peer(peer.id(), peer).await;
+
+    ////////// TESTING TIME BABAY
+
+    let dummy = Frame::dummy();
+
+    {
+        // Node A
+        let (target, frame) = (0, dummy.clone());
+
+        let peer = b_routes.get_peer_by_id(target).await.unwrap();
+        peer.send(&frame).await.unwrap();
+    }
+
+    {
+        // Node B
+        let recv_frame = a_rx.recv().await.unwrap().1;
+        assert_eq!(recv_frame, dummy);
     }
 }
