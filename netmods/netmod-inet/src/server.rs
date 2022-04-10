@@ -44,8 +44,8 @@ pub struct Server {
 
 impl Server {
     /// Attempt to bind the server socket
-    pub(crate) async fn bind(bind: &str, port: u16) -> Result<Server, ServerError> {
-        let addr: SocketAddr = format!("{}:{}", bind, port).parse()?;
+    pub(crate) async fn bind(bind: &str) -> Result<Server, ServerError> {
+        let addr: SocketAddr = bind.parse()?;
         if addr.is_ipv4() {
             error!("IPv4 binds are not supported (yet)");
             return Err(ServerError::Unknown);
@@ -59,17 +59,30 @@ impl Server {
         })
     }
 
+    pub(crate) fn port(&self) -> u16 {
+        self.ipv6_listen.local_addr().unwrap().port()
+    }
+
     /// Run in a loop to accept incoming connections
     pub(crate) async fn run(self, sender: FrameSender, r: Arc<Routes>) {
         let mut inc = self.ipv6_listen.incoming();
-        for stream in inc.next().await {
+
+        loop {
+            trace!("Waiting for incoming connection...");
+            let stream = inc.next().await;
+            debug!("New incoming connection!");
+
             match stream {
-                Ok(s) => {
+                Some(Ok(s)) => {
                     let r = Arc::clone(&r);
                     task::spawn(handle_stream(s, sender.clone(), r));
                 }
-                Err(e) => {
+                Some(Err(e)) => {
                     warn!("Invalid incoming stream: {}", e);
+                    continue;
+                }
+                None => {
+                    warn!("Incoming stream is 'None'");
                     continue;
                 }
             }
@@ -91,7 +104,8 @@ async fn handle_stream(s: TcpStream, sender: FrameSender, r: Arc<Routes>) {
     };
 
     // Spawn a task to listen for packets for this peer
-    task::spawn(Arc::clone(&peer).run());
+    let cancel = task::spawn(Arc::clone(&peer).run());
+    peer.insert_run(cancel).await;
 
     // Also add the peer to the routing table
     r.add_peer(peer.id(), peer).await;
@@ -106,10 +120,7 @@ async fn accept_connection(
 
     // First we read the handshake structure from the socket
     let tt = match proto::read_blocking(&mut s).await? {
-        Handshake::Hello { tt, .. } => {
-            proto::write(&mut s, &Handshake::Ack { tt }).await?;
-            tt
-        }
+        Handshake::Hello { tt, .. } => tt,
         Handshake::Ack { .. } => {
             drop(s);
             return Err(io::Error::new(
@@ -127,6 +138,7 @@ async fn accept_connection(
         addr,
     };
 
+    proto::write(&mut s, &Handshake::Ack { tt }).await?;
     info!("Successfully connected with peer :)");
-    Ok(Peer::standard(data, sender, s))
+    Ok(Peer::standard(data, sender, None, s))
 }

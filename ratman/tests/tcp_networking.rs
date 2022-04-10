@@ -1,6 +1,6 @@
 //! Sending messages over a TCP-connected router system
 
-use netmod_inet::{Endpoint, Mode};
+use netmod_inet::InetEndpoint;
 use ratman::{Identity, Router};
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
 
@@ -32,18 +32,14 @@ async fn announce_over_inet() {
     setup_logging("trace");
 
     // Device A
-    let ep1 = Endpoint::new("127.0.0.1:7100", "", Mode::Static)
-        .await
-        .unwrap();
+    let ep1 = InetEndpoint::start("[::0]:7100").await.unwrap();
 
     // Device C
-    let ep3 = Endpoint::new("127.0.0.1:7101", "", Mode::Static)
-        .await
-        .unwrap();
+    let ep3 = InetEndpoint::start("[::0]:7101").await.unwrap();
 
     // Make devices A and C connect to B
-    ep1.add_peers(vec!["127.0.0.1:7101".into()]).await.unwrap();
-    ep3.add_peers(vec!["127.0.0.1:7100".into()]).await.unwrap();
+    ep1.add_peers(vec!["[::1]:7101".into()]).await.unwrap();
+    ep3.add_peers(vec!["[::1]:7100".into()]).await.unwrap();
 
     let r1 = Router::new();
     let r3 = Router::new();
@@ -72,18 +68,14 @@ async fn flood_over_inet() {
     setup_logging("trace");
 
     // Device A
-    let ep1 = Endpoint::new("127.0.0.1:7200", "", Mode::Static)
-        .await
-        .unwrap();
+    let ep1 = InetEndpoint::start("[::0]:7200").await.unwrap();
 
     // Device C
-    let ep3 = Endpoint::new("127.0.0.1:7201", "", Mode::Static)
-        .await
-        .unwrap();
+    let ep3 = InetEndpoint::start("[::0]:7201").await.unwrap();
 
     // Make devices A and C connect to B
-    ep1.add_peers(vec!["127.0.0.1:7201".into()]).await.unwrap();
-    ep3.add_peers(vec!["127.0.0.1:7200".into()]).await.unwrap();
+    ep1.add_peers(vec!["[::1]:7201".into()]).await.unwrap();
+    ep3.add_peers(vec!["[::1]:7200".into()]).await.unwrap();
 
     let r1 = Router::new();
     let r3 = Router::new();

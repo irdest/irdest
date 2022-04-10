@@ -1,7 +1,8 @@
 use crate::proto::ProtoError;
-use crate::session::SessionData;
+use crate::session::{SessionData, SessionError};
 use crate::{proto, routes::Target};
 use async_std::channel;
+use async_std::task::JoinHandle;
 use async_std::{
     channel::{Receiver, Sender},
     net::{SocketAddr, TcpStream},
@@ -48,6 +49,8 @@ pub struct Peer {
     tx: Mutex<Option<TcpStream>>,
     rx: Mutex<Option<TcpStream>>,
     receiver: FrameSender,
+    restart: Option<Sender<SessionData>>,
+    cancel: Mutex<Option<JoinHandle<()>>>,
 }
 
 impl Peer {
@@ -55,6 +58,7 @@ impl Peer {
     pub(crate) fn standard(
         session: SessionData,
         receiver: FrameSender,
+        restart: Option<Sender<SessionData>>,
         stream: TcpStream,
     ) -> Arc<Self> {
         Arc::new(Self {
@@ -62,12 +66,28 @@ impl Peer {
             tx: Mutex::new(Some(stream.clone())),
             rx: Mutex::new(Some(stream)),
             receiver,
+            restart,
+            cancel: Mutex::new(None),
         })
     }
 
     /// Return this Peer's ID
+    #[inline]
     pub(crate) fn id(&self) -> Target {
         self.session.id
+    }
+
+    /// Cancel the runtime of this peer
+    pub(crate) async fn cancel(self: &Arc<Self>) {
+        if let Some(c) = core::mem::replace(&mut *self.cancel.lock().await, None) {
+            c.cancel().await;
+        }
+    }
+
+    /// Prepare the cancelation of this peer
+    pub(crate) async fn insert_run(self: &Arc<Self>, join: JoinHandle<()>) {
+        let mut c = self.cancel.lock().await;
+        *c = Some(join);
     }
 
     /// Send a frame to this peer
@@ -75,11 +95,30 @@ impl Peer {
     /// If the sending fails for any reason, the underlying
     /// `SessionData` is returned so that a new session may be
     /// started.
-    pub(crate) async fn send(self: &Arc<Self>, f: &Frame) -> Result<(), SessionData> {
+    pub(crate) async fn send(self: &Arc<Self>, f: &Frame) -> Result<(), SessionError> {
         let mut txg = self.tx.lock().await;
-        let tx = txg.as_mut().ok_or(self.session)?;
-        proto::write(&mut *tx, f).await.map_err(|_| self.session)?;
-        Ok(())
+
+        // The TcpStream SHOULD never just disappear
+        let tx = txg.as_mut().unwrap();
+
+        trace!("Writing data to stream {}", self.id());
+        match proto::write(&mut *tx, f).await {
+            Ok(()) => Ok(()),
+            Err(e) => {
+                // If we are the outgoing side we signal to be restarted
+                if let Some(ref tx) = self.restart {
+                    tx.send(self.session).await;
+                    Ok(())
+                }
+                // Else we just inform the sending context that this
+                // has failed.  On the server side we then remove this
+                // peer from the routing table and insert a temp
+                // buffer instead.
+                else {
+                    Err(SessionError::Dropped(self.session.addr))
+                }
+            }
+        }
     }
 
     /// Repeatedly attempt to read from the reading socket
@@ -92,14 +131,27 @@ impl Peer {
             };
 
             let f: Frame = match proto::read(rx).await {
-                Ok(f) => f,
+                Ok(f) => {
+                    trace!("Received frame from stream {}", self.id());
+                    f
+                }
                 Err(ProtoError::NoData) => {
                     drop(rxg);
                     task::yield_now();
                     continue;
                 }
                 Err(ProtoError::Io(io)) => {
-                    error!("Encountered I/O error during receiving: {}", io);
+                    error!(
+                        "Peers {} encountered I/O error during receiving: {}",
+                        self.id(),
+                        io
+                    );
+
+                    // If we were the outgoing peer we signal to re-connect
+                    if let Some(ref tx) = self.restart {
+                        tx.send(self.session).await;
+                    }
+
                     break;
                 }
             };
@@ -107,5 +159,7 @@ impl Peer {
             // If we received a correct frame we forward it to the receiver
             self.receiver.send((self.session.id, f)).await;
         }
+
+        trace!("Exit receive loop for peer {}", self.id());
     }
 }

@@ -1,7 +1,7 @@
-use netmod_inet::{Endpoint as InetEndpoint, Result as InetResult};
+use netmod_inet::{InetEndpoint, InetError};
 
 /// Parse a peer and introduce it to the appropriate netmod metadata
-pub async fn attach_peers(ep: &InetEndpoint, p: Vec<&str>) -> InetResult<()> {
+pub async fn attach_peers(ep: &InetEndpoint, p: Vec<&str>) -> Result<(), InetError> {
     let mut tcp = vec![];
     for peer in p {
         if peer == "" {
