@@ -1,11 +1,17 @@
+use crate::proto::ProtoError;
+use crate::session::SessionData;
 use crate::{proto, routes::Target};
 use async_std::channel;
 use async_std::{
     channel::{Receiver, Sender},
     net::{SocketAddr, TcpStream},
-    sync::Arc,
+    sync::{Arc, Mutex},
+    task,
 };
 use netmod::Frame;
+
+pub(crate) type FrameReceiver = Receiver<(Target, Frame)>;
+pub(crate) type FrameSender = Sender<(Target, Frame)>;
 
 /// Represent another node running netmod-inet
 ///
@@ -38,101 +44,63 @@ use netmod::Frame;
 ///
 /// The two inverse scenarios exist on the "server" side.
 pub struct Peer {
-    id: Target,
-    src_addr: Option<SocketAddr>,
-    dst_addr: Option<SocketAddr>,
-    tx: Option<TcpStream>,
-    rx: Option<TcpStream>,
-    receiver: Sender<(Target, Frame)>,
+    session: SessionData,
+    tx: Mutex<Option<TcpStream>>,
+    rx: Mutex<Option<TcpStream>>,
+    receiver: FrameSender,
 }
 
 impl Peer {
     /// Connect to a peer via "standard" connection
-    pub fn connect_standard(
-        id: Target,
-        dst_addr: SocketAddr,
+    pub(crate) fn outgoing_standard(
+        session: SessionData,
+        receiver: FrameSender,
         stream: TcpStream,
-    ) -> (Self, Receiver<(Target, Frame)>) {
-        let (ftx, frx) = channel::bounded(64);
-        (
-            Self {
-                id,
-                src_addr: None, // irrelevant
-                dst_addr: Some(dst_addr),
-                tx: Some(stream.clone()),
-                rx: Some(stream),
-                receiver: ftx,
-            },
-            frx,
-        )
+    ) -> Arc<Self> {
+        Arc::new(Self {
+            session,
+            tx: Mutex::new(Some(stream.clone())),
+            rx: Mutex::new(Some(stream)),
+            receiver,
+        })
     }
 
-    /// Connect to a peer via "cross" connection
-    pub fn connect_cross(
-        id: Target,
-        dst_addr: SocketAddr,
-        tx: TcpStream,
-    ) -> (Self, Receiver<(Target, Frame)>) {
-        let (ftx, frx) = channel::bounded(64);
-        (
-            Self {
-                id,
-                src_addr: None, // will be filled in
-                dst_addr: Some(dst_addr),
-                tx: Some(tx),
-                rx: None, // will be filled in
-                receiver: ftx,
-            },
-            frx,
-        )
+    /// Send a frame to this peer
+    ///
+    /// If the sending fails for any reason, the underlying
+    /// `SessionData` is returned so that a new session may be
+    /// started.
+    pub(crate) async fn send(self: &Arc<Self>, f: &Frame) -> Result<(), SessionData> {
+        let mut txg = self.tx.lock().await;
+        let tx = txg.as_mut().ok_or(self.session)?;
+        proto::write(&mut *tx, f).await.map_err(|_| self.session)?;
+        Ok(())
     }
 
-    /// Create a peer for an incoming standard connection
-    pub fn incoming_standard(
-        id: Target,
-        src_addr: SocketAddr,
-        stream: TcpStream,
-    ) -> (Self, Receiver<(Target, Frame)>) {
-        let (ftx, frx) = channel::bounded(64);
-        (
-            Self {
-                id,
-                src_addr: Some(src_addr),
-                dst_addr: None,
-                tx: Some(stream.clone()),
-                rx: Some(stream),
-                receiver: ftx,
-            },
-            frx,
-        )
-    }
+    /// Repeatedly attempt to read from the reading socket
+    pub(crate) async fn run(self: &Arc<Self>) {
+        loop {
+            let mut rxg = self.rx.lock().await;
+            let rx = match rxg.as_mut() {
+                Some(rx) => rx,
+                None => break,
+            };
 
-    /// Create a peer for an incoming cross connection
-    pub fn incoming_cross(
-        id: Target,
-        src_addr: SocketAddr,
-        dst_addr: SocketAddr,
-        tx: TcpStream,
-        rx: TcpStream,
-    ) -> (Self, Receiver<(Target, Frame)>) {
-        let (ftx, frx) = channel::bounded(64);
-        (
-            Self {
-                id,
-                src_addr: Some(src_addr),
-                dst_addr: Some(dst_addr),
-                tx: Some(tx),
-                rx: Some(rx),
-                receiver: ftx,
-            },
-            frx,
-        )
-    }
+            let f: Frame = match proto::read(rx).await {
+                Ok(f) => f,
+                Err(ProtoError::NoData) => {
+                    drop(rxg);
+                    task::yield_now();
+                    continue;
+                }
+                Err(ProtoError::Io(io)) => {
+                    error!("Encountered I/O error during receiving: {}", io);
+                    break;
+                }
+            };
 
-    /// Spawn this function to receive messages from this peer
-    pub async fn run(self: &Arc<Self>) {
-        while let Some(ref rx) = self.rx {
-            let _f: Frame = proto::read(rx).await.unwrap();
+            // If we received a correct frame we forward it to the receiver
+            self.receiver.send((self.session.id, f)).await;
         }
     }
 }
