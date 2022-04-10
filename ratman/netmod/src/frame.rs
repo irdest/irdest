@@ -79,7 +79,7 @@ impl Frame {
             Recipient::Flood(Identity::random()),
             Identity::random(),
         )
-        .add(vec![0xDE, 0xAD, 0xBE, 0xEF])
+        .add(vec![0x41, 0x43, 0x41, 0x42])
         .build()
         .remove(0)
     }
