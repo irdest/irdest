@@ -1,6 +1,4 @@
-#!/usr/bin/env bash
-
-set -xeo pipefail
+#!/bin/sh
 
 # build ratmand first
 cargo build --bin ratmand --all-features
