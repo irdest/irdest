@@ -177,7 +177,7 @@ impl RatmanIpc {
     pub async fn get_peers(&self) -> Result<Vec<Identity>> {
         let msg = api::api_peers(api::peers_req());
         write_with_length(&mut self.socket.clone(), &encode_message(msg)?).await?;
-        
+
         match parse_message(&mut self.socket.clone())
             .await
             .map(|m| m.inner)

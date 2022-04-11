@@ -243,7 +243,7 @@ impl Drop for Syslog {
     }
 }
 
-impl MakeWriter  for Syslog {
+impl MakeWriter for Syslog {
     type Writer = SyslogWriter;
 
     fn make_writer(&self) -> Self::Writer {

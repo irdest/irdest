@@ -2,8 +2,8 @@
 
 use netmod_inet::InetEndpoint;
 use ratman::{Identity, Router};
-use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
 use tracing::warn;
+use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
 
 pub fn setup_logging(lvl: &str) {
     let filter = EnvFilter::default()
