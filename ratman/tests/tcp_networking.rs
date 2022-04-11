@@ -70,15 +70,13 @@ async fn flood_over_inet() {
     // Device A
     let ep1 = InetEndpoint::start("[::0]:7200").await.unwrap();
 
-    // Device C
-    let ep3 = InetEndpoint::start("[::0]:7201").await.unwrap();
-
-    // Make devices A and C connect to B
-    ep1.add_peers(vec!["[::1]:7201".into()]).await.unwrap();
-
     // FIXME: peering in the other direction breaks the unit test ONLY
     // when cargo is running all of them at once.  Why?? I do not know
+    ep1.add_peers(vec!["[::1]:7201".into()]).await.unwrap();
     // ep3.add_peers(vec!["[::1]:7200".into()]).await.unwrap();
+
+    // Device C
+    let ep3 = InetEndpoint::start("[::0]:7201").await.unwrap();
 
     let r1 = Router::new();
     let r3 = Router::new();
