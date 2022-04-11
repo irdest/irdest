@@ -1,10 +1,10 @@
 //! Module only loaded when Ratman is running as a daemon
 
+pub mod config;
 mod parse;
 mod peers;
 mod state;
 mod transform;
-pub mod config;
 
 #[cfg(feature = "upnp")]
 pub mod upnp;
