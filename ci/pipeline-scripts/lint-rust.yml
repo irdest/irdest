@@ -1,0 +1,8 @@
+## This CI job enforces that rustfmt was run on the code before we
+## merge it.
+
+rustfmt:
+  image: rustdocker/rust:stable
+  stage: lint
+  script:
+    - cargo fmt --check --all

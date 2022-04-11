@@ -4,6 +4,7 @@ include:
   - ci/pipeline-scripts/*
 
 stages:
+  - lint
   - build
   - test
   - bundle
