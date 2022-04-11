@@ -8,7 +8,7 @@ pub mod v1;
 #[folder = "dashboard/dist"]
 struct DashboardAssets;
 
-async fn serve_static(req: Request<Router>) -> tide::Result {
+async fn serve_dashboard(req: Request<Router>) -> tide::Result {
     let path = {
         let path = req.url().path();
         if path == "/" {
@@ -18,6 +18,7 @@ async fn serve_static(req: Request<Router>) -> tide::Result {
         }
     };
     let asset = DashboardAssets::get(path)
+        .or_else(|| DashboardAssets::get("index.html"))
         .ok_or_else(|| tide::Error::from_str(404, format!("not found: /{:}", path)))?;
     Ok(Response::builder(200)
         .content_type(
@@ -51,10 +52,12 @@ pub async fn start(router: Router, bind: &str, port: u16) -> tide::Result<()> {
         Ok(res)
     }));
 
-    // Attach some routes to it
-    app.at("/").get(serve_static);
-    app.at("/assets/*").get(serve_static);
+    // Attach some routes to it.
     app.at("/api/v1/addrs").get(v1::get_addrs);
+
+    // Let the dashboard handle any routes we don't recognise.
+    app.at("/").get(serve_dashboard);
+    app.at("/*").get(serve_dashboard);
 
     // Then asynchronously run the web server
     let fut = app.listen(format!("{}:{}", bind, port));
