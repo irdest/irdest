@@ -9,6 +9,7 @@ use clap::{App, Arg, ArgMatches};
 use netmod_inet::{Endpoint as Inet, Mode};
 use netmod_lan::{default_iface, Endpoint as LanDiscovery};
 use std::{fs::File, io::Read};
+use ratman::daemon::config::Config;
 
 pub fn build_cli() -> ArgMatches<'static> {
     App::new("ratmand")
@@ -29,7 +30,7 @@ pub fn build_cli() -> ArgMatches<'static> {
             Arg::with_name("ACCEPT_UNKNOWN_PEERS")
                 .long("accept-unknown-peers")
                 .short("d")
-                .required_unless_one(&["PEERS", "PEER_FILE", "NO_INET"])
+                // .required_unless_one(&["PEERS", "PEER_FILE", "NO_INET"])
                 .help("Configure ratmand to peer with any incoming connection it may encounter")
         )
         .arg(
@@ -104,15 +105,8 @@ pub fn build_cli() -> ArgMatches<'static> {
 async fn setup_local_discovery(
     r: &Router,
     m: &ArgMatches<'_>,
+    c: &Config,
 ) -> std::result::Result<(String, u16), String> {
-
-    let configuration = match daemon::config::Config::load() {
-        Ok(cfg) => cfg,
-        Err(e) => {
-            error!("Failed to load/write configuration: {}. Resuming with default values.", e);
-            daemon::config::Config::new()
-        }
-    };
 
     let iface = m.value_of("DISCOVERY_IFACE")
         .map(Into::into)
@@ -123,7 +117,7 @@ async fn setup_local_discovery(
 
     let port = m
         .value_of("DISCOVERY_PORT")
-        .unwrap_or(configuration.netmod_lan_bind.as_str())
+        .unwrap_or(c.netmod_lan_bind.as_str())
         .parse()
         .map_err(|e| format!("failed to parse discovery port: {}", e))?;
 
@@ -200,7 +194,7 @@ async fn main() {
 
     // If local-discovery is enabled
     if !m.is_present("NO_DISCOVERY") || configuration.netmod_lan_enabled {
-        match setup_local_discovery(&r, &m).await {
+        match setup_local_discovery(&r, &m, &configuration).await {
             Ok((iface, port)) => debug!(
                 "Local peer discovery running on interface {}, port {}",
                 iface, port
