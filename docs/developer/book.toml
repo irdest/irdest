@@ -11,3 +11,9 @@ preferred-theme = "rust"
 preferred-dark-theme = "rust"
 git-repository-url = "https://git.irde.st/we/irdest/-/tree/develop/docs/developer"
 git-repository-icon = "fa-git"
+additional-js = ["mermaid.min.js", "mermaid-init.js"]
+
+[preprocessor]
+
+[preprocessor.mermaid]
+command = "mdbook-mermaid"
