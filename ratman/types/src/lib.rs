@@ -7,6 +7,7 @@ mod proto {
 
 pub mod api;
 pub mod message;
+pub mod timepair;
 
 pub use error::{Error, Result};
 pub use ratman_identity::Identity;

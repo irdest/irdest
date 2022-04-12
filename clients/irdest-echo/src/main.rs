@@ -14,7 +14,7 @@ async fn main() {
         }
 
         // Get the message sender identity and reply
-        let sender = Identity::from_bytes(msg.get_sender());
-        ipc.send_to(sender, msg.take_payload()).await.unwrap();
+        let sender = msg.get_sender();
+        ipc.send_to(sender, msg.get_payload()).await.unwrap();
     }
 }

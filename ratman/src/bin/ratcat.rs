@@ -131,7 +131,7 @@ async fn handle_receives(ipc: &RatmanIpc, num: usize) -> Result<(), Box<dyn std:
             continue;
         }
 
-        let payload: Vec<_> = msg.take_payload();
+        let payload: Vec<_> = msg.get_payload();
         if is_tty {
             println!(
                 "{}",

@@ -1612,9 +1612,13 @@ version = "0.3.0"
 dependencies = [
  "async-std",
  "byteorder",
+ "chrono",
  "protobuf",
  "protoc-rust",
  "ratman-identity",
+ "regex",
+ "serde",
+ "serde_json",
  "thiserror",
 ]
 

@@ -1,6 +1,6 @@
 //! Ratman API abstractions
 
-use crate::message::Message;
+use crate::proto::message::Message;
 pub use crate::proto::api::{
     ApiMessage, ApiMessage_oneof_inner as ApiMessageEnum, Peers, Peers_Type, Receive, Receive_Type,
     Send, Send_Type, Setup, Setup_Type, Setup_oneof__id, Setup_oneof__token,

@@ -74,7 +74,7 @@ async fn spawn_outwards(
 
     task::spawn(async move {
         while let Some((_, msg)) = ipc.next().await {
-            if let Err(e) = tcp.write_all(&msg.payload).await {
+            if let Err(e) = tcp.write_all(&msg.get_payload()).await {
                 error!("failed to forward data to {}: {}", socket_addr, e);
                 break;
             }
