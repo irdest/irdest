@@ -246,7 +246,7 @@ async fn run_receive(
 /// This test is horrible and a bad idea but whatever
 /// also you need to kill the daemon(kill process) after the test
 #[async_std::test]
-/// #[ignore]
+#[ignore]
 async fn send_message() {
     pub fn setup_logging() {
         use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
