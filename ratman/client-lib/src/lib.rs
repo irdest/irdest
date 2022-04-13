@@ -42,7 +42,7 @@ use types::{
         Peers_Type::{DISCOVER, RESP},
         Setup_Type::ACK,
     },
-    message::Message,
+    Message,
     encode_message, parse_message, read_with_length, write_with_length,
 };
 

@@ -80,7 +80,7 @@ async fn run_relay(r: Router, online: OnlineMap) {
             sign,
         } = r.next().await;
         debug!("Receiving message for {:?}", recipient);
-        let recv = types::api::receive_default(types::message::received(
+        let recv = types::api::receive_default(types::Message::received(
             id,
             sender,
             match recipient {

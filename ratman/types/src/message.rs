@@ -44,6 +44,28 @@ impl Message {
     pub fn get_sender(&self) -> Identity {
         self.sender.clone()
     }
+
+    // return protobuf type Message.
+    pub fn received(
+        id: Identity,
+        sender: Identity,
+        recipient: Option<Identity>,
+        payload: Vec<u8>,
+        timesig: String,
+        sign: Vec<u8>,
+    ) -> ProtoMessage {
+        let mut inner = ProtoMessage::new();
+        inner.set_id(id.as_bytes().to_vec());
+        inner.set_sender(sender.as_bytes().to_vec());
+        if let Some(r) = recipient {
+            inner.set_recipients(vec![r.as_bytes().to_vec()].into());
+        }
+        inner.set_time(timesig);
+        inner.set_payload(payload);
+        inner.set_signature(sign);
+
+        inner
+    }
 }
 
 /// Implement RAW `From` protobuf type message 
@@ -83,25 +105,4 @@ impl From<Message> for ProtoMessage {
         inner.set_signature(msg.signature);
         inner 
     }
-}
-
-pub fn received(
-    id: Identity,
-    sender: Identity,
-    recipient: Option<Identity>,
-    payload: Vec<u8>,
-    timesig: String,
-    sign: Vec<u8>,
-) -> ProtoMessage {
-    let mut inner = ProtoMessage::new();
-    inner.set_id(id.as_bytes().to_vec());
-    inner.set_sender(sender.as_bytes().to_vec());
-    if let Some(r) = recipient {
-        inner.set_recipients(vec![r.as_bytes().to_vec()].into());
-    }
-    inner.set_time(timesig);
-    inner.set_payload(payload);
-    inner.set_signature(sign);
-
-    inner
 }

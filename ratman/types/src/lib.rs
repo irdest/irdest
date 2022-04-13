@@ -6,8 +6,11 @@ mod proto {
 }
 
 pub mod api;
-pub mod message;
-pub mod timepair;
+mod message;
+mod timepair;
+
+pub use message::Message;
+pub use timepair::TimePair;
 
 pub use error::{Error, Result};
 pub use ratman_identity::Identity;
@@ -18,7 +21,7 @@ use async_std::{
     prelude::*,
 };
 use byteorder::{BigEndian, ByteOrder};
-use protobuf::Message;
+use protobuf::Message as ProtoMessage;
 
 /// First write the length as big-endian u64, then write the provided buffer
 pub async fn write_with_length<T: Write + Unpin>(t: &mut T, buf: &Vec<u8>) -> Result<usize> {

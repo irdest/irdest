@@ -30,7 +30,7 @@ async fn handle_send(r: &Router, online: &OnlineMap, _self: Identity, send: Send
 
         match msg.recipient {
             Recipient::Flood(_) => {
-                let recv = types::api::receive_default(types::message::received(
+                let recv = types::api::receive_default(types::Message::received(
                     *id,
                     *sender,
                     match recipient {
