@@ -42,8 +42,7 @@ use types::{
         Peers_Type::{DISCOVER, RESP},
         Setup_Type::ACK,
     },
-    Message,
-    encode_message, parse_message, read_with_length, write_with_length,
+    encode_message, parse_message, read_with_length, write_with_length, Message,
 };
 
 /// An IPC handle for a particular address
@@ -55,7 +54,7 @@ use types::{
 pub struct RatmanIpc {
     socket: TcpStream,
     addr: Identity,
-    recv: Receiver<(Receive_Type, Message)>, 
+    recv: Receiver<(Receive_Type, Message)>,
     disc: Receiver<Identity>,
 }
 
@@ -140,25 +139,31 @@ impl RatmanIpc {
 
     /// Send some data to a remote peer
     pub async fn send_to(&self, recipient: Identity, payload: Vec<u8>) -> Result<()> {
-        let msg = api::api_send(api::send_default(Message::new(
-            self.addr,
-            vec![recipient], // recipient
-            payload,
-            vec![], // signature
-        ).into()));
-        
+        let msg = api::api_send(api::send_default(
+            Message::new(
+                self.addr,
+                vec![recipient], // recipient
+                payload,
+                vec![], // signature
+            )
+            .into(),
+        ));
+
         write_with_length(&mut self.socket.clone(), &encode_message(msg)?).await?;
         Ok(())
     }
 
     /// Send some data to a remote peer
     pub async fn flood(&self, payload: Vec<u8>) -> Result<()> {
-        let msg = api::api_send(api::send_flood(Message::new(
-            self.addr,
-            vec![], // recipient
-            payload,
-            vec![], // signature
-        ).into()));
+        let msg = api::api_send(api::send_flood(
+            Message::new(
+                self.addr,
+                vec![], // recipient
+                payload,
+                vec![], // signature
+            )
+            .into(),
+        ));
 
         write_with_length(&mut self.socket.clone(), &encode_message(msg)?).await?;
         Ok(())
@@ -215,7 +220,7 @@ async fn run_receive(
                 ApiMessageEnum::recv(mut msg) => {
                     let tt = msg.field_type;
                     let msg = msg.take_msg();
-                    
+
                     debug!("Forwarding message to IPC wrapper");
                     if let Err(e) = tx.send((tt, msg.into())).await {
                         error!("Failed to forward received message: {}", e);
@@ -291,7 +296,7 @@ async fn send_message() {
     let (_, recv) = client.next().await.unwrap();
     info!("Receiving message: {:?}", recv);
     assert_eq!(recv.get_payload(), &[1, 3, 1, 2]);
-    
+
     // Exorcise the deamons!
     daemon.kill().unwrap();
 }

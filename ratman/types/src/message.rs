@@ -3,12 +3,11 @@
 /// payload is.  The payload can be empty, which can be used to create
 /// a ping, or using the 16 byte id as payload.  In these cases,
 /// the sigature can also be empty.
+use serde::{Deserialize, Serialize};
 
-use serde::{Serialize, Deserialize};
-
-use ratman_identity::Identity;
-use crate::timepair::TimePair;
 pub use crate::proto::message::Message as ProtoMessage;
+use crate::timepair::TimePair;
+use ratman_identity::Identity;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Message {
@@ -27,12 +26,12 @@ impl Message {
         payload: Vec<u8>,
         signature: Vec<u8>,
     ) -> Self {
-        Message { 
+        Message {
             id: Identity::random(),
-            sender: sender, 
-            recipients: recipients, 
+            sender: sender,
+            recipients: recipients,
             time: TimePair::sending(),
-            payload: payload, 
+            payload: payload,
             signature: signature,
         }
     }
@@ -68,34 +67,32 @@ impl Message {
     }
 }
 
-/// Implement RAW `From` protobuf type message 
+/// Implement RAW `From` protobuf type message
 impl From<ProtoMessage> for Message {
     fn from(msg: ProtoMessage) -> Self {
-        Message { 
-            id: Identity::from_bytes(msg.get_id()), 
-            sender: Identity::from_bytes(msg.get_id()), 
-            recipients: 
-                msg
-                    .get_recipients()
-                    .iter()
-                    .map(|r| Identity::from_bytes(r))
-                    .collect::<Vec<Identity>>()
-                    .into(),
-            time: TimePair::from_string(msg.get_time()), 
-            payload: msg.get_payload().to_vec(), 
+        Message {
+            id: Identity::from_bytes(msg.get_id()),
+            sender: Identity::from_bytes(msg.get_id()),
+            recipients: msg
+                .get_recipients()
+                .iter()
+                .map(|r| Identity::from_bytes(r))
+                .collect::<Vec<Identity>>()
+                .into(),
+            time: TimePair::from_string(msg.get_time()),
+            payload: msg.get_payload().to_vec(),
             signature: msg.get_signature().to_vec(),
         }
     }
 }
 
-/// Implement protobuf type message `From` RAW 
+/// Implement protobuf type message `From` RAW
 impl From<Message> for ProtoMessage {
     fn from(msg: Message) -> ProtoMessage {
         let mut inner = ProtoMessage::new();
         inner.set_sender(msg.sender.as_bytes().to_vec());
         inner.set_recipients(
-            msg
-                .recipients
+            msg.recipients
                 .iter()
                 .map(|r| r.as_bytes().to_vec())
                 .collect::<Vec<_>>()
@@ -103,6 +100,6 @@ impl From<Message> for ProtoMessage {
         );
         inner.set_payload(msg.payload);
         inner.set_signature(msg.signature);
-        inner 
+        inner
     }
 }
