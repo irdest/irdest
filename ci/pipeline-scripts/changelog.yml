@@ -1,0 +1,13 @@
+## These CI jobs enforce that the changelog is updated wherever
+## appropriate
+
+touch_changelog:
+  image: ubuntu:20.04
+  stage: lint
+  only:
+    - merge_requests
+  script:
+    - env
+    - apt-get update && apt-get install -y git
+    - echo $CI_MERGE_REQUEST_LABELS
+    - git diff --name-only $CI_MERGE_REQUEST_TARGET_BRANCH_SHA...$CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
