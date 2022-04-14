@@ -58,6 +58,7 @@ pub async fn start(router: Router, bind: &str, port: u16) -> tide::Result<()> {
     }));
 
     // Attach some routes to it.
+    app.at("/api/v1/openapi.json").get(v1::get_openapi);
     app.at("/api/v1/addrs").get(v1::get_addrs);
 
     // Let the dashboard handle any routes we don't recognise.
