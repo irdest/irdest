@@ -4,3 +4,5 @@ index:
   placeholder:
     heading: Currently known addresses
     greeting: ratmand keeps track of any address it has encountered on the network before. Following is a list of them. Further diagnostics tools will follow!
+api:
+  title: API Reference

@@ -48,6 +48,7 @@
     "ember-qunit": "^5.1.5",
     "ember-resolver": "^8.0.3",
     "ember-source": "~4.2.0",
+    "ember-swagger-ui": "^2.5.1",
     "ember-template-lint": "^4.2.0",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.4.0",
@@ -60,6 +61,7 @@
     "prettier": "^2.5.1",
     "qunit": "^2.18.0",
     "qunit-dom": "^2.0.0",
+    "swagger-ui-dist": "^4.5.0",
     "webpack": "^5.69.1"
   },
   "engines": {
