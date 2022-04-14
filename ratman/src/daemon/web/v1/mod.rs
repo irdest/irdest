@@ -5,13 +5,19 @@ use tide::http::mime;
 use tide::{prelude::*, Request, Response};
 
 #[derive(Debug, Serialize, OpenapiType)]
+/// A network address.
 struct Addr {
+    /// The address itself, in the form:
+    /// AAAA-BBBB-CCCC-DDDD-EEEE-FFFF-0000-1111-2222-3333-4444-5555-6666-7777-8888-9999.
     pub id: String,
+
+    /// Is this one of our addresses, as opposed to a peer?
     pub is_local: bool,
 }
 
 #[derive(Debug, Serialize, OpenapiType)]
 struct GetAddrsResponse {
+    /// An array of all known addresses.
     pub addrs: Vec<Addr>,
 }
 
