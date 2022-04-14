@@ -987,6 +987,7 @@ checksum = "282a6247722caba404c065016bbfa522806e51714c34f5dfc3e4a3a46fcb4223"
 dependencies = [
  "autocfg",
  "hashbrown",
+ "serde",
 ]
 
 [[package]]
@@ -1216,6 +1217,42 @@ name = "opaque-debug"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
+
+[[package]]
+name = "openapi_type"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d3c1ba11952bf91d70176cdcab1de486881c0cbf2d686bb38bbf1252bf1099ba"
+dependencies = [
+ "indexmap",
+ "openapi_type_derive",
+ "openapiv3",
+ "serde_json",
+]
+
+[[package]]
+name = "openapi_type_derive"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4fa9c8af69529fc540d6e3d619c19a914006acc69c54a90d07560360d7168aa5"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "serde_derive_internals",
+ "syn",
+ "syn-path",
+]
+
+[[package]]
+name = "openapiv3"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b6b4689110fd71f196934fbdf1ad0f0a4b49ea41fbc6f19008c00dba735b544c"
+dependencies = [
+ "indexmap",
+ "serde",
+ "serde_json",
+]
 
 [[package]]
 name = "os_str_bytes"
@@ -1553,6 +1590,7 @@ dependencies = [
  "netmod-lan",
  "netmod-mem",
  "nix",
+ "openapi_type",
  "pnet",
  "protobuf",
  "ratman-client",
@@ -1777,6 +1815,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_derive_internals"
+version = "0.26.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85bf8229e7920a9f636479437026331ce11aa132b4dde37d121944a44d6e5f3c"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "serde_json"
 version = "1.0.75"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1994,6 +2043,16 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-xid",
+]
+
+[[package]]
+name = "syn-path"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f1beb46ffbc8083d5f2a8d8ae508df459d4aabe103556de01d2bcfb8849a7e2f"
+dependencies = [
+ "proc-macro2",
+ "syn",
 ]
 
 [[package]]
