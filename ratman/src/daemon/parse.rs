@@ -17,7 +17,8 @@ use types::{
         all_peers, api_peers, api_setup, online_ack, ApiMessageEnum, Peers, Peers_Type, Receive,
         Send, Setup, Setup_Type, Setup_oneof__id,
     },
-    encode_message, parse_message, write_with_length, Error as ParseError, Result as ParseResult,
+    encode_message, parse_message, write_with_length, Error as ParseError,
+    Recipient as TypesRecipient, Result as ParseResult,
 };
 
 async fn handle_send(r: &Router, online: &OnlineMap, _self: Identity, send: Send) -> Result<()> {
@@ -38,8 +39,8 @@ async fn handle_send(r: &Router, online: &OnlineMap, _self: Identity, send: Send
                     *id,
                     *sender,
                     match recipient {
-                        Recipient::User(id) => Some(*id),
-                        Recipient::Flood(_) => None,
+                        Recipient::User(id) => TypesRecipient::Standard(vec![*id]),
+                        Recipient::Flood(ns) => TypesRecipient::Flood(*ns),
                     },
                     payload.clone(),
                     format!("{:?}", timesig),

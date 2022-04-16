@@ -3,12 +3,12 @@
 use crate::{AddrTable, Envelope, FrameExt};
 use async_std::{
     future::{self, Future},
-    net::{IpAddr, Ipv6Addr, SocketAddr, SocketAddrV6, UdpSocket},
+    net::{Ipv6Addr, SocketAddr, SocketAddrV6, UdpSocket},
     pin::Pin,
     sync::{Arc, RwLock},
     task::{self, Poll},
 };
-use netmod::{Frame, Target};
+use netmod::Target;
 use std::collections::VecDeque;
 use std::ffi::CString;
 use task_notify::Notify;
@@ -74,12 +74,16 @@ impl Socket {
 
     /// Send a multicast with an Envelope
     pub(crate) async fn multicast(&self, env: &Envelope) {
-        self.sock
+        if let Err(e) = self
+            .sock
             .send_to(
                 &env.as_bytes(),
                 SocketAddrV6::new(MULTI.clone(), self.port, 0, self.scope),
             )
-            .await;
+            .await
+        {
+            error!("failed to multicast frame: {}", e);
+        }
     }
 
     pub(crate) async fn next(&self) -> FrameExt {
@@ -123,7 +127,7 @@ impl Socket {
                         match arc.sock.local_addr() {
                             Ok(SocketAddr::V6(local)) if local == peer => continue,
                             Ok(_) => {}
-                            data => {
+                            _data => {
                                 warn!("failed to verify local-loop integrety.  this might caus issues!");
                             }
                         };
@@ -169,6 +173,6 @@ fn test_init() {
         let table = Arc::new(AddrTable::new());
         let sock = Socket::new("br42", 12322, table).await;
         println!("Multicasting");
-        sock.multicast(&Envelope::Announce);
+        sock.multicast(&Envelope::Announce).await;
     });
 }

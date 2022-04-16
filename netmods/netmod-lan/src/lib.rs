@@ -2,9 +2,6 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-//! netmod-udp is a UDP overlay for Ratman
-#![allow(warnings)]
-
 #[macro_use]
 extern crate tracing;
 
@@ -19,9 +16,8 @@ pub(crate) use framing::{Envelope, FrameExt};
 
 use async_std::{sync::Arc, task};
 use async_trait::async_trait;
-use netmod::{Endpoint as EndpointExt, Frame, Recipient, Result, Target};
+use netmod::{Endpoint as EndpointExt, Frame, Result, Target};
 use pnet::datalink::interfaces;
-use std::net::ToSocketAddrs;
 
 #[derive(Clone)]
 pub struct Endpoint {
@@ -57,7 +53,6 @@ impl EndpointExt for Endpoint {
         let inner = bincode::serialize(&frame).unwrap();
         let env = Envelope::Data(inner);
         match target {
-            /// Sending to a user,
             Target::Single(ref id) => {
                 self.socket
                     .send(&env, self.addrs.ip(*id).await.unwrap())

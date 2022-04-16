@@ -5,7 +5,7 @@
 //! Address resolution table module
 
 use async_std::{
-    net::{Ipv6Addr, SocketAddrV6},
+    net::SocketAddrV6,
     sync::{Arc, RwLock},
 };
 use std::collections::BTreeMap;
@@ -68,6 +68,7 @@ impl AddrTable {
         self.ips.read().await.get(&id).cloned()
     }
 
+    #[allow(unused)]
     pub(crate) async fn all(&self) -> Vec<SocketAddrV6> {
         self.ips.read().await.values().cloned().collect()
     }

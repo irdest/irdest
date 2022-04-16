@@ -38,7 +38,7 @@ use crate::{Message, Recipient, Router};
 use async_std::{net::TcpListener, task::spawn};
 use state::{DaemonState, OnlineMap};
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
-use types::Result;
+use types::{Recipient as TypesRecipient, Result};
 
 pub use peers::attach_peers;
 
@@ -101,8 +101,8 @@ async fn run_relay(r: Router, online: OnlineMap) {
             id,
             sender,
             match recipient {
-                Recipient::User(id) => Some(id),
-                Recipient::Flood(_) => None,
+                Recipient::User(addr) => TypesRecipient::Standard(vec![addr]),
+                Recipient::Flood(ns) => TypesRecipient::Flood(ns),
             },
             payload,
             format!("{:?}", timesig),

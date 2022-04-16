@@ -17,7 +17,7 @@ pub mod api;
 mod message;
 mod timepair;
 
-pub use message::Message;
+pub use message::{Message, Recipient};
 pub use timepair::TimePair;
 
 pub use error::{Error, Result};

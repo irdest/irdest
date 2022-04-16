@@ -10,12 +10,14 @@ use types::api::{Send, Send_Type};
 pub(crate) fn send_to_message(s: Send) -> Vec<Message> {
     // Take the set of recipients from the message and turn it into a
     // set of Ratman recipients
-    let recipients: Vec<_> = match s.field_type {
+    let recipient: Vec<_> = match s.field_type {
         Send_Type::DEFAULT => s
             .get_msg()
-            .recipients
-            .iter()
-            .map(|r| Recipient::User(Identity::from_bytes(&r)))
+            .get_recipient()
+            .get_std()
+            .get_standard()
+            .into_iter()
+            .map(|addr| Recipient::User(Identity::from_bytes(&addr)))
             .collect(),
         Send_Type::FLOOD => vec![Recipient::Flood(Identity::from_bytes(s.scope.as_slice()))],
     };
@@ -23,7 +25,7 @@ pub(crate) fn send_to_message(s: Send) -> Vec<Message> {
 
     // Then create a new message for each recipient (if the type is
     // "flood" then only a single message gets created)
-    recipients
+    recipient
         .into_iter()
         .map(|recipient| Message {
             id: MsgId::random(),

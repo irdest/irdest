@@ -14,8 +14,8 @@
 //! ## Version numbers
 //!
 //! The client library MAJOR and MINOR version follow a particular
-//! Ratman release.  So for example, version `0.3.0` of this crate is
-//! built against version `0.3.0` of `ratmand`.  Because Ratman itself
+//! Ratman release.  So for example, version `0.4.0` of this crate is
+//! built against version `0.4.0` of `ratmand`.  Because Ratman itself
 //! follows semantic versioning, this crate is in turn also
 //! semantically versioned.
 //!
@@ -35,14 +35,14 @@ use async_std::{
     net::TcpStream,
     task,
 };
-pub use types::{api::Receive_Type, Error, Identity, Result};
+pub use types::{api::Receive_Type, Error, Identity, Message, Result, TimePair};
 use types::{
     api::{
         self, ApiMessageEnum,
         Peers_Type::{DISCOVER, RESP},
         Setup_Type::ACK,
     },
-    encode_message, parse_message, read_with_length, write_with_length, Message,
+    encode_message, parse_message, read_with_length, write_with_length,
 };
 
 /// An IPC handle for a particular address

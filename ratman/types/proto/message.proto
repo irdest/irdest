@@ -4,20 +4,32 @@
 
 syntax = "proto3";
 
+message StandardRecipient {
+        repeated bytes standard = 1;
+}
+
+// Recipient state information
+message Recipient {
+        oneof inner {
+                StandardRecipient std = 1;
+                // A message gets generated for each recipient
+                bytes flood_scope = 2;
+        }
+}
+
 // A complete message type that maps onto a Ratman message
 message Message {
         // Message ID filled in by Ratman
         optional bytes id = 1;
         // Sender address information
         bytes sender = 2;
-        // A group of recipients (this will be broken up into multiple
-        // messages)
-        repeated bytes recipients = 3;
+        // Recipient information
+        Recipient recipient = 3;
         // Timestamp filled in by Ratman
         optional string time = 4;
 
         /////////////////////////
-        
+
         // Main message payload
         bytes payload = 10;
         // Payload signature
