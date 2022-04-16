@@ -29,7 +29,8 @@ impl TimePair {
     }
 
     /// A test function to strip the recv-time
-    pub(crate) fn into_sending(self) -> Self {
+    #[doc(hidden)]
+    pub fn into_sending(self) -> Self {
         Self { recv: None, ..self }
     }
 

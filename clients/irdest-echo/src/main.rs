@@ -1,4 +1,4 @@
-use ratman_client::{Identity, RatmanIpc, Receive_Type};
+use ratman_client::{RatmanIpc, Receive_Type};
 
 #[async_std::main]
 async fn main() {
@@ -7,7 +7,7 @@ async fn main() {
         .expect("Failed to connect to Ratman daemon!");
 
     println!("Listening on address: {}", ipc.address());
-    while let Some((tt, mut msg)) = ipc.next().await {
+    while let Some((tt, msg)) = ipc.next().await {
         // Ignore flood messages
         if tt == Receive_Type::FLOOD {
             continue;

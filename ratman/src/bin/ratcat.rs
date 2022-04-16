@@ -122,7 +122,7 @@ async fn handle_receives(ipc: &RatmanIpc, num: usize) -> Result<(), Box<dyn std:
     let is_tty = nix::unistd::isatty(stdout.as_raw_fd()).unwrap_or(false);
 
     for _ in if num == 0 { 0..std::usize::MAX } else { 0..num } {
-        let (tt, mut msg) = match ipc.next().await {
+        let (tt, msg) = match ipc.next().await {
             Some(msg) => msg,
             None => break,
         };

@@ -2,7 +2,7 @@
 name = "ratman"
 description = "A decentralised and peer-to-peer packet router"
 license = "AGPL-3.0"
-version = "0.3.1"
+version = "0.4.0"
 edition = "2018"
 
 # Stand-alone ratman daemon binary
@@ -49,13 +49,14 @@ netmod = { version ="0.5.0", path = "netmod", package = "ratman-netmod"}
 task-notify = { version = "0.1", path = "../utils/task-notify" }
 
 # Dependencies required for various binary targets
-types = { version = "0.3", path = "types", package = "ratman-types", optional = true }
+types = { version = "0.4.0", path = "types", package = "ratman-types", optional = true }
+ratman-client = { version = "0.4.0", path = "client-lib", optional = true }
+
 clap = { version = "2.0", optional = true, features = ["wrap_help", "color", "suggestions"] }
 tracing-subscriber = { version = "0.2", optional = true, features = ["fmt"] }
 tracing-syslog = { version = "0.1", path = "../utils/tracing-syslog", optional = true }
 directories = { version = "4.0.1", optional = true }
 serde_json = { version = "1.0", optional = true }
-ratman-client = { version = "0.3.0", path = "client-lib", optional = true }
 nix = { version = "0.23", optional = true }
 igd = { version = "=0.12", optional = true }       # These three crates are bound to an
 ipnetwork = { version = "=0.18", optional = true } # older version becuase we don't want
