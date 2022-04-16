@@ -59,6 +59,7 @@ pub async fn get_openapi(_req: Request<Router>) -> tide::Result {
                         "operationId": "getAddrs",
                         "responses": {
                             "200": {
+                                "description": "Success.",
                                 "content": {
                                     "application/json": {
                                         "schema": GetAddrsResponse::schema().schema,
