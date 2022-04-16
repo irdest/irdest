@@ -1,11 +1,15 @@
 //! API encoding types for Ratman
 
 mod error;
+
+#[cfg(feature = "proto")]
 mod proto {
     include!(concat!(env!("OUT_DIR"), "/proto_gen/mod.rs"));
 }
 
+#[cfg(feature = "proto")]
 pub mod api;
+
 mod message;
 mod timepair;
 
@@ -15,13 +19,14 @@ pub use timepair::TimePair;
 pub use error::{Error, Result};
 pub use ratman_identity::Identity;
 
-use api::ApiMessage;
 use async_std::{
     io::{Read, Write},
     prelude::*,
 };
 use byteorder::{BigEndian, ByteOrder};
-use protobuf::Message as ProtoMessage;
+
+#[cfg(feature = "proto")]
+use {api::ApiMessage, protobuf::Message as ProtoMessage};
 
 /// First write the length as big-endian u64, then write the provided buffer
 pub async fn write_with_length<T: Write + Unpin>(t: &mut T, buf: &Vec<u8>) -> Result<usize> {
@@ -44,11 +49,13 @@ pub async fn read_with_length<T: Read + Unpin>(r: &mut T) -> Result<Vec<u8>> {
 }
 
 /// Parse a single message from a reader stream
+#[cfg(feature = "proto")]
 pub async fn parse_message<R: Read + Unpin>(r: &mut R) -> Result<ApiMessage> {
     let vec = read_with_length(r).await?;
     decode_message(&vec)
 }
 
+#[cfg(feature = "proto")]
 #[inline]
 pub fn decode_message(vec: &Vec<u8>) -> Result<ApiMessage> {
     Ok(ApiMessage::parse_from_bytes(vec)?)
@@ -56,6 +63,7 @@ pub fn decode_message(vec: &Vec<u8>) -> Result<ApiMessage> {
 
 /// Encode an ApiMessage into a binary payload you can then pass to
 /// `write_with_length`
+#[cfg(feature = "proto")]
 #[inline]
 pub fn encode_message(msg: ApiMessage) -> Result<Vec<u8>> {
     let mut buf = vec![];

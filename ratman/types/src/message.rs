@@ -5,7 +5,9 @@
 /// the sigature can also be empty.
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "proto")]
 pub use crate::proto::message::Message as ProtoMessage;
+
 use crate::timepair::TimePair;
 use ratman_identity::Identity;
 
@@ -45,6 +47,7 @@ impl Message {
     }
 
     // return protobuf type Message.
+    #[cfg(feature = "proto")]
     pub fn received(
         id: Identity,
         sender: Identity,
@@ -68,6 +71,7 @@ impl Message {
 }
 
 /// Implement RAW `From` protobuf type message
+#[cfg(feature = "proto")]
 impl From<ProtoMessage> for Message {
     fn from(msg: ProtoMessage) -> Self {
         Message {
@@ -87,6 +91,7 @@ impl From<ProtoMessage> for Message {
 }
 
 /// Implement protobuf type message `From` RAW
+#[cfg(feature = "proto")]
 impl From<Message> for ProtoMessage {
     fn from(msg: Message) -> ProtoMessage {
         let mut inner = ProtoMessage::new();
