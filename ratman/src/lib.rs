@@ -135,12 +135,11 @@ pub(crate) type IoPair<T> = (Sender<T>, Receiver<T>);
 
 // Public API facade
 pub use crate::{
-    data::{Message, MsgId, TimePair},
+    data::{Message, MsgId},
     error::{Error, Result},
-    netmod::Recipient,
 };
-pub use identity::{Identity, ID_LEN};
 pub use netmod;
+pub use types::{Identity, Recipient, TimePair, ID_LEN};
 
 use crate::core::Core;
 use async_std::{
@@ -333,7 +332,7 @@ async fn matching_payloads() {
     let msg = Message {
         id: Identity::random(),
         sender: u1,
-        recipient: Recipient::User(u2),
+        recipient: Recipient::Standard(vec![u2]),
         payload: vec![1, 3, 1, 2],
         timesig: TimePair::sending(),
         sign: vec!['a' as u8, 'c' as u8, 'a' as u8, 'b' as u8],

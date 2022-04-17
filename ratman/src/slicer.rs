@@ -5,7 +5,7 @@
 //! Slices `Message` into a series of Frames
 
 use crate::{Message, Payload};
-use netmod::{Frame, SeqBuilder};
+use types::{Frame, SeqBuilder};
 
 /// Slices messages into managable chunks
 pub(crate) struct Slicer;

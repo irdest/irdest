@@ -38,7 +38,7 @@ use crate::{Message, Recipient, Router};
 use async_std::{net::TcpListener, task::spawn};
 use state::{DaemonState, OnlineMap};
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
-use types::{Recipient as TypesRecipient, Result};
+use types::Result;
 
 pub use peers::attach_peers;
 
@@ -100,18 +100,17 @@ async fn run_relay(r: Router, online: OnlineMap) {
         let recv = types::api::receive_default(types::Message::received(
             id,
             sender,
-            match recipient {
-                Recipient::User(addr) => TypesRecipient::Standard(vec![addr]),
-                Recipient::Flood(ns) => TypesRecipient::Flood(ns),
-            },
+            recipient.clone(),
             payload,
             format!("{:?}", timesig),
             sign,
         ));
 
         match recipient {
-            Recipient::User(ref id) => {
-                if let Some(Some(ref mut io)) = online.lock().await.get(id).map(Clone::clone) {
+            ref recp @ Recipient::Standard(_) => {
+                if let Some(Some(ref mut io)) =
+                    online.lock().await.get(&recp.scope()).map(Clone::clone)
+                {
                     info!("Forwarding message to online client!");
                     if let Err(e) = parse::forward_recv(io.as_io(), recv).await {
                         error!("Failed to forward received message: {}", e);

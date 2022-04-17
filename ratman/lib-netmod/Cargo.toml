@@ -6,7 +6,7 @@ edition = "2018"
 license = "AGPL-3.0"
 
 [dependencies]
-identity = { version ="0.6.0", path = "../identity", features = ["digest", "random"], package = "ratman-identity" }
+ratman-types = { version = "0.4.0", path = "../lib-types" }
 
 serde = { version = "1.0", features = ["derive"] }
 twox-hash = "1.5"

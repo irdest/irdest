@@ -49,14 +49,12 @@ twox-hash = "1.5"
 
 # Sub-components
 clockctrl = { version = "0.1", path = "../utils/clockctrl" }
-identity = { version ="0.6", path = "identity", package = "ratman-identity", features = ["digest", "random"] }
-netmod = { version ="0.5.0", path = "netmod", package = "ratman-netmod"}
+netmod = { version ="0.5.0", path = "lib-netmod", package = "ratman-netmod"}
 task-notify = { version = "0.1", path = "../utils/task-notify" }
 
 # Dependencies required for various binary targets
-types = { version = "0.4.0", path = "types", package = "ratman-types", optional = true }
-ratman-client = { version = "0.4.0", path = "client-lib", optional = true }
-
+types = { version = "0.4.0", path = "lib-types", package = "ratman-types", optional = true }
+ratman-client = { version = "0.4.0", path = "lib-client", optional = true }
 clap = { version = "2.0", optional = true, features = ["wrap_help", "color", "suggestions"] }
 tracing-subscriber = { version = "0.2", optional = true, features = ["fmt"] }
 tracing-syslog = { version = "0.1", path = "../utils/tracing-syslog", optional = true }

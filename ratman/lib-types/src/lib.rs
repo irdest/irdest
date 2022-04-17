@@ -14,14 +14,18 @@ mod proto {
 #[cfg(feature = "proto")]
 pub mod api;
 
+mod frame;
+mod id;
 mod message;
+mod seq;
 mod timepair;
 
-pub use message::{Message, Recipient};
-pub use timepair::TimePair;
-
 pub use error::{Error, Result};
-pub use ratman_identity::Identity;
+pub use frame::Frame;
+pub use id::{Identity, ID_LEN};
+pub use message::{Message, Recipient};
+pub use seq::{SeqBuilder, SeqData, SeqId};
+pub use timepair::TimePair;
 
 use async_std::{
     io::{Read, Write},

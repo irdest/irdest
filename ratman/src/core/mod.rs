@@ -20,7 +20,7 @@ pub(self) use switch::Switch;
 
 use crate::{Endpoint, Error, Identity, Message, Result};
 use async_std::sync::Arc;
-use netmod::Frame;
+use types::Frame;
 
 /// The Ratman routing core interface
 ///

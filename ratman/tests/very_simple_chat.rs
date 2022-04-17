@@ -19,6 +19,7 @@ use bincode;
 use netmod_mem::MemMod;
 use ratman::{Identity, Message, MsgId, Recipient, Result, Router, TimePair};
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
 
 /// A message from someone
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -30,7 +31,7 @@ struct ChatMessage {
 impl ChatMessage {
     fn to_msg(&self, sender: Identity, recp: Identity) -> Message {
         let payload = bincode::serialize(self).unwrap();
-        let recipient = Recipient::User(recp);
+        let recipient = Recipient::Standard(vec![recp]);
 
         Message {
             id: MsgId::random(),
@@ -86,6 +87,8 @@ async fn build_network() -> Result<()> {
 
     // Create a message from Alice (u1) to Bob (u3)
     let msg = hello.to_msg(u1, u3);
+
+    async_std::task::sleep(Duration::from_millis(500)).await;
 
     r1.send(msg.clone()).await?;
     assert_eq!(r3.next().await.remove_recv_time(), msg);

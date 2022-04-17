@@ -20,14 +20,13 @@ use async_std::{
     sync::{Arc, Mutex},
     task,
 };
-use identity::Identity;
-use netmod::Frame;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
     sync::atomic::{AtomicBool, Ordering},
     time::Duration,
 };
+use types::{Frame, Identity};
 
 /// A payload that represents a RATMAN-protocol message
 #[derive(Debug, Serialize, Deserialize)]

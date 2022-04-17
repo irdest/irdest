@@ -7,7 +7,7 @@
 use super::{Locked, State};
 use crate::{Message, Payload};
 use async_std::sync::Arc;
-use netmod::{Frame, SeqBuilder, SeqId};
+use types::{Frame, SeqBuilder, SeqId};
 
 /// A self contained sub-task that collects frames into messages
 pub(super) struct Worker {
@@ -64,7 +64,7 @@ fn join_frames(buf: &mut Vec<Frame>, new: Frame) -> Option<Message> {
     }) {
         let id = buf[0].seq.seqid;
         let sender = buf[0].sender;
-        let recipient = buf[0].recipient;
+        let recipient = buf[0].recipient.clone();
         let layered = SeqBuilder::restore(buf);
         let Payload {
             payload,
@@ -89,9 +89,7 @@ fn join_frames(buf: &mut Vec<Frame>, new: Frame) -> Option<Message> {
 }
 
 #[cfg(test)]
-use identity::Identity;
-#[cfg(test)]
-use netmod::Recipient;
+use types::{Identity, Recipient};
 
 // This test is broken because currently it just creates a sequence of
 // bytes that can then not be deserialised by bincode into a Payload
@@ -104,7 +102,7 @@ fn join_frame_simple() {
     let recp = Identity::random();
     let seqid = Identity::random();
 
-    let mut seq = SeqBuilder::new(sender, Recipient::User(recp), seqid)
+    let mut seq = SeqBuilder::new(sender, Recipient::Standard(vec![recp]), seqid)
         .add((0..10).into_iter().collect())
         .add((10..20).into_iter().collect())
         .add((20..30).into_iter().collect())

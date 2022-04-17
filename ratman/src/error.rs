@@ -5,7 +5,14 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 /// A Ratman error type
 #[derive(Debug)]
+#[deprecated]
 pub enum Error {
+    /// Generic IO fault
+    Io,
+    /// Protocol fault
+    Proto,
+    /// Invalid authentication
+    InvalidAuth,
     /// An error occured during router initialisation
     InitFailed,
     /// While sending an encoding operation failed
@@ -24,11 +31,14 @@ pub enum Error {
     NotSupportedOnPlatform,
 }
 
-use netmod::Error as NmError;
+use types::Error as NmError;
 
 impl From<NmError> for Error {
     fn from(e: NmError) -> Self {
         match e {
+            NmError::Io(_) => Self::Io,
+            NmError::Proto(_) => Self::Proto,
+            NmError::InvalidAuth => Self::InvalidAuth,
             NmError::ConnectionLost => Self::DispatchFailed,
             NmError::DesequenceFault => Self::DecodeFailed,
             NmError::FrameTooLarge => Self::PayloadTooLarge,

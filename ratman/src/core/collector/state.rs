@@ -11,9 +11,9 @@ use async_std::{
     sync::Arc,
     task::Poll,
 };
-use netmod::{Frame, SeqId};
 use std::collections::{BTreeMap, VecDeque};
 use task_notify::Notify;
+use types::{Frame, SeqId};
 
 /// Local frame collector state holder
 #[derive(Default)]

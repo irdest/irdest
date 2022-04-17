@@ -1120,7 +1120,6 @@ dependencies = [
  "async-trait",
  "bincode",
  "byteorder",
- "ratman-identity",
  "ratman-netmod",
  "serde",
  "thiserror",
@@ -1137,7 +1136,6 @@ dependencies = [
  "bincode",
  "libc",
  "pnet",
- "ratman-identity",
  "ratman-netmod",
  "serde",
  "task-notify",
@@ -1150,7 +1148,6 @@ version = "0.4.0"
 dependencies = [
  "async-std",
  "async-trait",
- "ratman-identity",
  "ratman-netmod",
 ]
 
@@ -1556,7 +1553,6 @@ dependencies = [
  "pnet",
  "protobuf",
  "ratman-client",
- "ratman-identity",
  "ratman-netmod",
  "ratman-types",
  "rust-embed",
@@ -1585,24 +1581,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "ratman-identity"
-version = "0.6.2"
-dependencies = [
- "bincode",
- "blake2",
- "cfg-if 1.0.0",
- "hex",
- "rand 0.7.3",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "ratman-netmod"
 version = "0.5.1"
 dependencies = [
  "async-trait",
- "ratman-identity",
+ "ratman-types",
  "serde",
  "twox-hash",
 ]
@@ -1612,15 +1595,20 @@ name = "ratman-types"
 version = "0.4.0"
 dependencies = [
  "async-std",
+ "bincode",
+ "blake2",
  "byteorder",
+ "cfg-if 1.0.0",
  "chrono",
+ "hex",
  "protobuf",
  "protoc-rust",
- "ratman-identity",
+ "rand 0.7.3",
  "regex",
  "serde",
  "serde_json",
  "thiserror",
+ "twox-hash",
 ]
 
 [[package]]

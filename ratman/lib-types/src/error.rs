@@ -15,6 +15,14 @@ pub enum Error {
     Proto(#[from] protobuf::ProtobufError),
     #[error("failed to provide correct authentication in handshake")]
     InvalidAuth,
+    #[error("failed to de-sequence a series of frames")]
+    DesequenceFault,
+    #[error("connection was unexpectedly dropped")]
+    ConnectionLost,
+    #[error("frame is too large to send through this channel")]
+    FrameTooLarge,
+    #[error("operation not supported")]
+    NotSupported,
 }
 
 impl From<Error> for io::Error {

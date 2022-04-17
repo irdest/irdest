@@ -10,8 +10,9 @@ use async_std::{
     sync::{Arc, Mutex},
     task,
 };
+use netmod::Target;
 use std::collections::BTreeMap;
-use {identity::Identity, netmod::Target};
+use types::Identity;
 
 /// A netmod endpoint ID and an endpoint target ID
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -6,10 +6,9 @@
 members = [
     # The decentralised router
     "ratman",
-    "ratman/client-lib",
-    "ratman/identity",
-    "ratman/netmod",
-    "ratman/types",
+    "ratman/lib-client",
+    "ratman/lib-types",
+    "ratman/lib-netmod",
 
     # Various utility crates
     "utils/task-notify",

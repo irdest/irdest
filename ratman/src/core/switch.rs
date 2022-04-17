@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use async_std::{channel::bounded, sync::Arc, task};
-use netmod::Recipient;
+use types::Recipient;
 
 use crate::{
     core::{Collector, Dispatch, DriverMap, Journal, RouteTable, RouteType},
@@ -90,7 +90,7 @@ impl Switch {
                         self.dispatch.reflood(f, id).await;
                     }
                 }
-                User(id) => match self.routes.reachable(id).await {
+                ref recp @ Standard(_) => match self.routes.reachable(recp.scope()).await {
                     Some(Local) => self.collector.queue_and_spawn(f.seqid(), f).await,
                     Some(Remote(_)) => self.dispatch.send_one(f).await.unwrap(),
                     None => self.journal.queue(f).await,

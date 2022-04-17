@@ -14,13 +14,13 @@ use async_std::{
     task::{block_on, spawn_blocking},
 };
 use directories::ProjectDirs;
-use identity::Identity;
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs::{File, OpenOptions},
     io::{Read, Write},
     path::PathBuf,
 };
+use types::Identity;
 
 pub(crate) type OnlineMap = Arc<Mutex<BTreeMap<Identity, Option<Io>>>>;
 

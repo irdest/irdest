@@ -7,8 +7,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "proto")]
 pub use crate::proto::message::Message as ProtoMessage;
 
-use crate::timepair::TimePair;
-use ratman_identity::Identity;
+use crate::{timepair::TimePair, Identity};
 
 /// Specify the message recipient
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -18,6 +17,16 @@ pub enum Recipient {
 }
 
 impl Recipient {
+    /// Return the scope of this recipient
+    ///
+    /// This is either the target user identity or the flood scope
+    pub fn scope(&self) -> Identity {
+        match self {
+            Self::Standard(id) => *id.first().expect("empty address set (invalid state)"),
+            Self::Flood(scope) => *scope,
+        }
+    }
+
     /// Create a standard message recipient
     pub fn standard<T: Into<Vec<Identity>>>(addrs: T) -> Self {
         Self::Standard(addrs.into())

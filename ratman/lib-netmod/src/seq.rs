@@ -1,17 +1,18 @@
 //! Sequence handling module
 
-use crate::{Error, Frame, Recipient};
-use identity::Identity;
+use crate::{Error, Frame, Identity, Recipient};
 use {
     std::hash::{BuildHasher, Hasher},
     twox_hash::{RandomXxHashBuilder64 as RXHash64, XxHash64},
 };
 
 /// A unique identifier to represents a sequence of frames
+#[deprecated]
 pub type SeqId = Identity;
 
 /// An XxHash signature and initialisation seed
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[deprecated]
 pub struct XxSignature {
     sig: u64,
     seed: u64,
@@ -44,6 +45,7 @@ impl XxSignature {
 ///
 /// Check the crate documentation for more details.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[deprecated]
 pub struct SeqData {
     /// Frame number in sequence
     pub num: u32,
@@ -60,6 +62,7 @@ pub struct SeqData {
 /// This type implements a builder, which is initialised with header
 /// data, then filled with various sliced payloads, and then made into
 /// a frame sequence, as outlined in the root netmod docs.
+#[deprecated]
 pub struct SeqBuilder {
     #[doc(hidden)]
     pub seqid: SeqId,

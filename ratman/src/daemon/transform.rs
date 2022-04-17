@@ -2,9 +2,11 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use crate::{Message, MsgId, Recipient, TimePair};
-use identity::Identity;
-use types::api::{Send, Send_Type};
+use crate::{Message, MsgId};
+use types::{
+    api::{Send, Send_Type},
+    Identity, Recipient, TimePair,
+};
 
 /// Turn an API `Send` to a `Message`
 pub(crate) fn send_to_message(s: Send) -> Vec<Message> {
@@ -17,7 +19,7 @@ pub(crate) fn send_to_message(s: Send) -> Vec<Message> {
             .get_std()
             .get_standard()
             .into_iter()
-            .map(|addr| Recipient::User(Identity::from_bytes(&addr)))
+            .map(|addr| Recipient::Standard(vec![Identity::from_bytes(&addr)]))
             .collect(),
         Send_Type::FLOOD => vec![Recipient::Flood(Identity::from_bytes(s.scope.as_slice()))],
     };

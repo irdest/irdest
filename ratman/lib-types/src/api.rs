@@ -9,7 +9,7 @@ pub use crate::proto::api::{
     Send, Send_Type, Setup, Setup_Type, Setup_oneof__id, Setup_oneof__token,
 };
 use crate::proto::message::Message;
-use ratman_identity::Identity;
+use crate::Identity;
 
 //////////// SEND type
 

@@ -257,6 +257,8 @@ async fn simple_transmission() {
         .await
         .unwrap();
 
+    async_std::task::sleep(std::time::Duration::from_millis(500)).await;
+
     let data = Frame::dummy();
     client.send(0, data.clone()).await.unwrap();
 

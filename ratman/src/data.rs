@@ -3,49 +3,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use chrono::{DateTime, Utc};
-use identity::Identity;
-use netmod::Recipient;
 use serde::{Deserialize, Serialize};
+use types::{Identity, Recipient, TimePair};
 
 /// A unique, randomly generated message ID
 pub type MsgId = Identity;
-
-/// Represents the time of sending and receiving this frame
-///
-/// Because there is no guarantee that the host clock is accurate or
-/// being maliciously manipulated, the sending time should not be
-/// trusted.  A timestamp that should be used by applications is
-/// available via the `local()` function.
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub struct TimePair {
-    sent: DateTime<Utc>,
-    recv: Option<DateTime<Utc>>,
-}
-
-impl TimePair {
-    /// A utility function to create a new sending timestamp
-    pub fn sending() -> Self {
-        Self {
-            sent: Utc::now(),
-            recv: None,
-        }
-    }
-
-    /// Update the received time in a timestamp locally received
-    pub fn receive(&mut self) {
-        self.recv = Some(Utc::now());
-    }
-
-    /// A test function to strip the recv-time
-    pub(crate) fn into_sending(self) -> Self {
-        Self { recv: None, ..self }
-    }
-
-    /// Get the most likely local time
-    pub fn local(&self) -> DateTime<Utc> {
-        self.recv.unwrap_or(self.sent)
-    }
-}
 
 /// An atomic message with a variable sized payload
 ///

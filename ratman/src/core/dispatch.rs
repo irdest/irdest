@@ -9,7 +9,8 @@ use crate::{
     Message, Result, Slicer,
 };
 use async_std::{sync::Arc, task};
-use netmod::{Frame, Recipient, Target};
+use netmod::Target;
+use types::{Frame, Recipient};
 
 pub(crate) struct Dispatch {
     routes: Arc<RouteTable>,
@@ -32,7 +33,7 @@ impl Dispatch {
     }
 
     pub(crate) async fn send_msg(&self, msg: Message) -> Result<()> {
-        let r = msg.recipient;
+        let r = msg.recipient.clone();
         trace!("dispatching message to recpient: {:?}", r);
 
         // This is a hardcoded MTU for now.  We need to adapt the MTU
@@ -41,8 +42,8 @@ impl Dispatch {
         // for better transmission metrics
         let frames = Slicer::slice(1312, msg);
 
-        frames.into_iter().fold(Ok(()), |res, f| match (res, r) {
-            (Ok(()), Recipient::User(_)) => task::block_on(self.send_one(f)),
+        frames.into_iter().fold(Ok(()), |res, f| match (res, &r) {
+            (Ok(()), Recipient::Standard(_)) => task::block_on(self.send_one(f)),
             (Ok(()), Recipient::Flood(_)) => task::block_on(self.flood(f)),
             (res, _) => res,
         })
@@ -53,7 +54,7 @@ impl Dispatch {
         let EpTargetPair(epid, trgt) = match self
             .routes
             .resolve(match frame.recipient {
-                Recipient::User(id) => id,
+                ref recp @ Recipient::Standard(_) => recp.scope(),
                 Recipient::Flood(_) => unreachable!(),
             })
             .await

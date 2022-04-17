@@ -10,15 +10,13 @@ use crate::{
     Message, Result, Router,
 };
 use async_std::io::{Read, Write};
-use identity::Identity;
-use netmod::Recipient;
 use types::{
     api::{
         all_peers, api_peers, api_setup, online_ack, ApiMessageEnum, Peers, Peers_Type, Receive,
         Send, Setup, Setup_Type, Setup_oneof__id,
     },
-    encode_message, parse_message, write_with_length, Error as ParseError,
-    Recipient as TypesRecipient, Result as ParseResult,
+    encode_message, parse_message, write_with_length, Error as ParseError, Identity, Recipient,
+    Result as ParseResult,
 };
 
 async fn handle_send(r: &Router, online: &OnlineMap, _self: Identity, send: Send) -> Result<()> {
@@ -38,10 +36,7 @@ async fn handle_send(r: &Router, online: &OnlineMap, _self: Identity, send: Send
                 let recv = types::api::receive_default(types::Message::received(
                     *id,
                     *sender,
-                    match recipient {
-                        Recipient::User(id) => TypesRecipient::Standard(vec![*id]),
-                        Recipient::Flood(ns) => TypesRecipient::Flood(*ns),
-                    },
+                    recipient.clone(),
                     payload.clone(),
                     format!("{:?}", timesig),
                     sign.clone(),

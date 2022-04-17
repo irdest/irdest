@@ -1,26 +1,3 @@
-//! # A Ratman network identity abstraction
-//!
-//! Because Ratman is a userspace router with no concept of link layer
-//! identities, network IDs are chosen to be fixed size byte arrays.
-//! It's left to the implementing application to map these to some
-//! useful source of identity.  This crate also provides a hashing
-//! constructor behind the `digest` feature flag which can be used to
-//! hash a secret to derive the identity value.
-//!
-//! Whatever scheme is chosen, two principles about identity must not
-//! be violated:
-//!
-//! 1. There are no identity collisions
-//! 2. Identities don't change mid-route
-//!
-//! This crate is part of the qaul project.  The docs for this
-//! crate are propably lacking because currently Ratman/ libqaul are
-//! the only users of it.  If you have questions, don't hesitate to
-//! [contact us]!
-//!
-//! [contact us]: https://docs.qaul.org/contributors/social/_intro.html
-
-use cfg_if;
 use serde::{
     de::{Deserializer, SeqAccess, Visitor},
     Deserialize, Serialize, Serializer,
@@ -30,18 +7,23 @@ use std::{
     string::ToString,
 };
 
-cfg_if::cfg_if! {
-    if #[cfg(features = "aligned")] {
-        use std::mem::size_of,
-        /// Length of the identity buffer to align with platform words
-        pub const ID_LEN: usize = size_of::<usize>();
-    } else {
-        /// Length of the identity buffer to align with an ed25519 pubkey
-        pub const ID_LEN: usize = 32;
-    }
-}
+/// Length of the identity buffer to align with an ed25519 pubkey
+pub const ID_LEN: usize = 32;
 
 /// A generic object identifier
+///
+/// Ratman is a userspace router with no concept of link layer
+/// identities, network IDs are chosen to be fixed size byte arrays.
+/// It's left to the implementing application to map these to some
+/// useful source of identity.  This crate also provides a hashing
+/// constructor behind the `digest` feature flag which can be used to
+/// hash a secret to derive the identity value.
+///
+/// Whatever scheme is chosen, two principles about identity must not
+/// be violated:
+///
+/// 1. There are no identity collisions
+/// 2. Identities don't change mid-route
 #[derive(Copy, Clone, Hash, PartialOrd, Ord, PartialEq, Eq)]
 pub struct Identity([u8; ID_LEN]);
 
@@ -134,7 +116,6 @@ impl Identity {
     /// This function requires the `digest` feature.
     ///
     /// [blake2]: https://blake2.net/
-    #[cfg(feature = "digest")]
     pub fn with_digest<'vec, V: Into<&'vec Vec<u8>>>(vec: V) -> Self {
         use blake2::{
             digest::{Update, VariableOutput},
@@ -147,7 +128,6 @@ impl Identity {
     }
 
     /// Generate a new random Identity
-    #[cfg(feature = "random")]
     pub fn random() -> Self {
         use rand::RngCore;
         let mut rng = rand::thread_rng();

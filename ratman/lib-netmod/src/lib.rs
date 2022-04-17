@@ -40,9 +40,8 @@ extern crate serde;
 mod endpoint;
 mod frame;
 mod result;
-mod seq;
 
 pub use endpoint::Endpoint;
-pub use frame::{Frame, Recipient, Target};
+pub use frame::Target;
+pub use ratman_types::{Frame, Recipient};
 pub use result::{Error, Result};
-pub use seq::{SeqBuilder, SeqData, SeqId};

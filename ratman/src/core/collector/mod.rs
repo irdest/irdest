@@ -28,9 +28,9 @@ use async_std::{
     sync::{Arc, Mutex},
     task,
 };
-use netmod::{Frame, SeqId};
 use std::collections::BTreeMap;
 use tracing_futures::Instrument;
+use types::{Frame, SeqId};
 
 pub(self) type Locked<T> = Arc<Mutex<T>>;
 
@@ -138,7 +138,7 @@ use crate::Identity;
 #[test]
 fn queue_one() {
     use crate::{Slicer, TimePair};
-    use netmod::Recipient;
+    use types::Recipient;
 
     let (sender, recipient, id) = (Identity::random(), Identity::random(), Identity::random());
     let mut seq = Slicer::slice(
@@ -146,7 +146,7 @@ fn queue_one() {
         Message {
             id,
             sender,
-            recipient: Recipient::User(recipient),
+            recipient: Recipient::Standard(vec![recipient]),
             payload: vec![0, 1, 2, 3, 1, 3, 1, 2, 1, 3, 3, 7],
             timesig: TimePair::sending(),
             sign: vec![0, 1],
@@ -181,7 +181,7 @@ fn queue_one() {
 #[test]
 fn queue_many() {
     use crate::{Slicer, TimePair};
-    use netmod::Recipient;
+    use types::Recipient;
 
     let (sender, recipient, id) = (Identity::random(), Identity::random(), Identity::random());
     let seq = Slicer::slice(
@@ -189,7 +189,7 @@ fn queue_many() {
         Message {
             id,
             sender,
-            recipient: Recipient::User(recipient),
+            recipient: Recipient::Standard(vec![recipient]),
             payload: vec![0, 1, 2, 3, 1, 3, 1, 2, 1, 3, 3, 7],
             timesig: TimePair::sending(),
             sign: vec![],

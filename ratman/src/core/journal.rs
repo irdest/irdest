@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use async_std::sync::{Arc, RwLock};
-use netmod::{Frame, SeqId};
 use std::collections::BTreeSet;
+use types::{Frame, SeqId};
 
 /// Remote frame journal
 pub(crate) struct Journal {
