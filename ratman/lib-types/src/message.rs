@@ -20,10 +20,10 @@ impl Recipient {
     /// Return the scope of this recipient
     ///
     /// This is either the target user identity or the flood scope
-    pub fn scope(&self) -> Identity {
+    pub fn scope(&self) -> Option<Identity> {
         match self {
-            Self::Standard(id) => *id.first().expect("empty address set (invalid state)"),
-            Self::Flood(scope) => *scope,
+            Self::Standard(id) => id.first().map(|x| x.clone()),
+            Self::Flood(scope) => Some(*scope),
         }
     }
 

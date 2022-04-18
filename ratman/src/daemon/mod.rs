@@ -108,8 +108,11 @@ async fn run_relay(r: Router, online: OnlineMap) {
 
         match recipient {
             ref recp @ Recipient::Standard(_) => {
-                if let Some(Some(ref mut io)) =
-                    online.lock().await.get(&recp.scope()).map(Clone::clone)
+                if let Some(Some(ref mut io)) = online
+                    .lock()
+                    .await
+                    .get(&recp.scope().expect("empty recipient"))
+                    .map(Clone::clone)
                 {
                     info!("Forwarding message to online client!");
                     if let Err(e) = parse::forward_recv(io.as_io(), recv).await {

@@ -90,10 +90,13 @@ impl Switch {
                         self.dispatch.reflood(f, id).await;
                     }
                 }
-                ref recp @ Standard(_) => match self.routes.reachable(recp.scope()).await {
-                    Some(Local) => self.collector.queue_and_spawn(f.seqid(), f).await,
-                    Some(Remote(_)) => self.dispatch.send_one(f).await.unwrap(),
-                    None => self.journal.queue(f).await,
+                ref recp @ Standard(_) => match recp.scope() {
+                    Some(scope) => match self.routes.reachable(scope).await {
+                        Some(Local) => self.collector.queue_and_spawn(f.seqid(), f).await,
+                        Some(Remote(_)) => self.dispatch.send_one(f).await.unwrap(),
+                        None => self.journal.queue(f).await,
+                    },
+                    None => {}
                 },
             }
         }

@@ -54,7 +54,7 @@ impl Dispatch {
         let EpTargetPair(epid, trgt) = match self
             .routes
             .resolve(match frame.recipient {
-                ref recp @ Recipient::Standard(_) => recp.scope(),
+                ref recp @ Recipient::Standard(_) => recp.scope().expect("empty recipient"),
                 Recipient::Flood(_) => unreachable!(),
             })
             .await
@@ -79,7 +79,7 @@ impl Dispatch {
     pub(crate) async fn flood(&self, frame: Frame) -> Result<()> {
         for ep in self.drivers.get_all().await.into_iter() {
             let f = frame.clone();
-            let target = Target::Flood(frame.recipient.scope());
+            let target = Target::Flood(frame.recipient.scope().expect("empty recipient"));
             ep.send(f, target).await.unwrap();
         }
 
@@ -90,7 +90,7 @@ impl Dispatch {
     pub(crate) async fn reflood(&self, frame: Frame, ep: usize) {
         for ep in self.drivers.get_without(ep).await.into_iter() {
             let f = frame.clone();
-            let target = Target::Flood(f.recipient.scope());
+            let target = Target::Flood(f.recipient.scope().expect("empty recipient"));
             task::spawn(async move { ep.send(f, target).await.unwrap() });
         }
     }
