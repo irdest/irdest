@@ -65,7 +65,10 @@ fn join_frames(buf: &mut Vec<Frame>, new: Frame) -> Option<Message> {
         let id = buf[0].seq.seqid;
         let sender = buf[0].sender;
         let recipient = buf[0].recipient.clone();
-        let layered = SeqBuilder::restore(buf);
+        let layered = match SeqBuilder::restore(buf) {
+            Ok(v) => v,
+            Err(_) => return None,
+        };
         let Payload {
             payload,
             mut timesig,

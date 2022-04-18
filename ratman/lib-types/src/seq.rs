@@ -142,7 +142,7 @@ impl SeqBuilder {
     ///
     /// This function assumes a complete set of frame that has
     /// previously been sorted along the `seq.num` metric.
-    pub fn restore(buf: &mut Vec<Frame>) -> Vec<u8> {
+    pub fn restore(buf: &mut Vec<Frame>) -> Result<Vec<u8>, Error> {
         // FIXME: `windows` are weird when there's less than n Items.
         // This hack just pretends that there are two.  We also
         // communicate to the fold that we should drop the last frame
@@ -161,9 +161,9 @@ impl SeqBuilder {
         let wins = buf.windows(2);
         let len = wins.len();
 
-        let r: Result<Vec<u8>, Error> = wins.enumerate().into_iter().fold(
-            Ok(Vec::with_capacity(buf.len())),
-            |mut res, (i, win)| {
+        wins.enumerate()
+            .into_iter()
+            .fold(Ok(Vec::with_capacity(buf.len())), |mut res, (i, win)| {
                 let last = i == (len - 1);
                 let a = &win[0];
                 let seqa = &a.seq;
@@ -198,10 +198,7 @@ impl SeqBuilder {
                     }
                     _ => Err(Error::DesequenceFault),
                 }
-            },
-        );
-
-        r.expect("SeqBuilder::restore failed with invalid inputs!")
+            })
     }
 
     /// Read the sequence ID back from the builder
