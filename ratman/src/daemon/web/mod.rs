@@ -4,16 +4,26 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use crate::Router;
+use async_std::sync::Arc;
+use prometheus_client::registry::Registry;
 use std::path::Path;
 use tide::{http::mime, prelude::*, utils::After, Request, Response};
 
+pub mod middleware;
 pub mod v1;
+
+pub type State = Arc<StateData>;
+
+pub struct StateData {
+    pub router: Router,
+    pub registry: Registry,
+}
 
 #[derive(rust_embed::RustEmbed)]
 #[folder = "dashboard/dist"]
 struct DashboardAssets;
 
-async fn serve_dashboard(req: Request<Router>) -> tide::Result {
+async fn serve_dashboard(req: Request<State>) -> tide::Result {
     let path = {
         let path = req.url().path();
         if path == "/" {
@@ -42,9 +52,29 @@ async fn serve_dashboard(req: Request<Router>) -> tide::Result {
         .build())
 }
 
-pub async fn start(router: Router, bind: &str, port: u16) -> tide::Result<()> {
+async fn serve_metrics(req: Request<State>) -> tide::Result {
+    let mut body = Vec::new();
+    prometheus_client::encoding::text::encode(&mut body, &req.state().registry).unwrap();
+    let response = tide::Response::builder(200)
+        .body(body)
+        .content_type("application/openmetrics-text; version=1.0.0; charset=utf-8")
+        .build();
+    Ok(response)
+}
+
+pub async fn start(
+    router: Router,
+    mut registry: Registry,
+    bind: &str,
+    port: u16,
+) -> tide::Result<()> {
+    // Metrics and logging for HTTP requests.
+    let instrument = middleware::Instrument::default();
+    instrument.register_metrics(&mut registry);
+
     // Create a new application with state
-    let mut app = tide::with_state(router);
+    let mut app = tide::with_state(Arc::new(StateData { router, registry }));
+    app.with(instrument);
 
     // Convert errors into a form Ember.js can understand.
     app.with(After(|mut res: Response| async {
@@ -62,6 +92,8 @@ pub async fn start(router: Router, bind: &str, port: u16) -> tide::Result<()> {
     // Attach some routes to it.
     app.at("/api/v1/openapi.json").get(v1::get_openapi);
     app.at("/api/v1/addrs").get(v1::get_addrs);
+
+    app.at("/_/metrics").get(serve_metrics);
 
     // Let the dashboard handle any routes we don't recognise.
     app.at("/").get(serve_dashboard);
