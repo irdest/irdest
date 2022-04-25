@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 /// If your endpoint doesn't implement a one-to-many link (i.e. if
 /// it's always one-to-one), just let this value to `Single(0)`
 /// (`Target::default()`)
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Target {
     /// Send message to all reachable endpoints
     Flood(Identity),

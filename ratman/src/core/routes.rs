@@ -15,11 +15,11 @@ use std::collections::BTreeMap;
 use types::Identity;
 
 /// A netmod endpoint ID and an endpoint target ID
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct EpTargetPair(pub(crate) u8, pub(crate) Target);
 
 /// Describes the reachability of a route
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) enum RouteType {
     Remote(EpTargetPair),
     Local,
