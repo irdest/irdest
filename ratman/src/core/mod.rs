@@ -72,6 +72,11 @@ impl Core {
         }
     }
 
+    /// Register metrics with a Prometheus registry.
+    pub fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
+        self.routes.register_metrics(registry);
+    }
+
     /// Asynchronously send a Message
     pub(crate) async fn send(&self, msg: Message) -> Result<()> {
         self.dispatch.send_msg(msg).await

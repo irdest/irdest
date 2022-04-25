@@ -33,6 +33,7 @@ pub(crate) enum RouteType {
 pub(crate) struct RouteTable {
     routes: Arc<Mutex<BTreeMap<Identity, RouteType>>>,
     new: IoPair<Identity>,
+    metrics: metrics::RouteTableMetrics,
 }
 
 impl RouteTable {
@@ -40,7 +41,13 @@ impl RouteTable {
         Arc::new(Self {
             routes: Default::default(),
             new: bounded(1),
+            metrics: metrics::RouteTableMetrics::default(),
         })
+    }
+
+    /// Register metrics with a Prometheus registry.
+    pub(crate) fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
+        self.metrics.register(registry);
     }
 
     /// Update or add an IDs entry in the routing table
@@ -54,6 +61,10 @@ impl RouteTable {
         // Only "announce" a new user if it was not known before
         if tbl.insert(id, route).is_none() {
             info!("Discovered new address {}", id);
+            self.metrics
+                .routes_count
+                .get_or_create(&metrics::RouteLabels { kind: route })
+                .inc();
             let s = Arc::clone(&self);
             task::spawn(async move { s.new.0.send(id).await });
         }
@@ -83,8 +94,14 @@ impl RouteTable {
     /// Delete an entry from the routing table
     pub(crate) async fn delete(&self, id: Identity) -> Result<()> {
         match self.routes.lock().await.remove(&id) {
-            Some(_) => Ok(()),
-            None => Err(Error::NoAddress),
+            Some(kind) => {
+                self.metrics
+                    .routes_count
+                    .get_or_create(&metrics::RouteLabels { kind })
+                    .dec();
+                Ok(())
+            }
+            None => Err(Error::NoUser),
         }
     }
 
@@ -113,5 +130,45 @@ impl RouteTable {
     /// Check if an ID is reachable via currently known routes
     pub(crate) async fn reachable(&self, id: Identity) -> Option<RouteType> {
         self.routes.lock().await.get(&id).cloned()
+    }
+}
+
+mod metrics {
+    //! Metric helpers.
+
+    use prometheus_client::{
+        encoding::text::Encode,
+        metrics::{family::Family, gauge::Gauge},
+        registry::Registry,
+    };
+
+    #[derive(Clone, Hash, PartialEq, Eq, Encode)]
+    pub(super) struct RouteLabels {
+        pub kind: super::RouteType,
+    }
+
+    impl Encode for super::RouteType {
+        fn encode(&self, w: &mut dyn std::io::Write) -> std::io::Result<()> {
+            match self {
+                Self::Local => write!(w, "local"),
+                // TODO: Can we add more detail to this?
+                Self::Remote(_) => write!(w, "remote"),
+            }
+        }
+    }
+
+    #[derive(Default)]
+    pub(super) struct RouteTableMetrics {
+        pub routes_count: Family<RouteLabels, Gauge>,
+    }
+
+    impl RouteTableMetrics {
+        pub fn register(&self, registry: &mut Registry) {
+            registry.register(
+                "routes_count",
+                "Number of routes currently in the table",
+                Box::new(self.routes_count.clone()),
+            );
+        }
     }
 }
