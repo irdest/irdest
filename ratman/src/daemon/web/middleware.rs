@@ -16,16 +16,19 @@ impl tide::Middleware<super::State> for Instrument {
         req: tide::Request<super::State>,
         next: tide::Next<'_, super::State>,
     ) -> tide::Result {
-        let labels = metrics::HTTPLabels {
-            path: req.url().path().into(),
-            method: metrics::HTTPMethod(req.method()),
-        };
+        let path = req.url().path().into();
+        let method = metrics::HTTPMethod(req.method());
+        let rsp = next.run(req).await;
+
         self.metrics
             .http_requests_total
-            .get_or_create(&labels)
+            .get_or_create(&metrics::HTTPLabels {
+                path,
+                method,
+                status: metrics::HTTPStatusCode(rsp.status()),
+            })
             .inc();
-
-        Ok(next.run(req).await)
+        Ok(rsp)
     }
 }
 
@@ -54,6 +57,7 @@ mod metrics {
     pub(super) struct HTTPLabels {
         pub method: HTTPMethod,
         pub path: String,
+        pub status: HTTPStatusCode,
     }
 
     /// Encode'able wrapper for tide::http::Method.
@@ -61,6 +65,16 @@ mod metrics {
     pub(super) struct HTTPMethod(pub tide::http::Method);
 
     impl Encode for HTTPMethod {
+        fn encode(&self, writer: &mut dyn std::io::Write) -> std::io::Result<()> {
+            write!(writer, "{}", self.0)
+        }
+    }
+
+    /// Encode'able wrapper for tide::http::Method.
+    #[derive(Clone, Hash, PartialEq, Eq)]
+    pub(super) struct HTTPStatusCode(pub tide::http::StatusCode);
+
+    impl Encode for HTTPStatusCode {
         fn encode(&self, writer: &mut dyn std::io::Write) -> std::io::Result<()> {
             write!(writer, "{}", self.0)
         }
