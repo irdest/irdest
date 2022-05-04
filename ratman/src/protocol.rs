@@ -36,11 +36,16 @@ enum ProtoPayload {
 #[derive(Default)]
 pub(crate) struct Protocol {
     online: Mutex<BTreeMap<Identity, Arc<AtomicBool>>>,
+    metrics: metrics::Metrics,
 }
 
 impl Protocol {
     pub(crate) fn new() -> Arc<Self> {
         Default::default()
+    }
+
+    pub fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
+        self.metrics.register(registry);
     }
 
     /// Dispatch a task to announce a user periodically
@@ -60,6 +65,7 @@ impl Protocol {
         task::spawn(async move {
             loop {
                 debug!("Sending announcement for {}", id);
+                self.metrics.announcements_total.inc();
                 core.raw_flood(Self::announce(id)).await.unwrap();
                 task::sleep(Duration::from_secs(2)).await;
 
@@ -104,5 +110,24 @@ impl Protocol {
 
         // Currently we just use the sender address as the "scope" of the
         Frame::inline_flood(sender, sender, payload)
+    }
+}
+
+mod metrics {
+    use prometheus_client::{metrics::counter::Counter, registry::Registry};
+
+    #[derive(Default)]
+    pub(super) struct Metrics {
+        pub announcements_total: Counter,
+    }
+
+    impl Metrics {
+        pub fn register(&self, registry: &mut Registry) {
+            registry.register(
+                "ratman_proto_announcements",
+                "Total number of announcements sent",
+                Box::new(self.announcements_total.clone()),
+            );
+        }
     }
 }
