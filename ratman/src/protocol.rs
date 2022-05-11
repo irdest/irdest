@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
+// SPDX-FileCopyrightText: 2022 embr <hi@liclac.eu>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
@@ -36,6 +37,7 @@ enum ProtoPayload {
 #[derive(Default)]
 pub(crate) struct Protocol {
     online: Mutex<BTreeMap<Identity, Arc<AtomicBool>>>,
+    #[cfg(feature = "webui")]
     metrics: metrics::Metrics,
 }
 
@@ -44,6 +46,7 @@ impl Protocol {
         Default::default()
     }
 
+    #[cfg(feature = "webui")]
     pub fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
         self.metrics.register(registry);
     }
@@ -65,7 +68,10 @@ impl Protocol {
         task::spawn(async move {
             loop {
                 debug!("Sending announcement for {}", id);
+
+                #[cfg(feature = "webui")]
                 self.metrics.announcements_total.inc();
+
                 core.raw_flood(Self::announce(id)).await.unwrap();
                 task::sleep(Duration::from_secs(2)).await;
 
@@ -113,6 +119,7 @@ impl Protocol {
     }
 }
 
+#[cfg(feature = "webui")]
 mod metrics {
     use prometheus_client::{metrics::counter::Counter, registry::Registry};
 

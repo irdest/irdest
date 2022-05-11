@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2022 Katharina Fey <kookie@spacekookie.de>
-// SPDX-FileCopyrightText: 2022 embr <git@liclac.eu>
+// SPDX-FileCopyrightText: 2022 embr <hi@liclac.eu>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 

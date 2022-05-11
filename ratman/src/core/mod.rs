@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
+// SPDX-FileCopyrightText: 2022 embr <hi@liclac.eu>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 //! Routing core components
 //!
 //! In previous designs (both code and docs) this was a single
@@ -73,8 +78,10 @@ impl Core {
     }
 
     /// Register metrics with a Prometheus registry.
+    #[cfg(feature = "webui")]
     pub fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
         self.routes.register_metrics(registry);
+        self.dispatch.register_metrics(registry);
     }
 
     /// Asynchronously send a Message

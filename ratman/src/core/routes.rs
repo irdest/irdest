@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
+// SPDX-FileCopyrightText: 2022 embr <hi@liclac.eu>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
@@ -33,6 +34,7 @@ pub(crate) enum RouteType {
 pub(crate) struct RouteTable {
     routes: Arc<Mutex<BTreeMap<Identity, RouteType>>>,
     new: IoPair<Identity>,
+    #[cfg(feature = "webui")]
     metrics: metrics::RouteTableMetrics,
 }
 
@@ -41,11 +43,13 @@ impl RouteTable {
         Arc::new(Self {
             routes: Default::default(),
             new: bounded(1),
+            #[cfg(feature = "webui")]
             metrics: metrics::RouteTableMetrics::default(),
         })
     }
 
     /// Register metrics with a Prometheus registry.
+    #[cfg(feature = "webui")]
     pub(crate) fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
         self.metrics.register(registry);
     }
@@ -61,6 +65,7 @@ impl RouteTable {
         // Only "announce" a new user if it was not known before
         if tbl.insert(id, route).is_none() {
             info!("Discovered new address {}", id);
+            #[cfg(feature = "webui")]
             self.metrics
                 .routes_count
                 .get_or_create(&metrics::RouteLabels { kind: route })
@@ -80,6 +85,7 @@ impl RouteTable {
         match self.routes.lock().await.insert(id, RouteType::Local) {
             Some(_) => Err(Error::DuplicateAddress),
             None => {
+                #[cfg(feature = "webui")]
                 self.metrics
                     .routes_count
                     .get_or_create(&metrics::RouteLabels {
@@ -103,6 +109,7 @@ impl RouteTable {
     pub(crate) async fn delete(&self, id: Identity) -> Result<()> {
         match self.routes.lock().await.remove(&id) {
             Some(kind) => {
+                #[cfg(feature = "webui")]
                 self.metrics
                     .routes_count
                     .get_or_create(&metrics::RouteLabels { kind })
@@ -141,6 +148,7 @@ impl RouteTable {
     }
 }
 
+#[cfg(feature = "webui")]
 mod metrics {
     //! Metric helpers.
 
