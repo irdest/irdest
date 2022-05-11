@@ -165,7 +165,7 @@ mod metrics {
     impl RouteTableMetrics {
         pub fn register(&self, registry: &mut Registry) {
             registry.register(
-                "routes_count",
+                "ratman_routes_current",
                 "Number of routes currently in the table",
                 Box::new(self.routes_count.clone()),
             );
