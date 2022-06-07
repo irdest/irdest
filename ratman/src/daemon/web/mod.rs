@@ -22,20 +22,22 @@ async fn serve_dashboard(req: Request<Router>) -> tide::Result {
             path.strip_prefix('/').unwrap_or(path)
         }
     };
-    let asset = DashboardAssets::get(path)
-        .or_else(|| DashboardAssets::get("index.html"))
-        .ok_or_else(|| tide::Error::from_str(404, format!("not found: /{:}", path)))?;
-    Ok(Response::builder(200)
-        .content_type(
-            mime::Mime::from_extension(
+    let (asset, mtype) = DashboardAssets::get(path)
+        .map(|ass| {
+            let mtype = mime::Mime::from_extension(
                 Path::new(&path)
                     .extension()
                     .unwrap_or_default()
                     .to_str()
                     .unwrap_or_default(),
             )
-            .unwrap_or(mime::PLAIN),
-        )
+            .unwrap_or(mime::PLAIN);
+            (ass, mtype)
+        })
+        .or_else(|| DashboardAssets::get("index.html").map(|ass| (ass, mime::HTML)))
+        .ok_or_else(|| tide::Error::from_str(404, format!("not found: /{:}", path)))?;
+    Ok(Response::builder(200)
+        .content_type(mtype)
         .body(&asset.data[..])
         .build())
 }
