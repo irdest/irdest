@@ -37,13 +37,14 @@ pub trait ToJObject {
 }
 
 pub(crate) struct JavaId(pub(crate) String);
+pub(crate) struct JRatmanIpc(pub(crate) ratman_client::RatmanIpc);
 
 impl JavaId {
     pub(crate) fn from_obj(env: &JNIEnv, jobj: JObject) -> Self {
         let jval = env.get_field(jobj, "inner", "Ljava/lang/String;").unwrap();
         let jstring = jval_to_jstring(jval);
         let id = conv_jstring(env, jstring);
-        Self(id)
+        Self(id.to_string())
     }
 
     pub(crate) fn into_obj<'a>(self, env: &'a JNIEnv) -> JObject<'a> {
@@ -68,6 +69,37 @@ impl JavaId {
     }
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn Java_irde_st_app_ffi_RatmanNative_connect<'a>(
+    jni_env: &'a JNIEnv,
+    j_obj: JObject,
+    socket: JString,
+    socket_addr: JString,
+) {
+    let skt = conv_jstring(jni_env, socket);
+    let skt_addr = JavaId::from_obj(jni_env, j_obj).into_identity();
+    ratman_client::RatmanIpc::connect(&skt, Some(skt_addr));
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_irde_st_app_ffi_RatmanNative_anonymous<'a>(
+    jni_env: &'a JNIEnv,
+    j_obj: JObject,
+    socket_addr: JString,
+) {
+    let skt_addr = conv_jstring(jni_env, socket_addr);
+    ratman_client::RatmanIpc::anonymous(&skt_addr);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_irde_st_app_ffi_RatmanNative_default_connect_with_addr<'a>(
+    jni_env: &'a JNIEnv,
+    j_obj: JObject,
+    addr: JString,
+) {
+    ratman_client::RatmanIpc::default_with_addr(JavaId::from_obj(jni_env, j_obj).into_identity());
+}
+
 // fn to_jpair<'env>(env: &'env JNIEnv, pair: Tuple) -> JObject<'env> {
 // }
 
@@ -78,7 +110,7 @@ impl JavaId {
 // }
 
 /// For logging the lib status in android device
-/// maybe not needed if ratman does tracing correctly
+/// maybe not needed if ratman does tracing internally
 pub(crate) fn init_panic_handling_once() {
     use std::sync::Once;
     static INIT_BACKTRACES: Once = Once::new();
