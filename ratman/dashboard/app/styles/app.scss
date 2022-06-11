@@ -4,10 +4,4 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
  */
 
-// Test styling that is not valid plain CSS.
-html {
-    body {
-        max-width: 1200px;
-        margin: auto;
-    }
-}
+@import "ember-bootstrap/bootstrap";
