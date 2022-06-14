@@ -1,0 +1,21 @@
+[package]
+name = "irdest-jni"
+description = "Irdest library for android"
+version = "0.0.1"
+edition = "2021"
+
+[profile.release]
+opt-level = "z" 
+lto = true
+codegen-units = 1
+
+[lib]
+name = "ratman"
+crate-type = ["rlib", "dylib"]
+
+[dependencies]
+ratman = { version = "0.4.0", path = "../ratman", package = "ratman"}
+jni = { version = "0.19.0", default-features = false }
+
+[dependencies.netmod-mem]
+path = "../netmods/netmod-mem"
