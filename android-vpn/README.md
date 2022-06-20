@@ -1,1 +1,0 @@
-![test_screenshot](/android/screenshot/Screenshot_20220609_ratman.jpg "ratman_on_Android")

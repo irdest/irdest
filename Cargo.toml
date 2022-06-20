@@ -27,5 +27,5 @@ members = [
     "clients/irdest-proxy",
 
     # Android support
-    "jni",
+    "clients/android-vpn/jni",
 ]
