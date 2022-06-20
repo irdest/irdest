@@ -6,41 +6,43 @@ variables:
   ANDROID_SDK_TOOLS: "8512546"
 
 # Install android SDK
-before_script:
-  # Let's install SDK on clients/android-vpn/android-home
-  - cd clients/android-vpn
-  # Packages installation before running script
-  - apt-get --quiet update --yes
-  - apt-get --quiet install --yes wget tar unzip lib32stdc++6 lib32z1
-  # Setup path as ANDROID_SDK_ROOT for moving/exporting the downloaded sdk into it
-  - export ANDROID_SDK_ROOT="${PWD}/android-home"
-  # Create a new directory at specified location
-  - install -d $ANDROID_SDK_ROOT
-  # Here we are installing androidSDK tools from official source,
-  # after that unzipping those tools and
-  # then running a series of SDK manager commands to install necessary android SDK packages that'll allow the app to build
-  - wget --output-document=$ANDROID_SDK_ROOT/cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_SDK_TOOLS}_latest.zip
-  # move to the archive at ANDROID_SDK_ROOT
-  - pushd $ANDROID_SDK_ROOT
-  - unzip -d cmdline-tools cmdline-tools.zip
-  - pushd cmdline-tools
-  # since commandline tools version 8512546 the root folder is named "cmdline-tools" so we rename it if necessary
-  - mv cmdline-tools tools || true
-  - popd
-  - popd
-  - export PATH=$PATH:${ANDROID_SDK_ROOT}/cmdline-tools/tools/bin/
+setup-android-sdk:
+  stage: build
+  script:
+    # Let's install SDK on clients/android-vpn/android-home
+    - cd clients/android-vpn
+    # Packages installation before running script
+    - apt-get --quiet update --yes
+    - apt-get --quiet install --yes wget tar unzip lib32stdc++6 lib32z1
+    # Setup path as ANDROID_SDK_ROOT for moving/exporting the downloaded sdk into it
+    - export ANDROID_SDK_ROOT="${PWD}/android-home"
+    # Create a new directory at specified location
+    - install -d $ANDROID_SDK_ROOT
+    # Here we are installing androidSDK tools from official source,
+    # after that unzipping those tools and
+    # then running a series of SDK manager commands to install necessary android SDK packages that'll allow the app to build
+    - wget --output-document=$ANDROID_SDK_ROOT/cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_SDK_TOOLS}_latest.zip
+    # move to the archive at ANDROID_SDK_ROOT
+    - pushd $ANDROID_SDK_ROOT
+    - unzip -d cmdline-tools cmdline-tools.zip
+    - pushd cmdline-tools
+    # since commandline tools version 8512546 the root folder is named "cmdline-tools" so we rename it if necessary
+    - mv cmdline-tools tools || true
+    - popd
+    - popd
+    - export PATH=$PATH:${ANDROID_SDK_ROOT}/cmdline-tools/tools/bin/
+    
+    # Nothing fancy here, just checking sdkManager version
+    - sdkmanager --version
+    
+    # use yes to accept all licenses
+    - yes | sdkmanager --licenses || true
+    - sdkmanager "platforms;android-${ANDROID_COMPILE_SDK}"
+    - sdkmanager "platform-tools"
+    - sdkmanager "build-tools;${ANDROID_BUILD_TOOLS}"
   
-  # Nothing fancy here, just checking sdkManager version
-  - sdkmanager --version
-  
-  # use yes to accept all licenses
-  - yes | sdkmanager --licenses || true
-  - sdkmanager "platforms;android-${ANDROID_COMPILE_SDK}"
-  - sdkmanager "platform-tools"
-  - sdkmanager "build-tools;${ANDROID_BUILD_TOOLS}"
- 
-  # Not necessary, but just for surity
-  - chmod +x ./gradlew
+    # Not necessary, but just for surity
+    - chmod +x ./gradlew
 
 # Compile rust library
 cross-compile-android:
