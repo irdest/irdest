@@ -3,18 +3,17 @@ buildscript {
     ext.kotlin_version = '1.7.0-RC2'
     repositories {
         mavenCentral()
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
+        maven {}
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath 'org.mozilla.rust-android-gradle:plugin:0.9.3'
     }
 }
 plugins {
     id 'com.android.application' version '7.2.0' apply false
     id 'com.android.library' version '7.2.0' apply false
+    
+    id "org.mozilla.rust-android-gradle.rust-android" version "0.9.3"
 }
 
 task clean(type: Delete) {

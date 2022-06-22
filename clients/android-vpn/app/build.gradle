@@ -6,7 +6,8 @@ apply plugin: 'org.mozilla.rust-android-gradle.rust-android'
 
 android {
     compileSdk 32
-
+    ndkVersion "24.0.8215888"
+    
     defaultConfig {
         applicationId "org.irdest.ratman"
         minSdk 21
@@ -29,6 +30,12 @@ android {
     }
 }
 
+cargo {
+    module = "jni"
+    libname = "ratman"
+    targets = ["x86", "arm", "arm64", "x86_64"]
+}
+
 dependencies {
 
     implementation 'androidx.appcompat:appcompat:1.4.1'
@@ -39,13 +46,6 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
     implementation "androidx.core:core-ktx:+"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-}
-
-cargo {
-    module = "../jni"
-    libname = "ratman"
-    //targets = ["x86", "arm", "arm64", "x86_64"]
-    targets = ["arm64"]
 }
 
 repositories {
