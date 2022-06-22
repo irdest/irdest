@@ -1,10 +1,9 @@
 use jni::{
     objects::{JClass, JObject, JString, JValue},
-    sys::jboolean,
     JNIEnv,
 };
-use ratman_client::{Identity, Message};
 use std::ffi::{CStr, CString};
+use types::{Identity, Message};
 
 pub(crate) fn into_jstring<'a>(env: &'a JNIEnv, s: String) -> JString<'a> {
     env.new_string(s).unwrap()
@@ -37,7 +36,7 @@ pub trait ToJObject {
 }
 
 pub(crate) struct JavaId(pub(crate) String);
-pub(crate) struct JRatmanIpc(pub(crate) ratman_client::RatmanIpc);
+// pub(crate) struct JRatmanIpc(pub(crate) ratman_client::RatmanIpc);
 
 impl JavaId {
     pub(crate) fn from_obj(env: &JNIEnv, jobj: JObject) -> Self {

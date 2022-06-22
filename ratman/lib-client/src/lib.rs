@@ -30,6 +30,9 @@
 #[macro_use]
 extern crate tracing;
 
+#[cfg(feature = "ffi")]
+pub mod ffi;
+
 use async_std::{
     channel::{unbounded, Receiver, Sender},
     net::TcpStream,

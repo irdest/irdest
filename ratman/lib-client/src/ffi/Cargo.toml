@@ -1,13 +1,9 @@
 [package]
-name = "libratmandroid"
+name = "ffi"
 description = "An FFI shim around ratman for its implementation on android"
 version = "0.0.1"
 edition = "2021"
 
-[lib]
-name = "ratmandroid"
-crate-type = ["cdylib"]
-
 [dependencies]
 jni = { version  = "0.19.0", optional = false, default-features = false }
-ratman-client = { version = "0.4.0", path = "../lib-client/", optional = false }
+types = { version = "0.4.0", path = "../../../lib-types", optional = false , package = "ratman-types" }

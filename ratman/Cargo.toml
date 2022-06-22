@@ -71,6 +71,7 @@ openapi_type = { version = "0.4", optional = true }
 # Bundled network modules are all optional dependencies
 netmod-inet = { path = "../netmods/netmod-inet", version = "0.4", optional = true }
 netmod-lan = { path = "../netmods/netmod-lan", version = "0.2", optional = true }
+ffi = { path = "lib-client/src/ffi", version = "0.0.1", optional = true }
 
 [dev-dependencies]
 bincode = "1.2"
