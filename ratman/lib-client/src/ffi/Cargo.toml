@@ -1,9 +1,0 @@
-[package]
-name = "ffi"
-description = "An FFI shim around ratman for its implementation on android"
-version = "0.0.1"
-edition = "2021"
-
-[dependencies]
-jni = { version  = "0.19.0", optional = false, default-features = false }
-types = { version = "0.4.0", path = "../../../lib-types", optional = false , package = "ratman-types" }
