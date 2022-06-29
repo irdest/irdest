@@ -80,7 +80,4 @@ RUN rustup target add \
         aarch64-linux-android \
         x86_64-linux-android
 
-# Copy sdk license agreement files.
-RUN ls ${ANDROID_HOME}
-# RUN mkdir -p $ANDROID_HOME/licenses
-# COPY licenses/* $ANDROID_HOME/licenses/
+# TODO: Copy sdk license agreement files.
