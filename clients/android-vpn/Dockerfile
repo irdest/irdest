@@ -9,7 +9,6 @@ ENV ANDROID_COMPILE_SDK="32"
 ENV ANDROID_BUILD_TOOLS="32.0.0"
 
 ENV ANDROID_HOME="/opt/android-sdk" \
-    ANDROID_SDK_ROOT="${ANDROID_HOME}" \
     JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64/
 
 # Set locale
@@ -41,6 +40,7 @@ RUN apt-get clean && \
         lib32ncurses6 \
         libc6-dev \
         openjdk-11-jdk \
+        python \
         unzip \
         wget \
         zip  > /dev/null && \
@@ -59,16 +59,16 @@ RUN echo "Installing sdk tools ${ANDROID_SDK_TOOLS_VERSION}" && \
     echo "### User Sources for Android SDK Manager" > \
         "${ANDROID_HOME}/.android/repositories.cfg" && \
     yes | sdkmanager --licenses > /dev/null && \
-    # Install NDK
+# Install NDK
     echo "Installing ndk r${ANDROID_NDK_VERSION}" && \
     yes | sdkmanager "ndk;${ANDROID_NDK_VERSION}" --channel=3 && \
-    # Install platforms
+# Install platforms
     echo "Installing platforms" && \
     yes | sdkmanager "platforms;android-${ANDROID_COMPILE_SDK}" > /dev/null && \
-    # Install platform tools
+# Install platform tools
     echo "Installing platform tools" && \
     yes | sdkmanager "platform-tools" > /dev/null && \
-    # Install build tools
+# Install build tools
     echo "Installing build tools" && \
     yes | sdkmanager "build-tools;${ANDROID_BUILD_TOOLS}" > /dev/null
 
