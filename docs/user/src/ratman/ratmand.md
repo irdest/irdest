@@ -47,13 +47,18 @@ The Irdest project runs a set of peering servers.  To start your
 daemon to connect to one of them you can use the next command.
 
 ```
-$ ratmand -p 'inet#hyperion.kookie.space:9000L' -v debug
+$ ratmand -p 'inet#hyperion.kookie.space:9000' -v debug
 ```
 
-This creates a "limited" connection to the peering server, meaning
-that the server doesn't need to be able to reach you if you are behind
-a firewall.  This is however enough to get you access to the rest of
-the Irdest test network!
+This creates a connection to the peering server, meaning that the
+server doesn't need to be able to reach you if you are behind a
+firewall.  This is however enough to get you access to the rest of the
+Irdest test network!
+
+Beware trying to peer computers on the same local network this way, as
+it may cause loops with the `lan` discovery module, which are not
+currently handled very well.  You can also disable local discovery
+with `--no-discovery`.
 
 To demonstrate that you are indeed connected you can use `ratcat` in
 combination with the `irdest-echo` application, as outlined
@@ -130,7 +135,7 @@ and used across various companents in Irdest.
 A peer is expressed as follows: 
 
 ```
-<netmod>#<address>:<port>[L]
+<netmod>#<address>:<port>
 ```
 
  - `<netmod>` refers to name of the netmod that the peer should be
@@ -139,7 +144,6 @@ A peer is expressed as follows:
  - `<address>` contains the main address part.  Domain names (provided
    you have a working DNS setup) are also accepted.
  - `<port>` finally the port to connect to
- - `L` indicates whether the peer should use a "limited" connection
  
  
 ### `-f`, `--peer-file`
@@ -184,5 +188,10 @@ file instead.
 
 
 ```
-TODO
+[Unit]
+Description = A decentralised and peer-to-peer packet router
+
+[Service]
+## Be sure to check the user manual for details on how to run ratmand
+ExecStart = /path/to/ratmand -f /path/to/peer.file
 ```
