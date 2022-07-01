@@ -67,10 +67,7 @@ pnet = { version = "=0.28", optional = true }      # to update to the 2021-editi
 tide = { version = "0.16", optional = true }
 rust-embed = { version = "6.3", optional = true }
 openapi_type = { version = "0.4", optional = true }
-
-# We need this fix, revert to upstream when 0.16 is out:
-# https://github.com/prometheus/client_rust/pull/58
-prometheus-client = { git = "https://github.com/prometheus/client_rust", rev = "eef56cf5792694e6ca03c0193c59675a4d3622e1", optional = true }
+prometheus-client = { version = "0.16", optional = true }
 
 # Bundled network modules are all optional dependencies
 netmod-inet = { path = "../netmods/netmod-inet", version = "0.4", optional = true }
