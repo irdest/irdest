@@ -14,6 +14,7 @@ members = [
     "utils/task-notify",
     "utils/clockctrl",
     "utils/tracing-syslog",
+    "utils/installer",
 
     # Available netmod drivers
     "netmods/netmod-mem",

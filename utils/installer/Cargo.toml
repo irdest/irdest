@@ -1,0 +1,11 @@
+[package]
+name = "installer"
+description = "Irdest application installer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+directories = "4.0"
+colored = "2.0"
+semver = "1.0"
+question = "0.2"
