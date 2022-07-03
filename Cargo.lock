@@ -1629,6 +1629,7 @@ dependencies = [
  "directories",
  "igd",
  "ipnetwork",
+ "jni",
  "netmod-inet",
  "netmod-lan",
  "netmod-mem",

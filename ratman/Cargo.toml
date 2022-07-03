@@ -34,6 +34,7 @@ util = ["cli", "ratman-client"]
 cli = ["types", "clap", "directories", "nix", "serde_json", "tracing-subscriber"]
 webui = ["daemon", "tide", "rust-embed", "openapi_type"]
 syslog = ["tracing-syslog"]
+ffi = ["jni"]
 
 [dependencies]
 async-std = { version = "1.0", features = ["std", "unstable"] }
@@ -46,6 +47,7 @@ thiserror = "1.0"
 tracing = "0.1"
 tracing-futures = "0.2"
 twox-hash = "1.5"
+jni = { version  = "0.19.0", optional = true, default-features = false }
 
 # Sub-components
 clockctrl = { version = "0.1", path = "../utils/clockctrl" }
