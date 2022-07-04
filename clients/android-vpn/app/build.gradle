@@ -7,10 +7,11 @@ apply plugin: 'org.mozilla.rust-android-gradle.rust-android'
 
 android {
     compileSdk 32
+
     ndkVersion "23.2.8568313"
-    
+
     defaultConfig {
-        applicationId "org.irdest.ratman"
+        applicationId "org.irdest.IrdestVPN"
         minSdk 21
         targetSdk 32
         versionCode 1
@@ -32,8 +33,8 @@ android {
 }
 
 cargo {
-    module = "jni"
-    libname = "ratman"
+    module = "../../ratman/lib-client"
+    libname = "ratman-client"
     targets = ["x86", "arm", "arm64", "x86_64"]
 }
 

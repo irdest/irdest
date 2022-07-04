@@ -1,6 +1,4 @@
-package org.irdest.ratman
-
-import org.irdest.ratman.Ratmand
+package org.irdest.IrdestVPN
 
 class Ratmand {
     // JNI constructs the name of function that it will call is
