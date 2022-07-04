@@ -3,6 +3,8 @@
   only:
     changes:
       - clients/android-vpn/**/*
+  script:
+    - cd clients/android-vpn
   cache:
     key: ${CI_PROJECT_ID}
     paths:

@@ -1,4 +1,4 @@
-package org.irdest.ratman;
+package org.irdest.IrdestVPN;
 
 import org.junit.Test;
 

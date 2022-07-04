@@ -26,7 +26,4 @@ members = [
     # End-user applications
     "clients/irdest-echo",
     "clients/irdest-proxy",
-
-    # Android support
-    "clients/android-vpn/jni",
 ]
