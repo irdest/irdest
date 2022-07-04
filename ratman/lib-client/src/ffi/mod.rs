@@ -9,7 +9,7 @@ pub(crate) fn into_jstring<'a>(env: &'a JNIEnv, s: String) -> JString<'a> {
     env.new_string(s).unwrap()
 }
 
-pub(crate) fn conv_jstring(env: &JNIEnv, s: JString) -> String {
+pub fn conv_jstring(env: &JNIEnv, s: JString) -> String {
     CString::from(unsafe { CStr::from_ptr(env.get_string(s).unwrap().as_ptr()) })
         .to_str()
         .unwrap()

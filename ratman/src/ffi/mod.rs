@@ -1,7 +1,9 @@
+use crate::daemon;
 use jni::{
     objects::{JClass, JObject, JString, JValue},
     JNIEnv,
 };
+use ratman_client::ffi;
 
 #[no_mangle]
 pub unsafe extern "C" fn Java_irde_st_app_ffi_RatmanNative_initRatman<'a>(
@@ -16,9 +18,9 @@ pub unsafe extern "C" fn Java_irde_st_app_ffi_RatmanNative_setupLogging<'a>(
     jni_env: &'a JNIEnv,
     j_obj: JObject,
     level: JString,
-    syslog: bool,
+    syslog: jni::sys::jboolean,
 ) {
-    let lv_str = ratman_client::ffi::conv_jstring(jni_env, level).to_string();
-    let slog_bool = conv_jbool(jni_env, syslog);
-    daemon::setup_logging(lv_str, syslog)
+    let lv_str = ffi::conv_jstring(jni_env, level);
+    let slog_bool = (syslog > 0);
+    daemon::setup_logging(&lv_str, slog_bool)
 }

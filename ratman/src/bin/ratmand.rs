@@ -7,6 +7,7 @@
 
 extern crate tracing;
 
+use crate::daemon;
 pub(crate) use ratman::*;
 
 fn main() {
