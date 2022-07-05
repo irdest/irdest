@@ -1,8 +1,9 @@
 package org.irdest.IrdestVPN
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import org.irdest.IrdestVPN.R
+import android.view.View
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
     companion object {
