@@ -27,6 +27,7 @@ cross-compile-android-vpn:
 # Build android deBug.apk
 build-android-vpn:
   <<: *android-configuration
+  stage: build
   script:
     - ./gradlew assembleDebug
     - mkdir result-android-vpn && cp app/build/outputs/apk/debug/app-debug.apk result-android-vpn/irdest-vpn-debug.apk
@@ -42,7 +43,7 @@ lint-android-vpn:
   script:
     - ./gradlew -Pci --console=plain :app:lintDebug -PbuildDir=lint
 
-# Run all tests, do not interrupt the pipeline 
+# Run all the tests. Do not interrupt the pipeline 
 test-android-vpn:
   <<: *android-configuration
   stage: test

@@ -7,7 +7,7 @@ import org.irdest.IrdestVPN.R
 class MainActivity : AppCompatActivity() {
     companion object {
         init {
-            System.loadLibrary("ratman-client")
+            System.loadLibrary("ratman")
         }
     }
 
@@ -15,5 +15,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val r = Ratmand()
+        val test_op = r.run_ratmand("From android")
+
+        (findViewById<View>(R.id.test_view) as TextView).text = test_op
     }
 }
