@@ -1,12 +1,12 @@
-.android-vpn-job-configuration:
+.android-template: &android-configuration
   image: irdest/android-build-env:latest
-  script:
-    - pwd
+  before_script:
     - cd clients/android-vpn
     - chmod +x gradlew
   only:
     changes:
       - clients/android-vpn/**/*
+      - ci/pipeline-scripts/android-vpn-ci.yml
   cache:
     key: ${CI_PROJECT_ID}
     paths:
@@ -14,8 +14,8 @@
 
 # Compile rust library
 cross-compile-android-vpn:
+  <<: *android-configuration
   stage: build
-  extends: .android-vpn-job-configuration
   script:
     - ./gradlew cargoBuild
     - mkdir result-android-vpn && cp -r app/src/main/jniLibs/* result-android-vpn/ 
@@ -26,8 +26,7 @@ cross-compile-android-vpn:
 
 # Build android deBug.apk
 build-android-vpn:
-  stage: build
-  extends: .android-vpn-job-configuration
+  <<: *android-configuration
   script:
     - ./gradlew assembleDebug
     - mkdir result-android-vpn && cp app/build/outputs/apk/debug/app-debug.apk result-android-vpn/irdest-vpn-debug.apk
@@ -37,15 +36,15 @@ build-android-vpn:
       - clients/android-vpn/result-android-vpn/*
 
 # Check linting
-lint-androd-vpn:
+lint-android-vpn:
+  <<: *android-configuration
   stage: lint 
-  extends: .android-vpn-job-configuration
   script:
     - ./gradlew -Pci --console=plain :app:lintDebug -PbuildDir=lint
 
 # Run all tests, do not interrupt the pipeline 
 test-android-vpn:
+  <<: *android-configuration
   stage: test
-  extends: .android-vpn-job-configuration
   script:
     - ./gradlew -Pci --console=plain :app:testDebug
