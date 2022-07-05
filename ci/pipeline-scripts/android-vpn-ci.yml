@@ -1,10 +1,12 @@
 .android-vpn-job-configuration:
   image: irdest/android-build-env:latest
+  script:
+    - pwd
+    - cd clients/android-vpn
+    - chmod +x gradlew
   only:
     changes:
       - clients/android-vpn/**/*
-  script:
-    - cd clients/android-vpn
   cache:
     key: ${CI_PROJECT_ID}
     paths:
@@ -40,7 +42,6 @@ lint-androd-vpn:
   extends: .android-vpn-job-configuration
   script:
     - ./gradlew -Pci --console=plain :app:lintDebug -PbuildDir=lint
-
 
 # Run all tests, do not interrupt the pipeline 
 test-android-vpn:
