@@ -25,7 +25,7 @@ name = "ratctl"
 required-features = ["util"]
 
 [features]
-default = ["daemon", "util"]
+default = ["daemon", "util", "prometheus-client"]
 inet = ["netmod-inet"]
 lan = ["netmod-lan"]
 upnp = ["igd", "ipnetwork", "pnet"]

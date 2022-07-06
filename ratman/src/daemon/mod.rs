@@ -29,7 +29,8 @@ pub mod web;
 #[cfg(not(feature = "webui"))]
 pub mod web {
     use crate::Router;
-    pub async fn start(_: Router, _: &str, _: u16) -> async_std::io::Result<()> {
+    use prometheus_client::registry::Registry;
+    pub async fn start(_: Router, _: Registry, _: &str, _: u16) -> async_std::io::Result<()> {
         Ok(())
     }
 }
