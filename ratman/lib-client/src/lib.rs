@@ -91,12 +91,13 @@ impl RatmanIpc {
         // Then wait for a response and assign the used address
         let addr = match parse_message(&mut socket).await.map(|m| m.inner) {
             Ok(Some(one_of)) => match one_of {
-                ApiMessageEnum::setup(s) if s.field_type == ACK => s
-                    ._id
-                    .as_ref()
-                    .map(|_| Identity::from_bytes(s.get_id()))
-                    .or(addr)
-                    .expect("failed to initialise new address!"),
+                ApiMessageEnum::setup(ref s) if s.field_type == ACK => {
+                    if s.id.len() > 0 {
+                        Identity::from_bytes(s.get_id())
+                    } else {
+                        panic!("failed to initialise new address!");
+                    }
+                }
                 _ => unreachable!(),
             },
             _ => unreachable!(),
