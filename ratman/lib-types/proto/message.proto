@@ -20,13 +20,13 @@ message Recipient {
 // A complete message type that maps onto a Ratman message
 message Message {
         // Message ID filled in by Ratman
-        optional bytes id = 1;
+        bytes id = 1;
         // Sender address information
         bytes sender = 2;
         // Recipient information
         Recipient recipient = 3;
         // Timestamp filled in by Ratman
-        optional string time = 4;
+        string time = 4;
 
         /////////////////////////
 
