@@ -14,7 +14,7 @@ fn main() {
 ";
     println!("{}", welcome.bright_purple());
 
-    println!("This installer will determine how to install Ratman on your system!");
+    println!("Hello!\nThis program will determine how to install Ratman on your system...\n");
 
     let dirs = Directories::new();
 

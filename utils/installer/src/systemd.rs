@@ -1,5 +1,6 @@
 use colored::Colorize;
 use std::{
+    boxed::Box,
     fs::File,
     io::{Read, Write},
     path::PathBuf,
@@ -29,4 +30,15 @@ pub fn install_unitfile(path: PathBuf, ratmand_path: &PathBuf, target: &PathBuf)
     {
         println!("systemctl daemon-reload: {}", "OK".bright_green())
     }
+}
+
+pub fn uninstall_unitfile(target: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+    std::fs::remove_file(target)?;
+
+    Command::new("systemctl")
+        .arg("--user")
+        .arg("daemon-reload")
+        .output()?;
+
+    Ok(())
 }

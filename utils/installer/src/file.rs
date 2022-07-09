@@ -1,7 +1,7 @@
 use crate::{bundle_dir, print_path, Directories};
 use colored::Colorize;
 use semver::Version;
-use std::{error::Error, path::PathBuf};
+use std::path::PathBuf;
 
 pub enum File {
     Ratmand,
@@ -11,6 +11,7 @@ pub enum File {
     SystemdUnit,
 }
 
+#[derive(PartialEq)]
 pub enum Status {
     Missing,
     Exists,
@@ -114,5 +115,51 @@ impl File {
             &Self::Ratmand.get_target(dirs),
             &self.get_target(dirs),
         );
+    }
+
+    pub fn uninstall_state(&self, dirs: &Directories) -> Status {
+        let target = self.get_target(dirs);
+
+        if target.exists() {
+            println!("({}) {} -> 💀", "REMOVE".red(), print_path(&target));
+            Status::Exists
+        } else {
+            println!("({}) {} ❓", "MISSING".yellow(), print_path(&target));
+            Status::Missing
+        }
+    }
+
+    pub fn uninstall(&self, dirs: &Directories) {
+        let target = self.get_target(dirs);
+
+        match std::fs::remove_file(&target) {
+            Ok(_) => println!("Uninstall {}: {}", print_path(&target), "OK".bright_green()),
+            Err(e) => eprintln!(
+                "Uninstall {}: {}",
+                print_path(&target),
+                format!(
+                    "{} ({})",
+                    "FAILED".bright_red(),
+                    e.to_string().split("(").nth(0).unwrap().trim()
+                )
+            ),
+        }
+    }
+
+    pub fn uninstall_unitfile(&self, dirs: &Directories) {
+        let target = self.get_target(dirs);
+
+        match crate::systemd::uninstall_unitfile(&target) {
+            Ok(_) => println!("Uninstall {}: {}", print_path(&target), "OK".bright_green()),
+            Err(e) => eprintln!(
+                "Uninstall {}: {}",
+                print_path(&target),
+                format!(
+                    "{} ({})",
+                    "FAILED".bright_red(),
+                    e.to_string().split("(").nth(0).unwrap().trim()
+                )
+            ),
+        }
     }
 }
