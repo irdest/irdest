@@ -9,6 +9,7 @@ pub mod config;
 mod parse;
 mod peers;
 pub mod pidfile;
+pub mod startup;
 mod state;
 mod transform;
 

@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use types::{Identity, Recipient, TimePair};
 
