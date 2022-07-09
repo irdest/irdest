@@ -18,7 +18,7 @@ impl FuzzEndpoint {
 
     pub async fn recv(&self, buf: &[u8]) {
         if let Ok(frame) = bincode::deserialize(&buf) {
-            self.tx.send((frame, netmod::Target::Single(0))).await;
+            let _ = self.tx.send((frame, netmod::Target::Single(0))).await;
         }
     }
 }
@@ -29,7 +29,7 @@ impl netmod::Endpoint for FuzzEndpoint {
         0
     }
 
-    async fn send(&self, frame: Frame, target: netmod::Target) -> Result<(), netmod::Error> {
+    async fn send(&self, _: Frame, _: netmod::Target) -> Result<(), netmod::Error> {
         Ok(())
     }
 
