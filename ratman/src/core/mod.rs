@@ -18,8 +18,9 @@ pub(self) use journal::Journal;
 pub(self) use routes::{EpTargetPair, RouteTable, RouteType};
 pub(self) use switch::Switch;
 
-use crate::{Endpoint, Error, Identity, Message, Result};
+use crate::{Error, Identity, Message, Result};
 use async_std::sync::Arc;
+use netmod::Endpoint;
 use types::Frame;
 
 /// The Ratman routing core interface
