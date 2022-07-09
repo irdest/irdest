@@ -67,7 +67,7 @@ impl RouteTable {
     /// Track a local ID in the routes table
     pub(crate) async fn add_local(&self, id: Identity) -> Result<()> {
         match self.routes.lock().await.insert(id, RouteType::Local) {
-            Some(_) => Err(Error::DuplicateUser),
+            Some(_) => Err(Error::DuplicateAddress),
             None => Ok(()),
         }
     }
@@ -76,7 +76,7 @@ impl RouteTable {
     pub(crate) async fn local(&self, id: Identity) -> Result<()> {
         match self.reachable(id).await {
             Some(RouteType::Local) => Ok(()),
-            _ => Err(Error::NoUser),
+            _ => Err(Error::NoAddress),
         }
     }
 
@@ -84,7 +84,7 @@ impl RouteTable {
     pub(crate) async fn delete(&self, id: Identity) -> Result<()> {
         match self.routes.lock().await.remove(&id) {
             Some(_) => Ok(()),
-            None => Err(Error::NoUser),
+            None => Err(Error::NoAddress),
         }
     }
 

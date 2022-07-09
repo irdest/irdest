@@ -1,12 +1,11 @@
 use crate::{
     clock::{ClockCtrl, Tasks},
     core::Core,
-    error::Result,
     Identity, Message, MsgId, Protocol, Recipient,
 };
 use async_std::sync::Arc;
 use netmod::Endpoint;
-use types::TimePair;
+use types::{Result, TimePair};
 
 /// Primary async ratman router handle
 ///

@@ -18,10 +18,10 @@ pub(self) use journal::Journal;
 pub(self) use routes::{EpTargetPair, RouteTable, RouteType};
 pub(self) use switch::Switch;
 
-use crate::{Error, Identity, Message, Result};
+use crate::{Identity, Message};
 use async_std::sync::Arc;
 use netmod::Endpoint;
-use types::Frame;
+use types::{Error, Frame, Result};
 
 /// The Ratman routing core interface
 ///
@@ -99,7 +99,7 @@ impl Core {
             self.routes
                 .resolve(id)
                 .await
-                .map_or(Err(Error::NoUser), |_| Ok(()))
+                .map_or(Err(Error::NoAddress), |_| Ok(()))
         }
     }
 

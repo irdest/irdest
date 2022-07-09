@@ -6,6 +6,8 @@ use async_std::io;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
+/// A central error facade for Ratman
+// TODO: this needs a better design
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("failed to perform system i/o operation: {}", 0)]
@@ -23,6 +25,10 @@ pub enum Error {
     FrameTooLarge,
     #[error("operation not supported")]
     NotSupported,
+    #[error("requested an unknown address")]
+    NoAddress,
+    #[error("address already exists in routing table")]
+    DuplicateAddress,
 }
 
 impl From<Error> for io::Error {

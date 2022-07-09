@@ -12,10 +12,7 @@
 //! - `Announce` is sent when a node comes online
 //! - `Sync` is a reply to an `Announce`, only omitted when `no_sync` is set
 
-use crate::{
-    error::{Error, Result},
-    Core,
-};
+use crate::Core;
 use async_std::{
     sync::{Arc, Mutex},
     task,
@@ -26,7 +23,7 @@ use std::{
     sync::atomic::{AtomicBool, Ordering},
     time::Duration,
 };
-use types::{Frame, Identity};
+use types::{Error, Frame, Identity, Result};
 
 /// A payload that represents a RATMAN-protocol message
 #[derive(Debug, Serialize, Deserialize)]
@@ -83,7 +80,7 @@ impl Protocol {
             .await
             .get(&id)
             .map(|b| b.swap(false, Ordering::Relaxed))
-            .map_or(Err(Error::NoUser), |_| Ok(()))
+            .map_or(Err(Error::NoAddress), |_| Ok(()))
     }
 
     /// Try to parse a frame as an announcement

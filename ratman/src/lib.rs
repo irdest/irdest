@@ -23,7 +23,6 @@ extern crate tracing;
 pub mod clock;
 mod core;
 mod data;
-mod error;
 mod protocol;
 mod router;
 mod slicer;
@@ -40,8 +39,7 @@ pub(crate) type IoPair<T> = (Sender<T>, Receiver<T>);
 // Public API facade
 pub use crate::{
     data::{Message, MsgId},
-    error::{Error, Result},
     router::Router,
 };
 pub use netmod;
-pub use types::{Identity, Recipient, TimePair, ID_LEN};
+pub use types::{Error, Identity, Recipient, Result, TimePair, ID_LEN};
