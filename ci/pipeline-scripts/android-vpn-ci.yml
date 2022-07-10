@@ -17,14 +17,6 @@ cross-compile-android-vpn:
   <<: *android-configuration
   stage: build
   script:
-    # Install protoc this is a temporory solution 
-    # After updating docker image below lines should be removed.
-    - curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v21.2/protoc-21.2-linux-x86_64.zip
-    - mkdir protoc
-    - unzip protoc-21.2-linux-x86_64.zip -d protoc
-    - mv protoc/bin/* /usr/local/bin/
-    - mv protoc/include/* /usr/local/include
-    
     # Compile library 
     # Only below 2 lines should be remaind 
     - ./gradlew cargoBuild
