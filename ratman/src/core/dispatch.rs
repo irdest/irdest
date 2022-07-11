@@ -50,7 +50,8 @@ impl Dispatch {
         self.metrics
             .messages_total
             .get_or_create(&metrics::Labels {
-                recipient: (&msg.recipient).into(),
+                recp_type: (&r).into(),
+                recp_id: r.scope().expect("empty recipient"),
             })
             .inc();
 
@@ -69,14 +70,20 @@ impl Dispatch {
 
     /// Dispatch a single frame across the network
     pub(crate) async fn send_one(&self, frame: Frame) -> Result<()> {
-        let EpTargetPair(epid, trgt) = match self
-            .routes
-            .resolve(match frame.recipient {
-                ref recp @ Recipient::Standard(_) => recp.scope().expect("empty recipient"),
-                Recipient::Flood(_) => unreachable!(),
+        let scope = match frame.recipient {
+            ref recp @ Recipient::Standard(_) => recp.scope().expect("empty recipient"),
+            Recipient::Flood(_) => unreachable!(),
+        };
+        #[cfg(feature = "webui")]
+        self.metrics
+            .frames_total
+            .get_or_create(&metrics::Labels {
+                recp_type: metrics::RecipientType::Standard,
+                recp_id: scope,
             })
-            .await
-        {
+            .inc();
+
+        let EpTargetPair(epid, trgt) = match self.routes.resolve(scope).await {
             Some(resolve) => resolve,
 
             // FIXME: "local address" needs to be handled in a
@@ -97,6 +104,7 @@ impl Dispatch {
                 recipient: (&frame.recipient).into(),
             })
             .inc();
+
         let ep = self.drivers.get(epid as usize).await;
         Ok(ep.send(frame, trgt, None).await?)
     }
@@ -104,13 +112,15 @@ impl Dispatch {
     pub(crate) async fn flood(&self, frame: Frame) -> Result<()> {
         for ep in self.drivers.get_all().await.into_iter() {
             let f = frame.clone();
-            let target = Target::Flood(frame.recipient.scope().expect("empty recipient"));
+            let scope = frame.recipient.scope().expect("empty recipient");
+            let target = Target::Flood(scope);
 
             #[cfg(feature = "webui")]
             self.metrics
                 .frames_total
                 .get_or_create(&metrics::Labels {
-                    recipient: (&frame.recipient).into(),
+                    recp_type: metrics::RecipientType::Flood,
+                    recp_id: scope,
                 })
                 .inc();
             ep.send(f, target, None).await.unwrap();
@@ -156,16 +166,17 @@ mod metrics {
 
     #[derive(Clone, Hash, PartialEq, Eq, Encode)]
     pub(super) struct Labels {
-        pub recipient: Recipient,
+        pub recp_type: RecipientType,
+        pub recp_id: types::Identity,
     }
 
     #[derive(Clone, Hash, PartialEq, Eq)]
-    pub(super) enum Recipient {
+    pub(super) enum RecipientType {
         Standard,
         Flood,
     }
 
-    impl From<&types::Recipient> for Recipient {
+    impl From<&types::Recipient> for RecipientType {
         fn from(v: &types::Recipient) -> Self {
             match v {
                 &types::Recipient::Standard(_) => Self::Standard,
@@ -175,7 +186,7 @@ mod metrics {
     }
 
     // Manually implement Encode to produce eg. `recipient=standard` rather than `recipient=Standard`.
-    impl Encode for Recipient {
+    impl Encode for RecipientType {
         fn encode(&self, w: &mut dyn std::io::Write) -> std::io::Result<()> {
             match self {
                 Self::Standard => write!(w, "standard"),

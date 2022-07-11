@@ -157,6 +157,10 @@ pub async fn run_app(m: ArgMatches<'static>, configuration: Config) -> std::resu
     // Setup logging
     daemon::setup_logging(m.value_of("VERBOSITY").unwrap(), m.is_present("DAEMONIZE"));
 
+    // Setup metrics collection
+    #[cfg(feature = "webui")]
+    let mut registry = prometheus_client::registry::Registry::default();
+
     // Load peers or throw an error about missing cli data!
     let peers: Vec<_> = match m
         .value_of("PEERS")
@@ -178,6 +182,10 @@ pub async fn run_app(m: ArgMatches<'static>, configuration: Config) -> std::resu
     };
 
     let r = Router::new();
+
+    #[cfg(feature = "webui")]
+    r.register_metrics(&mut registry);
+
     if !m.is_present("NO_INET") || configuration.netmod_inet_enabled {
         let tcp = match Inet::start(
             m.value_of("INET_BIND")
@@ -217,8 +225,9 @@ pub async fn run_app(m: ArgMatches<'static>, configuration: Config) -> std::resu
     }
 
     // If webui is enabled
+    #[cfg(feature = "webui")]
     if !m.is_present("NO_DASHBOARD") {
-        match daemon::web::start(r.clone(), "127.0.0.1", 8090).await {
+        match daemon::web::start(r.clone(), registry, "127.0.0.1", 8090).await {
             Ok(_) => {}
             Err(e) => warn!("Failed to setup webui bind {:?}", e),
         }

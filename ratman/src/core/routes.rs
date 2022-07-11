@@ -108,11 +108,11 @@ impl RouteTable {
     /// Delete an entry from the routing table
     pub(crate) async fn delete(&self, id: Identity) -> Result<()> {
         match self.routes.lock().await.remove(&id) {
-            Some(kind) => {
+            Some(_kind) => {
                 #[cfg(feature = "webui")]
                 self.metrics
                     .routes_count
-                    .get_or_create(&metrics::RouteLabels { kind })
+                    .get_or_create(&metrics::RouteLabels { kind: _kind })
                     .dec();
                 Ok(())
             }
