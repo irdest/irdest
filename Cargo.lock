@@ -1762,6 +1762,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "chrono",
  "hex",
+ "prometheus-client",
  "protobuf",
  "protoc-rust",
  "rand 0.7.3",

@@ -1,3 +1,4 @@
+use prometheus_client::encoding::text::Encode;
 use serde::{
     de::{Deserializer, SeqAccess, Visitor},
     Deserialize, Serialize, Serializer,
@@ -46,6 +47,12 @@ impl Display for Identity {
                 .unwrap()
                 .join("-")
         )
+    }
+}
+
+impl Encode for Identity {
+    fn encode(&self, w: &mut dyn std::io::Write) -> std::io::Result<()> {
+        write!(w, "{:}", self)
     }
 }
 
