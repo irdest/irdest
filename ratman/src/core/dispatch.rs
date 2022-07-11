@@ -75,13 +75,17 @@ impl Dispatch {
             Recipient::Flood(_) => unreachable!(),
         };
         #[cfg(feature = "webui")]
-        self.metrics
-            .frames_total
-            .get_or_create(&metrics::Labels {
+        {
+            let metric_labels = &metrics::Labels {
                 recp_type: metrics::RecipientType::Standard,
                 recp_id: scope,
-            })
-            .inc();
+            };
+            self.metrics.frames_total.get_or_create(metric_labels).inc();
+            self.metrics
+                .bytes_total
+                .get_or_create(metric_labels)
+                .inc_by(frame.payload.len() as u64);
+        }
 
         let EpTargetPair(epid, trgt) = match self.routes.resolve(scope).await {
             Some(resolve) => resolve,
@@ -116,13 +120,18 @@ impl Dispatch {
             let target = Target::Flood(scope);
 
             #[cfg(feature = "webui")]
-            self.metrics
-                .frames_total
-                .get_or_create(&metrics::Labels {
+            {
+                let metric_labels = &metrics::Labels {
                     recp_type: metrics::RecipientType::Flood,
                     recp_id: scope,
-                })
-                .inc();
+                };
+                self.metrics.frames_total.get_or_create(metric_labels).inc();
+                self.metrics
+                    .bytes_total
+                    .get_or_create(metric_labels)
+                    .inc_by(frame.payload.len() as u64);
+            }
+
             ep.send(f, target, None).await.unwrap();
         }
 
@@ -161,7 +170,7 @@ mod metrics {
     use prometheus_client::{
         encoding::text::Encode,
         metrics::{counter::Counter, family::Family},
-        registry::Registry,
+        registry::{Registry, Unit},
     };
 
     #[derive(Clone, Hash, PartialEq, Eq, Encode)]
@@ -199,6 +208,7 @@ mod metrics {
     pub(super) struct Metrics {
         pub messages_total: Family<Labels, Counter>,
         pub frames_total: Family<Labels, Counter>,
+        pub bytes_total: Family<Labels, Counter>,
     }
 
     impl Metrics {
@@ -212,6 +222,12 @@ mod metrics {
                 "ratman_dispatch_frames",
                 "Total number of frames dispatched",
                 Box::new(self.frames_total.clone()),
+            );
+            registry.register_with_unit(
+                "ratman_dispatch_bytes",
+                "Total size of dispatched frames",
+                Unit::Bytes,
+                Box::new(self.bytes_total.clone()),
             );
         }
     }
