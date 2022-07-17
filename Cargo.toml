@@ -15,6 +15,7 @@ members = [
     "utils/clockctrl",
     "utils/tracing-syslog",
     "utils/installer",
+    "utils/eris-rs",
 
     # Available netmod drivers
     "netmods/netmod-mem",
