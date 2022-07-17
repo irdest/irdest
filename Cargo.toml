@@ -12,6 +12,7 @@ members = [
 
     # Various utility crates
     "utils/clockctrl",
+    "utils/eris-rs",
     "utils/installer",
     "utils/irdest-firmware-util",
     "utils/task-notify",
