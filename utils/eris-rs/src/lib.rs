@@ -96,6 +96,17 @@ impl ReadCapability {
         out
     }
 
+    pub fn from_binary(buf: &[u8]) -> Option<ReadCapability> {
+        if buf.len() != 1 + 1 + 32 + 32 { return None; }
+        let block_size = 2usize.pow(buf[0].into());
+        let level = buf[1];
+        let root_reference_bytes: [u8; 32] = buf[2..34].try_into().unwrap();
+        let root_key_bytes: [u8; 32] = buf[34..66].try_into().unwrap();
+        let root_reference = BlockReference::from(root_reference_bytes);
+        let root_key = BlockKey::from(root_key_bytes);
+        Some(Self { block_size, level, root_reference, root_key, })
+    }
+
     pub fn urn(&self) -> String {
         format!("urn:erisx2:{}", &display_base32(&self.binary()))
     }
