@@ -43,12 +43,14 @@ in {
 
     systemd.services.ratmand = {
       wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" ];
+      after = [ "network-online.target" ];
+      script = ''
+        ${cfg.package}/bin/ratmand --daemonize ${builtins.concatStringsSep " " cfg.extraArgs}
+      '';
       serviceConfig = {
         #User = "ratman";
         #Group = "ratman";
 
-        ExecStart = "${cfg.package}/bin/ratmand --daemonize ${builtins.concatStringsSep " " cfg.extraArgs}";
         Type = "forking";
 
         # Security Hardening
