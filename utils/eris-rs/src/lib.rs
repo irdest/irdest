@@ -3,15 +3,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 mod enc;
-pub use enc::{Encoder, encode, encode_const, BlockSize};
+pub use enc::{encode, encode_const, BlockSize, Encoder};
 mod dec;
 pub use dec::{decode, decode_const, Error, Result};
 
-use blake2::{Blake2b, Digest, digest::consts::U32};
-use chacha20::ChaCha20;
-use chacha20::cipher::{KeyIvInit, StreamCipher};
 use async_trait::async_trait;
-use derive_more::{Deref, DerefMut, From, Display, DebugCustom};
+use blake2::{digest::consts::U32, Blake2b, Digest};
+use chacha20::cipher::{KeyIvInit, StreamCipher};
+use chacha20::ChaCha20;
+use derive_more::{DebugCustom, Deref, DerefMut, Display, From};
 use std::collections::HashMap;
 
 fn display_base32(bytes: &[u8]) -> String {
@@ -53,15 +53,18 @@ impl<const BS: usize> BlockStorage<BS> for MemoryStorage {
     async fn fetch(&self, reference: &BlockReference) -> std::io::Result<Option<Block<BS>>> {
         self.get(reference)
             .map(|x| -> std::io::Result<_> {
-                let arr: [u8; BS] = x.clone().try_into()
-                    .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Block has unexpected size"))?;
+                let arr: [u8; BS] = x.clone().try_into().map_err(|_| {
+                    std::io::Error::new(std::io::ErrorKind::Other, "Block has unexpected size")
+                })?;
                 Ok(arr.into())
             })
             .transpose()
     }
 }
 
-const fn num_bits<T>() -> usize { std::mem::size_of::<T>() * 8 }
+const fn num_bits<T>() -> usize {
+    std::mem::size_of::<T>() * 8
+}
 
 // replace with usize::log2 once its stable
 fn log_2(x: usize) -> u32 {
@@ -97,14 +100,21 @@ impl ReadCapability {
     }
 
     pub fn from_binary(buf: &[u8]) -> Option<ReadCapability> {
-        if buf.len() != 1 + 1 + 32 + 32 { return None; }
+        if buf.len() != 1 + 1 + 32 + 32 {
+            return None;
+        }
         let block_size = 2usize.pow(buf[0].into());
         let level = buf[1];
         let root_reference_bytes: [u8; 32] = buf[2..34].try_into().unwrap();
         let root_key_bytes: [u8; 32] = buf[34..66].try_into().unwrap();
         let root_reference = BlockReference::from(root_reference_bytes);
         let root_key = BlockKey::from(root_key_bytes);
-        Some(Self { block_size, level, root_reference, root_key, })
+        Some(Self {
+            block_size,
+            level,
+            root_reference,
+            root_key,
+        })
     }
 
     pub fn urn(&self) -> String {
