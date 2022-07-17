@@ -27,9 +27,10 @@ rustPlatform.buildRustPackage rec {
       !(lib.hasPrefix "${toString ../../.}/docs" name) &&
       !(lib.hasPrefix "${toString ../../.}/target" name) &&
       !(lib.hasPrefix "${toString ../../.}/nix" name) &&
+      !(lib.hasPrefix "${toString ../../.}/ci" name) &&
       !(lib.hasPrefix "${toString ../../.}/ratman/dashboard" name)
     ;
-    src = ../../.;
+    src = lib.cleanSource ../../.;
   };
 
   nativeBuildInputs = [
