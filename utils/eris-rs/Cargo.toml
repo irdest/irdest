@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022 Yureka Lilian <yuka@yuka.dev>
+#
+# SPDX-License-Identifier: CC0-1.0
+
 [package]
 name = "eris"
 version = "0.1.0"
