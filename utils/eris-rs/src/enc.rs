@@ -6,7 +6,8 @@ use crate::{Block, BlockKey, BlockStorage, RKPair, ReadCapability};
 use blake2::{
     digest::consts::U32, digest::FixedOutput, digest::KeyInit, digest::Update, Blake2bMac,
 };
-use futures_lite::io::{AsyncRead, AsyncReadExt};
+use futures_io::AsyncRead;
+use futures_util::io::AsyncReadExt;
 
 impl<const BS: usize> Block<BS> {
     fn encrypt(&mut self, convergence_secret: &[u8; 32]) -> RKPair {

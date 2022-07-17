@@ -15,7 +15,8 @@ chacha20 = "0.9"
 thiserror = "1.0"
 async-trait = "0.1"
 base32 = "0.4"
-futures-lite = "1.12"
+futures-io = "0.3"
+futures-util = { version = "0.3", features = [ "io" ] }
 derive_more = "0.99"
 
 [dev-dependencies]

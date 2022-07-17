@@ -2,9 +2,11 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use crate::{BlockKey, BlockReference, BlockStorage, ReadCapability};
-use futures_lite::io::{AsyncWrite, AsyncWriteExt};
-use std::collections::VecDeque;
+use crate::{Block, BlockKey, BlockReference, BlockStorage, ReadCapability};
+use futures_io::AsyncWrite;
+use futures_util::io::AsyncWriteExt;
+use futures_util::stream::FuturesUnordered;
+use futures_util::StreamExt;
 use thiserror::Error as ThisError;
 
 #[derive(ThisError, Debug)]
@@ -49,6 +51,19 @@ pub async fn decode<S: BlockStorage<1024> + BlockStorage<{ 32 * 1024 }>, W: Asyn
         _ => Err(Error::NonstandardBlockSize),
     }
 }
+
+async fn fetch_and_decrypt_block<S: BlockStorage<BS>, const BS: usize>(
+    read_capability: ReadCapability,
+    block_storage: &S,
+) -> Result<(u8, Block<BS>)> {
+    let mut block = block_storage
+        .fetch(&read_capability.root_reference)
+        .await?
+        .ok_or(Error::BlockNotFound)?;
+    block.chacha20(&read_capability.root_key);
+    Ok::<_, Error>((read_capability.level, block))
+}
+
 pub async fn decode_const<S: BlockStorage<BS>, W: AsyncWrite + Unpin, const BS: usize>(
     target: &mut W,
     read_capability: &ReadCapability,
@@ -58,17 +73,14 @@ pub async fn decode_const<S: BlockStorage<BS>, W: AsyncWrite + Unpin, const BS: 
         return Err(Error::UnexpectedBlockSize);
     }
 
-    let mut subtrees = VecDeque::new();
-    subtrees.push_back(read_capability.clone());
+    let mut subtrees = FuturesUnordered::new();
+    subtrees.push(fetch_and_decrypt_block(
+        read_capability.clone(),
+        block_storage,
+    ));
 
-    while let Some(tree) = subtrees.pop_front() {
-        let mut block = block_storage
-            .fetch(&tree.root_reference)
-            .await?
-            .ok_or(Error::BlockNotFound)?;
-        block.chacha20(&tree.root_key);
-
-        if tree.level == 0 {
+    while let Some((level, block)) = subtrees.next().await.transpose()? {
+        if level == 0 {
             let mut block = (*block).as_slice();
             if subtrees.len() == 0 {
                 // this is the last block, unpad
@@ -86,11 +98,10 @@ pub async fn decode_const<S: BlockStorage<BS>, W: AsyncWrite + Unpin, const BS: 
                     BlockReference(rk_pair_raw[..32].try_into().unwrap()),
                     BlockKey(rk_pair_raw[32..].try_into().unwrap()),
                 );
-                subtrees.push_back(ReadCapability::from_rk_pair(
-                    rk_pair,
-                    tree.level - 1,
-                    read_capability.block_size,
-                ));
+                let read_capability =
+                    ReadCapability::from_rk_pair(rk_pair, level - 1, read_capability.block_size);
+
+                subtrees.push(fetch_and_decrypt_block(read_capability, block_storage));
             }
         }
     }
