@@ -41,7 +41,7 @@ impl Dispatch {
         // to the interface we're broadcasting on and we potentially
         // need a way to re-slice, or combine frames that we encounter
         // for better transmission metrics
-        let frames = Slicer::slice(1312, msg);
+        let frames = Slicer::slice::<1024>(msg);
 
         frames.into_iter().fold(Ok(()), |res, f| match (res, &r) {
             (Ok(()), Recipient::Standard(_)) => task::block_on(self.send_one(f)),

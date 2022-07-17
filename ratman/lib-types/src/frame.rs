@@ -23,22 +23,20 @@ pub struct Frame {
 impl Frame {
     /// Produce a new dummy frame that sends nonsense data from nowhere to everyone.
     pub fn dummy() -> Self {
-        SeqBuilder::new(
+        let mut seq_builder = SeqBuilder::new(
             Identity::from([0; ID_LEN]),
             Recipient::Flood(Identity::random()),
             Identity::random(),
-        )
-        .add(vec![0x41, 0x43, 0x41, 0x42])
-        .build()
-        .remove(0)
+        );
+        seq_builder.add(vec![0x41, 0x43, 0x41, 0x42]);
+        seq_builder.build().remove(0)
     }
 
     /// Build a one-off frame with inline payload
     pub fn inline_flood(sender: Identity, scope: Identity, payload: Vec<u8>) -> Frame {
-        SeqBuilder::new(sender, Recipient::Flood(scope), Identity::random())
-            .add(payload)
-            .build()
-            .remove(0)
+        let mut seq_builder = SeqBuilder::new(sender, Recipient::Flood(scope), Identity::random());
+        seq_builder.add(payload);
+        seq_builder.build().remove(0)
     }
 
     /// Return the sequence Id of a frame

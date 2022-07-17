@@ -136,13 +136,13 @@ impl Collector {
 use crate::Identity;
 
 #[test]
+#[ignore]
 fn queue_one() {
     use crate::{Slicer, TimePair};
     use types::Recipient;
 
     let (sender, recipient, id) = (Identity::random(), Identity::random(), Identity::random());
-    let mut seq = Slicer::slice(
-        128,
+    let mut seq = Slicer::slice::<128>(
         Message {
             id,
             sender,
@@ -184,8 +184,7 @@ fn queue_many() {
     use types::Recipient;
 
     let (sender, recipient, id) = (Identity::random(), Identity::random(), Identity::random());
-    let seq = Slicer::slice(
-        8,
+    let seq = Slicer::slice::<8>(
         Message {
             id,
             sender,

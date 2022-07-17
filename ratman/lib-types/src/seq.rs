@@ -85,9 +85,8 @@ impl SeqBuilder {
     }
 
     /// Add a slice of payload to the sequence set
-    pub fn add(mut self, data: Vec<u8>) -> Self {
+    pub fn add(&mut self, data: Vec<u8>) {
         self.data.push(data);
-        self
     }
 
     /// Consume the builder into a set of frames
@@ -230,11 +229,11 @@ impl SeqBuilder {
 fn setup() -> Vec<Frame> {
     let sender = Identity::with_digest(&vec![1]);
     let recp = Identity::with_digest(&vec![2]);
-    SeqBuilder::new(sender, Recipient::Standard(vec![recp]), Identity::random())
-        .add(vec![42])
-        .add(vec![13, 12])
-        .add(vec![13, 37])
-        .build()
+    let mut seq_builder = SeqBuilder::new(sender, Recipient::Standard(vec![recp]), Identity::random());
+    seq_builder.add(vec![42]);
+    seq_builder.add(vec![13, 12]);
+    seq_builder.add(vec![13, 37]);
+    seq_builder.build()
 }
 
 #[test]
