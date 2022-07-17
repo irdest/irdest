@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2022 Yureka Lilian <yuka@yuka.dev>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
+nixos-tests:
+  tags: [ irdest-nix ]
+  stage: test
+  needs: [ build-ratman ]
+  script:
+    - nix-build nix/test/simple-two-nodes.nix
