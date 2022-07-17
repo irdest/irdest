@@ -113,7 +113,7 @@ impl ReadCapability {
 }
 
 impl<const BS: usize> Block<BS> {
-    pub(crate) fn reference(&self) -> BlockReference {
+    pub fn reference(&self) -> BlockReference {
         let mut hasher = Blake2b::<U32>::new();
         Digest::update(&mut hasher, &**self);
         BlockReference(hasher.finalize().into())
