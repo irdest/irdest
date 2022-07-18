@@ -9,7 +9,16 @@ SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 <h2>{{t 'index.placeholder.heading'}}</h2>
 <p>{{t 'index.placeholder.greeting'}}</p>
 <ul>
-  {{#each @model.addrs as |addr|}}
-    <li><pre>{{addr.id}}{{#if addr.isLocal}} (local){{/if}}</pre></li>
-  {{/each}}
+  <table class="table">
+    <tbody>
+    {{#each @model.addrs as |addr|}}
+      <tr>
+        <td>{{#if addr.isLocal}}{{t 'addr.is_local'}}{{/if}}</td>
+        <td>{{addr.id}}</td>
+        <td class="peer-data peer-data-up">↑ 1.0kb</td>
+        <td class="peer-data peer-data-down">↓ 69.0kb</td>
+      </tr>
+    {{/each}}
+    </tbody>
+  </table>
 </ul>
