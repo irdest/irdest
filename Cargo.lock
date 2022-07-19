@@ -1060,6 +1060,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "irdest-jni"
+version = "0.0.1"
+dependencies = [
+ "jni",
+ "netmod-mem",
+ "ratman",
+]
+
+[[package]]
 name = "irdest-proxy"
 version = "0.1.0"
 dependencies = [
