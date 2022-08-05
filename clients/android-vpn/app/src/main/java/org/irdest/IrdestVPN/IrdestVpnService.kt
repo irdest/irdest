@@ -1,24 +1,14 @@
 package org.irdest.IrdestVPN
 
-import android.annotation.SuppressLint
 import android.app.*
-import android.content.ContextWrapper
 import android.content.Intent
 import android.net.VpnService
-import android.os.*
+import android.os.Build
+import android.os.ParcelFileDescriptor
 import android.util.Log
-import android.widget.Toast
 import androidx.annotation.RequiresApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.selects.whileSelect
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.nio.ByteBuffer
-import java.nio.channels.FileChannel
 
 /* Local tun interface address*/
 // IpV4
@@ -32,26 +22,26 @@ const val VPN_ROUTE_V6 = "::" // Intercept all
 class IrdestVpnService : VpnService() {
     private val TAG = IrdestVpnService::class.java.simpleName
 
-    private var vpnInterface: ParcelFileDescriptor? = null
+    private val NOTIFICATION_CHANNEL_ID = "IrdestVpn"
+    private lateinit var clientIntent: Intent
 
-    // Receive from local and send to remote network.
-    private var inputStream: FileChannel? = null
-    // Receive from remote and send to local network.
-    private var outputStream: FileChannel? = null
+    private lateinit var vpnInterface: ParcelFileDescriptor
+    private lateinit var connection: Connection
+
 
     override fun onCreate() {
         super.onCreate()
+        // When user click the foreground notification, this activity will be opened.
+        clientIntent = Intent(this, MainActivity::class.java)
 
-        // Set foreground service
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            updateForegroundNotification(R.string.connecting)
-        }
-        // Open local tunnel
-        openTun()
+        // Start foreground service
+        startForegroundService()
+        updateForegroundNotification(R.string.connecting)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.getStringExtra("ACTION") == "disconnect") {
+            // onDestroy()
             disconnect()
             return Service.START_NOT_STICKY
         } else {
@@ -60,99 +50,77 @@ class IrdestVpnService : VpnService() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        disconnect()
-    }
-
+    @Throws(NullPointerException::class)
     private fun openTun() {
         vpnInterface = Builder()
             .addAddress(VPN_ADDRESS_V6, 64)
             .addRoute(VPN_ROUTE_V6, 0)
             .setSession(TAG)
-            .establish()
+            .establish()!!
 
-        Log.d(TAG, "openTun: New tun interface created")
+        Log.d(TAG, "openTun: New tun interface is created")
     }
 
-    private fun connect() = runBlocking {
-        // Receive from local and send to remote network.
-        inputStream = FileInputStream(vpnInterface!!.fileDescriptor)
-            .channel
-        // Receive from remote and send to local network.
-        outputStream = FileOutputStream(vpnInterface!!.fileDescriptor)
-            .channel
+    private fun connect() {
+        try {
+            openTun()
+            // Receive from local and send to remote network.
+            val inputStream =
+                FileInputStream(vpnInterface.fileDescriptor)
+                .channel
+            // Receive from remote and send to local network.
+            val outputStream =
+                FileOutputStream(vpnInterface.fileDescriptor)
+                .channel
 
-        launch {
-            mainLoop(inputStream!!, outputStream!!)
+            connection = Connection(inputStream, outputStream)
+            // TODO: Connect to remote server & protect tunnel
         }
-
-        Log.d(TAG, "vpnRunLoop: Main loop stopped")
-    }
-
-    private suspend fun mainLoop(
-        input: FileChannel, output: FileChannel) = runBlocking {
-        Log.d(TAG, "connect: Running main loop...")
-
-        var alive = true
-
-        launch(Dispatchers.IO) {
-            Log.d(TAG, "mainLoop: ### Main loop couroutine starts")
-            loop@ while (alive) {
-                val buffer = ByteBuffer.allocate(1024)
-
-                if (input.read(buffer) <= 0) {
-                    delay(100)
-                    continue@loop
-                }
-
-                // Received packet from local.
-                Log.d(TAG, "vpnRunLoop: Received packet from loacl")
-            }
+        catch (e: Exception) {
+            Log.e(TAG, "connect: Failed to open tun interface", e)
         }
-        alive = false
+        finally {
+            connection.runForever()
+            updateForegroundNotification(R.string.connected)
+        }
     }
 
     private fun disconnect() {
-        inputStream?.close()
-        outputStream?.close()
+        connection.disconnect()
         vpnInterface?.close()
         stopForeground(true)
         stopSelf()
-        Log.i(TAG, "stopVPN: Vpn service stopped")
+        Log.i(TAG, "stopVPN: Vpn service is stopped")
     }
 
-    // Start foreground service
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun startForegroundService() {
+        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
+            .createNotificationChannel(
+                NotificationChannel(
+                    NOTIFICATION_CHANNEL_ID,
+                    NOTIFICATION_CHANNEL_ID,
+                    NotificationManager.IMPORTANCE_DEFAULT
+                )
+            )
+
+        applicationContext.startForegroundService(clientIntent)
+    }
+
     @RequiresApi(Build.VERSION_CODES.O)
     private fun updateForegroundNotification(msg: Int) {
-        // Init NotificationManager
-        val NOTIFICATION_CHANNEL_ID = "IrdestVpn"
-        val notificationMng = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        notificationMng.createNotificationChannel(
-            NotificationChannel(
-                NOTIFICATION_CHANNEL_ID,
-                NOTIFICATION_CHANNEL_ID,
-                NotificationManager.IMPORTANCE_DEFAULT
-            )
-        )
-
-        val mainIntent = Intent(this, MainActivity::class.java)
-        applicationContext.startForegroundService(mainIntent)
-
         val configureIntent =
             PendingIntent.getActivity(
                 this,
                 0,
-                mainIntent,
+                clientIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT)
-
 
         startForeground(
             1,
             Notification.Builder(this, NOTIFICATION_CHANNEL_ID)
                 .setContentTitle("Irdest Vpn")
                 .setContentText(getString(msg))
-                .setTicker("Message Ticker")
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentIntent(configureIntent)
                 .build()

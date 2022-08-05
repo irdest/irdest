@@ -1,13 +1,11 @@
 package org.irdest.IrdestVPN
 
 import android.app.Activity
-import android.app.Instrumentation
 import android.content.Intent
 import android.net.VpnService
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.Button
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 
@@ -26,8 +24,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Connect button clicked
     fun startVpn(view: View) {
+        Log.d(TAG, "startVpn: Connect button is clicked")
         // Ask for permission
         var intent = VpnService.prepare(this)
         if (intent != null) {
@@ -37,8 +35,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Disconnect button clicked
     fun stopVpn(view: View) {
+        Log.d(TAG, "stopVpn: Disconnect button is clicked")
         startService(getService()
             .putExtra("ACTION", "disconnect"))
     }
