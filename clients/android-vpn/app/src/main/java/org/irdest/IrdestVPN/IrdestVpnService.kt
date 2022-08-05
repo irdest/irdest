@@ -1,5 +1,6 @@
 package org.irdest.IrdestVPN
 
+import android.annotation.SuppressLint
 import android.app.*
 import android.content.Intent
 import android.net.VpnService
@@ -28,7 +29,7 @@ class IrdestVpnService : VpnService() {
     private lateinit var vpnInterface: ParcelFileDescriptor
     private lateinit var connection: Connection
 
-
+    @SuppressLint("NewApi")
     override fun onCreate() {
         super.onCreate()
         // When user click the foreground notification, this activity will be opened.
@@ -61,6 +62,7 @@ class IrdestVpnService : VpnService() {
         Log.d(TAG, "openTun: New tun interface is created")
     }
 
+    @SuppressLint("NewApi")
     private fun connect() {
         try {
             openTun()
