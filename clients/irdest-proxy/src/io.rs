@@ -31,6 +31,8 @@ pub async fn from_tcp_to_ratman(
     let mut buffer = vec![0; 1024]; // TODO: get this size from IPC interface
     tcp.read(&mut buffer).await?;
 
+    debug!("Read message from TCP, wrapping into Ratman envelope...");
+
     // Encode data into envelope
     let env = Envelope::with_session(session, buffer);
 

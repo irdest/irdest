@@ -23,6 +23,8 @@ impl Inlet {
         let tcp = TcpListener::bind(&socket_addr).await?;
         let ipc = connect_with_address(bind, addr).await?;
 
+        debug!("Starting inlet loop");
+        
         task::spawn(async move {
             let mut inc = tcp.incoming();
 
@@ -37,6 +39,8 @@ impl Inlet {
                     }
                 };
 
+                debug!("Accepted new stream!");
+
                 // Then spawn a new task for this session.  We keep
                 // reading messages from the TCP stream until we no
                 // longer get any (i.e. the socket collapses or
@@ -45,7 +49,7 @@ impl Inlet {
                 task::spawn(async move {
                     let session = Identity::random();
                     while let Ok(_) = from_tcp_to_ratman(addr, session, &mut stream, &ipc).await {}
-
+                    
                     // Before we kill the task we send one last
                     // message to the peer to terminate the session on
                     // their end
