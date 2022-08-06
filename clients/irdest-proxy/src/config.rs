@@ -142,7 +142,6 @@ fn test_parse_line_out() {
     }
 }
 
-
 #[test]
 fn test_parse_line_in() {
     let line = "127.0.0.1:443 <- 7053-2C1D-15D9-4D30-4FC5-4663-28BD-2E0C-F33D-0D49-2E28-6C1F-5649-6922-7DA8-B7A5";
