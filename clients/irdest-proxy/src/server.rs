@@ -107,6 +107,8 @@ impl Server {
     /// Run this server
     pub async fn run(&self, bind: Option<&str>) {
         for (ip, (io, addr)) in self.cfg.map.iter() {
+            debug!("Loading: {:?} // {:?} // {}", ip, io, addr);
+
             if let Err(e) = match io {
                 InOrOut::In => Inlet::new(bind, ip, *addr),
                 InOrOut::Out => Outlet::new(&self.map, bind, ip, *addr),
