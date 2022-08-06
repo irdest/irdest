@@ -57,6 +57,7 @@ async fn handle_send(r: &Router, online: &OnlineMap, _self: Identity, send: Send
     Ok(())
 }
 
+// TODO: why does this function exist?
 async fn handle_setup(_io: &mut Io, _r: &Router, s: Setup) -> Result<()> {
     trace!("Handle setup message: {:?}", s);
     Ok(())

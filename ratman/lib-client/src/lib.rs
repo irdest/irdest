@@ -81,7 +81,7 @@ impl RatmanIpc {
 
         // Introduce ourselves to the daemon
         let online_msg = api::api_setup(match addr {
-            Some(addr) => api::online(addr, vec![]),
+            Some(addr) => api::online(addr, vec![0, 1, 2, 3]),
             None => api::online_init(),
         });
         info!("Sending introduction message!");
