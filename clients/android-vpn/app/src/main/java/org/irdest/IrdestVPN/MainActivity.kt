@@ -12,6 +12,14 @@ import androidx.appcompat.app.AppCompatActivity
 class MainActivity : AppCompatActivity() {
     private val TAG = MainActivity::class.java.simpleName
 
+    companion object {
+        init {
+            System.loadLibrary("ratman")
+        }
+
+        val rat = Ratmand()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -43,5 +51,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun getService() : Intent {
         return Intent(this, IrdestVpnService::class.java)
+    }
+
+    fun runRatman(view: View) {
+        Log.d(TAG, "runRatman: Run ratman buntton is clicked")
+        Log.d(TAG, "runRatman: Current Thread = "
+                + Thread.currentThread())
+
+        rat.runRatmand("test")
+    }
+
+    fun stopRatmand(view: View) {
+        Log.d(TAG, "stopRatmand: Stop ratmand buttion is clicked")
+        rat.stopRatmand()
     }
 }

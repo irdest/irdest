@@ -24,6 +24,8 @@ class Connection(
     // Do nothing but receive packets from local.
     fun runForever() {
         viewModelScope.launch(ioDispatcher) {
+            Log.d(TAG, "runForever: Current Thread = "
+                    + Thread.currentThread())
             while(alive) {
                 val buffer = ByteBuffer.allocate(MAX_PACKET_SIZE)
 
