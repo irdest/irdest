@@ -108,8 +108,8 @@ pub fn build_cli() -> ArgMatches<'static> {
                 .help("Attempt to open the port used by the inet driver in your local gateway")
         )
         .arg(
-            Arg::with_name("NO_WEBUI")
-                .long("no-webui")
+            Arg::with_name("NO_DASHBOARD")
+                .long("no-dashboard")
                 .help("Stop ratmand from serving a webui on port 8090")
         )
         .arg(
@@ -217,7 +217,7 @@ pub async fn run_app(m: ArgMatches<'static>, configuration: Config) -> std::resu
     }
 
     // If webui is enabled
-    if !m.is_present("NO_WEBUI") {
+    if !m.is_present("NO_DASHBOARD") {
         match daemon::web::start(r.clone(), "127.0.0.1", 8090).await {
             Ok(_) => {}
             Err(e) => warn!("Failed to setup webui bind {:?}", e),
