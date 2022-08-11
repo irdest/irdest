@@ -158,9 +158,14 @@ impl InetEndpoint {
         Ok(())
     }
 
-    pub async fn send_all(&self, frame: Frame) -> Result<(), InetError> {
+    pub async fn send_all(&self, frame: Frame, exclude: Option<Target>) -> Result<(), InetError> {
         let all = self.routes.get_all_valid().await;
-        for peer in all {
+        for (peer, id) in all {
+            match exclude {
+                Some(exclude) if id == exclude => continue,
+                _ => {}
+            }
+
             if let Err(e) = peer.send(&frame).await {
                 error!("failed to send frame to peer {}: {}", peer.id(), e);
                 self.routes.remove_peer(peer.id()).await;
@@ -202,11 +207,16 @@ impl netmod::Endpoint for InetEndpoint {
     /// The target ID is a way to instruct a netmod where to send a
     /// frame in a one-to-many mapping.  When implementing a
     /// one-to-one endpoint, this ID can be ignored (set to 0).
-    async fn send(&self, frame: Frame, target: netmod::Target) -> Result<(), Error> {
+    async fn send(
+        &self,
+        frame: Frame,
+        target: netmod::Target,
+        exclude: Option<u16>,
+    ) -> Result<(), Error> {
         trace!("Sending message to {:?}", target);
         match target {
             netmod::Target::Single(target) => self.send(target, frame).await?,
-            netmod::Target::Flood(_) => self.send_all(frame).await?,
+            netmod::Target::Flood(_) => self.send_all(frame, exclude).await?,
         }
 
         Ok(())

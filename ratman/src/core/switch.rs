@@ -67,13 +67,14 @@ impl Switch {
 
     async fn run_inner(self: Arc<Self>, id: usize) {
         let ep = self.drivers.get(id).await;
+
         loop {
             let (f, t) = match ep.next().await {
                 Ok(f) => f,
                 _ => continue,
             };
 
-            trace!("Receiving frame...");
+            trace!("Receiving frame from '{:?}'...", t);
 
             // Switch the traffic to the appropriate place
             use {Recipient::*, RouteType::*};
@@ -88,7 +89,7 @@ impl Switch {
                             self.collector.queue_and_spawn(f.seqid(), f.clone()).await;
                         }
 
-                        self.dispatch.reflood(f, id).await;
+                        self.dispatch.reflood(f, id, t).await;
                     }
                 }
                 ref recp @ Standard(_) => match recp.scope() {

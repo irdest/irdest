@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 //! `netmod-mem` is an in-memory `netmod` endpoint
 //!
 //! This aims to make testing any structure that binds against
@@ -90,11 +94,12 @@ impl Endpoint for MemMod {
     ///
     /// Returns `OperationNotSupported` if attempting to send through
     /// a connection that is not yet connected.
-    async fn send(&self, frame: Frame, _: Target) -> NetResult<()> {
+    async fn send(&self, frame: Frame, _: Target, exclude: Option<u16>) -> NetResult<()> {
         let io = self.io.read().await;
         match *io {
             None => Err(NetError::NotSupported),
-            Some(ref io) => Ok(io.out.send(frame).await.unwrap()),
+            Some(ref io) if exclude.is_none() => Ok(io.out.send(frame).await.unwrap()),
+            _ => Ok(()), // when exclude is some we just drop the frame
         }
     }
 

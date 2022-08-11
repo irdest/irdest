@@ -74,25 +74,42 @@ impl Dispatch {
         };
 
         let ep = self.drivers.get(epid as usize).await;
-        Ok(ep.send(frame, trgt).await?)
+        Ok(ep.send(frame, trgt, None).await?)
     }
 
     pub(crate) async fn flood(&self, frame: Frame) -> Result<()> {
         for ep in self.drivers.get_all().await.into_iter() {
             let f = frame.clone();
             let target = Target::Flood(frame.recipient.scope().expect("empty recipient"));
-            ep.send(f, target).await.unwrap();
+            ep.send(f, target, None).await.unwrap();
         }
 
         Ok(())
     }
 
     /// Reflood a message to the network, except the previous interface
-    pub(crate) async fn reflood(&self, frame: Frame, ep: usize) {
-        for ep in self.drivers.get_without(ep).await.into_iter() {
+    pub(crate) async fn reflood(
+        &self,
+        frame: Frame,
+        originator_ep: usize,
+        originator_peer: Target,
+    ) {
+        for (ep, ep_id) in self.drivers.get_with_ids().await.into_iter() {
+            // When looking at the driver that handed us the flood we
+            // explicitly exclude the originating peering target to
+            // avoid endless replication.  But importantly we _must_
+            // pass the flood back to the originating driver because
+            // it may be handling a segmented peer space
+            // (i.e. connections with peers that don't peer amongst
+            // themselves).
+            let exclude = match originator_peer {
+                Target::Single(id) if ep_id == originator_ep => Some(id),
+                _ => None,
+            };
+
             let f = frame.clone();
             let target = Target::Flood(f.recipient.scope().expect("empty recipient"));
-            task::spawn(async move { ep.send(f, target).await.unwrap() });
+            task::spawn(async move { ep.send(f, target, exclude).await.unwrap() });
         }
     }
 }
