@@ -7,7 +7,7 @@ use async_std::{
     io::{stdin, stdout, ReadExt, WriteExt},
 };
 use clap::{App, Arg};
-use directories::ProjectDirs;
+// use directories::ProjectDirs;
 use ratman_client::{Identity, RatmanIpc, Receive_Type};
 use serde::{Deserialize, Serialize};
 use std::{os::unix::prelude::AsRawFd, path::PathBuf};
@@ -170,12 +170,16 @@ async fn main() {
     let m = app.clone().get_matches();
 
     //// Setup the application config directory
-    let dirs = ProjectDirs::from("org", "irdest", "ratcat")
-        .expect("Failed to initialise project directories for this platform!");
-    let cfg_dir = env_xdg_config()
-        .map(|path| PathBuf::new().join(path))
-        .unwrap_or_else(|| dirs.config_dir().to_path_buf());
+    //let dirs = ProjectDirs::from("org", "irdest", "ratcat")
+    //   .expect("Failed to initialise project directories for this platform!");
+    //let cfg_dir = env_xdg_config()
+    //   .map(|path| PathBuf::new().join(path))
+    //   .unwrap_or_else(|| dirs.config_dir().to_path_buf());
+
+    let cfg_dir = PathBuf::new().join("ratcat_config");
     let _ = create_dir(&cfg_dir).await;
+
+    // let _ = create_dir("ratcat_config".to_path_buf());
 
     let num: usize = match m.value_of("RECV_COUNT").map(|c| c.parse().ok()) {
         Some(Some(num)) => num,
