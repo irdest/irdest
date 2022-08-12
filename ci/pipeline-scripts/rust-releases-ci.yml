@@ -4,6 +4,7 @@ bundle-ratman:
   tags: [ irdest-nix ]
   stage: bundle
   dependencies:
+    - build-installer-static
     - build-ratman-static
     - build-manual
   script:
@@ -11,6 +12,7 @@ bundle-ratman:
     - cp -rv ../dist .
     - cp -rv ../docs/man .
     - cp -rv ../result-ratman/bin .
+    - cp -rv ../result-installer/bin/* .
     - cp -rv ../result-manual-user manual
     - cd ..
     - tar cvf ratman-bundle-x86_64.tar.gz ratman-bundle-x86_64/
@@ -22,6 +24,7 @@ bundle-ratman-aarch64:
   tags: [ irdest-nix ]
   stage: bundle
   dependencies:
+    - build-installer-static-aarch64
     - build-ratman-static-aarch64
     - build-manual
   script:
@@ -29,6 +32,7 @@ bundle-ratman-aarch64:
     - cp -rv ../dist .
     - cp -rv ../docs/man .
     - cp -rv ../result-ratman/bin .
+    - cp -rv ../result-installer/bin/* .
     - cp -rv ../result-manual-user manual
     - cd ..
     - tar cvf ratman-bundle-aarch64.tar.gz ratman-bundle-aarch64/

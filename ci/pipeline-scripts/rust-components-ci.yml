@@ -4,7 +4,7 @@
 
 # Script that triggers the pipelines for rust-components of `irdest`
 
-####################### RATMAN ROUTER BUILDS
+####################### RATMAN ROUTER
 
 build-ratman:
   tags: [ irdest-nix ]
@@ -41,7 +41,7 @@ build-ratman-static-aarch64:
     paths:
       - result-ratman/*
 
-####################### IRDEST PROXY BUILDS
+####################### IRDEST PROXY
 
 build-irdest-proxy:
   tags: [ irdest-nix ]
@@ -74,3 +74,32 @@ build-irdest-proxy-static-aarch64:
   artifacts:
     paths:
       - result-irdest-proxy/*
+
+####################### IRDEST INSTALLER
+
+build-installer-static:
+  tags: [ irdest-nix ]
+  stage: build
+  script:
+    - nix-env -iA cachix -f https://cachix.org/api/v1/install
+    - cachix use irdest -O ~/.config/nix
+    - nix-build nix -A pkgsStatic.buildPackages.rustc.all -A pkgsStatic.buildPackages.cargo -o toolchain
+    - cachix push irdest ./toolchain* || echo "couldn't push"
+    - nix-build nix -A pkgsStatic.irdest-installer -o result-installer
+  artifacts:
+    paths:
+      - result-installer/*
+
+build-installer-static-aarch64:
+  tags: [ irdest-nix ]
+  stage: build
+  needs: [ build-ratman-dashboard ]
+  script:
+    - nix-env -iA cachix -f https://cachix.org/api/v1/install
+    - cachix use irdest -O ~/.config/nix
+    - nix-build nix -A pkgsCross.aarch64-multiplatform.pkgsStatic.stdenv -A pkgsCross.aarch64-multiplatform.pkgsStatic.buildPackages.rustc.all -A pkgsCross.aarch64-multiplatform.pkgsStatic.buildPackages.cargo -o toolchain
+    - cachix push irdest ./toolchain* || echo "couldn't push"
+    - nix-build nix -A pkgsCross.aarch64-multiplatform.pkgsStatic.irdest-installer -o result-installer
+  artifacts:
+    paths:
+      - result-installer/*
