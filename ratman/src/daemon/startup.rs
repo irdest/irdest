@@ -110,7 +110,7 @@ pub fn build_cli() -> ArgMatches<'static> {
         .arg(
             Arg::with_name("NO_DASHBOARD")
                 .long("no-dashboard")
-                .help("Stop ratmand from serving a webui on port 8090")
+                .help("Stop ratmand from serving a dashboard on port 8090")
         )
         .arg(
             Arg::with_name("DAEMONIZE")
@@ -158,7 +158,7 @@ pub async fn run_app(m: ArgMatches<'static>, configuration: Config) -> std::resu
     daemon::setup_logging(m.value_of("VERBOSITY").unwrap(), m.is_present("DAEMONIZE"));
 
     // Setup metrics collection
-    #[cfg(feature = "webui")]
+    #[cfg(feature = "dashboard")]
     let mut registry = prometheus_client::registry::Registry::default();
 
     // Load peers or throw an error about missing cli data!
@@ -183,7 +183,7 @@ pub async fn run_app(m: ArgMatches<'static>, configuration: Config) -> std::resu
 
     let r = Router::new();
 
-    #[cfg(feature = "webui")]
+    #[cfg(feature = "dashboard")]
     r.register_metrics(&mut registry);
 
     if !m.is_present("NO_INET") || configuration.netmod_inet_enabled {
@@ -224,12 +224,12 @@ pub async fn run_app(m: ArgMatches<'static>, configuration: Config) -> std::resu
         }
     }
 
-    // If webui is enabled
-    #[cfg(feature = "webui")]
+    // If dashboard is enabled
+    #[cfg(feature = "dashboard")]
     if !m.is_present("NO_DASHBOARD") {
         match daemon::web::start(r.clone(), registry, "127.0.0.1", 8090).await {
             Ok(_) => {}
-            Err(e) => warn!("Failed to setup webui bind {:?}", e),
+            Err(e) => warn!("Failed to setup dashboard bind {:?}", e),
         }
     }
 

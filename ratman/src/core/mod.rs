@@ -78,7 +78,7 @@ impl Core {
     }
 
     /// Register metrics with a Prometheus registry.
-    #[cfg(feature = "webui")]
+    #[cfg(feature = "dashboard")]
     pub fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
         self.routes.register_metrics(registry);
         self.dispatch.register_metrics(registry);

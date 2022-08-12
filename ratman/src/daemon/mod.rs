@@ -23,10 +23,10 @@ pub mod upnp {
     }
 }
 
-#[cfg(feature = "webui")]
+#[cfg(feature = "dashboard")]
 pub mod web;
 
-#[cfg(not(feature = "webui"))]
+#[cfg(not(feature = "dashboard"))]
 pub mod web {
     use crate::Router;
     use prometheus_client::registry::Registry;

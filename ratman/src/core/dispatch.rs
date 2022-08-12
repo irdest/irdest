@@ -18,7 +18,7 @@ pub(crate) struct Dispatch {
     routes: Arc<RouteTable>,
     drivers: Arc<DriverMap>,
     collector: Arc<Collector>,
-    #[cfg(feature = "webui")]
+    #[cfg(feature = "dashboard")]
     metrics: Arc<metrics::Metrics>,
 }
 
@@ -33,12 +33,12 @@ impl Dispatch {
             routes,
             drivers,
             collector,
-            #[cfg(feature = "webui")]
+            #[cfg(feature = "dashboard")]
             metrics: Arc::new(metrics::Metrics::default()),
         })
     }
 
-    #[cfg(feature = "webui")]
+    #[cfg(feature = "dashboard")]
     pub(crate) fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
         self.metrics.register(registry);
     }
@@ -46,7 +46,7 @@ impl Dispatch {
     pub(crate) async fn send_msg(&self, msg: Message) -> Result<()> {
         let r = msg.recipient.clone();
         trace!("dispatching message to recpient: {:?}", r);
-        #[cfg(feature = "webui")]
+        #[cfg(feature = "dashboard")]
         self.metrics
             .messages_total
             .get_or_create(&metrics::Labels {
@@ -75,7 +75,7 @@ impl Dispatch {
             Recipient::Flood(_) => unreachable!(),
         };
 
-        #[cfg(feature = "webui")]
+        #[cfg(feature = "dashboard")]
         {
             let metric_labels = &metrics::Labels {
                 recp_type: metrics::RecipientType::Standard,
@@ -112,7 +112,7 @@ impl Dispatch {
             let scope = frame.recipient.scope().expect("empty recipient");
             let target = Target::Flood(scope);
 
-            #[cfg(feature = "webui")]
+            #[cfg(feature = "dashboard")]
             {
                 let metric_labels = &metrics::Labels {
                     recp_type: metrics::RecipientType::Flood,
@@ -158,7 +158,7 @@ impl Dispatch {
     }
 }
 
-#[cfg(feature = "webui")]
+#[cfg(feature = "dashboard")]
 mod metrics {
     use prometheus_client::{
         encoding::text::Encode,

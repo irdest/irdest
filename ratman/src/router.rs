@@ -32,7 +32,7 @@ impl Router {
     }
 
     /// Register metrics with a Prometheus registry.
-    #[cfg(feature = "webui")]
+    #[cfg(feature = "dashboard")]
     pub fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
         self.inner.register_metrics(registry);
     }

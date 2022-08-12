@@ -37,7 +37,7 @@ enum ProtoPayload {
 #[derive(Default)]
 pub(crate) struct Protocol {
     online: Mutex<BTreeMap<Identity, Arc<AtomicBool>>>,
-    #[cfg(feature = "webui")]
+    #[cfg(feature = "dashboard")]
     metrics: metrics::Metrics,
 }
 
@@ -46,7 +46,7 @@ impl Protocol {
         Default::default()
     }
 
-    #[cfg(feature = "webui")]
+    #[cfg(feature = "dashboard")]
     pub fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
         self.metrics.register(registry);
     }
@@ -69,7 +69,7 @@ impl Protocol {
             loop {
                 debug!("Sending announcement for {}", id);
 
-                #[cfg(feature = "webui")]
+                #[cfg(feature = "dashboard")]
                 self.metrics.announcements_total.inc();
 
                 core.raw_flood(Self::announce(id)).await.unwrap();
@@ -119,7 +119,7 @@ impl Protocol {
     }
 }
 
-#[cfg(feature = "webui")]
+#[cfg(feature = "dashboard")]
 mod metrics {
     use prometheus_client::{metrics::counter::Counter, registry::Registry};
 

@@ -105,7 +105,7 @@ pub async fn start(
         match fut.await {
             Ok(_) => {}
             Err(e) => error!(
-                "An error was encountered while running ratmand webui: {:?}",
+                "An error was encountered while running ratmand dashboard: {:?}",
                 e
             ),
         }
