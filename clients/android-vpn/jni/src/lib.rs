@@ -8,9 +8,9 @@ use ratman::daemon;
 async fn ratrun() {
     let configuration = daemon::config::Config::default();
     let m = daemon::startup::build_cli();
-    
+
     daemon::startup::run_app(m, configuration);
-} 
+}
 
 #[allow(non_snake_case)]
 #[no_mangle]
