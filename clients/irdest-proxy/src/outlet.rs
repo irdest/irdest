@@ -25,7 +25,7 @@ impl Outlet {
         let ipc = connect_with_address(bind, addr).await?;
 
         debug!("Starting the outlet loop");
-        
+
         // We don't set up a lot of state for this type.  We do
         // however move Self into the task so it doesn't go out of
         // scope.
@@ -36,7 +36,7 @@ impl Outlet {
                 let session_exists = this.map.read().await.contains_key(&session);
 
                 debug!("New session: {:?}", session);
-                
+
                 match (session_exists, data) {
                     // Session exists, no data sent --> drop session
                     (true, None) => {

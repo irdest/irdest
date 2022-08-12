@@ -24,7 +24,7 @@ impl Inlet {
         let ipc = connect_with_address(bind, addr).await?;
 
         debug!("Starting inlet loop");
-        
+
         task::spawn(async move {
             let mut inc = tcp.incoming();
 
@@ -49,7 +49,7 @@ impl Inlet {
                 task::spawn(async move {
                     let session = Identity::random();
                     while let Ok(_) = from_tcp_to_ratman(addr, session, &mut stream, &ipc).await {}
-                    
+
                     // Before we kill the task we send one last
                     // message to the peer to terminate the session on
                     // their end
