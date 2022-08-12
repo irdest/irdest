@@ -31,6 +31,12 @@ impl Router {
         Self { inner, proto }
     }
 
+    /// Register metrics with a Prometheus registry.
+    #[cfg(feature = "webui")]
+    pub fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
+        self.inner.register_metrics(registry);
+    }
+
     /// Add a new endpoint to this router
     ///
     /// An endpoint is defined by the [`Endpoint`] trait from the

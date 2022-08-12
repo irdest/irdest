@@ -74,6 +74,7 @@ impl Dispatch {
             ref recp @ Recipient::Standard(_) => recp.scope().expect("empty recipient"),
             Recipient::Flood(_) => unreachable!(),
         };
+
         #[cfg(feature = "webui")]
         {
             let metric_labels = &metrics::Labels {
@@ -100,14 +101,6 @@ impl Dispatch {
                 return Ok(());
             }
         };
-
-        #[cfg(feature = "webui")]
-        self.metrics
-            .frames_total
-            .get_or_create(&metrics::Labels {
-                recipient: (&frame.recipient).into(),
-            })
-            .inc();
 
         let ep = self.drivers.get(epid as usize).await;
         Ok(ep.send(frame, trgt, None).await?)
