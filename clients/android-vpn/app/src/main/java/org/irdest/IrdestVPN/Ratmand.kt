@@ -25,9 +25,12 @@ class Ratmand: ViewModel() {
             Log.d(TAG, "run_ratmand: Current thread = "
                     + Thread.currentThread())
 
+            var ratruned = ratrun("test")
+            Log.d(TAG, "runRatmand: ratrun called got string from rust "
+                    + ratruned)
+
             while(arive) {
                 delay(2000)
-                var returned = ratrun("test")
                 Log.d(TAG, "run_ratmand: ratmand is running ....")
             }
         }
