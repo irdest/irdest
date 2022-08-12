@@ -1,16 +1,22 @@
 # ratman-dashboard
 
-This is the admin dashboard for `ratmand`. When built with the `webui` feature
-enabled, it'll be accessible at `localhost:8090` by default.
+This is the admin dashboard for `ratmand`. When built with the
+`dashboard` feature enabled, it'll be accessible at `localhost:8090`
+by default.
 
-If making your own builds of `ratmand`, it has to be built manually, eg.:
+## TLDR
+
+When building `ratmand` via `cargo` you will have to first build and
+bundle the web dashboard:
 
 ```
 $ env -C ratman/dashboard yarn
-$ cargo run
+$ env -C ratman/dashboard yarn build
+$ cargo build --bin ratmand --all-features
 ```
 
-To hack on web UI itself, remember to point it at your `ratmand` instance:
+When hacking on the dashboard itself remember to point it at the
+`ratmand` instance you would like to use:
 
 ```
 $ cd ratman/dashboard

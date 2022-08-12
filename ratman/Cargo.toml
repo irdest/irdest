@@ -32,7 +32,7 @@ upnp = ["igd", "ipnetwork", "pnet"]
 daemon = ["cli", "inet", "lan", "upnp", "syslog"]
 util = ["cli", "ratman-client"]
 cli = ["types", "clap", "directories", "nix", "serde_json", "tracing-subscriber"]
-webui = ["daemon", "tide", "rust-embed", "openapi_type"]
+dashboard = ["daemon", "tide", "rust-embed", "openapi_type"]
 syslog = ["tracing-syslog"]
 
 [dependencies]
