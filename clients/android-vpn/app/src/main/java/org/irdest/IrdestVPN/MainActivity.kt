@@ -14,7 +14,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         init {
-            System.loadLibrary("ratman")
+            System.loadLibrary("ratman_android")
         }
 
         val rat = Ratmand()
