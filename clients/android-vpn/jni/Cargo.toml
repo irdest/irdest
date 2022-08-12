@@ -10,8 +10,8 @@ lto = true
 codegen-units = 1
 
 [lib]
-name = "ratman"
-crate-type = ["rlib", "dylib"]
+name = "ratman_android"
+crate-type = ["dylib"]
 
 [dependencies]
 ratman = { version = "0.4.0", path = "../../../ratman", package = "ratman"}

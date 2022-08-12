@@ -1,15 +1,13 @@
-use std::ffi::{CStr, CString};
-use std::os::raw::c_char;
-
 use jni::objects::{JClass, JString};
 use jni::sys::jstring;
 use jni::JNIEnv;
+use std::error::Error;
 
 use netmod_mem::MemMod;
 use ratman::{Identity, Router};
 
 // Run ratman for the simple android test.
-async fn router_testing() -> std::result::Result<(), ()> {
+async fn router_testing() -> Result<(), Box<dyn Error>> {
     // Build a simple channel in memory
     let mm1 = MemMod::new();
 
@@ -21,10 +19,10 @@ async fn router_testing() -> std::result::Result<(), ()> {
 
     // Create a user and add them to the router
     let u1 = Identity::random();
-    r1.add_user(u1).await;
+    r1.add_user(u1).await?;
 
     // And mark router "online"
-    r1.online(u1).await;
+    r1.online(u1).await?;
 
     // The routers will now start announcing their new users on the
     // micro-network.  You can now poll for new user discoveries.
@@ -48,12 +46,13 @@ async fn router_testing() -> std::result::Result<(), ()> {
 pub extern "C" fn Java_org_irdest_ratman_Ratmand_ratrun(
     env: JNIEnv,
     _: JClass,
-    test_string: JString,
+    _test_string: JString,
 ) -> jstring {
     // Ignoring the test_string which comes from the android application.
 
     // Run ratman router for the test
-    router_testing();
+    // TODO: wrap this in async_std::task::block_on
+    let _ = router_testing();
 
     env.new_string("Testing is running 🐲")
         .expect("Error: can't not make java string!")
