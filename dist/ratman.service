@@ -7,4 +7,4 @@ Description = A decentralised and peer-to-peer packet router
 
 [Service]
 ## Be sure to check the user manual for details on how to run ratmand
-ExecStart = /path/to/ratmand -f /path/to/peer.file
+ExecStart = /path/to/ratmand -f /path/to/peer.file -v debug

@@ -12,7 +12,9 @@ pub fn install_unitfile(path: PathBuf, ratmand_path: &PathBuf, target: &PathBuf)
     let mut f = File::open(path).unwrap();
     f.read_to_string(&mut buf).unwrap();
 
-    let new_str = buf.replace("/path/to/ratmand", &crate::print_path(&ratmand_path));
+    let new_str = buf
+        .replace("/path/to/ratmand", &crate::print_path(&ratmand_path))
+        .replace("/path/to/peer.file", "");
 
     let mut new_file = File::options()
         .write(true)

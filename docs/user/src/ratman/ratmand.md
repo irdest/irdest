@@ -99,10 +99,10 @@ will find other Ratman instances on your local network to peer with.
 This flag disables that functionality.
 
 
-### `--no-webui`
+### `--no-dashboard`
 
-By default Ratman runs a small webui server on port 8090 to display
-usage and network state information.  If this is unwanted you can turn
+By default Ratman runs a small web server on port 8090 to display a
+usage and network state dashboard.  If this is unwanted you can turn
 off this functionality.
 
 
