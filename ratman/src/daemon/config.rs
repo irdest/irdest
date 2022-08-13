@@ -114,7 +114,7 @@ impl Default for Config {
         Config {
             verbosity: "debug".into(),
             accept_unknown_peers: false,
-            api_bind: "127.9.9.1:9020".into(),
+            api_bind: "127.0.0.1:9020".into(),
 
             inet_bind: "[::]:9000".into(),
             no_inet: false,

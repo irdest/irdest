@@ -14,14 +14,25 @@ pub struct Inlet;
 
 impl Inlet {
     /// Spawn an inlet listener
-    pub fn new(bind: Option<&str>, ip: &IpSpace, addr: Identity) -> io::Result<()> {
-        task::block_on(Self.spawn(bind, ip, addr))
+    pub fn new(
+        bind: Option<&str>,
+        ip: &IpSpace,
+        peer_addr: Identity,
+        self_addr: Identity,
+    ) -> io::Result<()> {
+        task::block_on(Self.spawn(bind, ip, peer_addr, self_addr))
     }
 
-    async fn spawn(self, bind: Option<&str>, ip: &IpSpace, addr: Identity) -> io::Result<()> {
+    async fn spawn(
+        self,
+        bind: Option<&str>,
+        ip: &IpSpace,
+        peer_addr: Identity,
+        self_addr: Identity,
+    ) -> io::Result<()> {
         let socket_addr = ip.socket_addr().clone();
         let tcp = TcpListener::bind(&socket_addr).await?;
-        let ipc = connect_with_address(bind, addr).await?;
+        let ipc = connect_with_address(bind, self_addr).await?;
 
         debug!("Starting inlet loop");
 
@@ -48,12 +59,15 @@ impl Inlet {
                 let ipc = ipc.clone();
                 task::spawn(async move {
                     let session = Identity::random();
-                    while let Ok(_) = from_tcp_to_ratman(addr, session, &mut stream, &ipc).await {}
+                    while let Ok(_) =
+                        from_tcp_to_ratman(peer_addr, session, &mut stream, &ipc).await
+                    {
+                    }
 
                     // Before we kill the task we send one last
                     // message to the peer to terminate the session on
                     // their end
-                    if let Err(e) = terminate_session(addr, session, &ipc).await {
+                    if let Err(e) = terminate_session(peer_addr, session, &ipc).await {
                         error!("failed to terminate session: {}", e);
                     }
                 });

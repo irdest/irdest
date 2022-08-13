@@ -5,6 +5,7 @@ use async_std::{
 };
 use ratman_client::{Identity, RatmanIpc, Receive_Type};
 
+/// Connect to the router with a fixed address
 pub async fn connect_with_address(bind: Option<&str>, addr: Identity) -> io::Result<RatmanIpc> {
     Ok(match bind {
         Some(bind) => RatmanIpc::connect(bind, Some(addr)).await,

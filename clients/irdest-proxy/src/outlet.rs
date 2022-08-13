@@ -35,16 +35,16 @@ impl Outlet {
             while let Some((session, data)) = from_ratman(&ipc).await {
                 let session_exists = this.map.read().await.contains_key(&session);
 
-                debug!("New session: {:?}", session);
-
                 match (session_exists, data) {
                     // Session exists, no data sent --> drop session
                     (true, None) => {
+                        debug!("Clearing session: {:?}", session);
                         this.map.write().await.remove(&session);
                     }
                     // Session exists and we received data --> forward
                     (true, Some(data)) => {
                         let mut tcp = this.map.read().await.get(&session).unwrap().clone();
+                        trace!("Received data, forwarding to {:?}", tcp.peer_addr());
                         if let Err(e) = to_tcp(&mut tcp, data).await {
                             error!("failed to send message for session {}: {}", session, e);
                             this.map.write().await.remove(&session);
@@ -52,6 +52,7 @@ impl Outlet {
                     }
                     // No session exists, but we received data --> create session
                     (false, Some(data)) => {
+                        debug!("Creating new session: {:?}", session);
                         let mut tcp = match TcpStream::connect(&socket_addr).await {
                             Ok(tcp) => tcp,
                             Err(e) => {

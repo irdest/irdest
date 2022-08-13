@@ -1083,6 +1083,7 @@ dependencies = [
  "clap 3.0.10",
  "directories",
  "libc",
+ "ratman",
  "ratman-client",
  "serde",
  "serde_json",
