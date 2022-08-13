@@ -55,9 +55,6 @@ class MainActivity : AppCompatActivity() {
 
     fun runRatman(view: View) {
         Log.d(TAG, "runRatman: Run ratman buntton is clicked")
-        Log.d(TAG, "runRatman: Current Thread = "
-                + Thread.currentThread())
-
         rat.runRatmand("test")
     }
 

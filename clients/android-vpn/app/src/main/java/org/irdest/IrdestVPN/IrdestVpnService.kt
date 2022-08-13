@@ -82,7 +82,7 @@ class IrdestVpnService : VpnService() {
             Log.e(TAG, "connect: Failed to open tun interface", e)
         }
         finally {
-            connection.runForever()
+            connection.connect()
             updateForegroundNotification(R.string.connected)
         }
     }

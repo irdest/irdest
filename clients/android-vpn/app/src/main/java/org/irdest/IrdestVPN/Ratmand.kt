@@ -1,14 +1,10 @@
 package org.irdest.IrdestVPN
 
 import android.util.Log
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
-class Ratmand: ViewModel() {
+class Ratmand {
     private val TAG = Ratmand::class.java.simpleName
     // JNI constructs the name of function that it will call is
     // Java_<domain>_<class>_<methodname> (Java_org_irdest_ratman_Ratmand_ratrun).
@@ -21,19 +17,24 @@ class Ratmand: ViewModel() {
     fun runRatmand(test_string: String?) {
         arive = true
 
-        viewModelScope.launch(defaultDispatcher) {
-            Log.d(TAG, "run_ratmand: Current thread = "
-                    + Thread.currentThread())
+        // Create new thread
+        val ratmandThread = object : Thread() {
+            override fun run() {
+                Log.d(TAG, "run_ratmand(Ratmand): Current thread = "
+                        + Thread.currentThread())
+                var ratruned = ratrun("test")
+                Log.d(TAG, "runRatmand: ratrun called got string from rust "
+                        + ratruned)
 
-            var ratruned = ratrun("test")
-            Log.d(TAG, "runRatmand: ratrun called got string from rust "
-                    + ratruned)
-
-            while(arive) {
-                delay(2000)
-                Log.d(TAG, "run_ratmand: ratmand is running ....")
+                // Looping
+                while(arive) {
+                    Thread.sleep(2000)
+                    Log.d(TAG, "run_ratmand: ratmand is running ....")
+                }
             }
         }
+        ratmandThread.isDaemon = true
+        ratmandThread.start()
     }
 
     fun stopRatmand() {

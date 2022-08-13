@@ -21,26 +21,27 @@ class Connection(
 
     private var alive = true
 
-    // Do nothing but receive packets from local.
-    fun runForever() {
-        viewModelScope.launch(ioDispatcher) {
-            Log.d(TAG, "runForever: Current Thread = "
-                    + Thread.currentThread())
-            while(alive) {
-                val buffer = ByteBuffer.allocate(MAX_PACKET_SIZE)
+    fun connect() {
+        object : Thread() {
+            override fun run() {
+                Log.d(TAG, "runForever(Irdest-proxy): Current Thread = "
+                        + Thread.currentThread())
+                while(alive) {
+                    val buffer = ByteBuffer.allocate(MAX_PACKET_SIZE)
 
-                if (input.read(buffer) <= 0) {
-                    delay(1000)
+                    if (input.read(buffer) <= 0) {
+                        Thread.sleep(1000)
+                    }
+
+                    // Received packet from local.
+                    Log.d(TAG, "vpnRunLoop: Received packet from local packet: "
+                            + "Bytes = " + buffer.array())
+
+                    buffer.clear()
                 }
-
-                // Received packet from local.
-                Log.d(TAG, "vpnRunLoop: Received packet from local packet: "
-                        + "Bytes = " + buffer.array())
-
-                buffer.clear()
+                Log.d(TAG, "runForever: Main loop is stopped.")
             }
-            Log.d(TAG, "runForever: Main loop is stopped.")
-        }
+        }.start()
     }
 
     fun disconnect() {
