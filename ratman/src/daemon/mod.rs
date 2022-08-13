@@ -84,7 +84,23 @@ pub fn setup_logging(lvl: &str, syslog: bool) {
             .with_writer(syslog)
             .init();
     } else {
-        fmt().with_env_filter(filter).init();
+        let subscriber = fmt().with_env_filter(filter).finish();
+
+        #[cfg(feature = "android")]
+        {
+            use android_logger::Config;
+            use logh::Level;
+
+            android_logger::init_once(
+                Config::default()
+                    .with_tag("ratmand")
+                    .with_min_level(Level::Debug),
+            );
+        }
+
+        if let Err(_) = tracing::subscriber::set_global_default(subscriber) {
+            eprintln!("failed to register global tracing-subscriber");
+        }
     }
     info!("Initialised logger: welcome to ratmand!");
 }
