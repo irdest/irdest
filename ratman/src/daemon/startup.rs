@@ -20,12 +20,10 @@ use nix::{
     fcntl::{open, OFlag},
     libc,
 };
+use std::{convert::TryInto, os::unix::io::RawFd};
+use std::{error::Error, fs::File, io::Read, path::Path, result::Result as StdResult};
 
-use std::convert::TryInto;
-use std::os::unix::io::RawFd;
-use std::path::Path;
-use std::{fs::File, io::Read};
-
+/// Start Ratman in the current process/ thread
 pub fn build_cli() -> ArgMatches<'static> {
     App::new("ratmand")
         .about("Decentralised and delay tolerant peer-to-peer packet router.  Part of the Irdest project: https://irde.st")
@@ -131,53 +129,46 @@ pub fn build_cli() -> ArgMatches<'static> {
 // Err(_) -> emit warning but keep going
 pub async fn setup_local_discovery(
     r: &Router,
-    m: &ArgMatches<'_>,
     c: &Config,
 ) -> std::result::Result<(String, u16), String> {
-    let iface = m.value_of("DISCOVERY_IFACE")
-        .map(Into::into)
-        .or_else(|| default_iface().map(|iface| {
-            info!("Auto-selected interface '{}' for local peer discovery.  Is this wrong?  Pass --discovery-iface to ratmand instead!", iface);
-            iface
-        })).ok_or("failed to determine interface to bind on".to_string())?;
+    let iface = c.discovery_iface.as_ref().map(Into::into).or_else(|| default_iface().map(|iface| {
+        info!("Auto-selected interface '{}' for local peer discovery.  Is this wrong?  Pass --discovery-iface to ratmand instead!", iface);
+        iface
+    })).ok_or("failed to determine interface to bind on".to_string())?;
 
-    let port = m
-        .value_of("DISCOVERY_PORT")
-        .unwrap_or(c.netmod_lan_bind.as_str())
-        .parse()
-        .map_err(|e| format!("failed to parse discovery port: {}", e))?;
-
-    r.add_endpoint(LanDiscovery::spawn(&iface, port)).await;
-    Ok((iface, port))
+    r.add_endpoint(LanDiscovery::spawn(&iface, c.discovery_port))
+        .await;
+    Ok((iface, c.discovery_port))
 }
 
-pub async fn run_app(m: ArgMatches<'static>, configuration: Config) -> std::result::Result<(), ()> {
-    let dynamic = m.is_present("ACCEPT_UNKNOWN_PEERS") || configuration.accept_unknown_peers;
-
+pub async fn run_app(cfg: Config) -> std::result::Result<(), ()> {
     // Setup logging
-    daemon::setup_logging(m.value_of("VERBOSITY").unwrap(), m.is_present("DAEMONIZE"));
+    daemon::setup_logging(&cfg.verbosity, cfg.daemonize);
 
     // Setup metrics collection
     #[cfg(feature = "dashboard")]
     let mut registry = prometheus_client::registry::Registry::default();
 
     // Load peers or throw an error about missing cli data!
-    let peers: Vec<_> = match m
-        .value_of("PEERS")
+    let peers: Vec<_> = match cfg
+        .peers
+        .as_ref()
         .map(|s| s.replace(" ", "\n").to_owned())
-        .or(m.value_of("PEER_FILE").and_then(|path| {
+        .or(cfg.peer_file.as_ref().and_then(|path| {
             let mut f = File::open(path).ok()?;
             let mut buf = String::new();
             f.read_to_string(&mut buf).ok()?;
             Some(buf)
         }))
-        .or(if m.is_present("NO_PEERING") {
+        .or(if cfg.no_peering {
             Some("".into())
         } else {
             None
         }) {
         Some(peer_str) => peer_str.split("\n").map(|s| s.trim().to_owned()).collect(),
-        None if !dynamic => daemon::elog("Failed to initialise ratmand: missing peers data!", 2),
+        None if !cfg.accept_unknown_peers => {
+            daemon::elog("Failed to initialise ratmand: missing peers data!", 2)
+        }
         None => vec![],
     };
 
@@ -186,16 +177,11 @@ pub async fn run_app(m: ArgMatches<'static>, configuration: Config) -> std::resu
     #[cfg(feature = "dashboard")]
     r.register_metrics(&mut registry);
 
-    if !m.is_present("NO_INET") || configuration.netmod_inet_enabled {
-        let tcp = match Inet::start(
-            m.value_of("INET_BIND")
-                .unwrap_or(configuration.netmod_inet_bind.as_str()),
-        )
-        .await
-        {
+    if !cfg.no_inet {
+        let tcp = match Inet::start(&cfg.inet_bind).await {
             Ok(tcp) => {
                 // Open the UPNP port if the user enabled this feature
-                if m.is_present("USE_UPNP") {
+                if cfg.use_upnp {
                     if let Err(e) = daemon::upnp::open_port(tcp.port()) {
                         error!("UPNP setup failed: {}", e);
                     }
@@ -214,8 +200,8 @@ pub async fn run_app(m: ArgMatches<'static>, configuration: Config) -> std::resu
     }
 
     // If local-discovery is enabled
-    if !m.is_present("NO_DISCOVERY") || configuration.netmod_lan_enabled {
-        match setup_local_discovery(&r, &m, &configuration).await {
+    if !cfg.no_discovery {
+        match setup_local_discovery(&r, &cfg).await {
             Ok((iface, port)) => debug!(
                 "Local peer discovery running on interface {}, port {}",
                 iface, port
@@ -226,31 +212,26 @@ pub async fn run_app(m: ArgMatches<'static>, configuration: Config) -> std::resu
 
     // If dashboard is enabled
     #[cfg(feature = "dashboard")]
-    if !m.is_present("NO_DASHBOARD") {
+    if !cfg.no_dashboard {
         match daemon::web::start(r.clone(), registry, "127.0.0.1", 8090).await {
             Ok(_) => {}
             Err(e) => warn!("Failed to setup dashboard bind {:?}", e),
         }
     }
 
-    let api_bind = match m
-        .value_of("API_BIND")
-        .unwrap_or(configuration.api_socket_bind.as_str())
-        .parse()
-    {
+    let api_bind = match cfg.api_bind.parse() {
         Ok(addr) => addr,
         Err(e) => daemon::elog(format!("Failed to parse API_BIND address: {}", e), 2),
     };
+
     if let Err(e) = daemon::run(r, api_bind).await {
         error!("Ratmand suffered fatal error: {}", e);
     }
     Ok(())
 }
 
-pub fn sysv_daemonize_app(
-    m: ArgMatches<'static>,
-    configuration: Config,
-) -> std::result::Result<(), Box<dyn std::error::Error>> {
+/// Start Ratman as a daemonised process
+pub fn sysv_daemonize_app(cfg: Config) -> StdResult<(), Box<dyn Error>> {
     //  1. Close all open file descriptors except standard input,
     //     output, and error (i.e. the first three file descriptors 0,
     //     1, 2). This ensures that no accidentally passed file
@@ -305,7 +286,6 @@ pub fn sysv_daemonize_app(
     close(read_pipe_fd)?;
 
     /* Become session leader */
-
     setsid()?;
     if let ForkResult::Parent { child: _ } = unsafe { fork()? } {
         return Ok(());
@@ -343,9 +323,7 @@ pub fn sysv_daemonize_app(
     //     it is verified at the same time that the PID previously
     //     stored in the PID file no longer exists or belongs to a
     //     foreign process.
-    let pid_filepath = m.value_of("PID_FILE").unwrap();
-
-    let pid_file = match daemon::pidfile::PidFile::new(&pid_filepath).and_then(|f| f.write_pid()) {
+    let pid_file = match daemon::pidfile::PidFile::new(&cfg.pid_file).and_then(|f| f.write_pid()) {
         Ok(v) => v,
         Err(err) => {
             let err = err as i32;
@@ -360,7 +338,7 @@ pub fn sysv_daemonize_app(
     write(write_pipe_fd, &pid_bytes)?;
     close(write_pipe_fd)?;
 
-    let _ = async_std::task::block_on(run_app(m, configuration));
+    let _ = async_std::task::block_on(run_app(cfg));
 
     // Unlock and close/delete pid file
     drop(pid_file);

@@ -11,7 +11,7 @@ extern crate tracing;
 pub(crate) use ratman::{daemon::startup::*, *};
 
 fn main() {
-    let configuration = match daemon::config::Config::load() {
+    let mut config = match daemon::config::Config::load() {
         Ok(cfg) => cfg,
         Err(e) => {
             error!(
@@ -23,13 +23,16 @@ fn main() {
     };
 
     let m = build_cli();
-    let daemonize = m.is_present("DAEMONIZE");
-    if daemonize {
-        if let Err(err) = sysv_daemonize_app(m, configuration) {
-            eprintln!("Ratmand suffered fatal error: {}", err);
-            std::process::exit(-1);
-        }
-    } else if let Err(()) = async_std::task::block_on(run_app(m, configuration)) {
+    config.apply_arg_matches(m);
+
+    if config.daemonize {
+        eprintln!("hahahahahahahaha. No.")
+
+        // if let Err(err) = sysv_daemonize_app(m, configuration) {
+        //     eprintln!("Ratmand suffered fatal error: {}", err);
+        //     std::process::exit(-1);
+        // }
+    } else if let Err(()) = async_std::task::block_on(run_app(config)) {
         std::process::exit(-1);
     }
 }
