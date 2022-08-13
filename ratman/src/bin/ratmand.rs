@@ -26,12 +26,10 @@ fn main() {
     config.apply_arg_matches(m);
 
     if config.daemonize {
-        eprintln!("hahahahahahahaha. No.")
-
-        // if let Err(err) = sysv_daemonize_app(m, configuration) {
-        //     eprintln!("Ratmand suffered fatal error: {}", err);
-        //     std::process::exit(-1);
-        // }
+        if let Err(err) = sysv_daemonize_app(config) {
+            eprintln!("Ratmand suffered fatal error: {}", err);
+            std::process::exit(-1);
+        }
     } else if let Err(()) = async_std::task::block_on(run_app(config)) {
         std::process::exit(-1);
     }
