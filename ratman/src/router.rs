@@ -35,6 +35,7 @@ impl Router {
     #[cfg(feature = "dashboard")]
     pub fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
         self.inner.register_metrics(registry);
+        self.proto.register_metrics(registry);
     }
 
     /// Add a new endpoint to this router
