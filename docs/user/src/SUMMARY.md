@@ -8,3 +8,4 @@
   - [ratcat](./ratman/ratcat.md)
   - [ratctl](./ratman/ratctl.md)
 - [irdest-echo](./irdest-echo.md)
+- [irdest-proxy](./irdest-proxy.md)
