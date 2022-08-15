@@ -20,7 +20,7 @@ class Ratmand {
             override fun run() {
                 try {
                     ratrun("test")
-                } catch(e: InterruptedException){
+                } catch(e: InterruptedException) {
                     Log.e(TAG, "run: ratmand thread interrupted ", e)
                 }
                 // Catch uncaught exception

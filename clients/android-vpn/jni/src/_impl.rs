@@ -5,7 +5,7 @@ use jni::JNIEnv;
 use ratman::daemon;
 use std::error::Error;
 
-use log::{info, trace, warn, Level};
+use log::{info, trace, Level};
 use netmod_mem::MemMod;
 use ratman::{Identity, Router};
 
@@ -55,19 +55,17 @@ pub extern "C" fn Java_org_irdest_IrdestVPN_Ratmand_ratrun(
 ) -> jstring {
     // Ignoring the test_string which comes from the android application.
 
-    // Run ratman router for the test
-    // TODO: wrap this in async_std::task::block_on
-    // let _ = router_testing();
-    // let _ = ratrun_with_startup();
-    //
-    android_logger::init_once(Config::default().with_min_level(Level::Trace));
-
-    trace!("Trace from rust!!!");
-    info!("Info from rust!!!");
-    warn!("This is warring from rust!!!");
+    // Send log to logcat
+    android_logger::init_once(
+        Config::default()
+            .with_tag("ratmand-android-logger")
+            .with_min_level(Level::Trace),
+    );
 
     let mut cfg = daemon::config::Config::new();
     cfg.accept_unknown_peers = true;
+
+    info!("@android-dev#: config => {:?}", cfg);
 
     async_std::task::block_on(ratman::daemon::startup::run_app(cfg)).unwrap();
 
