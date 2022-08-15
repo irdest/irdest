@@ -22,9 +22,8 @@ class Ratmand {
             override fun run() {
                 Log.d(TAG, "run_ratmand(Ratmand): Current thread = "
                         + Thread.currentThread())
-                var ratruned = ratrun("test")
-                Log.d(TAG, "runRatmand: ratrun called got string from rust "
-                        + ratruned)
+
+                ratrun("test")
 
                 // Looping
                 while(arive) {

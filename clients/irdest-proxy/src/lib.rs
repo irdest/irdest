@@ -22,12 +22,9 @@ mod outlet;
 mod proto;
 mod server;
 
-<<<<<<< HEAD
 #[cfg(test)]
 mod test;
 
-=======
->>>>>>> 4f890eff (irdest-proxy: make the proxy easier to use)
 pub use config::{parse_routes_file, Config, Routes};
 
 use directories::ProjectDirs;
