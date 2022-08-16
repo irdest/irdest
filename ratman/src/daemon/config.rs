@@ -24,6 +24,9 @@ pub struct Config {
     pub lora_baud: u32,
     pub no_lora: bool,
 
+    pub raw_bind: String,
+    pub no_raw: bool,
+
     pub peers: Option<String>,
     pub peer_file: Option<String>,
     pub no_peering: bool,
@@ -130,6 +133,9 @@ impl Default for Config {
             lora_port: None,
             lora_baud: 9600,
             no_lora: true,
+
+            raw_bind: "wlan0".into(),
+            no_raw: false,
 
             peers: None,
             peer_file: None,

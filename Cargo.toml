@@ -25,6 +25,7 @@ members = [
     "netmods/netmod-lora",
     "netmods/netmod-mem",
     "netmods/netmod-wd",
+    "netmods/netmod-raw",
 
     # End-user applications
     "clients/android-vpn/jni",
