@@ -18,9 +18,7 @@ ratman = { version = "0.4.0", path = "../../../ratman", package = "ratman"}
 async-std = { version = "1.0", features = ["attributes"] }
 jni = { version = "0.19.0", default-features = false }
 log = "0.4"
+android_logger = "0.11"
 
 [dependencies.netmod-mem]
 path = "../../../netmods/netmod-mem"
-
-[target.'cfg(target_os = "android")'.dependencies]
-android_logger = "0.11"
