@@ -5,7 +5,6 @@ use jni::JNIEnv;
 use ratman::daemon;
 use std::error::Error;
 
-use log::{info, trace, Level};
 use netmod_mem::MemMod;
 use ratman::{Identity, Router};
 
@@ -64,7 +63,6 @@ pub extern "C" fn Java_org_irdest_IrdestVPN_Ratmand_ratrun(
 
     let mut cfg = daemon::config::Config::new();
     cfg.accept_unknown_peers = true;
-
     info!("@android-dev#: config => {:?}", cfg);
 
     async_std::task::block_on(ratman::daemon::startup::run_app(cfg)).unwrap();
