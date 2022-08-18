@@ -31,6 +31,8 @@ pub(crate) struct Socket {
     inbox: Arc<RwLock<Notify<VecDeque<FrameExt>>>>,
 }
 
+const CUSTOM_ETHERTYPE: EtherType = EtherType (0xDE57);
+
 impl Socket {
     /// Create a new socket handler and return a management reference
     pub(crate) async fn new(iface: NetworkInterface, table: Arc<AddrTable>) -> Arc<Self> {
@@ -47,7 +49,7 @@ impl Socket {
             inbox: Default::default(),
         });
 
-        Self::incoming_handle(Arc::clone(&arc), table);
+        dbg!(Self::incoming_handle(Arc::clone(&arc), table));
         arc.multicast(&Envelope::Announce).await;
         info!("Sent multicast announcement");
         arc
@@ -86,7 +88,7 @@ impl Socket {
             new_packet.set_destination(dest);
             index += 1;
 
-            new_packet.set_ethertype(EtherType::new(0xDE57));
+            new_packet.set_ethertype(CUSTOM_ETHERTYPE);
             new_packet.set_payload(&payload);
         });
     }
@@ -102,7 +104,7 @@ impl Socket {
 
             new_packet.set_source(self.iface.mac.unwrap());
             new_packet.set_destination(peer);
-            new_packet.set_ethertype(EtherType::new(0xDE57));
+            new_packet.set_ethertype(CUSTOM_ETHERTYPE);
             new_packet.set_payload(&payload);
         });
 
@@ -130,20 +132,29 @@ impl Socket {
 #[instrument(skip(arc, table), level = "trace")]
     fn incoming_handle(arc: Arc<Self>, table: Arc<AddrTable>) {
         task::spawn(async move {
+            dbg!("Spawned raw handler");
             loop {
                 let mut buf = vec![0; 1500];
 
                 let mut rx = arc.rx.lock_arc().await;
 
-                match rx.next() { //this will probably block
+                match rx.next() { //TODO: this will probably block
                     Ok(packet) => {
                         let packet = EthernetPacket::new(packet).unwrap();
+                        
+                        if packet.get_ethertype() != CUSTOM_ETHERTYPE { // Immediately filter irrelevant
+                                                                  // packets. TODO: Check if pnet
+                                                                  // has a better way to do this.
+                            continue
+                        }
 
+                        dbg!(&packet);
+                        
                         let peer = packet.get_source();
 
                         match buf.write_all(packet.payload()).await {
                             Ok(()) => (),
-                            Err(_) => continue, //some day we'll manage dropping packets?
+                            Err(_) => continue, // TODO: this doesn't look right
                         };
 
                         let env = Envelope::from_bytes(&buf);
@@ -178,14 +189,4 @@ impl Socket {
             }
         });
     }
-}
-#[ignore]
-#[test]
-fn test_init() {
-    task::block_on(async move {
-        let table = Arc::new(AddrTable::new());
-        let sock = Socket::new("br42", 12322, table).await;
-        println!("Multicasting");
-        sock.multicast(&Envelope::Announce).await;
-    });
 }

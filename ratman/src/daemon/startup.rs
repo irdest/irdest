@@ -6,6 +6,7 @@
 use crate::{daemon::config::Config, *};
 use netmod_inet::InetEndpoint as Inet;
 use netmod_lan::{default_iface, Endpoint as LanDiscovery};
+use netmod_raw::Endpoint as LocalDiscovery;
 
 #[cfg(feature = "lora")]
 use netmod_lora::LoraEndpoint;
@@ -63,6 +64,13 @@ pub fn build_cli() -> ArgMatches<'static> {
                 .long("inet")
                 .help("Specify the inet-driver socket bind address.  Make sure this port is open in your firewall")
                 .default_value("[::]:9000"),
+        )
+        .arg(
+            Arg::with_name("ETHERNET_BIND")
+            .takes_value(true)
+            .long("ethernet")
+            .help("Specify raw interface.")
+            .default_value("wlan0"),
         )
         .arg(
             Arg::with_name("NO_INET")
@@ -150,8 +158,15 @@ pub async fn setup_local_discovery(
         iface
     })).ok_or("failed to determine interface to bind on".to_string())?;
 
-    r.add_endpoint(LanDiscovery::spawn(&iface, c.discovery_port))
+    //r.add_endpoint(LanDiscovery::spawn(&iface, c.discovery_port))
+    //    .await;
+
+    r.add_endpoint(LocalDiscovery::spawn(&iface))
         .await;
+
+    dbg!("after added endpoint");
+    //to add: networkmanager scan & find ssid
+
     Ok((iface, c.discovery_port))
 }
 

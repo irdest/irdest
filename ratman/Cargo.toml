@@ -33,7 +33,8 @@ lan = ["netmod-lan"]
 lora = ["netmod-lora"]
 
 upnp = ["igd", "ipnetwork", "pnet"]
-daemon = ["cli", "inet", "lan", "upnp", "syslog"]
+raw = ["netmod-raw"]
+daemon = ["cli", "inet", "lan", "upnp", "syslog", "raw"]
 util = ["cli", "ratman-client"]
 cli = ["types", "clap", "directories", "nix", "serde_json", "tracing-subscriber"]
 dashboard = ["daemon", "tide", "rust-embed", "openapi_type", "prometheus-client"]
@@ -84,6 +85,7 @@ async-eris = { version = "0.1", path = "../utils/eris-rs" }
 netmod-inet = { path = "../netmods/netmod-inet", version = "0.4", optional = true }
 netmod-lan = { path = "../netmods/netmod-lan", version = "0.2", optional = true }
 netmod-lora = { path = "../netmods/netmod-lora", version = "0.1", optional = true }
+netmod-raw = { path = "../netmods/netmod-raw", version = "0.2", optional = true }
 
 [dev-dependencies]
 bincode = "1.2"

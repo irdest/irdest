@@ -59,6 +59,10 @@ impl Config {
             self.inet_bind = inet_bind.into();
         }
 
+        if let Some(raw_bind) = m.value_of("ETHERNET_BIND") {
+            self.raw_bind = raw_bind.into();
+        }
+
         self.no_inet |= m.is_present("NO_INET");
 
         if let Some(discovery_port) = m.value_of("DISCOVERY_PORT") {
