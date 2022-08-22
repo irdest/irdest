@@ -126,7 +126,6 @@ pub(crate) struct DaemonState<'a> {
 impl<'a> DaemonState<'a> {
     pub(crate) fn new(l: &'a TcpListener, router: Router) -> Self {
         let path = Os::match_os().data_path();
-
         let r2 = router.clone();
 
         let online = block_on(async move {
