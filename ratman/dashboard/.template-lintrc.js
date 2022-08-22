@@ -8,11 +8,11 @@ module.exports = {
   extends: 'recommended',
   rules: {
     // Prevent unlocalised string literals in templates, use {{t '...'}}.
-    // Unlocalisable strings, like arrows, emojis, etc. can be allowlistd here.
+    // Unlocalisable strings, like arrows, emojis, etc. can be allowlisted here.
     'no-bare-strings': [
-      // TODO: These are placeholder strings until we have the metrics API working.
-      '↑ 1.0kb',
-      '↓ 69.0kb',
+      // Front page metrics (upload/download).
+      '↑',
+      '↓',
     ],
   },
 };

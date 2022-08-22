@@ -15,8 +15,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
       <tr>
         <td>{{#if addr.isLocal}}{{t 'addr.is_local'}}{{/if}}</td>
         <td>{{addr.id}}</td>
-        <td class="peer-data peer-data-up">↑ 1.0kb</td>
-        <td class="peer-data peer-data-down">↓ 69.0kb</td>
+        <td class="peer-data peer-data-up">↑ {{addr.metricBytesSent}}</td>
+        <td class="peer-data peer-data-down">↓ {{addr.metricBytesRecv}}</td>
       </tr>
     {{/each}}
     </tbody>
