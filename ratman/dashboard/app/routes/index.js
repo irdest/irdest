@@ -8,6 +8,7 @@ import RSVP from 'rsvp';
 
 export default class IndexRoute extends Route {
   @service store;
+  @service metrics;
 
   model() {
     return RSVP.hash({

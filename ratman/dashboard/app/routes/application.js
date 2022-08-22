@@ -8,10 +8,14 @@ import { service } from '@ember/service';
 export default class ApplicationRoute extends Route {
   @service intl;
   @service bestLanguage;
+  @service metrics;
 
   beforeModel() {
     super.beforeModel(...arguments);
     this.setupIntl();
+
+    // Start polling for metrics.
+    this.metrics.start();
   }
 
   // Try to set a locale based on browser settings.
