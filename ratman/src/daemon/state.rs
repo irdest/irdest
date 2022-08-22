@@ -14,6 +14,7 @@ use async_std::{
     task::{block_on, spawn_blocking},
 };
 use directories::ProjectDirs;
+use std::env::consts::OS;
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs::{File, OpenOptions},
@@ -68,13 +69,22 @@ async fn load_users(router: &Router, path: PathBuf) -> Vec<Identity> {
     }
 }
 
-fn data_path(dirs: &ProjectDirs) -> PathBuf {
-    let data_dir = env_xdg_data()
-        .map(|path| PathBuf::new().join(path))
-        .unwrap_or_else(|| dirs.data_dir().to_path_buf());
-    trace!("Ensure data directory exists: {:?}", data_dir);
-    let _ = std::fs::create_dir(&data_dir);
-    PathBuf::new().join(data_dir).join("users.json")
+fn data_path() -> PathBuf {
+    match OS.as_ref() {
+        "android" => PathBuf::new().join("/data/user/0/org.irdest.IrdestVPN/files/users.json"),
+        // Window, Linux, MacOs
+        _ => {
+            let dirs = ProjectDirs::from("org", "irdest", "ratmand")
+                .expect("Failed to initialise project directories");
+
+            let data_dir = env_xdg_data()
+                .map(|path| PathBuf::new().join(path))
+                .unwrap_or_else(|| dirs.data_dir().to_path_buf());
+            trace!("Ensure data directory exists: {:?}", data_dir);
+            let _ = std::fs::create_dir(&data_dir);
+            PathBuf::new().join(data_dir).join("users.json")
+        }
+    }
 }
 
 /// Keep track of current connections to stream messages to
@@ -82,16 +92,13 @@ pub(crate) struct DaemonState<'a> {
     router: Router,
     online: OnlineMap,
     listen: Incoming<'a>,
-    dirs: ProjectDirs,
 }
 
 impl<'a> DaemonState<'a> {
     pub(crate) fn new(l: &'a TcpListener, router: Router) -> Self {
-        let dirs = ProjectDirs::from("org", "irdest", "ratmand")
-            .expect("Failed to initialise project directories");
-
-        let path = data_path(&dirs);
+        let path = data_path();
         let r2 = router.clone();
+
         let online = block_on(async move {
             load_users(&r2, path)
                 .await
@@ -104,7 +111,6 @@ impl<'a> DaemonState<'a> {
             online: Arc::new(Mutex::new(online)),
             listen: l.incoming(),
             router,
-            dirs,
         }
     }
 
@@ -129,7 +135,8 @@ impl<'a> DaemonState<'a> {
             Ok(())
         }
 
-        let path = data_path(&self.dirs);
+        let path = data_path();
+
         let ids: Vec<_> = self.online.lock().await.iter().map(|(k, _)| *k).collect();
         spawn_blocking(move || sync_blocking(path, ids)).await?;
         Ok(())
