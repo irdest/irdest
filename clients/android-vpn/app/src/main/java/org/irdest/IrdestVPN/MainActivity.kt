@@ -8,9 +8,12 @@ import android.util.Log
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
     private val TAG = MainActivity::class.java.simpleName
+
+    private val DATA_FILE = "users.json"
 
     companion object {
         init {
@@ -23,6 +26,14 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // Check if data file is exist if not create one.
+        val data_file = File(applicationContext.filesDir, DATA_FILE)
+        if (!data_file.exists()) {
+            Log.i(TAG, "onCreate: Data file is not existed create new file")
+            val isCreated = data_file.createNewFile()
+            Log.i(TAG, "onCreate: File is created = " + isCreated)
+        }
     }
 
     private var resultLauncher = registerForActivityResult(
@@ -55,7 +66,7 @@ class MainActivity : AppCompatActivity() {
 
     fun runRatman(view: View) {
         Log.d(TAG, "runRatman: Run ratman buntton is clicked")
-        rat.runRatmand("test")
+        rat.runRatmand("test");
     }
 
     fun stopRatmand(view: View) {
