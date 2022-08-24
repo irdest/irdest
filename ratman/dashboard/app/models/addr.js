@@ -17,7 +17,8 @@ export default class AddrModel extends Model {
   }
 
   get metricBytesRecv() {
-    // TODO: Implement me!
-    return 42069;
+    return this.metrics.sumRate('ratman_switch_received_bytes_total', {
+      recp_id: this.id,
+    });
   }
 }
