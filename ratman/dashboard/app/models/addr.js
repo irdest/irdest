@@ -11,7 +11,7 @@ export default class AddrModel extends Model {
   @attr isLocal;
 
   get metricBytesSent() {
-    return this.metrics.sum('ratman_dispatch_bytes_total', {
+    return this.metrics.sumRate('ratman_dispatch_bytes_total', {
       recp_id: this.id,
     });
   }
