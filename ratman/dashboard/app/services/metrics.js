@@ -1,10 +1,11 @@
 import Service from '@ember/service';
 import { later } from '@ember/runloop';
+import { tracked } from '@glimmer/tracking';
 import fetch from 'fetch';
 import parsePrometheusTextFormat from 'parse-prometheus-text-format';
 
 export default class MetricsService extends Service {
-  metrics = {};
+  @tracked metrics = {};
 
   start() {
     fetch('/_/metrics').then((response) => {
