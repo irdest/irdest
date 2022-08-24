@@ -217,7 +217,7 @@ mod metrics {
                 Box::new(self.frames_total.clone()),
             );
             registry.register_with_unit(
-                "ratman_dispatch_bytes",
+                "ratman_dispatch",
                 "Total size of dispatched frames",
                 Unit::Bytes,
                 Box::new(self.bytes_total.clone()),
