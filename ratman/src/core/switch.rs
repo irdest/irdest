@@ -29,6 +29,9 @@ pub(crate) struct Switch {
 
     /// Control channel to start new endpoints
     ctrl: IoPair<usize>,
+
+    #[cfg(feature = "dashboard")]
+    metrics: Arc<metrics::Metrics>,
 }
 
 impl Switch {
@@ -47,7 +50,14 @@ impl Switch {
             collector,
             drivers,
             ctrl: bounded(1),
+            #[cfg(feature = "dashboard")]
+            metrics: Arc::new(metrics::Metrics::default()),
         })
+    }
+
+    #[cfg(feature = "dashboard")]
+    pub(crate) fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
+        self.metrics.register(registry);
     }
 
     /// Add a new interface to the run switch
@@ -76,6 +86,20 @@ impl Switch {
 
             trace!("Receiving frame from '{:?}'...", t);
 
+            #[cfg(feature = "dashboard")]
+            {
+                let metric_labels = &metrics::Labels {
+                    sender_id: f.sender,
+                    recp_type: (&f.recipient).into(),
+                    recp_id: f.recipient.scope().expect("empty recipient"),
+                };
+                self.metrics.frames_total.get_or_create(metric_labels).inc();
+                self.metrics
+                    .bytes_total
+                    .get_or_create(metric_labels)
+                    .inc_by(f.payload.len() as u64);
+            }
+
             // Switch the traffic to the appropriate place
             use {Recipient::*, RouteType::*};
             match f.recipient {
@@ -101,6 +125,69 @@ impl Switch {
                     None => {}
                 },
             }
+        }
+    }
+}
+
+#[cfg(feature = "dashboard")]
+mod metrics {
+    use prometheus_client::{
+        encoding::text::Encode,
+        metrics::{counter::Counter, family::Family},
+        registry::{Registry, Unit},
+    };
+
+    #[derive(Clone, Hash, PartialEq, Eq, Encode)]
+    pub(super) struct Labels {
+        pub sender_id: types::Identity,
+        pub recp_type: IdentityType,
+        pub recp_id: types::Identity,
+    }
+
+    #[derive(Clone, Hash, PartialEq, Eq)]
+    pub(super) enum IdentityType {
+        Standard,
+        Flood,
+    }
+
+    impl From<&types::Recipient> for IdentityType {
+        fn from(v: &types::Recipient) -> Self {
+            match v {
+                &types::Recipient::Standard(_) => Self::Standard,
+                &types::Recipient::Flood(_) => Self::Flood,
+            }
+        }
+    }
+
+    // Manually implement Encode to produce eg. `recp_type=standard` rather than `recp_type=Standard`.
+    impl Encode for IdentityType {
+        fn encode(&self, w: &mut dyn std::io::Write) -> std::io::Result<()> {
+            match self {
+                Self::Standard => write!(w, "standard"),
+                Self::Flood => write!(w, "flood"),
+            }
+        }
+    }
+
+    #[derive(Default)]
+    pub(super) struct Metrics {
+        pub frames_total: Family<Labels, Counter>,
+        pub bytes_total: Family<Labels, Counter>,
+    }
+
+    impl Metrics {
+        pub fn register(&self, registry: &mut Registry) {
+            registry.register(
+                "ratman_switch_received_frames",
+                "Total number of received frames",
+                Box::new(self.frames_total.clone()),
+            );
+            registry.register_with_unit(
+                "ratman_switch_received",
+                "Total size of received frames",
+                Unit::Bytes,
+                Box::new(self.bytes_total.clone()),
+            );
         }
     }
 }

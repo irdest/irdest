@@ -82,6 +82,7 @@ impl Core {
     pub fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
         self.routes.register_metrics(registry);
         self.dispatch.register_metrics(registry);
+        self.switch.register_metrics(registry);
     }
 
     /// Asynchronously send a Message
