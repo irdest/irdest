@@ -38,6 +38,53 @@ impl Io {
     }
 }
 
+/// OS specific support
+pub enum Os {
+    Android,
+    Unix,
+    Unknown,
+    Ios,
+    Windows,
+}
+
+impl Os {
+    pub fn match_os() -> Os {
+        match OS.as_ref() {
+            "linux" | "macos" | "freebsd" | "dragonfly" | "netbsd" | "openbsd" | "solaris" => {
+                Self::Unix
+            }
+            "android" => Self::Android,
+            "ios" => Self::Ios,
+            "windows" => Self::Windows,
+            _ => Self::Unknown, // Found ailian Os write log
+        }
+    }
+
+    pub fn data_path(&self) -> PathBuf {
+        match self {
+            Self::Android => Self::android_data_path(),
+            Self::Unix | Self::Windows => Self::xdg_data_path(),
+            _ => Self::xdg_data_path(), // Maybe try
+        }
+    }
+
+    pub fn xdg_data_path() -> PathBuf {
+        let dirs = ProjectDirs::from("org", "irdest", "ratmand")
+            .expect("Failed to initialise project directories");
+        let data_dir = env_xdg_data()
+            .map(|path| PathBuf::new().join(path))
+            .unwrap_or_else(|| dirs.data_dir().to_path_buf());
+        trace!("Ensure data directory exists: {:?}", data_dir);
+        let _ = std::fs::create_dir(&data_dir);
+
+        PathBuf::new().join(data_dir).join("users.json")
+    }
+
+    pub fn android_data_path() -> PathBuf {
+        PathBuf::new().join("/data/user/0/org.irdest.IrdestVPN/files/users.json")
+    }
+}
+
 async fn load_users(router: &Router, path: PathBuf) -> Vec<Identity> {
     debug!("Loading registered users from file {:?}", path);
     let mut f = match File::open(path) {
@@ -69,24 +116,6 @@ async fn load_users(router: &Router, path: PathBuf) -> Vec<Identity> {
     }
 }
 
-fn data_path() -> PathBuf {
-    match OS.as_ref() {
-        "android" => PathBuf::new().join("/data/user/0/org.irdest.IrdestVPN/files/users.json"),
-        // Window, Linux, MacOs
-        _ => {
-            let dirs = ProjectDirs::from("org", "irdest", "ratmand")
-                .expect("Failed to initialise project directories");
-
-            let data_dir = env_xdg_data()
-                .map(|path| PathBuf::new().join(path))
-                .unwrap_or_else(|| dirs.data_dir().to_path_buf());
-            trace!("Ensure data directory exists: {:?}", data_dir);
-            let _ = std::fs::create_dir(&data_dir);
-            PathBuf::new().join(data_dir).join("users.json")
-        }
-    }
-}
-
 /// Keep track of current connections to stream messages to
 pub(crate) struct DaemonState<'a> {
     router: Router,
@@ -96,7 +125,8 @@ pub(crate) struct DaemonState<'a> {
 
 impl<'a> DaemonState<'a> {
     pub(crate) fn new(l: &'a TcpListener, router: Router) -> Self {
-        let path = data_path();
+        let path = Os::match_os().data_path();
+
         let r2 = router.clone();
 
         let online = block_on(async move {
@@ -135,7 +165,7 @@ impl<'a> DaemonState<'a> {
             Ok(())
         }
 
-        let path = data_path();
+        let path = Os::match_os().data_path();
 
         let ids: Vec<_> = self.online.lock().await.iter().map(|(k, _)| *k).collect();
         spawn_blocking(move || sync_blocking(path, ids)).await?;
