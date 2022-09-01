@@ -6,6 +6,7 @@ let
     irdest-manual-developer = self.callPackage ./irdest-manual/developer.nix {};
     irdest-manual-user = self.callPackage ./irdest-manual/user.nix {};
     irdest-proxy = self.callPackage ./irdest-proxy {};
+    irdest-mblog = self.callPackage ./irdest-mblog {};
     irdest-website = self.callPackage ./irdest-website {};
 
     ratman = self.callPackage ./ratman {};

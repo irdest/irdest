@@ -75,6 +75,40 @@ build-irdest-proxy-static-aarch64:
     paths:
       - result-irdest-proxy/*
 
+####################### IRDEST MBLOG
+
+build-irdest-mblog:
+  tags: [ irdest-nix ]
+  stage: build
+  script:
+    - nix-build nix -A irdest-mblog
+
+build-irdest-mblog-static:
+  tags: [ irdest-nix ]
+  stage: build
+  script:
+    - nix-env -iA cachix -f https://cachix.org/api/v1/install
+    - cachix use irdest
+    - nix-build nix -A pkgsStatic.buildPackages.rustc -A pkgsStatic.buildPackages.cargo -o toolchain
+    - cachix push irdest ./toolchain* || echo "couldn't push"
+    - nix-build nix -A pkgsStatic.irdest-mblog -o result-irdest-mblog
+  artifacts:
+    paths:
+      - result-irdest-mblog/*
+
+build-irdest-mblog-static-aarch64:
+  tags: [ irdest-nix ]
+  stage: build
+  script:
+    - nix-env -iA cachix -f https://cachix.org/api/v1/install
+    - cachix use irdest
+    - nix-build nix -A pkgsCross.aarch64-multiplatform.pkgsStatic.stdenv -A pkgsCross.aarch64-multiplatform.pkgsStatic.buildPackages.rustc -A pkgsCross.aarch64-multiplatform.pkgsStatic.buildPackages.cargo -o toolchain
+    - cachix push irdest ./toolchain* || echo "couldn't push"
+    - nix-build nix -A pkgsCross.aarch64-multiplatform.pkgsStatic.irdest-mblog -o result-irdest-mblog
+  artifacts:
+    paths:
+      - result-irdest-mblog/*
+
 ####################### IRDEST INSTALLER
 
 build-installer-static:

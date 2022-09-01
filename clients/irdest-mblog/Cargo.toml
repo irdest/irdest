@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2022 embr <hi@liclac.eu>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+[package]
+name = "irdest-mblog"
+version = "0.1.0"
+edition = "2018"
+
+[[bin]]
+name = "irdest-mblog-gtk"
+required-features = [ "mblog-gtk" ]
+
+[features]
+mblog-gtk = [ "gtk" ]
+
+[dependencies]
+ratman-client = { version = "0.4.0", path = "../../ratman/lib-client/" }
+
+# GTK frontend only
+gtk = { version = "0.4.8", package = "gtk4", optional = true }

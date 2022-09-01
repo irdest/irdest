@@ -22,6 +22,9 @@ stdenv.mkDerivation {
 
     # for the ratman dashboard
     nodejs yarn
+
+    # for irdest-mblog
+    gtk4
   ]
   # Special dependencies for macOS builds
   ++ lib.optionals stdenv.isDarwin [
