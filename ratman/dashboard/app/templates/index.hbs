@@ -16,11 +16,11 @@ SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
         <td>{{#if addr.isLocal}}{{t 'addr.is_local'}}{{/if}}</td>
         <td>{{addr.id}}</td>
         <td class="peer-data peer-data-up">
-          ↑ {{format-number addr.metricBytesSent unit='byte-per-second'
+          ↑ {{format-number addr.bytesPerSecondSent unit='byte-per-second'
               unitDisplay='narrow' style='unit'}}
         </td>
         <td class="peer-data peer-data-down">
-          ↓ {{format-number addr.metricBytesRecv unit='byte-per-second'
+          ↓ {{format-number addr.bytesPerSecondRecv unit='byte-per-second'
               unitDisplay='narrow' style='unit'}}
         </td>
       </tr>
