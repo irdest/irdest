@@ -25,6 +25,24 @@ export default class AddrModel extends Model {
     });
   }
 
+  @cached
+  get bytesSent() {
+    return this.metrics.sum('ratman_dispatch_bytes_total', {
+      recp_id: this.id,
+    });
+  }
+
+  @cached
+  get bytesRecv() {
+    return this.metrics.sum('ratman_switch_received_bytes_total', {
+      recp_id: this.id,
+    });
+  }
+
+  get bytesTotal() {
+    return this.bytesRecv + this.bytesSent;
+  }
+
   get isActive() {
     return this.bytesPerSecondRecv > 0 || this.bytesPerSecondSent > 0;
   }
