@@ -5,6 +5,12 @@ export default class IndexController extends Controller {
     return this.model.addrs;
   }
   get sortedAddrs() {
-    return this.addrs.sortBy('isLocal', 'bytesTotal').reverse();
+    return this.addrs.sortBy('bytesTotal');
+  }
+  get localAddrs() {
+    return this.sortedAddrs.filterBy('isLocal', true);
+  }
+  get remoteAddrs() {
+    return this.sortedAddrs.filterBy('isLocal', false);
   }
 }
