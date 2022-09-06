@@ -36,7 +36,7 @@ You will need the following things properly installed on your computer.
 ## Setup
 
 * `git clone <repository-url>` this repository
-* `cd dashboard`
+* `cd ratman/dashboard`
 * `yarn`
 
 ## Running / Development
@@ -66,10 +66,10 @@ Make use of the many generators for code, try `yarn exec ember help generate` fo
 
 ### Deploying
 
-Make a production build, then build `ratmand` with the `webui` feature enabled.
+Make a production build, then build `ratmand` with the `dashboard` feature enabled.
 
 * `yarn build`
-* `cargo build --features=webui`
+* `cargo build --features=dashboard`
 
 ## Further Reading / Useful Links
 
