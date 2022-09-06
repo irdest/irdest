@@ -4,6 +4,12 @@ This is the admin dashboard for `ratmand`. When built with the
 `dashboard` feature enabled, it'll be accessible at `localhost:8090`
 by default.
 
+---
+
+<center>
+![screenshot](screenshot.png)
+</center>
+
 ## TLDR
 
 When building `ratmand` via `cargo` you will have to first build and
