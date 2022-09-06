@@ -12,6 +12,6 @@ index:
 addr:
   group:
     local: Lokale Addressen
-    remote: Entfernte Addressen
+    remote: Fremde Addressen
 api:
   title: API Referenz
