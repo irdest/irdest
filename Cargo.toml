@@ -17,6 +17,7 @@ members = [
     "utils/irdest-firmware-util",
     "utils/task-notify",
     "utils/tracing-syslog",
+    "utils/cchamt",
 
     # Available netmod drivers
     "netmods/netmod-fuzz",
