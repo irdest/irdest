@@ -4,14 +4,29 @@
 
 import Route from '@ember/routing/route';
 import { service } from '@ember/service';
+import { later } from '@ember/runloop';
 
 export default class ApplicationRoute extends Route {
   @service intl;
   @service bestLanguage;
+  @service metrics;
+
+  isInited = false;
+  refreshIntervalSecs = 10;
 
   beforeModel() {
     super.beforeModel(...arguments);
-    this.setupIntl();
+    if (!this.isInited) {
+      this.isInited = true;
+      this.setupIntl();
+
+      // Start polling for metrics.
+      this.metrics.start();
+    }
+  }
+  afterModel() {
+    super.afterModel(...arguments);
+    later(this, this.refresh, this.refreshIntervalSecs * 1000);
   }
 
   // Try to set a locale based on browser settings.

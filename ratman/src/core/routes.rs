@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
+// SPDX-FileCopyrightText: 2022 embr <hi@liclac.eu>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
@@ -15,11 +16,11 @@ use std::collections::BTreeMap;
 use types::Identity;
 
 /// A netmod endpoint ID and an endpoint target ID
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct EpTargetPair(pub(crate) u8, pub(crate) Target);
 
 /// Describes the reachability of a route
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) enum RouteType {
     Remote(EpTargetPair),
     Local,
@@ -33,6 +34,8 @@ pub(crate) enum RouteType {
 pub(crate) struct RouteTable {
     routes: Arc<Mutex<BTreeMap<Identity, RouteType>>>,
     new: IoPair<Identity>,
+    #[cfg(feature = "dashboard")]
+    metrics: metrics::RouteTableMetrics,
 }
 
 impl RouteTable {
@@ -40,7 +43,15 @@ impl RouteTable {
         Arc::new(Self {
             routes: Default::default(),
             new: bounded(1),
+            #[cfg(feature = "dashboard")]
+            metrics: metrics::RouteTableMetrics::default(),
         })
+    }
+
+    /// Register metrics with a Prometheus registry.
+    #[cfg(feature = "dashboard")]
+    pub(crate) fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
+        self.metrics.register(registry);
     }
 
     /// Update or add an IDs entry in the routing table
@@ -54,6 +65,11 @@ impl RouteTable {
         // Only "announce" a new user if it was not known before
         if tbl.insert(id, route).is_none() {
             info!("Discovered new address {}", id);
+            #[cfg(feature = "dashboard")]
+            self.metrics
+                .routes_count
+                .get_or_create(&metrics::RouteLabels { kind: route })
+                .inc();
             let s = Arc::clone(&self);
             task::spawn(async move { s.new.0.send(id).await });
         }
@@ -68,7 +84,16 @@ impl RouteTable {
     pub(crate) async fn add_local(&self, id: Identity) -> Result<()> {
         match self.routes.lock().await.insert(id, RouteType::Local) {
             Some(_) => Err(Error::DuplicateAddress),
-            None => Ok(()),
+            None => {
+                #[cfg(feature = "dashboard")]
+                self.metrics
+                    .routes_count
+                    .get_or_create(&metrics::RouteLabels {
+                        kind: RouteType::Local,
+                    })
+                    .inc();
+                Ok(())
+            }
         }
     }
 
@@ -83,7 +108,14 @@ impl RouteTable {
     /// Delete an entry from the routing table
     pub(crate) async fn delete(&self, id: Identity) -> Result<()> {
         match self.routes.lock().await.remove(&id) {
-            Some(_) => Ok(()),
+            Some(_kind) => {
+                #[cfg(feature = "dashboard")]
+                self.metrics
+                    .routes_count
+                    .get_or_create(&metrics::RouteLabels { kind: _kind })
+                    .dec();
+                Ok(())
+            }
             None => Err(Error::NoAddress),
         }
     }
@@ -113,5 +145,46 @@ impl RouteTable {
     /// Check if an ID is reachable via currently known routes
     pub(crate) async fn reachable(&self, id: Identity) -> Option<RouteType> {
         self.routes.lock().await.get(&id).cloned()
+    }
+}
+
+#[cfg(feature = "dashboard")]
+mod metrics {
+    //! Metric helpers.
+
+    use prometheus_client::{
+        encoding::text::Encode,
+        metrics::{family::Family, gauge::Gauge},
+        registry::Registry,
+    };
+
+    #[derive(Clone, Hash, PartialEq, Eq, Encode)]
+    pub(super) struct RouteLabels {
+        pub kind: super::RouteType,
+    }
+
+    impl Encode for super::RouteType {
+        fn encode(&self, w: &mut dyn std::io::Write) -> std::io::Result<()> {
+            match self {
+                Self::Local => write!(w, "local"),
+                // TODO: Can we add more detail to this?
+                Self::Remote(_) => write!(w, "remote"),
+            }
+        }
+    }
+
+    #[derive(Default)]
+    pub(super) struct RouteTableMetrics {
+        pub routes_count: Family<RouteLabels, Gauge>,
+    }
+
+    impl RouteTableMetrics {
+        pub fn register(&self, registry: &mut Registry) {
+            registry.register(
+                "ratman_routes_current",
+                "Number of routes currently in the table",
+                Box::new(self.routes_count.clone()),
+            );
+        }
     }
 }

@@ -6,4 +6,25 @@ SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 {{page-title (t 'application.title')}}
 
-{{outlet}}
+{{!-- For some reason, @fluid=false doesn't work, but a "falsy" value does. --}}
+<BsNavbar
+  @fluid=""
+  as |navbar|
+>
+  <LinkTo @route="index" class="navbar-brand">{{t 'application.title'}}</LinkTo>
+  <navbar.toggle />
+  <navbar.content>
+    <navbar.nav as |nav|>
+      <nav.item>
+        <nav.link-to @route="index">{{t 'index.title'}}</nav.link-to>
+      </nav.item>
+      <nav.item>
+        <nav.link-to @route="api">{{t 'api.title'}}</nav.link-to>
+      </nav.item>
+    </navbar.nav>
+  </navbar.content>
+</BsNavbar>
+
+<div class="container">
+  {{outlet}}
+</div>

@@ -40,8 +40,13 @@ pub trait Endpoint {
     ///
     /// The target ID is a way to instruct a netmod where to send a
     /// frame in a one-to-many mapping.  When implementing a
-    /// one-to-one endpoint, this ID can be ignored (set to 0).
-    async fn send(&self, frame: Frame, target: Target) -> Result<()>;
+    /// one-to-one endpoint this ID can be ignored (set to 0).
+    ///
+    /// Optionally an exclusion target can be provided.  This is used
+    /// to prevent endless replication of flood messages.  When
+    /// implementing a one-to-one endpoint, the frame MUST be dropped
+    /// when exclude contains any value!
+    async fn send(&self, frame: Frame, target: Target, exclude: Option<u16>) -> Result<()>;
 
     /// Poll for the next available Frame from this interface
     ///
@@ -57,8 +62,8 @@ impl<T: Endpoint + Send + Sync> Endpoint for Arc<T> {
         T::size_hint(self)
     }
 
-    async fn send(&self, frame: Frame, target: Target) -> Result<()> {
-        T::send(self, frame, target).await
+    async fn send(&self, frame: Frame, target: Target, exclude: Option<u16>) -> Result<()> {
+        T::send(self, frame, target, exclude).await
     }
 
     async fn next(&self) -> Result<(Frame, Target)> {

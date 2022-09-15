@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">IrdestVPN</string>
+    <string name="disconnect_vpn">Disconnect</string>
+    <string name="connect_vpn">Connect</string>
+    <string name="connecting">IrdestVPN is connecting...</string>
+    <string name="connected">IrdestVPN is connected.</string>
+    <string name="disconnected">IrdestVPN is disconnected.</string>
+</resources>

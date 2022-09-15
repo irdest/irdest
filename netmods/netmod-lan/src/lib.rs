@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: 2019-2021 Katharina Fey <kookie@spacekookie.de>
-// SPDX-FileCopyrightText: 2019-2021 Yureka Lilian <yuka@yuka.dev>
+// SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
+// SPDX-FileCopyrightText: 2019-2022 Yureka Lilian <yuka@yuka.dev>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
@@ -50,7 +50,7 @@ impl EndpointExt for Endpoint {
         0
     }
 
-    async fn send(&self, frame: Frame, target: Target) -> Result<()> {
+    async fn send(&self, frame: Frame, target: Target, exclude: Option<u16>) -> Result<()> {
         let inner = bincode::serialize(&frame).unwrap();
         let env = Envelope::Data(inner);
         match target {
@@ -59,9 +59,16 @@ impl EndpointExt for Endpoint {
                     .send(&env, self.addrs.ip(*id).await.unwrap())
                     .await
             }
-            Target::Flood(_) => {
+
+            // When `exclude` is_some we can assume that we are in the
+            // process of re-flooding something.  Because netmod-lan
+            // is not segmented (i.e. all peers all also know each
+            // other) we can just not bother to send the message
+            // again (hopefully)
+            Target::Flood(_) if exclude.is_none() => {
                 self.socket.multicast(&env).await;
             }
+            _ => {}
         }
 
         Ok(())

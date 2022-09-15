@@ -90,11 +90,11 @@ async fn flood_over_inet() {
     ep3.add_peers(vec!["[::1]:7210".into()]).await.unwrap();
 
     let r1 = Router::new();
-    let _r2 = Router::new();
+    let r2 = Router::new();
     let r3 = Router::new();
 
     r1.add_endpoint(ep1).await;
-    r1.add_endpoint(ep2).await;
+    r2.add_endpoint(ep2).await;
     r3.add_endpoint(ep3).await;
 
     /////// Create some identities and announce people

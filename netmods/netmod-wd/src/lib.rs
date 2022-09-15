@@ -44,7 +44,7 @@ impl Endpoint for WdMod {
         0
     }
 
-    async fn send(&self, frame: Frame, t: Target) -> Result<()> {
+    async fn send(&self, frame: Frame, t: Target, _: Option<u16>) -> Result<()> {
         self.send_queue.0.send((frame, t)).await.unwrap();
         Ok(())
     }

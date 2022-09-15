@@ -70,8 +70,11 @@ impl Routes {
         inner.get(&target).map(|peer| Arc::clone(&peer))
     }
 
-    pub(crate) async fn get_all_valid(self: &Arc<Self>) -> Vec<Arc<Peer>> {
+    pub(crate) async fn get_all_valid(self: &Arc<Self>) -> Vec<(Arc<Peer>, u16)> {
         let inner = self.inner.read().await;
-        inner.iter().map(|(_, peer)| Arc::clone(&peer)).collect()
+        inner
+            .iter()
+            .map(|(id, peer)| (Arc::clone(&peer), *id))
+            .collect()
     }
 }

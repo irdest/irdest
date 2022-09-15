@@ -1,16 +1,28 @@
 # ratman-dashboard
 
-This is the admin dashboard for `ratmand`. When built with the `webui` feature
-enabled, it'll be accessible at `localhost:8090` by default.
+This is the admin dashboard for `ratmand`. When built with the
+`dashboard` feature enabled, it'll be accessible at `localhost:8090`
+by default.
 
-If making your own builds of `ratmand`, it has to be built manually, eg.:
+---
+
+<center>
+![screenshot](screenshot.png)
+</center>
+
+## TLDR
+
+When building `ratmand` via `cargo` you will have to first build and
+bundle the web dashboard:
 
 ```
 $ env -C ratman/dashboard yarn
-$ cargo run
+$ env -C ratman/dashboard yarn build
+$ cargo build --bin ratmand --all-features
 ```
 
-To hack on web UI itself, remember to point it at your `ratmand` instance:
+When hacking on the dashboard itself remember to point it at the
+`ratmand` instance you would like to use:
 
 ```
 $ cd ratman/dashboard
@@ -30,7 +42,7 @@ You will need the following things properly installed on your computer.
 ## Setup
 
 * `git clone <repository-url>` this repository
-* `cd dashboard`
+* `cd ratman/dashboard`
 * `yarn`
 
 ## Running / Development
@@ -60,10 +72,10 @@ Make use of the many generators for code, try `yarn exec ember help generate` fo
 
 ### Deploying
 
-Make a production build, then build `ratmand` with the `webui` feature enabled.
+Make a production build, then build `ratmand` with the `dashboard` feature enabled.
 
 * `yarn build`
-* `cargo build --features=webui`
+* `cargo build --features=dashboard`
 
 ## Further Reading / Useful Links
 

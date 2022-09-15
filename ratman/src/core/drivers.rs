@@ -72,12 +72,12 @@ impl DriverMap {
     }
 
     /// Get all endpoints, except for the one provided via the ID
-    pub(crate) async fn get_without(&self, not: usize) -> Vec<Arc<Ep>> {
+    pub(crate) async fn get_with_ids(&self) -> Vec<(Arc<Ep>, usize)> {
         let map = self.map.read().await;
         map.iter()
             .enumerate()
             .filter_map(|(i, ep)| match ep {
-                EpWrap::Used(ref ep) if i != not => Some(Arc::clone(ep)),
+                EpWrap::Used(ref ep) => Some((Arc::clone(ep), i)),
                 _ => None,
             })
             .collect()

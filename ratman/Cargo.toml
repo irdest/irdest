@@ -25,15 +25,16 @@ name = "ratctl"
 required-features = ["util"]
 
 [features]
-default = ["daemon", "util"]
+default = ["daemon", "util", "prometheus-client"]
 inet = ["netmod-inet"]
 lan = ["netmod-lan"]
 upnp = ["igd", "ipnetwork", "pnet"]
 daemon = ["cli", "inet", "lan", "upnp", "syslog"]
 util = ["cli", "ratman-client"]
 cli = ["types", "clap", "directories", "nix", "serde_json", "tracing-subscriber"]
-webui = ["daemon", "tide", "rust-embed", "openapi_type"]
+dashboard = ["daemon", "tide", "rust-embed", "openapi_type", "prometheus-client"]
 syslog = ["tracing-syslog"]
+android = []
 
 [dependencies]
 async-std = { version = "1.0", features = ["std", "unstable"] }
@@ -52,6 +53,7 @@ twox-hash = "1.5"
 clockctrl = { version = "0.1", path = "../utils/clockctrl" }
 netmod = { version ="0.5.0", path = "lib-netmod", package = "ratman-netmod"}
 task-notify = { version = "0.1", path = "../utils/task-notify" }
+eris = { version = "0.1", path = "../utils/eris-rs" }
 
 # Dependencies required for various binary targets
 types = { version = "0.4.0", path = "lib-types", package = "ratman-types", optional = true }
@@ -68,7 +70,7 @@ pnet = { version = "=0.28", optional = true }      # to update to the 2021-editi
 tide = { version = "0.16", optional = true }
 rust-embed = { version = "6.3", optional = true }
 openapi_type = { version = "0.4", optional = true }
-eris = { version = "0.1", path = "../utils/eris-rs" }
+prometheus-client = { version = "0.16", optional = true }
 
 # Bundled network modules are all optional dependencies
 netmod-inet = { path = "../netmods/netmod-inet", version = "0.4", optional = true }

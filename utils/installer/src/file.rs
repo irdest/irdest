@@ -87,7 +87,17 @@ impl File {
     }
 
     pub fn install(&self, dirs: &Directories, bundle_dir: &PathBuf) {
-        match std::fs::copy(bundle_dir.join(self.bundle_path()), self.get_target(dirs)) {
+        let target = self.get_target(dirs);
+        let parent = target.parent().expect("target path had no parent");
+        if let Err(e) = std::fs::create_dir_all(&parent) {
+            eprintln!(
+                "failed to create directory '{}': {}",
+                parent.to_str().unwrap_or("<unprintable path>"),
+                e
+            );
+        }
+
+        match std::fs::copy(bundle_dir.join(self.bundle_path()), &target) {
             Ok(_) => {
                 println!(
                     "Install {}: {}",
@@ -98,7 +108,7 @@ impl File {
             Err(e) => {
                 eprintln!(
                     "Install {}: {}",
-                    print_path(&self.get_target(dirs)),
+                    print_path(&target),
                     format!(
                         "{} ({})",
                         "FAILED".bright_red(),

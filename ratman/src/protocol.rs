@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
+// SPDX-FileCopyrightText: 2022 embr <hi@liclac.eu>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
@@ -36,11 +37,18 @@ enum ProtoPayload {
 #[derive(Default)]
 pub(crate) struct Protocol {
     online: Mutex<BTreeMap<Identity, Arc<AtomicBool>>>,
+    #[cfg(feature = "dashboard")]
+    metrics: metrics::Metrics,
 }
 
 impl Protocol {
     pub(crate) fn new() -> Arc<Self> {
         Default::default()
+    }
+
+    #[cfg(feature = "dashboard")]
+    pub fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
+        self.metrics.register(registry);
     }
 
     /// Dispatch a task to announce a user periodically
@@ -60,6 +68,10 @@ impl Protocol {
         task::spawn(async move {
             loop {
                 debug!("Sending announcement for {}", id);
+
+                #[cfg(feature = "dashboard")]
+                self.metrics.announcements_total.inc();
+
                 core.raw_flood(Self::announce(id)).await.unwrap();
                 task::sleep(Duration::from_secs(2)).await;
 
@@ -104,5 +116,25 @@ impl Protocol {
 
         // Currently we just use the sender address as the "scope" of the
         Frame::inline_flood(sender, sender, payload)
+    }
+}
+
+#[cfg(feature = "dashboard")]
+mod metrics {
+    use prometheus_client::{metrics::counter::Counter, registry::Registry};
+
+    #[derive(Default)]
+    pub(super) struct Metrics {
+        pub announcements_total: Counter,
+    }
+
+    impl Metrics {
+        pub fn register(&self, registry: &mut Registry) {
+            registry.register(
+                "ratman_proto_announcements",
+                "Total number of announcements sent",
+                Box::new(self.announcements_total.clone()),
+            );
+        }
     }
 }

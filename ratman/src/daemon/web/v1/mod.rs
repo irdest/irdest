@@ -1,4 +1,3 @@
-use crate::Router;
 use openapi_type::OpenapiType;
 use serde::Serialize;
 use tide::http::mime;
@@ -21,9 +20,10 @@ struct GetAddrsResponse {
     pub addrs: Vec<Addr>,
 }
 
-pub async fn get_addrs(req: Request<Router>) -> tide::Result {
+pub async fn get_addrs(req: Request<super::State>) -> tide::Result {
     let addrs = req
         .state()
+        .router
         .known_addresses()
         .await
         .into_iter()
@@ -38,7 +38,7 @@ pub async fn get_addrs(req: Request<Router>) -> tide::Result {
         .build())
 }
 
-pub async fn get_openapi(_req: Request<Router>) -> tide::Result {
+pub async fn get_openapi(_req: Request<super::State>) -> tide::Result {
     // I would like there to be a better way to generate this JSON blob.
     //
     // Unfortunately, the structs in the `openapiv3` crate are quite extensive, and don't

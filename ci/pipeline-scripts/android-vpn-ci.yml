@@ -1,0 +1,59 @@
+.android-template: &android-configuration
+  image: irdest/android-build-env:latest
+  before_script:
+    - cd clients/android-vpn
+    - chmod +x gradlew
+  only:
+    changes:
+      - clients/android-vpn/**/*
+      - ci/pipeline-scripts/android-vpn-ci.yml
+  cache:
+    key: ${CI_PROJECT_ID}
+    paths:
+      - clients/android-vpn/.gradle/
+
+# Compile rust library
+cross-compile-android-vpn:
+  <<: *android-configuration
+  stage: build
+  script:
+    # Install protoc this is a temporory solution 
+    # After updating docker image below lines should be removed.
+    - curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v21.2/protoc-21.2-linux-x86_64.zip
+    - mkdir protoc
+    - unzip protoc-21.2-linux-x86_64.zip -d protoc
+    - mv protoc/bin/* /usr/local/bin/
+    - mv protoc/include/* /usr/local/include
+    # Compile library 
+    - ./gradlew cargoBuild
+    - mkdir result-android-vpn && cp -r app/src/main/jniLibs/* result-android-vpn/ 
+  artifacts:
+    name: "android-vpn-ratman-library"
+    paths:
+      - clients/android-vpn/result-android-vpn/*
+
+# Build android deBug.apk
+build-android-vpn:
+  <<: *android-configuration
+  stage: build
+  script:
+    - ./gradlew assembleDebug
+    - mkdir result-android-vpn && cp app/build/outputs/apk/debug/app-debug.apk result-android-vpn/irdest-vpn-debug.apk
+  artifacts:
+    name: "android-vpn-apk"
+    paths:
+      - clients/android-vpn/result-android-vpn/*
+
+# Check linting
+lint-android-vpn:
+  <<: *android-configuration
+  stage: lint 
+  script:
+    - ./gradlew -Pci --console=plain :app:lintDebug -PbuildDir=lint
+
+# Run all the tests. Do not interrupt the pipeline 
+test-android-vpn:
+  <<: *android-configuration
+  stage: test
+  script:
+    - ./gradlew -Pci --console=plain :app:testDebug

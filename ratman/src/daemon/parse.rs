@@ -13,7 +13,7 @@ use async_std::io::{Read, Write};
 use types::{
     api::{
         all_peers, api_peers, api_setup, online_ack, ApiMessageEnum, Peers, Peers_Type, Receive,
-        Send, Setup, Setup_Type, Setup_oneof__id,
+        Send, Setup, Setup_Type,
     },
     encode_message, parse_message, write_with_length, Error as ParseError, Identity, Recipient,
     Result as ParseResult,
@@ -57,6 +57,7 @@ async fn handle_send(r: &Router, online: &OnlineMap, _self: Identity, send: Send
     Ok(())
 }
 
+// TODO: why does this function exist?
 async fn handle_setup(_io: &mut Io, _r: &Router, s: Setup) -> Result<()> {
     trace!("Handle setup message: {:?}", s);
     Ok(())
@@ -108,12 +109,12 @@ pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
 
     match one_of {
         ApiMessageEnum::setup(setup) if setup.field_type == Setup_Type::ONLINE => {
-            let id = setup._id;
-            let token = setup._token;
+            let id = setup.id;
+            let token = setup.token;
 
             match (id, token) {
                 // FIXME: validate token
-                (Some(Setup_oneof__id::id(id)), Some(_)) => {
+                (id, token) if id.len() != 0 && token.len() != 0 => {
                     let id = Identity::from_bytes(id.as_slice());
                     let _ = r.add_user(id).await;
                     r.online(id).await.unwrap();
@@ -121,7 +122,7 @@ pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
                     debug!("Authorisation for known client");
                     Ok(Some((id, vec![])))
                 }
-                (None, None) => {
+                (id, token) if id.len() == 0 && token.len() == 0 => {
                     let id = Identity::random();
                     r.add_user(id).await.unwrap();
                     r.online(id).await.unwrap();

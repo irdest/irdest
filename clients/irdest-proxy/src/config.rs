@@ -4,79 +4,106 @@
 
 use async_std::net::SocketAddr;
 use ratman_client::Identity;
+use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
     fs::File,
-    io::{self, Read, Write},
+    io::{Read, Write},
     path::PathBuf,
 };
 
+pub type Routes = BTreeMap<IpSpace, (InOrOut, Identity)>;
+
 /// Encode the current routing configuration
+///
+/// The `addresses` field is only relevant for Inlets and is
+/// automatically populated.  Each "bind" is registered as a new
+/// address.  These addresses are then be re-used between runs.
+#[derive(Default, Serialize, Deserialize)]
 pub struct Config {
-    /// The address of _this_ application
-    pub addr: Identity,
-    /// A map of IP spaces -> addresses
-    pub map: BTreeMap<IpSpace, (InOrOut, Identity)>,
-}
-
-fn read_to_string(p: &PathBuf) -> io::Result<String> {
-    let mut f = File::open(p)?;
-    let mut string = String::new();
-    f.read_to_string(&mut string)?;
-    Ok(string)
-}
-
-fn parse_self_cfg(p: PathBuf) -> io::Result<Identity> {
-    match read_to_string(&p) {
-        Ok(cfg) => match serde_json::from_str::<BTreeMap<String, String>>(&cfg) {
-            Ok(ref mut map) if map.contains_key("addr") => {
-                Ok(Identity::from_string(&map.remove("addr").unwrap()))
-            }
-            _ => {
-                info!(
-                        "failed to parse self.json... assuming first install and generating new address!"
-                    );
-                Ok(Identity::random())
-            }
-        },
-        Err(_) => {
-            let mut cfg = File::create(&p)?;
-            let id = Identity::random().to_string();
-            let mut map = BTreeMap::<String, String>::new();
-            map.insert("addr".into(), id);
-            let buf = serde_json::to_string_pretty(&map).expect("woopsie");
-            cfg.write_all(&buf.as_bytes())?;
-            parse_self_cfg(p)
-        }
-    }
+    /// Inlet addresses per-route
+    pub addresses: BTreeMap<String, Identity>,
 }
 
 impl Config {
-    pub fn load(dir: PathBuf) -> io::Result<Self> {
-        let addr = parse_self_cfg(dir.join("self.json"))?;
+    pub fn get_address(&self, ip: &IpSpace) -> Identity {
+        *self
+            .addresses
+            .get(&ip.to_string())
+            .expect("failed to load address from config")
+    }
 
-        let friends = read_to_string(&dir.join("routes.pm"))?;
-        let map = friends.lines().fold(BTreeMap::new(), |mut map, line| {
-            match parse_line(line) {
-                Some((key, val)) => {
-                    map.insert(key, val);
-                }
-                None => {
-                    eprintln!("failed to parse config line: {}", line);
-                }
+    /// Load the current configuration (creating it if none exists)
+    /// and generating new addresses for any additional Inlet route
+    /// that exists.
+    pub fn load_and_update(dir: &PathBuf, routes: &Routes) -> Self {
+        let path = dir.join("config.json");
+
+        let mut f = File::open(&path)
+            .unwrap_or_else(|_| File::create(&path).expect("failed to create config file"));
+
+        let mut buf = String::new();
+        f.read_to_string(&mut buf)
+            .expect("failed to read config file");
+
+        let mut cfg = serde_json::from_str(&buf).unwrap_or_else(|_| Config::default());
+
+        for (ip, (io, _)) in routes {
+            // We only care about Inlet routes
+            if io == &InOrOut::Out {
+                continue;
             }
 
-            map
-        });
+            // If this inlet route is new we generate a unique address for it
+            let ip_str = ip.to_string();
+            if !cfg.addresses.contains_key(&ip_str) {
+                cfg.addresses.insert(ip_str, Identity::random());
+            }
+        }
 
-        Ok(Self { addr, map })
+        // After generating new addresses for inlet routes we save
+        // this to the configuration
+        f.write_all(&serde_json::to_string_pretty(&cfg).unwrap().as_bytes())
+            .unwrap();
+
+        cfg
     }
+}
+
+pub fn parse_routes_file(dir: &PathBuf) -> Routes {
+    let path = dir.join("routes.pm");
+
+    let mut f = File::open(&path)
+        .expect("Couldn't find routes.pm in your config directory.  This file is required!");
+    let mut friends = String::new();
+    f.read_to_string(&mut friends).unwrap();
+
+    friends.lines().fold(Routes::new(), |mut map, line| {
+        match parse_line(line) {
+            Some((key, val)) => {
+                map.insert(key, val);
+            }
+            None => {
+                eprintln!("failed to parse config line: {}", line);
+            }
+        }
+
+        map
+    })
 }
 
 /// Represent some kind of IP space information
 #[derive(Debug, Ord, PartialOrd, PartialEq, Eq)]
 pub enum IpSpace {
     Single(SocketAddr),
+}
+
+impl ToString for IpSpace {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Single(addr) => addr.to_string(),
+        }
+    }
 }
 
 impl IpSpace {
@@ -96,9 +123,9 @@ pub enum InOrOut {
 
 /// Parse a single line of configuration into a routing tuple
 fn parse_line(line: &str) -> Option<(IpSpace, (InOrOut, Identity))> {
-    if line.contains("->") {
+    if line.contains("<-") {
         parse_outgoing(line)
-    } else if line.contains("<-") {
+    } else if line.contains("->") {
         parse_incoming(line)
     } else {
         warn!("Invalid peer-map line syntax: `{}`", line);
@@ -107,15 +134,59 @@ fn parse_line(line: &str) -> Option<(IpSpace, (InOrOut, Identity))> {
 }
 
 fn parse_outgoing(line: &str) -> Option<(IpSpace, (InOrOut, Identity))> {
-    let split: Vec<_> = line.split("->").collect();
-    let socket = IpSpace::Single(split.get(0)?.parse().ok()?);
-    let id = Identity::from_bytes(split.get(1)?.as_bytes());
+    let split: Vec<_> = line.split("<-").collect();
+    let socket = IpSpace::Single(split.get(0)?.trim().parse().ok()?);
+    let id = Identity::from_string(&split.get(1)?.trim().to_string());
     Some((socket, (InOrOut::Out, id)))
 }
 
 fn parse_incoming(line: &str) -> Option<(IpSpace, (InOrOut, Identity))> {
-    let split: Vec<_> = line.split("<-").collect();
-    let socket = IpSpace::Single(split.get(0)?.parse().ok()?);
-    let id = Identity::from_bytes(split.get(1)?.as_bytes());
+    let split: Vec<_> = line.split("->").collect();
+    let socket = IpSpace::Single(split.get(0)?.trim().parse().ok()?);
+    let id = Identity::from_string(&split.get(1)?.trim().to_string());
     Some((socket, (InOrOut::In, id)))
+}
+
+#[test]
+fn test_parse_line_out() {
+    let line = "127.0.0.1:443 <- 7053-2C1D-15D9-4D30-4FC5-4663-28BD-2E0C-F33D-0D49-2E28-6C1F-5649-6922-7DA8-B7A5";
+    use std::net::*;
+
+    match parse_line(line) {
+        Some((ip, (io, id))) => {
+            assert_eq!(
+                IpSpace::Single(SocketAddr::V4(SocketAddrV4::new(
+                    Ipv4Addr::new(127, 0, 0, 1),
+                    443
+                ))),
+                ip
+            );
+
+            assert_eq!(io, InOrOut::Out);
+            assert_eq!(id, Identity::from_string(&"7053-2C1D-15D9-4D30-4FC5-4663-28BD-2E0C-F33D-0D49-2E28-6C1F-5649-6922-7DA8-B7A5".to_owned()))
+        }
+        _ => panic!("invalid parse"),
+    }
+}
+
+#[test]
+fn test_parse_line_in() {
+    let line = "0.0.0.0:8000 -> 7053-2C1D-15D9-4D30-4FC5-4663-28BD-2E0C-F33D-0D49-2E28-6C1F-5649-6922-7DA8-B7A5";
+    use std::net::*;
+
+    match parse_line(line) {
+        Some((ip, (io, id))) => {
+            assert_eq!(
+                IpSpace::Single(SocketAddr::V4(SocketAddrV4::new(
+                    Ipv4Addr::new(0, 0, 0, 0),
+                    8000
+                ))),
+                ip
+            );
+
+            assert_eq!(io, InOrOut::In);
+            assert_eq!(id, Identity::from_string(&"7053-2C1D-15D9-4D30-4FC5-4663-28BD-2E0C-F33D-0D49-2E28-6C1F-5649-6922-7DA8-B7A5".to_owned()))
+        }
+        _ => panic!("invalid parse"),
+    }
 }

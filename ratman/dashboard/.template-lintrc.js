@@ -7,7 +7,12 @@
 module.exports = {
   extends: 'recommended',
   rules: {
-    // Prevent string literals in templates; use localisation placeholders!
-    'no-bare-strings': true,
+    // Prevent unlocalised string literals in templates, use {{t '...'}}.
+    // Unlocalisable strings, like arrows, emojis, etc. can be allowlisted here.
+    'no-bare-strings': [
+      // Front page metrics (upload/download).
+      '↑',
+      '↓',
+    ],
   },
 };

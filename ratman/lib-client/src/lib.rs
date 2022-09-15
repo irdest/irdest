@@ -81,7 +81,7 @@ impl RatmanIpc {
 
         // Introduce ourselves to the daemon
         let online_msg = api::api_setup(match addr {
-            Some(addr) => api::online(addr, vec![]),
+            Some(addr) => api::online(addr, vec![0, 1, 2, 3]),
             None => api::online_init(),
         });
         info!("Sending introduction message!");
@@ -91,12 +91,13 @@ impl RatmanIpc {
         // Then wait for a response and assign the used address
         let addr = match parse_message(&mut socket).await.map(|m| m.inner) {
             Ok(Some(one_of)) => match one_of {
-                ApiMessageEnum::setup(s) if s.field_type == ACK => s
-                    ._id
-                    .as_ref()
-                    .map(|_| Identity::from_bytes(s.get_id()))
-                    .or(addr)
-                    .expect("failed to initialise new address!"),
+                ApiMessageEnum::setup(ref s) if s.field_type == ACK => {
+                    if s.id.len() > 0 {
+                        Identity::from_bytes(s.get_id())
+                    } else {
+                        panic!("failed to initialise new address!");
+                    }
+                }
                 _ => unreachable!(),
             },
             _ => unreachable!(),

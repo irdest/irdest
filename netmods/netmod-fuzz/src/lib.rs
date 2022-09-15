@@ -29,7 +29,7 @@ impl netmod::Endpoint for FuzzEndpoint {
         0
     }
 
-    async fn send(&self, _: Frame, _: netmod::Target) -> Result<(), netmod::Error> {
+    async fn send(&self, _: Frame, _: netmod::Target, _: Option<u16>) -> Result<(), netmod::Error> {
         Ok(())
     }
 

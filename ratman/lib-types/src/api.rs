@@ -6,7 +6,7 @@
 
 pub use crate::proto::api::{
     ApiMessage, ApiMessage_oneof_inner as ApiMessageEnum, Peers, Peers_Type, Receive, Receive_Type,
-    Send, Send_Type, Setup, Setup_Type, Setup_oneof__id, Setup_oneof__token,
+    Send, Send_Type, Setup, Setup_Type,
 };
 use crate::proto::message::Message;
 use crate::Identity;
