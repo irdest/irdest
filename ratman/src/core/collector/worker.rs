@@ -8,8 +8,8 @@
 use super::{Locked, State};
 use crate::{Message, Payload};
 use async_std::sync::Arc;
+use eris::{Block, BlockStorage, MemoryStorage, ReadCapability};
 use std::convert::TryInto;
-use eris::{BlockStorage, Block, MemoryStorage, ReadCapability};
 use types::{Frame, SeqBuilder, SeqId};
 
 /// A self contained sub-task that collects frames into messages
@@ -85,7 +85,9 @@ fn join_frames<const BS: usize>(buf: &mut Vec<Frame>, new: Frame) -> Option<Mess
                 store.store(&block).await.unwrap();
             }
             let mut res = vec![];
-            eris::decode_const::<_, _, BS>(&mut res, &read_capability, &mut store).await.unwrap();
+            eris::decode_const::<_, _, BS>(&mut res, &read_capability, &mut store)
+                .await
+                .unwrap();
             res
         });
         let Payload {

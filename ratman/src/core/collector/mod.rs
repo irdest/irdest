@@ -142,16 +142,14 @@ fn queue_one() {
     use types::Recipient;
 
     let (sender, recipient, id) = (Identity::random(), Identity::random(), Identity::random());
-    let mut seq = Slicer::slice::<128>(
-        Message {
-            id,
-            sender,
-            recipient: Recipient::Standard(vec![recipient]),
-            payload: vec![0, 1, 2, 3, 1, 3, 1, 2, 1, 3, 3, 7],
-            timesig: TimePair::sending(),
-            sign: vec![0, 1],
-        },
-    );
+    let mut seq = Slicer::slice::<128>(Message {
+        id,
+        sender,
+        recipient: Recipient::Standard(vec![recipient]),
+        payload: vec![0, 1, 2, 3, 1, 3, 1, 2, 1, 3, 3, 7],
+        timesig: TimePair::sending(),
+        sign: vec![0, 1],
+    });
 
     assert_eq!(seq.len(), 1);
     let frame = seq.remove(0);
@@ -184,16 +182,14 @@ fn queue_many() {
     use types::Recipient;
 
     let (sender, recipient, id) = (Identity::random(), Identity::random(), Identity::random());
-    let seq = Slicer::slice::<8>(
-        Message {
-            id,
-            sender,
-            recipient: Recipient::Standard(vec![recipient]),
-            payload: vec![0, 1, 2, 3, 1, 3, 1, 2, 1, 3, 3, 7],
-            timesig: TimePair::sending(),
-            sign: vec![],
-        },
-    );
+    let seq = Slicer::slice::<8>(Message {
+        id,
+        sender,
+        recipient: Recipient::Standard(vec![recipient]),
+        payload: vec![0, 1, 2, 3, 1, 3, 1, 2, 1, 3, 3, 7],
+        timesig: TimePair::sending(),
+        sign: vec![],
+    });
 
     let seqid = id;
     let len = seq.len();

@@ -229,7 +229,8 @@ impl SeqBuilder {
 fn setup() -> Vec<Frame> {
     let sender = Identity::with_digest(&vec![1]);
     let recp = Identity::with_digest(&vec![2]);
-    let mut seq_builder = SeqBuilder::new(sender, Recipient::Standard(vec![recp]), Identity::random());
+    let mut seq_builder =
+        SeqBuilder::new(sender, Recipient::Standard(vec![recp]), Identity::random());
     seq_builder.add(vec![42]);
     seq_builder.add(vec![13, 12]);
     seq_builder.add(vec![13, 37]);
