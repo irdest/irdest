@@ -4,7 +4,9 @@
 
 //! Socket handler module
 
-use crate::{AddrTable, Envelope, FrameExt};
+use useful_netmod_bits::addrs::AddrTable;
+use useful_netmod_bits::framing::{Envelope, FrameExt};
+
 use async_std::{
     future::{self, Future},
     pin::Pin,
@@ -35,7 +37,7 @@ const CUSTOM_ETHERTYPE: EtherType = EtherType (0xDE57);
 
 impl Socket {
     /// Create a new socket handler and return a management reference
-    pub(crate) async fn new(iface: NetworkInterface, table: Arc<AddrTable>) -> Arc<Self> {
+    pub(crate) async fn new(iface: NetworkInterface, table: Arc<AddrTable<MacAddr>>) -> Arc<Self> {
         let (tx, rx) = match channel(&iface, Default::default()) {
             Ok(Channel::Ethernet(tx, rx)) => (tx, rx),
             Ok(_) => panic!("Invalid channel type"),
@@ -130,7 +132,7 @@ impl Socket {
     }
 
 #[instrument(skip(arc, table), level = "trace")]
-    fn incoming_handle(arc: Arc<Self>, table: Arc<AddrTable>) {
+    fn incoming_handle(arc: Arc<Self>, table: Arc<AddrTable<MacAddr>>) {
         task::spawn(async move {
             dbg!("Spawned raw handler");
             loop {

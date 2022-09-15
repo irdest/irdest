@@ -9,7 +9,6 @@ use async_std::{
     sync::{Arc, RwLock},
 };
 use std::collections::BTreeMap;
-use pnet::util::MacAddr;
 
 /// A small utility that creates sequential IDs
 struct IdMaker {
@@ -27,15 +26,15 @@ impl IdMaker {
     }
 }
 
-pub(crate) struct AddrTable {
+pub struct AddrTable<T> {
     factory: IdMaker,
-    addrs: Arc<RwLock<BTreeMap<u16, MacAddr>>>,
-    ids: Arc<RwLock<BTreeMap<MacAddr, u16>>>,
+    addrs: Arc<RwLock<BTreeMap<u16, T>>>,
+    ids: Arc<RwLock<BTreeMap<T, u16>>>,
 }
 
-impl AddrTable {
+impl<T> AddrTable<T> where T: Default + Copy + Ord {
     /// Create a new address lookup table
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             factory: IdMaker {
                 last: Default::default(),
@@ -48,7 +47,7 @@ impl AddrTable {
     /// Insert a given Ethernet address into the table, returning its ID
     ///
     /// Topology changes are handled additively.
-    pub(crate) async fn set(&self, addr: MacAddr) -> u16 {
+    pub async fn set(&self, addr: T) -> u16 {
         let id = self.factory.incr().await.curr().await;
         let peer = addr.into();
         self.addrs.write().await.insert(id, peer);
@@ -57,17 +56,17 @@ impl AddrTable {
     }
 
     /// Get the ID for a given Peer address
-    pub(crate) async fn id(&self, peer: MacAddr) -> Option<u16> {
+    pub async fn id(&self, peer: T) -> Option<u16> {
         self.ids.read().await.get(&peer).cloned()
     }
 
     /// Get the Peer for a given internal ID
-    pub(crate) async fn addr(&self, id: u16) -> Option<MacAddr> {
+    pub async fn addr(&self, id: u16) -> Option<T> {
         self.addrs.read().await.get(&id).cloned()
     }
 
     #[allow(unused)]
-    pub(crate) async fn all(&self) -> Vec<MacAddr> {
+    pub async fn all(&self) -> Vec<T> {
         self.addrs.read().await.values().cloned().collect()
     }
 }

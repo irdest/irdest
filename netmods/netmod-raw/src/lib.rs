@@ -6,25 +6,23 @@
 #[macro_use]
 extern crate tracing;
 
-mod addrs;
-pub(crate) use addrs::AddrTable;
-
 mod socket;
 pub(crate) use socket::Socket;
 
-mod framing;
-pub(crate) use framing::{Envelope, FrameExt};
+use useful_netmod_bits::addrs::AddrTable;
+use useful_netmod_bits::framing::Envelope;
 
 use async_std::{sync::Arc, task};
 use async_trait::async_trait;
 use netmod::{Endpoint as EndpointExt, Frame, Result, Target};
+use pnet::util::MacAddr;
 use pnet_datalink::interfaces;
 use ratman_types::Error;
 
 #[derive(Clone)]
 pub struct Endpoint {
     socket: Arc<Socket>,
-    addrs: Arc<AddrTable>,
+    addrs: Arc<AddrTable<MacAddr>>,
 }
 
 impl Endpoint {
