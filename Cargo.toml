@@ -18,6 +18,7 @@ members = [
     "utils/task-notify",
     "utils/tracing-syslog",
     "utils/useful-netmod-bits",
+    "utils/zbus-nm",
 
     # Available netmod drivers
     "netmods/netmod-fuzz",

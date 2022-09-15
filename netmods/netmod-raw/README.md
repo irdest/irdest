@@ -1,16 +1,17 @@
 <!--
 SPDX-FileCopyrightText: 2019-2021 Katharina Fey <kookie@spacekookie.de>
+SPDX-FileCopyrightText: 2022 Christopher Grant <grantchristophera@gmail.com>
 
 SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 -->
 
-# netmod-udp
+# netmod-raw
 
-The netmod-udp endpoint is the main endpoint for udp capable IP
-networks, such as LAN-networks, existing Wifi networks, etc. .
-Network discovery features are implemented via broadcast addresses,
-and a special UDP handshake packet.
+The netmod-raw endpoint can be used for local communication over ethernet, but it includes
+components meant for configuring over 802.11 (which uses ethernet packets by default).
 
-This crate also handles the NAT required to go from a ratman routing
-ID, to a local IP address.  It does however not implement IP range
-discovery.  See libqaul-proxy for that.
+Several features are not supported, including jumbo frames which are usually supported in wireless
+data packets.
+
+Please note that permissions are required for accessing ethernet packets directly. This endpoint
+also currently requires a dedicated physical endpoint.
