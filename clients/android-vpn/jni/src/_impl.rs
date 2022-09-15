@@ -1,14 +1,14 @@
+use android_logger::Config;
 use async_std;
 use jni::objects::{JClass, JString};
 use jni::sys::jstring;
 use jni::JNIEnv;
+use log::{debug, info, Level};
 use ratman::daemon;
 use std::error::Error;
 
 use netmod_mem::MemMod;
 use ratman::{Identity, Router};
-
-use android_logger::Config;
 
 // Run ratman for the simple android test.
 async fn router_testing() -> Result<(), Box<dyn Error>> {
