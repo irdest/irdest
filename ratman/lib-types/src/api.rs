@@ -13,21 +13,25 @@ use crate::Identity;
 
 //////////// SEND type
 
-fn send(msg: Message, t: Send_Type) -> Send {
+fn send(msg: Message, t: Send_Type, scope: Option<Identity>) -> Send {
     let mut send = Send::new();
     send.set_field_type(t);
     send.set_msg(msg);
+    if let Some(scope) = scope {
+        send.set_scope(scope.as_bytes().to_vec());
+    }
+
     send
 }
 
 /// Create a new default send message
 pub fn send_default(msg: Message) -> Send {
-    send(msg, Send_Type::DEFAULT)
+    send(msg, Send_Type::DEFAULT, None)
 }
 
 /// Create a new flood send message
-pub fn send_flood(msg: Message) -> Send {
-    send(msg, Send_Type::FLOOD)
+pub fn send_flood(msg: Message, scope: Identity) -> Send {
+    send(msg, Send_Type::FLOOD, Some(scope))
 }
 
 //////////// RECEIVE type
