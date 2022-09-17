@@ -30,7 +30,7 @@ enum CtrlTypeCode {
 #[derive(Copy, Clone, Serialize, Deserialize)]
 struct CtrlHeader {
     magic: u8,
-    packetType: CtrlTypeCode,
+    packet_type: CtrlTypeCode,
     length: u8,
 }
 
@@ -81,28 +81,27 @@ impl Endpoint for LoraEndpoint {
     }
 
     async fn send(&self, frame: Frame, target: Target, exclude: Option<u16>) -> Result<()> {
-        // if exclude.is_some() {
-        //     return Ok(());
-        // }
+        if exclude.is_some() {
+            return Ok(());
+        }
 
-        // let ctrl = CtrlHeader {
-        //     magic: IRDEST_MAGIC,
-        //     packetType: CtrlTypeCode::Data,
-        //     length: self.size_hint() as u8,
-        // };
+        let ctrl = CtrlHeader {
+            magic: IRDEST_MAGIC,
+            packet_type: CtrlTypeCode::Data,
+            length: self.size_hint() as u8,
+        };
 
-        // todo!("serialise Frame");
-        // let buffer: [u8; RADIO_MTU] = [0; RADIO_MTU];
+        todo!("serialise Frame");
+        let buffer: [u8; RADIO_MTU] = [0; RADIO_MTU];
 
-        // self.serial.lock().await.write(&buffer).unwrap();
+        self.serial.lock().await.write(&buffer).unwrap();
 
         Ok(())
     }
 
     async fn next(&self) -> Result<(Frame, Target)> {
-        // let frame = self.rx.recv().await.unwrap();
-        // Ok((frame, Target::Single(0)))
-        todo!("");
+        let frame = self.rx.recv().await.unwrap();
+        Ok((frame, Target::Single(0)))
     }
 }
 
