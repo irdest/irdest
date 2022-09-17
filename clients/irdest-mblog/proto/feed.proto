@@ -1,0 +1,14 @@
+// SPDX-FileCopyrightText: 2022 embr <hi@liclac.eu>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
+syntax = "proto3";
+
+message Author {
+    string nick = 1;
+}
+
+message Post {
+    Author author = 1;
+    string text = 2;
+}

@@ -1,6 +1,11 @@
 use anyhow::{anyhow, Result};
 use ratman_client::{Address, RatmanIpc};
 
+#[cfg(feature = "proto")]
+pub mod proto {
+    include!(concat!(env!("OUT_DIR"), "/proto_gen/mod.rs"));
+}
+
 /// Loads an address from a file ('addr' in the system-appropriate config dir), or
 /// if that doesn't exist, call the local ratmand to generate one, stashing it in
 /// said file to be found on our next run.

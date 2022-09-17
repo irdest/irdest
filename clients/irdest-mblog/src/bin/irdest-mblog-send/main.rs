@@ -1,5 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
+use irdest_mblog::proto::feed::{Author, Post};
+use protobuf::Message;
 use ratman_client::{Address, RatmanIpc};
 
 const NAMESPACE: [u8; 32] = [
@@ -16,27 +18,39 @@ struct Args {
     addr: Option<String>,
 
     /// Specify a nickname.
-    #[clap(short = 'N', long)]
-    nick: Option<String>,
-
-    /// Use your system username as your nickname.
     #[clap(short, long)]
-    nick_from_user: bool,
+    nick: String,
+
+    /// Text to send.
+    #[clap()]
+    text: String,
 }
 
 #[async_std::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
 
+    // Take an address from --addr, load it from disk, or generate and save one.
     let addr = if let Some(addr_str) = args.addr {
         Address::from_string(&addr_str)
     } else {
         irdest_mblog::load_or_create_addr().await?
     };
-    println!("{:?}", &addr);
 
-    let ipc = RatmanIpc::default_with_addr(addr).await?;
-    ipc.flood(NAMESPACE.into(), vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 0])
+    // There has to be a less awkward way to construct this.
+    let mut post = Post {
+        text: args.text,
+        ..Default::default()
+    };
+    post.set_author(Author {
+        nick: args.nick,
+        ..Default::default()
+    });
+
+    // Connect and send!
+    RatmanIpc::default_with_addr(addr)
+        .await?
+        .flood(NAMESPACE.into(), post.write_to_bytes()?)
         .await?;
 
     Ok(())
