@@ -22,6 +22,7 @@ members = [
     "netmods/netmod-lan",
     "netmods/netmod-wd",
     "netmods/netmod-fuzz",
+    "netmods/netmod-lora",
 
     # End-user applications
     "clients/irdest-echo",

@@ -1,0 +1,16 @@
+[package]
+name = "netmod-lora"
+description = "A LoRa driver"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-or-later"
+
+[dependencies]
+task-notify = { version = "0.1", path = "../../utils/task-notify" }
+netmod = { version ="0.5.0", path = "../../ratman/lib-netmod", package = "ratman-netmod" }
+
+async-std = { version = "1.0", features = ["unstable"] }
+async-trait = "0.1"
+serde = { version = "1.0", features = ["derive"] }
+tracing = "0.1"
+serialport = "4.2"
