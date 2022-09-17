@@ -20,15 +20,10 @@ use std::sync::Arc;
 /// this interface is immutable by default.
 #[async_trait]
 pub trait Endpoint {
-    /// Return a desired frame size in bytes
+    /// Return a maximum frame size in bytes
     ///
-    /// A user of this library should use this metric to slice larger
-    /// payloads into frame sequencies via the provided utilities.
-    ///
-    /// This metric is only a hint, and a router can choose to ignore
-    /// it, if it then deals with possible "too large" errors during
-    /// sending.  Choosing between a greedy or cautious approach to
-    /// data slicing is left to the user of the interfaces.
+    /// Despite the function name, **this is not a hint** and your
+    /// netmod driver should select the actual
     fn size_hint(&self) -> usize;
 
     /// Dispatch a `Frame` across this link
