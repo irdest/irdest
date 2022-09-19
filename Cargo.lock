@@ -1153,6 +1153,9 @@ dependencies = [
 [[package]]
 name = "irdest-firmware-util"
 version = "0.1.0"
+dependencies = [
+ "ratman-types",
+]
 
 [[package]]
 name = "irdest-jni"

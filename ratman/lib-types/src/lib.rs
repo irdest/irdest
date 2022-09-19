@@ -24,7 +24,7 @@ pub use error::{Error, Result};
 pub use frame::Frame;
 pub use id::{Address, Id, ID_LEN};
 pub use message::{Message, Recipient};
-pub use seq::{SeqBuilder, SeqData};
+pub use seq::{SeqBuilder, SeqData, SeqId, XxSignature};
 pub use timepair::TimePair;
 
 use async_std::{

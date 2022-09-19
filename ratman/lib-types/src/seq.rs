@@ -12,8 +12,8 @@ use twox_hash::{RandomXxHashBuilder64 as RXHash64, XxHash64};
 /// An XxHash signature and initialisation seed
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct XxSignature {
-    sig: u64,
-    seed: u64,
+    pub sig: u64,
+    pub seed: u64,
 }
 
 impl XxSignature {
