@@ -7,25 +7,28 @@ members = [
     # The decentralised router
     "ratman",
     "ratman/lib-client",
-    "ratman/lib-types",
     "ratman/lib-netmod",
+    "ratman/lib-types",
 
     # Various utility crates
-    "utils/task-notify",
     "utils/clockctrl",
-    "utils/tracing-syslog",
     "utils/installer",
+    "utils/irdest-firmware-util",
+    "utils/task-notify",
+    "utils/tracing-syslog",
 
     # Available netmod drivers
-    "netmods/netmod-mem",
+    "netmods/netmod-fuzz",
     "netmods/netmod-inet",
     "netmods/netmod-lan",
-    "netmods/netmod-wd",
-    "netmods/netmod-fuzz",
     "netmods/netmod-lora",
+    "netmods/netmod-mem",
+    "netmods/netmod-wd",
 
     # End-user applications
+    "clients/android-vpn/jni",
     "clients/irdest-echo",
     "clients/irdest-proxy",
-    "clients/android-vpn/jni",
+
+    # Firmware abstractions and crates
 ]

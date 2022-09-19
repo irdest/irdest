@@ -1151,6 +1151,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "irdest-firmware-util"
+version = "0.1.0"
+
+[[package]]
 name = "irdest-jni"
 version = "0.0.1"
 dependencies = [

@@ -15,7 +15,7 @@ stdenv.mkDerivation {
     rustc cargo rustfmt rust-analyzer clangStdenv
 
     # core native deps
-    pkg-config protobuf
+    pkg-config protobuf udev
 
     # for various tests
     cargo-watch binutils reuse jq
