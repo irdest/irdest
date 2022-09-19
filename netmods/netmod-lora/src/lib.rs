@@ -3,16 +3,16 @@
 #[macro_use]
 extern crate tracing;
 
-use netmod::{Endpoint, Result, Frame, Target};
+use netmod::{Endpoint, Frame, Result, Target};
 
-use async_std::{sync::Arc, task, channel, sync::Mutex};
+use async_std::{channel, sync::Arc, sync::Mutex, task};
 use async_trait::async_trait;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-use std::time::Duration;
 use serialport::TTYPort;
 use std::io::prelude::*;
+use std::time::Duration;
 
 const RADIO_MTU: usize = 255;
 const BUFFER_SIZE: usize = 32;
@@ -38,7 +38,7 @@ struct CtrlHeader {
 #[derive(Serialize, Deserialize)]
 struct LoraPacket<'a> {
     header: CtrlHeader,
-    payload: &'a[u8],
+    payload: &'a [u8],
 }
 
 pub struct LoraEndpoint {
@@ -51,15 +51,16 @@ impl LoraEndpoint {
         let (tx, rx) = channel::bounded(BUFFER_SIZE);
         let serial = serialport::new("/dev/ttyUSB0", 115_200)
             .timeout(Duration::from_millis(10))
-            .open_native().expect("Failed to open port");
-        
-        let this = Arc::new(Self{
-                rx,
-                serial: Mutex::new(serial),
-            });
+            .open_native()
+            .expect("Failed to open port");
+
+        let this = Arc::new(Self {
+            rx,
+            serial: Mutex::new(serial),
+        });
 
         task::spawn(Self::read_serial(this.clone(), tx));
-        
+
         this
     }
 
@@ -104,4 +105,3 @@ impl Endpoint for LoraEndpoint {
         Ok((frame, Target::Single(0)))
     }
 }
-
