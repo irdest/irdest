@@ -9,20 +9,21 @@ use useful_netmod_bits::framing::{Envelope, FrameExt};
 
 use async_std::{
     future::{self, Future},
+    io::WriteExt,
     pin::Pin,
-    sync::{Arc, RwLock, Mutex},
+    sync::{Arc, Mutex, RwLock},
     task::{self, Poll},
-    io::{WriteExt},
 };
-use pnet_datalink::{DataLinkReceiver, DataLinkSender, NetworkInterface, Channel, channel};
 use pnet::{
+    packet::ethernet::{EtherType, EthernetPacket, MutableEthernetPacket},
     packet::Packet,
-    packet::ethernet::{EthernetPacket, MutableEthernetPacket, EtherType},
     util::MacAddr,
 };
+use pnet_datalink::{channel, Channel, DataLinkReceiver, DataLinkSender, NetworkInterface};
 
 use netmod::Target;
 use std::collections::VecDeque;
+use std::error::Error;
 use task_notify::Notify;
 
 /// Wraps the pnet ethernet channel and the input queue
@@ -33,28 +34,33 @@ pub(crate) struct Socket {
     inbox: Arc<RwLock<Notify<VecDeque<FrameExt>>>>,
 }
 
-const CUSTOM_ETHERTYPE: EtherType = EtherType (0xDE57);
+const CUSTOM_ETHERTYPE: EtherType = EtherType(0xDE57);
 
 impl Socket {
     /// Create a new socket handler and return a management reference
-    pub(crate) async fn new(iface: NetworkInterface, table: Arc<AddrTable<MacAddr>>) -> Arc<Self> {
+    pub(crate) async fn new(
+        iface: NetworkInterface,
+        table: Arc<AddrTable<MacAddr>>,
+    ) -> Result<Arc<Self>, Box<dyn Error>> {
         let (tx, rx) = match channel(&iface, Default::default()) {
             Ok(Channel::Ethernet(tx, rx)) => (tx, rx),
-            Ok(_) => panic!("Invalid channel type"),
-            Err(_) => panic!("Error opening ethernet channel. (Do you have permissions?)"),
-        }; 
+            Ok(_) => Err("Invalid channel type")?,
+            Err(e) => Err(e)?,
+        };
 
         let arc = Arc::new(Self {
             iface: iface,
-            tx: Arc::new(Mutex::new(tx)), 
+            tx: Arc::new(Mutex::new(tx)),
             rx: Arc::new(Mutex::new(rx)),
             inbox: Default::default(),
         });
 
-        dbg!(Self::incoming_handle(Arc::clone(&arc), table));
+        Self::incoming_handle(Arc::clone(&arc), table); //NOTE: I am not certain that cloning the
+                                                        //ethernet channel is wise, but we are only ever
+                                                        //either recieving or transmitting.
         arc.multicast(&Envelope::Announce).await;
         info!("Sent multicast announcement");
-        arc
+        Ok(arc)
     }
 
     /// Send a message to one specific client
@@ -62,13 +68,17 @@ impl Socket {
         self.send_inner(env, peer).await;
     }
 
-
     /// Send a multicast with an Envelope
     pub(crate) async fn multicast(&self, env: &Envelope) {
         self.send_inner(env, MacAddr::broadcast()).await;
     }
 
-    pub(crate) async fn send_multiple(&self, env: &Envelope, peers: &Vec<MacAddr>, exclude: MacAddr) {
+    pub(crate) async fn send_multiple(
+        &self,
+        env: &Envelope,
+        peers: &Vec<MacAddr>,
+        exclude: MacAddr,
+    ) {
         let mut tx = self.tx.lock_arc().await;
 
         let payload = env.as_bytes();
@@ -109,9 +119,7 @@ impl Socket {
             new_packet.set_ethertype(CUSTOM_ETHERTYPE);
             new_packet.set_payload(&payload);
         });
-
     }
-
 
     pub(crate) async fn next(&self) -> FrameExt {
         future::poll_fn(|ctx| {
@@ -131,7 +139,7 @@ impl Socket {
         .await
     }
 
-#[instrument(skip(arc, table), level = "trace")]
+    #[instrument(skip(arc, table), level = "trace")]
     fn incoming_handle(arc: Arc<Self>, table: Arc<AddrTable<MacAddr>>) {
         task::spawn(async move {
             dbg!("Spawned raw handler");
@@ -140,23 +148,27 @@ impl Socket {
 
                 let mut rx = arc.rx.lock_arc().await;
 
-                match rx.next() { //TODO: this will probably block
+                match rx.next() {
+                    //TODO: this probably blocks
                     Ok(packet) => {
                         let packet = EthernetPacket::new(packet).unwrap();
-                        
-                        if packet.get_ethertype() != CUSTOM_ETHERTYPE { // Immediately filter irrelevant
-                                                                  // packets. TODO: Check if pnet
-                                                                  // has a better way to do this.
-                            continue
+
+                        if packet.get_ethertype() != CUSTOM_ETHERTYPE {
+                            // Immediately filter irrelevant
+                            // packets. TODO: Check if pnet
+                            // has a better way to do this.
+                            continue;
                         }
 
                         dbg!(&packet);
-                        
+
                         let peer = packet.get_source();
 
                         match buf.write_all(packet.payload()).await {
                             Ok(()) => (),
-                            Err(_) => continue, // TODO: this doesn't look right
+                            Err(_) => {
+                                warn!("Failed to write packet to buffer. Supported MTU is 1500.")
+                            } //NOTE: Is this reasonable?
                         };
 
                         let env = Envelope::from_bytes(&buf);
@@ -184,6 +196,7 @@ impl Socket {
                     }
                     val => {
                         // TODO: handle errors more gracefully
+                        // This will occur if the network goes down.
                         error!("Crashed raw thread: {:#?}", val);
                         val.expect("Crashed raw thread!");
                     }

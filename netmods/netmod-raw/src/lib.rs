@@ -26,17 +26,33 @@ pub struct Endpoint {
 }
 
 impl Endpoint {
+    
+    #[cfg(target_os = "linux")]
+    fn configure_vif() {
+        todo!();
+    }
+
+    //This should only need two arguments. Layer 2 encryption should not be necessary.
+    #[cfg(target_os = "linux")]
+    async fn configure_network_manager(iface: &str, ssid: &str) -> Result<()> {
+        todo!();
+        //let nm = zbus_nm::NMClient::new().await?;
+        Ok(())
+    }
+
     /// Create a new endpoint and spawn a dispatch task
-    pub fn spawn(iface: &str) -> Arc<Self> {
+    pub fn spawn(iface: &str, ssid: Option<&str>) -> Arc<Self> {
+        
+
         let niface = interfaces()
             .into_iter()
             .rfind(|i| i.name == iface)
-            .expect("Router sent invalid interface");
+            .expect(&format!("Interface name {} does not exist.", iface));
 
         task::block_on(async move {
             let addrs = Arc::new(AddrTable::new());
             Arc::new(Self {
-                socket: Socket::new(niface, Arc::clone(&addrs)).await,
+                socket: Socket::new(niface, Arc::clone(&addrs)).await.unwrap(),
                 addrs,
             })
         })
@@ -66,19 +82,22 @@ impl EndpointExt for Endpoint {
         match target {
             Target::Single(ref id) => {
                 self.socket
-                    .send(&env, self.addrs.addr(*id).await.unwrap()).await;
+                    .send(&env, self.addrs.addr(*id).await.unwrap())
+                    .await;
             }
-            Target::Flood(_) => {
-                match exclude {
-                    Some(u) => {
-                        let peers = self.addrs.all().await;
-                        let exc = self.addrs.addr(u).await.expect("Router sent invalid exclude id.");
-                        
-                        self.socket.send_multiple(&env, &peers, exc).await;
-                    },
-                    None => self.socket.multicast(&env).await,
+            Target::Flood(_) => match exclude {
+                Some(u) => {
+                    let peers = self.addrs.all().await;
+                    let exc = self
+                        .addrs
+                        .addr(u)
+                        .await
+                        .expect("Router sent invalid exclude id.");
+
+                    self.socket.send_multiple(&env, &peers, exc).await;
                 }
-            }
+                None => self.socket.multicast(&env).await,
+            },
         }
 
         Ok(())

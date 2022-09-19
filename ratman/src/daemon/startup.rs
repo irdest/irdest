@@ -6,7 +6,6 @@
 use crate::{daemon::config::Config, *};
 use netmod_inet::InetEndpoint as Inet;
 use netmod_lan::{default_iface, Endpoint as LanDiscovery};
-use netmod_raw::Endpoint as LocalDiscovery;
 
 #[cfg(feature = "lora")]
 use netmod_lora::LoraEndpoint;
@@ -158,14 +157,19 @@ pub async fn setup_local_discovery(
         iface
     })).ok_or("failed to determine interface to bind on".to_string())?;
 
-    //r.add_endpoint(LanDiscovery::spawn(&iface, c.discovery_port))
-    //    .await;
-
-    r.add_endpoint(LocalDiscovery::spawn(&iface))
+    r.add_endpoint(LanDiscovery::spawn(&iface, c.discovery_port))
         .await;
 
-    dbg!("after added endpoint");
-    //to add: networkmanager scan & find ssid
+    info!("Initialized UDP Endpoint");
+
+    #[cfg(feature = "raw")]
+    {
+        use netmod_raw::Endpoint as LocalDiscovery;
+        r.add_endpoint(LocalDiscovery::spawn(&iface, Some("ratman"))) //FIXME: ssid
+            .await;
+
+        info!("Initialized Ethernet Endpoint");
+    }
 
     Ok((iface, c.discovery_port))
 }
