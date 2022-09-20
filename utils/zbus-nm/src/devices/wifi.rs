@@ -10,24 +10,24 @@ use zvariant::Value;
 use crate::{proxies::NetworkManager::DeviceWireless::WirelessProxy, NMClient};
 
 use super::{
-    accesspoint::AccessPoint,
+    accesspoint::NMAccessPoint,
     device::{FromDevice, NMDevice, NMDeviceType},
 };
 
-struct Wifi<'a> {
+pub struct NMDeviceWifi<'a> {
     proxy: WirelessProxy<'a>,
 }
 
 type ScanOptions<'a> = HashMap<&'a str, Value<'a>>;
 
 #[async_trait]
-impl<'a> FromDevice for Wifi<'a> {
-    async fn from_device(nm: NMClient<'_>, device: NMDevice) -> Result<Wifi<'a>> {
+impl<'a> FromDevice for NMDeviceWifi<'a> {
+    async fn from_device(nm: &NMClient<'_>, device: &NMDevice) -> Result<NMDeviceWifi<'a>> {
         match device.kind {
-            NMDeviceType::Wifi => Ok(Wifi {
+            NMDeviceType::Wifi => Ok(NMDeviceWifi {
                 proxy: WirelessProxy::builder(nm.proxy.connection())
                     .destination(crate::DESTINATION)?
-                    .path(device.path)?
+                    .path(device.path.clone())?
                     .build()
                     .await?,
             }),
@@ -36,7 +36,7 @@ impl<'a> FromDevice for Wifi<'a> {
     }
 }
 
-impl<'a> Wifi<'a> {
+impl<'a> NMDeviceWifi<'a> {
     ///This function requests an SSID scan from the wireless device. The callback is an
     ///asynchronous closure. The SSIDs can then be found by calling get_all_access_points.
     ///
@@ -46,7 +46,7 @@ impl<'a> Wifi<'a> {
         F: Future<Output = ()>,
         C: FnOnce() -> F,
     {
-        self.proxy.request_scan(options).await;
+        self.proxy.request_scan(options).await.unwrap();
 
         let current_stamp = self.proxy.receive_last_scan_changed().await.next().await;
 
@@ -59,8 +59,13 @@ impl<'a> Wifi<'a> {
         }
     }
 
-    pub async fn get_all_access_points(&self) -> Result<Vec<AccessPoint>> {
-        let aps = self.proxy.get_access_points().await?;
-        Err(zbus::Error::Unsupported)
+    //NOTE: Rust's Iterator is still foreign to me, but lazy evaluation is probably sensible here.
+    pub async fn get_all_access_points(&self) -> Result<Vec<NMAccessPoint>> {
+        let paths = self.proxy.get_access_points().await?;
+        let mut aps = Vec::new();
+        for path in paths {
+            aps.push(NMAccessPoint::new(self.proxy.connection(), path).await?);
+        }
+        Ok(aps)
     }
 }

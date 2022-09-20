@@ -1,16 +1,20 @@
+use std::collections::HashMap;
+
 use zbus::{Connection, Result};
+use zvariant::{OwnedObjectPath, OwnedValue, Value};
 
 mod proxies;
 
 use crate::proxies::NetworkManager::NetworkManagerProxy;
+use crate::proxies::NetworkManager::Settings::SettingsProxy;
 
-mod devices;
+pub mod devices;
 
 use crate::devices::device::NMDevice;
 
-mod settings;
+pub mod settings;
 
-use settings::NMSettings;
+use settings::{NMActiveConnection, NMConnection, NMSettings, PartialConnection};
 
 const DESTINATION: &str = "org.freedesktop.NetworkManager";
 const SETTINGS_PATH: &str = "/org/freedesktop/NetworkManager/Settings";
@@ -21,19 +25,19 @@ pub struct NMClient<'a> {
 }
 
 impl<'a> NMClient<'a> {
-    ///Allow the client lib to create the connection.
-    pub async fn new(conn: Option<Connection>) -> Result<NMClient<'a>> {
-        let system_connection = match conn {
+    ///Allow the user to pass a connection if so desired.
+    pub async fn new(system_connection: Option<Connection>) -> Result<NMClient<'a>> {
+        let conn = match system_connection {
             Some(val) => val,
             None => Connection::system().await?,
         };
 
-        let nm_proxy = NetworkManagerProxy::new(&system_connection).await?;
+        let nm_proxy = NetworkManagerProxy::new(&conn).await?;
 
         Ok(NMClient {
             proxy: nm_proxy,
             settings: NMSettings {
-                proxy: SettingsProxy::builder(&system_connection)
+                proxy: SettingsProxy::builder(&conn)
                     .destination(DESTINATION)?
                     .path(SETTINGS_PATH)?
                     .build()
@@ -48,65 +52,68 @@ impl<'a> NMClient<'a> {
         let mut devices = Vec::new();
 
         for path in reply {
-            if let Ok(device) = NMDevice::from_owned_object_path(self, path).await {
+            if let Ok(device) =
+                NMDevice::from_owned_object_path(&self.proxy.connection(), path).await
+            {
                 devices.push(device);
             }
         }
 
         Ok(devices)
     }
-}
 
-//#[async_std::main]
-//async fn main() -> Result<(), Box<dyn Error>> {
-//
-//
-//    // The SettingsProxy provides access to NetworkManager's saved connections and provides better
-//    // control when adding a new connection than the base object.
-//    let settings_proxy = SettingsProxy::builder(&system_connection)
-//        .destination(DESTINATION)?
-//        .path("/org/freedesktop/NetworkManager/Settings")?
-//        .build()
-//        .await?;
-//
-//    let reply = settings_proxy.list_connections().await?;
-//
-//    // Item should always be a path to a org.freedesktop.NetworkManager.Settings.Connection object
-//    for item in reply {
-//        let settings_connection_proxy = ConnectionProxy::builder()
-//            .destination(DESTINATION)?
-//            .path(&item)?
-//            .build()
-//            .await?;
-//
-//        let value = settings_connection_proxy.get_settings().await?;
-//
-//        dbg!(value);
-//
-//        //TODO: Finish automatically connecting to IBSS or AP
-//        //if value.connection.ssid == "ratman" {
-//        //    nm_proxy.activate_connection(item, devices.first(), ).await?;
-//        //}
-//    }
-//
-//
-//
-//    //TODO: Wireless
-//    let wireless_device = devices
-//        .iter()
-//        .take_while(|test| test.name == "org.freedesktop.NetworkManager.Device.Wireless")
-//        .next()
-//        .unwrap();
-//
-//    let mut test_conn = HashMap::new();
-//    //TODO: consider concatenating random base32 string to end of ssid name?
-//    //TODO: NetworkManager connection types and device types as enums?
-//    test_conn.insert("ssid", "ratman");
-//    test_conn.insert("type", "802-11-wireless");
-//    test_conn.insert("interface-name", &wireless_device.name);
-//    test_conn.insert("", "");
-//
-//    //let reply = settings_proxy.add_connection_unsaved(test_conn);
-//
-//    Ok(())
-//}
+    pub async fn get_device_by_iface(&self, iface: &str) -> Result<NMDevice<'_>> {
+        Ok(NMDevice::from_owned_object_path(
+            &self.proxy.connection(),
+            self.proxy.get_device_by_ip_iface(iface).await?,
+        )
+        .await?)
+    }
+
+    pub async fn add_and_activate_connection(
+        &self,
+        connection: PartialConnection<'_>,
+        device: NMDevice<'_>,
+        specific_object: OwnedObjectPath,
+    ) -> Result<(NMConnection, NMActiveConnection)> {
+        let reply = self
+            .proxy
+            .add_and_activate_connection(
+                connection,
+                &device.path, 
+                &specific_object,
+            )
+            .await?;
+        Ok((
+            NMConnection::new(&self.proxy.connection(), reply.0).await?,
+            NMActiveConnection::new(&self.proxy.connection(), reply.1).await?,
+        ))
+    }
+
+    pub async fn add_and_activate_connection2(
+        &self,
+        connection: PartialConnection<'_>,
+        device: &NMDevice<'_>,
+        specific_object: OwnedObjectPath,
+        options: HashMap<&str, Value<'_>>,
+    ) -> Result<(
+        NMConnection,
+        NMActiveConnection,
+        HashMap<String, OwnedValue>,
+    )> {
+        let reply = self
+            .proxy
+            .add_and_activate_connection2(
+                connection,
+                &device.path,
+                &specific_object,
+                options,
+            )
+            .await?;
+        Ok((
+            NMConnection::new(&self.proxy.connection(), reply.0).await?,
+            NMActiveConnection::new(&self.proxy.connection(), reply.1).await?,
+            reply.2,
+        ))
+    }
+}

@@ -1,27 +1,57 @@
-use zbus::{export::async_trait::async_trait, Result};
+use zbus::{Connection, Result};
+use zvariant::OwnedObjectPath;
 
-use crate::{proxies::NetworkManager::AccessPoint::AccessPointProxy, NMClient};
+use crate::proxies::NetworkManager::AccessPoint::AccessPointProxy;
 
-use super::device::{FromDevice, NMDevice, NMDeviceType};
-
-pub struct AccessPoint<'a> {
-    proxy: AccessPointProxy<'a>,
+pub enum NM80211Mode {
+    Unknown,
+    Adhoc,
+    Infra,
+    AP,
+    Mesh,
 }
 
-impl AccessPoint<'_> {}
-
-#[async_trait]
-impl<'a> FromDevice for AccessPoint<'a> {
-    async fn from_device(nm: NMClient<'_>, device: NMDevice) -> Result<AccessPoint<'a>> {
-        match device.kind {
-            NMDeviceType::AccessPoint => Ok(AccessPoint {
-                proxy: AccessPointProxy::builder(nm.proxy.connection())
-                    .destination(crate::DESTINATION)?
-                    .path(device.path)?
-                    .build()
-                    .await?,
-            }),
-            _ => Err(zbus::Error::Unsupported),
+impl From<u32> for NM80211Mode {
+    fn from(u: u32) -> Self {
+        match u {
+            0 => Self::Unknown,
+            1 => Self::Adhoc,
+            2 => Self::Infra,
+            3 => Self::AP,
+            4 => Self::Mesh,
+            _ => Self::Unknown,
         }
     }
 }
+
+#[derive(Clone)]
+pub struct NMAccessPoint<'a> {
+    proxy: AccessPointProxy<'a>,
+}
+
+impl<'a> NMAccessPoint<'a> {
+    pub(crate) async fn new(conn: &Connection, path: OwnedObjectPath) -> Result<NMAccessPoint<'a>> {
+        Ok(NMAccessPoint {
+            proxy: AccessPointProxy::builder(conn)
+                .destination(crate::DESTINATION)?
+                .path(path)?
+                .build()
+                .await?,
+        })
+    }
+
+    pub async fn get_ssid(&self) -> Result<Vec<u8>> {
+        self.proxy.ssid().await
+    }
+
+    pub async fn get_mode(&self) -> Result<NM80211Mode> {
+        Ok(self.proxy.mode().await?.into())
+    }
+
+    ///Deadline is approaching so I need to break the abstraction :(
+    pub fn get_path(&self) -> OwnedObjectPath {
+       self.proxy.path().clone().into()
+    }
+}
+
+

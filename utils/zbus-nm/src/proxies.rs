@@ -1,3 +1,4 @@
+#[allow(non_snake_case)]
 pub mod NetworkManager {
     pub mod DeviceStatistics {
         /// # DBus interface proxy for: `org.freedesktop.NetworkManager.Device.Statistics`
