@@ -22,6 +22,7 @@ extern crate tracing;
 
 pub mod clock;
 mod core;
+mod crypto;
 mod data;
 mod protocol;
 mod router;
