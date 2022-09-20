@@ -8,7 +8,7 @@ Resilient: |
     This also makes it much harder to censor or control.
 Extensible_Title: An extensible architecture
 Extensible: |
-    An Irdest network can be composed of both various devices, as well as
+    An Irdest network can be composed of both devices and
     other networks, creating a network of networks; a new internet.  With
     the Irdest client SDK third-party applications can interact with other
     instances of itself on an Irdest network.
