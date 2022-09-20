@@ -59,7 +59,7 @@ impl<'a> NMDeviceWifi<'a> {
         }
     }
 
-    //NOTE: Rust's Iterator is still foreign to me, but lazy evaluation is probably sensible here.
+    //PERF: Iterator is still foreign to me and Vec is easy. Lazy evaluation is probably sensible here.
     pub async fn get_all_access_points(&self) -> Result<Vec<NMAccessPoint>> {
         let paths = self.proxy.get_access_points().await?;
         let mut aps = Vec::new();

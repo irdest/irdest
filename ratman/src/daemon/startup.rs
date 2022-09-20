@@ -65,13 +65,6 @@ pub fn build_cli() -> ArgMatches<'static> {
                 .default_value("[::]:9000"),
         )
         .arg(
-            Arg::with_name("ETHERNET_BIND")
-            .takes_value(true)
-            .long("ethernet")
-            .help("Specify raw interface.")
-            .default_value("wlan0"),
-        )
-        .arg(
             Arg::with_name("NO_INET")
                 .long("no-inet")
                 .help("Disable the inet overlay driver")
@@ -103,8 +96,41 @@ pub fn build_cli() -> ArgMatches<'static> {
                 #[cfg(not(feature = "lora"))]
                 let arg = arg.hidden(true);
                 arg
+            })
+        .arg(
+            {
+                let arg = Arg::with_name("ETHERNET_IFACE")
+                    .takes_value(true)
+                    .long("ethernet-iface")
+                    .help("Specify ethernet interface.");
+
+                #[cfg(not(feature = "raw"))]
+                let arg = arg.hidden(true);
+                arg
+            })
+        .arg(
+            {
+                let arg = Arg::with_name("SSID")
+                    .takes_value(true)
+                    .long("ssid")
+                    .help("Specify SSID for wireless interface");
+
+                #[cfg(not(feature = "raw"))]
+                let arg = arg.hidden(true);
+                arg
             }
         )
+        .arg(
+            {
+                let arg = Arg::with_name("NO_ETHERNET")
+                    .long("no-ethernet")
+                    .help("Disables ethernet driver");
+
+                #[cfg(not(feature = "raw"))]
+                let arg = arg.hidden(true);
+                arg
+            }
+            )
         .arg(
             Arg::with_name("PEERS")
                 .long("peers")
@@ -159,17 +185,6 @@ pub async fn setup_local_discovery(
 
     r.add_endpoint(LanDiscovery::spawn(&iface, c.discovery_port))
         .await;
-
-    info!("Initialized UDP Endpoint");
-
-    #[cfg(feature = "raw")]
-    {
-        use netmod_raw::Endpoint as LocalDiscovery;
-        r.add_endpoint(LocalDiscovery::spawn(&iface, Some("ratman"))) //FIXME: ssid
-            .await;
-
-        info!("Initialized Ethernet Endpoint");
-    }
 
     Ok((iface, c.discovery_port))
 }
@@ -261,6 +276,17 @@ pub async fn run_app(cfg: Config) -> std::result::Result<(), ()> {
             Ok(_) => {}
             Err(e) => warn!("Failed to setup dashboard bind {:?}", e),
         }
+    }
+
+    #[cfg(feature = "raw")]
+    if !cfg.no_ethernet {
+        use netmod_raw::Endpoint as Ethernet;
+
+        r.add_endpoint(Ethernet::spawn(
+            cfg.ethernet_iface.as_ref().map(|s| s.as_str()),
+            cfg.ssid.as_ref().map(|s| s.as_str()),
+        ))
+        .await;
     }
 
     let api_bind = match cfg.api_bind.parse() {

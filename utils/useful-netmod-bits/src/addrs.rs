@@ -5,9 +5,7 @@
 
 //! Address resolution table module
 
-use async_std::{
-    sync::{Arc, RwLock},
-};
+use async_std::sync::{Arc, RwLock};
 use std::collections::BTreeMap;
 
 /// A small utility that creates sequential IDs
@@ -32,7 +30,10 @@ pub struct AddrTable<T> {
     ids: Arc<RwLock<BTreeMap<T, u16>>>,
 }
 
-impl<T> AddrTable<T> where T: Default + Copy + Ord {
+impl<T> AddrTable<T>
+where
+    T: Default + Copy + Ord,
+{
     /// Create a new address lookup table
     pub fn new() -> Self {
         Self {

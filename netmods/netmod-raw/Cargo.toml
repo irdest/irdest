@@ -24,3 +24,5 @@ pnet = "0.31.0"
 serde = { version = "1.0", features = ["derive"] }
 tracing = "0.1"
 pnet_datalink = "0.31.0"
+zbus = "3.1.0"
+nix = "0.25.0"

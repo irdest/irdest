@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
-use zbus::{Result, Connection};
-use zvariant::{OwnedValue, OwnedObjectPath, Value};
+use zbus::{Connection, Result};
+use zvariant::{OwnedObjectPath, OwnedValue, Value};
 
 use crate::proxies::NetworkManager::{
-    Settings::SettingsProxy, SettingsConnection::ConnectionProxy, ConnectionActive::ActiveProxy,
+    ConnectionActive::ActiveProxy, Settings::SettingsProxy, SettingsConnection::ConnectionProxy,
 };
 
 pub struct NMSettings<'a> {
@@ -24,6 +24,7 @@ pub struct NMActiveConnection<'a> {
 }
 
 impl<'a> NMSettings<'a> {
+    //PERF: Iterator is still foreign to me and Vec is easy. Lazy evaluation is probably sensible here.
     pub async fn list_connections(&self) -> Result<Vec<NMConnection>> {
         let paths = self.proxy.list_connections().await?;
         let mut connections = Vec::new();
@@ -40,8 +41,9 @@ pub type NMSetting = HashMap<String, HashMap<String, OwnedValue>>;
 
 impl<'a> NMConnection<'a> {
     pub async fn new(conn: &Connection, path: OwnedObjectPath) -> Result<NMConnection<'_>> {
-        Ok(NMConnection { proxy: ConnectionProxy::builder(conn)
-            .destination(crate::DESTINATION)?
+        Ok(NMConnection {
+            proxy: ConnectionProxy::builder(conn)
+                .destination(crate::DESTINATION)?
                 .path(path)?
                 .build()
                 .await?,
@@ -53,12 +55,35 @@ impl<'a> NMConnection<'a> {
     }
 }
 
+#[derive(Debug, Eq, PartialEq)]
+pub enum NMActiveConnectionState {
+    Unknown,
+    Activating,
+    Activated,
+    Deactivating,
+    Deactivated,
+}
+
 impl<'a> NMActiveConnection<'a> {
     pub async fn new(conn: &Connection, path: OwnedObjectPath) -> Result<NMActiveConnection<'_>> {
-        Ok(NMActiveConnection { proxy: ActiveProxy::builder(conn)
-            .destination(crate::DESTINATION)?
+        Ok(NMActiveConnection {
+            proxy: ActiveProxy::builder(conn)
+                .destination(crate::DESTINATION)?
                 .path(path)?
                 .build()
-                .await?, })
+                .await?,
+        })
+    }
+
+    pub async fn state(&self) -> Result<NMActiveConnectionState> {
+        match self.proxy.state().await {
+            Ok(0) => Ok(NMActiveConnectionState::Unknown),
+            Ok(1) => Ok(NMActiveConnectionState::Activating),
+            Ok(2) => Ok(NMActiveConnectionState::Activated),
+            Ok(3) => Ok(NMActiveConnectionState::Deactivating),
+            Ok(4) => Ok(NMActiveConnectionState::Deactivated),
+            Ok(_) => Ok(NMActiveConnectionState::Unknown),
+            Err(e) => Err(e),
+        }
     }
 }

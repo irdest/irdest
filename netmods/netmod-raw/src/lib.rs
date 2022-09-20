@@ -7,53 +7,253 @@
 extern crate tracing;
 
 mod socket;
+use std::{collections::HashMap, convert::TryInto, time::Duration};
+
 pub(crate) use socket::Socket;
 
 use useful_netmod_bits::addrs::AddrTable;
 use useful_netmod_bits::framing::Envelope;
 
-use async_std::{sync::Arc, task};
+use async_std::{future, sync::Arc, task};
 use async_trait::async_trait;
 use netmod::{Endpoint as EndpointExt, Frame, Result, Target};
 use pnet::util::MacAddr;
 use pnet_datalink::interfaces;
 use ratman_types::Error;
 
+use zbus::{
+    export::futures_util::{pin_mut, stream, StreamExt},
+    zvariant::{OwnedObjectPath, Value},
+    Connection,
+};
+use zbus_nm::{
+    devices::device::FromDevice,
+    devices::device::NMDevice,
+    devices::wifi::NMDeviceWifi,
+    settings::{NMActiveConnectionState, PartialConnection},
+    NMClient, Options,
+};
+
 #[derive(Clone)]
 pub struct Endpoint {
     socket: Arc<Socket>,
     addrs: Arc<AddrTable<MacAddr>>,
+    //Our network connection will terminate when this closes.
+    #[allow(dead_code)]
+    nmconn: Arc<Connection>,
+}
+
+#[allow(dead_code)]
+#[cfg(target_os = "linux")]
+fn configure_vif() {
+    todo!();
+}
+
+async fn scan_wireless_for_ssid<'a>(
+    nm: &'a NMClient<'a>,
+    iface: Option<&str>,
+    ssid: &str,
+) -> Option<(NMDevice<'a>, OwnedObjectPath)> {
+    let devices = nm.get_all_devices().await.unwrap();
+
+    for device in devices {
+        let dev_iface = device.get_iface().await.unwrap();
+
+        if iface.is_some() && iface.unwrap() != dev_iface {
+            continue;
+        }
+
+        if let Ok(wireless) = NMDeviceWifi::from_device(&nm, &device).await {
+            let mut aps = None;
+
+            //Look for an ssid across all wireless devices
+            wireless
+                .request_scan(HashMap::new(), || async {
+                    aps = Some(wireless.get_all_access_points().await.unwrap());
+                })
+                .await
+                .unwrap();
+
+            info!("Scanning for SSID on {}...", dev_iface);
+
+            future::timeout(Duration::from_secs(30), async {
+                while aps.is_none() {
+                    task::sleep(Duration::from_secs(1)).await;
+                }
+            })
+            .await
+            .unwrap_or_else(|_| warn!("Scan timed out on {}.", dev_iface));
+
+            for ap in aps.unwrap() {
+                if let Ok(ap_ssid) = ap.get_ssid().await {
+                    if ssid == String::from_utf8_lossy(&ap_ssid) {
+                        //HACK: This function should be returning AP and there should be a trait
+                        //to convert an NMAccessPoint object into OwnedObjectPath. However, I am
+                        //not sufficiently skilled with Rust at the moment to understand how to
+                        //re-write the initialization such that the compiler does not have to worry
+                        //about the connection lifetime. For today, I am going to break the
+                        //abstraction.
+                        return Some((device, ap.get_path()));
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
+async fn create_new_network<'a, 'b>(
+    nm: &'a NMClient<'a>,
+    iface: Option<&str>,
+    ssid: &'b str,
+) -> (NMDevice<'a>, PartialConnection<'b>) {
+    let config = PartialConnection::from([
+        (
+            "connection",
+            HashMap::from([
+                ("type", Value::from("802-11-wireless")),
+                ("id", Value::from("Irdest automagic IBSS")),
+            ]),
+        ),
+        //NOTE: Setting channel and band might be important in the future.
+        (
+            "802-11-wireless",
+            HashMap::from([
+                ("ssid", Value::from(ssid.as_bytes())),
+                ("mode", Value::from("adhoc")),
+                ("band", Value::from("bg")),
+                ("channel", Value::from(1u32)),
+            ]),
+        ),
+        //HACK: NetworkManager wants an IP address, so just put some garbage in so it can be
+        //satisfied.
+        //NOTE: The docs are wrong again. address-data does not work with manual.
+        (
+            "ipv4",
+            HashMap::from([
+                ("method", Value::from("manual")),
+                ("addresses", Value::from(vec![vec![1u32, 1u32, 0u32]])),
+            ]),
+        ),
+        ("ipv6", HashMap::from([("method", Value::from("disabled"))])),
+    ]);
+
+    let device = match iface {
+        Some(i) => {
+            let dev = nm.get_device_by_iface(i).await.unwrap();
+            //HACK: This is an incredibly stupid hack for type checking :x
+            NMDeviceWifi::from_device(nm, &dev).await.unwrap();
+            dev
+        }
+        None => {
+            let devices =
+                stream::iter(nm.get_all_devices().await.unwrap()).filter_map(|item| async move {
+                    //HACK: Same type checking hack again.
+                    match NMDeviceWifi::from_device(nm, &item).await {
+                        Ok(_) => Some(item),
+                        Err(_) => None,
+                    }
+                });
+            pin_mut!(devices);
+            devices
+                .next()
+                .await
+                .expect("Cannot find a wireless device!")
+        }
+    };
+    (device, config)
+}
+
+///This function is currently only designed to handle wifi networks!
+///NOTE: This should probably separate from the endpoint someday.
+///It's easy to hook it in here and does not tie up the daemon with OS-specific code.
+///
+///Not specifying an interface and having the endpoint choose one is a bad idea, but neat for a
+///proof-of-concept. Prompting the user to make a choice is almost certainly a better idea.
+async fn configure_network_manager<'a>(
+    conn: &Connection,
+    iface: Option<&str>,
+    ssid: Option<&str>,
+) -> std::result::Result<String, String> {
+    info!("Configuring NetworkManager");
+
+    let nm = NMClient::new(conn).await.unwrap();
+
+    //This looks absolutely atrocious, but there are effectively 3 possibilities:
+    //Case 1: The router provides an SSID, so the endpoint should attempt to set up the wireless
+    //network with the given SSID, with or without a default interface.
+    //
+    //Case 2: Just write to whatever interface was given. No setup.
+    //
+    //Case 3: The router gave no information. Do not continue at the
+    //moment. This can be resolved in a few ways, including generating an SSID.
+    let res = match (iface, ssid) {
+        (_, Some(s)) => {
+            let (conn, device, obj) = match scan_wireless_for_ssid(&nm, iface, s).await {
+                Some((device, ap)) => (HashMap::new(), device, ap),
+                None => {
+                    let (device, config) = create_new_network(&nm, iface, s).await;
+                    (config, device, "/".try_into().unwrap())
+                }
+            };
+            let (_connection, active) = match nm
+                .add_and_activate_connection2(
+                    conn,
+                    &device,
+                    obj,
+                    Options::from([
+                        ("persist", Value::from("volatile")),
+                        //NOTE: NM DBus docs are wrong.
+                        ("bind-activation", Value::from("dbus-client")),
+                    ]),
+                )
+                .await
+            {
+                Ok((c, a, _)) => (c, a),
+                Err(e) => return Err(format!("Failed to configure NetworkManager: {}", e)),
+            };
+
+            info!("Waiting for NetworkManager to configure the device...");
+
+            //Network sometimes takes a bit to get going.
+            future::timeout(Duration::from_secs(30), async {
+                while active.state().await.unwrap() != NMActiveConnectionState::Activated {
+                    task::sleep(Duration::from_secs(1)).await;
+                }
+            })
+            .await
+            .unwrap_or_else(|_| warn!("Timed out trying to configure NetworkManager!"));
+
+            device.get_iface().await.unwrap()
+        }
+        (Some(i), None) => i.to_owned(),
+        (None, None) => panic!("Neither the interface nor the ssid were supplied."),
+    };
+    info!("Successfully configured NetworkManager");
+    Ok(res)
 }
 
 impl Endpoint {
-    
-    #[cfg(target_os = "linux")]
-    fn configure_vif() {
-        todo!();
-    }
-
-    //This should only need two arguments. Layer 2 encryption should not be necessary.
-    #[cfg(target_os = "linux")]
-    async fn configure_network_manager(iface: &str, ssid: &str) -> Result<()> {
-        todo!();
-        //let nm = zbus_nm::NMClient::new().await?;
-        Ok(())
-    }
-
     /// Create a new endpoint and spawn a dispatch task
-    pub fn spawn(iface: &str, ssid: Option<&str>) -> Arc<Self> {
-        
-
-        let niface = interfaces()
-            .into_iter()
-            .rfind(|i| i.name == iface)
-            .expect(&format!("Interface name {} does not exist.", iface));
+    pub fn spawn(iface: Option<&str>, ssid: Option<&str>) -> Arc<Self> {
+        info!("Initializing ethernet endpoint...");
 
         task::block_on(async move {
+            let nmconn = Arc::new(Connection::system().await.unwrap());
+            let iface_str = configure_network_manager(&nmconn, iface, ssid)
+                .await
+                .unwrap();
+
+            let niface = interfaces()
+                .into_iter()
+                .rfind(|i| i.name == iface_str)
+                .expect(&format!("Interface name {} not found.", iface_str));
+
             let addrs = Arc::new(AddrTable::new());
             Arc::new(Self {
                 socket: Socket::new(niface, Arc::clone(&addrs)).await.unwrap(),
                 addrs,
+                nmconn,
             })
         })
     }

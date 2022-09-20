@@ -24,8 +24,9 @@ pub struct Config {
     pub lora_baud: u32,
     pub no_lora: bool,
 
-    pub raw_bind: String,
-    pub no_raw: bool,
+    pub ethernet_iface: Option<String>,
+    pub no_ethernet: bool,
+    pub ssid: Option<String>,
 
     pub peers: Option<String>,
     pub peer_file: Option<String>,
@@ -59,10 +60,6 @@ impl Config {
             self.inet_bind = inet_bind.into();
         }
 
-        if let Some(raw_bind) = m.value_of("ETHERNET_BIND") {
-            self.raw_bind = raw_bind.into();
-        }
-
         self.no_inet |= m.is_present("NO_INET");
 
         if let Some(discovery_port) = m.value_of("DISCOVERY_PORT") {
@@ -84,6 +81,16 @@ impl Config {
         }
 
         self.no_dashboard |= m.is_present("NO_DASHBOARD");
+
+        self.no_ethernet |= m.is_present("NO_ETHERNET");
+
+        if let Some(ethernet_iface) = m.value_of("ETHERNET_IFACE") {
+            self.ethernet_iface = Some(ethernet_iface.into());
+        }
+
+        if let Some(ssid) = m.value_of("SSID") {
+            self.ssid = Some(ssid.into());
+        }
     }
 
     pub fn load() -> std::io::Result<Config> {
@@ -138,8 +145,9 @@ impl Default for Config {
             lora_baud: 9600,
             no_lora: true,
 
-            raw_bind: "wlan0".into(),
-            no_raw: false,
+            ethernet_iface: None,
+            no_ethernet: true,
+            ssid: Some("irdest".into()),
 
             peers: None,
             peer_file: None,

@@ -48,10 +48,10 @@ impl<'a> NMAccessPoint<'a> {
         Ok(self.proxy.mode().await?.into())
     }
 
-    ///Deadline is approaching so I need to break the abstraction :(
+    ///TODO: Figure out a better way to handle paths. Ideally the user should not need to deal with
+    ///OwnedObjectPath at all. This is probably fairly opinionated and I am not familiar enough
+    ///with Rust to feel like I can make an authoritative decision here.
     pub fn get_path(&self) -> OwnedObjectPath {
-       self.proxy.path().clone().into()
+        self.proxy.path().clone().into()
     }
 }
-
-

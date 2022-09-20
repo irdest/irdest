@@ -24,20 +24,16 @@ pub struct NMClient<'a> {
     pub settings: NMSettings<'a>,
 }
 
-impl<'a> NMClient<'a> {
-    ///Allow the user to pass a connection if so desired.
-    pub async fn new(system_connection: Option<Connection>) -> Result<NMClient<'a>> {
-        let conn = match system_connection {
-            Some(val) => val,
-            None => Connection::system().await?,
-        };
+pub type Options<'a> = HashMap<&'a str, Value<'a>>;
 
-        let nm_proxy = NetworkManagerProxy::new(&conn).await?;
+impl<'a> NMClient<'a> {
+    pub async fn new(system_connection: &Connection) -> Result<NMClient<'a>> {
+        let nm_proxy = NetworkManagerProxy::new(system_connection).await?;
 
         Ok(NMClient {
             proxy: nm_proxy,
             settings: NMSettings {
-                proxy: SettingsProxy::builder(&conn)
+                proxy: SettingsProxy::builder(system_connection)
                     .destination(DESTINATION)?
                     .path(SETTINGS_PATH)?
                     .build()
@@ -46,6 +42,7 @@ impl<'a> NMClient<'a> {
         })
     }
 
+    //PERF: Iterator is still foreign to me and Vec is easy. Lazy evaluation is probably sensible here.
     pub async fn get_all_devices(&self) -> Result<Vec<NMDevice>> {
         let reply = self.proxy.get_all_devices().await?;
 
@@ -78,11 +75,7 @@ impl<'a> NMClient<'a> {
     ) -> Result<(NMConnection, NMActiveConnection)> {
         let reply = self
             .proxy
-            .add_and_activate_connection(
-                connection,
-                &device.path, 
-                &specific_object,
-            )
+            .add_and_activate_connection(connection, &device.path, &specific_object)
             .await?;
         Ok((
             NMConnection::new(&self.proxy.connection(), reply.0).await?,
@@ -95,7 +88,7 @@ impl<'a> NMClient<'a> {
         connection: PartialConnection<'_>,
         device: &NMDevice<'_>,
         specific_object: OwnedObjectPath,
-        options: HashMap<&str, Value<'_>>,
+        options: Options<'_>,
     ) -> Result<(
         NMConnection,
         NMActiveConnection,
@@ -103,12 +96,7 @@ impl<'a> NMClient<'a> {
     )> {
         let reply = self
             .proxy
-            .add_and_activate_connection2(
-                connection,
-                &device.path,
-                &specific_object,
-                options,
-            )
+            .add_and_activate_connection2(connection, &device.path, &specific_object, options)
             .await?;
         Ok((
             NMConnection::new(&self.proxy.connection(), reply.0).await?,

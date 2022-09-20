@@ -22,6 +22,7 @@ use pnet::{
 use pnet_datalink::{channel, Channel, DataLinkReceiver, DataLinkSender, NetworkInterface};
 
 use netmod::Target;
+use nix::errno::Errno;
 use std::collections::VecDeque;
 use std::error::Error;
 use task_notify::Notify;
@@ -49,15 +50,13 @@ impl Socket {
         };
 
         let arc = Arc::new(Self {
-            iface: iface,
+            iface,
             tx: Arc::new(Mutex::new(tx)),
             rx: Arc::new(Mutex::new(rx)),
             inbox: Default::default(),
         });
 
-        Self::incoming_handle(Arc::clone(&arc), table); //NOTE: I am not certain that cloning the
-                                                        //ethernet channel is wise, but we are only ever
-                                                        //either recieving or transmitting.
+        Self::incoming_handle(Arc::clone(&arc), table);
         arc.multicast(&Envelope::Announce).await;
         info!("Sent multicast announcement");
         Ok(arc)
@@ -142,21 +141,17 @@ impl Socket {
     #[instrument(skip(arc, table), level = "trace")]
     fn incoming_handle(arc: Arc<Self>, table: Arc<AddrTable<MacAddr>>) {
         task::spawn(async move {
-            dbg!("Spawned raw handler");
             loop {
                 let mut buf = vec![0; 1500];
 
                 let mut rx = arc.rx.lock_arc().await;
 
                 match rx.next() {
-                    //TODO: this probably blocks
+                    //PERF: this probably blocks
                     Ok(packet) => {
                         let packet = EthernetPacket::new(packet).unwrap();
 
                         if packet.get_ethertype() != CUSTOM_ETHERTYPE {
-                            // Immediately filter irrelevant
-                            // packets. TODO: Check if pnet
-                            // has a better way to do this.
                             continue;
                         }
 
@@ -168,7 +163,7 @@ impl Socket {
                             Ok(()) => (),
                             Err(_) => {
                                 warn!("Failed to write packet to buffer. Supported MTU is 1500.")
-                            } //NOTE: Is this reasonable?
+                            }
                         };
 
                         let env = Envelope::from_bytes(&buf);
@@ -194,11 +189,18 @@ impl Socket {
                             }
                         }
                     }
-                    val => {
-                        // TODO: handle errors more gracefully
-                        // This will occur if the network goes down.
-                        error!("Crashed raw thread: {:#?}", val);
-                        val.expect("Crashed raw thread!");
+                    Err(error) => {
+                        //NOTE: See issue #86442. Nix hopefully won't be necessary for most of this
+                        //in the future :D
+                        match error.raw_os_error() {
+                            Some(os_error) => match Errno::from_i32(os_error) {
+                                Errno::ENETDOWN => {
+                                    error!("Looks like the network is down! Please fix it.")
+                                }
+                                _ => panic!("{}", error),
+                            },
+                            None => panic!("{}", error),
+                        }
                     }
                 }
             }

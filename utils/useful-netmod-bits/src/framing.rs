@@ -14,14 +14,14 @@ use serde::{Deserialize, Serialize};
 /// is done with a simple protocol where announcements are periodically sent
 /// via multicast to advertise an IP as a valid endpoint.
 ///
-/// These do not have to track what IDs are reachable via them, only what 
+/// These do not have to track what IDs are reachable via them, only what
 /// internal ID they are represented by.  All other routing is then done via
 /// Ratman and the netmod API which considers target state.
 ///
 /// This is the same as the UDP envelope. They are intentionally
-/// familiar because the two protocols are simple and similar. 
-/// 
-/// Factoring might be reasonable? 
+/// familiar because the two protocols are simple and similar.
+///
+/// Factoring might be reasonable?
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Envelope {
     /// Announcing an endpoint via multicast

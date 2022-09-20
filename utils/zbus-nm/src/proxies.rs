@@ -12,9 +12,8 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Statistics")]
         trait Statistics {
             /// RefreshRateMs property
@@ -22,11 +21,11 @@ pub mod NetworkManager {
             fn refresh_rate_ms(&self) -> zbus::Result<u32>;
             #[dbus_proxy(property)]
             fn set_refresh_rate_ms(&self, value: u32) -> zbus::Result<()>;
-        
+
             /// RxBytes property
             #[dbus_proxy(property)]
             fn rx_bytes(&self) -> zbus::Result<u64>;
-        
+
             /// TxBytes property
             #[dbus_proxy(property)]
             fn tx_bytes(&self) -> zbus::Result<u64>;
@@ -44,47 +43,46 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.AccessPoint")]
         trait AccessPoint {
             /// Flags property
             #[dbus_proxy(property)]
             fn flags(&self) -> zbus::Result<u32>;
-        
+
             /// Frequency property
             #[dbus_proxy(property)]
             fn frequency(&self) -> zbus::Result<u32>;
-        
+
             /// HwAddress property
             #[dbus_proxy(property)]
             fn hw_address(&self) -> zbus::Result<String>;
-        
+
             /// LastSeen property
             #[dbus_proxy(property)]
             fn last_seen(&self) -> zbus::Result<i32>;
-        
+
             /// MaxBitrate property
             #[dbus_proxy(property)]
             fn max_bitrate(&self) -> zbus::Result<u32>;
-        
+
             /// Mode property
             #[dbus_proxy(property)]
             fn mode(&self) -> zbus::Result<u32>;
-        
+
             /// RsnFlags property
             #[dbus_proxy(property)]
             fn rsn_flags(&self) -> zbus::Result<u32>;
-        
+
             /// Ssid property
             #[dbus_proxy(property)]
             fn ssid(&self) -> zbus::Result<Vec<u8>>;
-        
+
             /// Strength property
             #[dbus_proxy(property)]
             fn strength(&self) -> zbus::Result<u8>;
-        
+
             /// WpaFlags property
             #[dbus_proxy(property)]
             fn wpa_flags(&self) -> zbus::Result<u32>;
@@ -102,19 +100,18 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.WiMax.Nsp")]
         trait Nsp {
             /// Name property
             #[dbus_proxy(property)]
             fn name(&self) -> zbus::Result<String>;
-        
+
             /// NetworkType property
             #[dbus_proxy(property)]
             fn network_type(&self) -> zbus::Result<u32>;
-        
+
             /// SignalQuality property
             #[dbus_proxy(property)]
             fn signal_quality(&self) -> zbus::Result<u32>;
@@ -132,9 +129,8 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Ppp")]
         trait Ppp {}
     }
@@ -150,35 +146,34 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Tun")]
         trait Tun {
             /// Group property
             #[dbus_proxy(property)]
             fn group(&self) -> zbus::Result<i64>;
-        
+
             /// HwAddress property
             #[dbus_proxy(property)]
             fn hw_address(&self) -> zbus::Result<String>;
-        
+
             /// Mode property
             #[dbus_proxy(property)]
             fn mode(&self) -> zbus::Result<String>;
-        
+
             /// MultiQueue property
             #[dbus_proxy(property)]
             fn multi_queue(&self) -> zbus::Result<bool>;
-        
+
             /// NoPi property
             #[dbus_proxy(property)]
             fn no_pi(&self) -> zbus::Result<bool>;
-        
+
             /// Owner property
             #[dbus_proxy(property)]
             fn owner(&self) -> zbus::Result<i64>;
-        
+
             /// VnetHdr property
             #[dbus_proxy(property)]
             fn vnet_hdr(&self) -> zbus::Result<bool>;
@@ -196,15 +191,14 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Infiniband")]
         trait Infiniband {
             /// Carrier property
             #[dbus_proxy(property)]
             fn carrier(&self) -> zbus::Result<bool>;
-        
+
             /// HwAddress property
             #[dbus_proxy(property)]
             fn hw_address(&self) -> zbus::Result<String>;
@@ -222,50 +216,49 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.WiMax")]
         trait WiMax {
             /// GetNspList method
             fn get_nsp_list(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
-        
+
             /// NspAdded signal
             #[dbus_proxy(signal)]
             fn nsp_added(&self, nsp: zbus::zvariant::ObjectPath<'_>) -> zbus::Result<()>;
-        
+
             /// NspRemoved signal
             #[dbus_proxy(signal)]
             fn nsp_removed(&self, nsp: zbus::zvariant::ObjectPath<'_>) -> zbus::Result<()>;
-        
+
             /// ActiveNsp property
             #[dbus_proxy(property)]
             fn active_nsp(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// Bsid property
             #[dbus_proxy(property)]
             fn bsid(&self) -> zbus::Result<String>;
-        
+
             /// CenterFrequency property
             #[dbus_proxy(property)]
             fn center_frequency(&self) -> zbus::Result<u32>;
-        
+
             /// Cinr property
             #[dbus_proxy(property)]
             fn cinr(&self) -> zbus::Result<i32>;
-        
+
             /// HwAddress property
             #[dbus_proxy(property)]
             fn hw_address(&self) -> zbus::Result<String>;
-        
+
             /// Nsps property
             #[dbus_proxy(property)]
             fn nsps(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
-        
+
             /// Rssi property
             #[dbus_proxy(property)]
             fn rssi(&self) -> zbus::Result<i32>;
-        
+
             /// TxPower property
             #[dbus_proxy(property)]
             fn tx_power(&self) -> zbus::Result<i32>;
@@ -283,19 +276,18 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.WireGuard")]
         trait WireGuard {
             /// FwMark property
             #[dbus_proxy(property)]
             fn fw_mark(&self) -> zbus::Result<u32>;
-        
+
             /// ListenPort property
             #[dbus_proxy(property)]
             fn listen_port(&self) -> zbus::Result<u16>;
-        
+
             /// PublicKey property
             #[dbus_proxy(property)]
             fn public_key(&self) -> zbus::Result<Vec<u8>>;
@@ -313,9 +305,8 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.DHCP4Config")]
         trait DHCP4Config {
             /// Options property
@@ -337,47 +328,46 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.WifiP2PPeer")]
         trait WifiP2PPeer {
             /// Flags property
             #[dbus_proxy(property)]
             fn flags(&self) -> zbus::Result<u32>;
-        
+
             /// HwAddress property
             #[dbus_proxy(property)]
             fn hw_address(&self) -> zbus::Result<String>;
-        
+
             /// LastSeen property
             #[dbus_proxy(property)]
             fn last_seen(&self) -> zbus::Result<i32>;
-        
+
             /// Manufacturer property
             #[dbus_proxy(property)]
             fn manufacturer(&self) -> zbus::Result<String>;
-        
+
             /// Model property
             #[dbus_proxy(property)]
             fn model(&self) -> zbus::Result<String>;
-        
+
             /// ModelNumber property
             #[dbus_proxy(property)]
             fn model_number(&self) -> zbus::Result<String>;
-        
+
             /// Name property
             #[dbus_proxy(property)]
             fn name(&self) -> zbus::Result<String>;
-        
+
             /// Serial property
             #[dbus_proxy(property)]
             fn serial(&self) -> zbus::Result<String>;
-        
+
             /// Strength property
             #[dbus_proxy(property)]
             fn strength(&self) -> zbus::Result<u8>;
-        
+
             /// WfdIEs property
             #[dbus_proxy(property)]
             fn wfd_ies(&self) -> zbus::Result<Vec<u8>>;
@@ -395,9 +385,8 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Settings")]
         trait Settings {
             /// AddConnection method
@@ -408,7 +397,7 @@ pub mod NetworkManager {
                     std::collections::HashMap<&str, zbus::zvariant::Value<'_>>,
                 >,
             ) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// AddConnection2 method
             fn add_connection2(
                 &self,
@@ -422,7 +411,7 @@ pub mod NetworkManager {
                 zbus::zvariant::OwnedObjectPath,
                 std::collections::HashMap<String, zbus::zvariant::OwnedValue>,
             )>;
-        
+
             /// AddConnectionUnsaved method
             fn add_connection_unsaved(
                 &self,
@@ -431,38 +420,47 @@ pub mod NetworkManager {
                     std::collections::HashMap<&str, zbus::zvariant::Value<'_>>,
                 >,
             ) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// GetConnectionByUuid method
-            fn get_connection_by_uuid(&self, uuid: &str) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+            fn get_connection_by_uuid(
+                &self,
+                uuid: &str,
+            ) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
+
             /// ListConnections method
             fn list_connections(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
-        
+
             /// LoadConnections method
             fn load_connections(&self, filenames: &[&str]) -> zbus::Result<(bool, Vec<String>)>;
-        
+
             /// ReloadConnections method
             fn reload_connections(&self) -> zbus::Result<bool>;
-        
+
             /// SaveHostname method
             fn save_hostname(&self, hostname: &str) -> zbus::Result<()>;
-        
+
             /// ConnectionRemoved signal
             #[dbus_proxy(signal)]
-            fn connection_removed(&self, connection: zbus::zvariant::ObjectPath<'_>) -> zbus::Result<()>;
-        
+            fn connection_removed(
+                &self,
+                connection: zbus::zvariant::ObjectPath<'_>,
+            ) -> zbus::Result<()>;
+
             /// NewConnection signal
             #[dbus_proxy(signal)]
-            fn new_connection(&self, connection: zbus::zvariant::ObjectPath<'_>) -> zbus::Result<()>;
-        
+            fn new_connection(
+                &self,
+                connection: zbus::zvariant::ObjectPath<'_>,
+            ) -> zbus::Result<()>;
+
             /// CanModify property
             #[dbus_proxy(property)]
             fn can_modify(&self) -> zbus::Result<bool>;
-        
+
             /// Connections property
             #[dbus_proxy(property)]
             fn connections(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
-        
+
             /// Hostname property
             #[dbus_proxy(property)]
             fn hostname(&self) -> zbus::Result<String>;
@@ -480,9 +478,8 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.IP6Config")]
         trait IP6Config {
             /// AddressData property
@@ -490,41 +487,41 @@ pub mod NetworkManager {
             fn address_data(
                 &self,
             ) -> zbus::Result<Vec<std::collections::HashMap<String, zbus::zvariant::OwnedValue>>>;
-        
+
             /// Addresses property
             #[dbus_proxy(property)]
             fn addresses(&self) -> zbus::Result<Vec<(Vec<u8>, u32, Vec<u8>)>>;
-        
+
             /// DnsOptions property
             #[dbus_proxy(property)]
             fn dns_options(&self) -> zbus::Result<Vec<String>>;
-        
+
             /// DnsPriority property
             #[dbus_proxy(property)]
             fn dns_priority(&self) -> zbus::Result<i32>;
-        
+
             /// Domains property
             #[dbus_proxy(property)]
             fn domains(&self) -> zbus::Result<Vec<String>>;
-        
+
             /// Gateway property
             #[dbus_proxy(property)]
             fn gateway(&self) -> zbus::Result<String>;
-        
+
             /// Nameservers property
             #[dbus_proxy(property)]
             fn nameservers(&self) -> zbus::Result<Vec<Vec<u8>>>;
-        
+
             /// RouteData property
             #[dbus_proxy(property)]
             fn route_data(
                 &self,
             ) -> zbus::Result<Vec<std::collections::HashMap<String, zbus::zvariant::OwnedValue>>>;
-        
+
             /// Routes property
             #[dbus_proxy(property)]
             fn routes(&self) -> zbus::Result<Vec<(Vec<u8>, u32, Vec<u8>, u32)>>;
-        
+
             /// Searches property
             #[dbus_proxy(property)]
             fn searches(&self) -> zbus::Result<Vec<String>>;
@@ -542,75 +539,74 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Vxlan")]
         trait Vxlan {
             /// Ageing property
             #[dbus_proxy(property)]
             fn ageing(&self) -> zbus::Result<u32>;
-        
+
             /// DstPort property
             #[dbus_proxy(property)]
             fn dst_port(&self) -> zbus::Result<u16>;
-        
+
             /// Group property
             #[dbus_proxy(property)]
             fn group(&self) -> zbus::Result<String>;
-        
+
             /// HwAddress property
             #[dbus_proxy(property)]
             fn hw_address(&self) -> zbus::Result<String>;
-        
+
             /// Id property
             #[dbus_proxy(property)]
             fn id(&self) -> zbus::Result<u32>;
-        
+
             /// L2miss property
             #[dbus_proxy(property)]
             fn l2miss(&self) -> zbus::Result<bool>;
-        
+
             /// L3miss property
             #[dbus_proxy(property)]
             fn l3miss(&self) -> zbus::Result<bool>;
-        
+
             /// Learning property
             #[dbus_proxy(property)]
             fn learning(&self) -> zbus::Result<bool>;
-        
+
             /// Limit property
             #[dbus_proxy(property)]
             fn limit(&self) -> zbus::Result<u32>;
-        
+
             /// Local property
             #[dbus_proxy(property)]
             fn local(&self) -> zbus::Result<String>;
-        
+
             /// Parent property
             #[dbus_proxy(property)]
             fn parent(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// Proxy property
             #[dbus_proxy(property)]
             fn proxy(&self) -> zbus::Result<bool>;
-        
+
             /// Rsc property
             #[dbus_proxy(property)]
             fn rsc(&self) -> zbus::Result<bool>;
-        
+
             /// SrcPortMax property
             #[dbus_proxy(property)]
             fn src_port_max(&self) -> zbus::Result<u16>;
-        
+
             /// SrcPortMin property
             #[dbus_proxy(property)]
             fn src_port_min(&self) -> zbus::Result<u16>;
-        
+
             /// Tos property
             #[dbus_proxy(property)]
             fn tos(&self) -> zbus::Result<u8>;
-        
+
             /// Ttl property
             #[dbus_proxy(property)]
             fn ttl(&self) -> zbus::Result<u8>;
@@ -628,23 +624,22 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Team")]
         trait Team {
             /// Carrier property
             #[dbus_proxy(property)]
             fn carrier(&self) -> zbus::Result<bool>;
-        
+
             /// Config property
             #[dbus_proxy(property)]
             fn config(&self) -> zbus::Result<String>;
-        
+
             /// HwAddress property
             #[dbus_proxy(property)]
             fn hw_address(&self) -> zbus::Result<String>;
-        
+
             /// Slaves property
             #[dbus_proxy(property)]
             fn slaves(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
@@ -662,75 +657,74 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Connection.Active")]
         trait Active {
             ///// StateChanged signal
             //#[dbus_proxy(signal)]
             //fn state_changed(&self, state: u32, reason: u32) -> zbus::Result<()>;
-        
+
             /// Connection property
             #[dbus_proxy(property)]
             fn connection(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// Default property
             #[dbus_proxy(property)]
             fn default(&self) -> zbus::Result<bool>;
-        
+
             /// Default6 property
             #[dbus_proxy(property)]
             fn default6(&self) -> zbus::Result<bool>;
-        
+
             /// Devices property
             #[dbus_proxy(property)]
             fn devices(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
-        
+
             /// Dhcp4Config property
             #[dbus_proxy(property)]
             fn dhcp4_config(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// Dhcp6Config property
             #[dbus_proxy(property)]
             fn dhcp6_config(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// Id property
             #[dbus_proxy(property)]
             fn id(&self) -> zbus::Result<String>;
-        
+
             /// Ip4Config property
             #[dbus_proxy(property)]
             fn ip4_config(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// Ip6Config property
             #[dbus_proxy(property)]
             fn ip6_config(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// Master property
             #[dbus_proxy(property)]
             fn master(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// SpecificObject property
             #[dbus_proxy(property)]
             fn specific_object(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// State property
             #[dbus_proxy(property)]
             fn state(&self) -> zbus::Result<u32>;
-        
+
             /// StateFlags property
             #[dbus_proxy(property)]
             fn state_flags(&self) -> zbus::Result<u32>;
-        
+
             /// Type property
             #[dbus_proxy(property)]
             fn type_(&self) -> zbus::Result<String>;
-        
+
             /// Uuid property
             #[dbus_proxy(property)]
             fn uuid(&self) -> zbus::Result<String>;
-        
+
             /// Vpn property
             #[dbus_proxy(property)]
             fn vpn(&self) -> zbus::Result<bool>;
@@ -748,27 +742,26 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Wired")]
         trait Wired {
             /// Carrier property
             #[dbus_proxy(property)]
             fn carrier(&self) -> zbus::Result<bool>;
-        
+
             /// HwAddress property
             #[dbus_proxy(property)]
             fn hw_address(&self) -> zbus::Result<String>;
-        
+
             /// PermHwAddress property
             #[dbus_proxy(property)]
             fn perm_hw_address(&self) -> zbus::Result<String>;
-        
+
             /// S390Subchannels property
             #[dbus_proxy(property)]
             fn s390subchannels(&self) -> zbus::Result<Vec<String>>;
-        
+
             /// Speed property
             #[dbus_proxy(property)]
             fn speed(&self) -> zbus::Result<u32>;
@@ -785,9 +778,8 @@ pub mod NetworkManager {
     /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
     /// section of the zbus documentation.
     ///
-    
     use zbus::dbus_proxy;
-    
+
     #[dbus_proxy(interface = "org.freedesktop.NetworkManager")]
     trait NetworkManager {
         /// ActivateConnection method
@@ -797,7 +789,7 @@ pub mod NetworkManager {
             device: &zbus::zvariant::ObjectPath<'_>,
             specific_object: &zbus::zvariant::ObjectPath<'_>,
         ) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-    
+
         /// AddAndActivateConnection method
         fn add_and_activate_connection(
             &self,
@@ -811,7 +803,7 @@ pub mod NetworkManager {
             zbus::zvariant::OwnedObjectPath,
             zbus::zvariant::OwnedObjectPath,
         )>;
-    
+
         /// AddAndActivateConnection2 method
         fn add_and_activate_connection2(
             &self,
@@ -827,17 +819,17 @@ pub mod NetworkManager {
             zbus::zvariant::OwnedObjectPath,
             std::collections::HashMap<String, zbus::zvariant::OwnedValue>,
         )>;
-    
+
         /// CheckConnectivity method
         fn check_connectivity(&self) -> zbus::Result<u32>;
-    
+
         /// CheckpointAdjustRollbackTimeout method
         fn checkpoint_adjust_rollback_timeout(
             &self,
             checkpoint: &zbus::zvariant::ObjectPath<'_>,
             add_timeout: u32,
         ) -> zbus::Result<()>;
-    
+
         /// CheckpointCreate method
         fn checkpoint_create(
             &self,
@@ -845,110 +837,116 @@ pub mod NetworkManager {
             rollback_timeout: u32,
             flags: u32,
         ) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-    
+
         /// CheckpointDestroy method
-        fn checkpoint_destroy(&self, checkpoint: &zbus::zvariant::ObjectPath<'_>) -> zbus::Result<()>;
-    
+        fn checkpoint_destroy(
+            &self,
+            checkpoint: &zbus::zvariant::ObjectPath<'_>,
+        ) -> zbus::Result<()>;
+
         /// CheckpointRollback method
         fn checkpoint_rollback(
             &self,
             checkpoint: &zbus::zvariant::ObjectPath<'_>,
         ) -> zbus::Result<std::collections::HashMap<String, u32>>;
-    
+
         /// DeactivateConnection method
         fn deactivate_connection(
             &self,
             active_connection: &zbus::zvariant::ObjectPath<'_>,
         ) -> zbus::Result<()>;
-    
+
         /// Enable method
         fn enable(&self, enable: bool) -> zbus::Result<()>;
-    
+
         /// GetAllDevices method
         fn get_all_devices(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
-    
+
         /// GetDeviceByIpIface method
-        fn get_device_by_ip_iface(&self, iface: &str) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-    
+        fn get_device_by_ip_iface(
+            &self,
+            iface: &str,
+        ) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
+
         /// GetDevices method
         fn get_devices(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
-    
+
         /// GetLogging method
         fn get_logging(&self) -> zbus::Result<(String, String)>;
-    
+
         /// GetPermissions method
         fn get_permissions(&self) -> zbus::Result<std::collections::HashMap<String, String>>;
-    
+
         /// Reload method
         fn reload(&self, flags: u32) -> zbus::Result<()>;
-    
+
         /// SetLogging method
         fn set_logging(&self, level: &str, domains: &str) -> zbus::Result<()>;
-    
+
         /// Sleep method
         fn sleep(&self, sleep: bool) -> zbus::Result<()>;
-    
+
         /// state method
         fn state(&self) -> zbus::Result<u32>;
-    
+
         /// CheckPermissions signal
         #[dbus_proxy(signal)]
         fn check_permissions(&self) -> zbus::Result<()>;
-    
+
         /// DeviceAdded signal
         #[dbus_proxy(signal)]
         fn device_added(&self, device_path: zbus::zvariant::ObjectPath<'_>) -> zbus::Result<()>;
-    
+
         /// DeviceRemoved signal
         #[dbus_proxy(signal)]
         fn device_removed(&self, device_path: zbus::zvariant::ObjectPath<'_>) -> zbus::Result<()>;
-    
+
         ///// StateChanged signal
         //#[dbus_proxy(signal)]
         //fn state_changed(&self, state: u32) -> zbus::Result<()>;
-    
+
         /// ActivatingConnection property
         #[dbus_proxy(property)]
         fn activating_connection(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-    
+
         /// ActiveConnections property
         #[dbus_proxy(property)]
         fn active_connections(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
-    
+
         /// AllDevices property
         #[dbus_proxy(property)]
         fn all_devices(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
-    
+
         /// Capabilities property
         #[dbus_proxy(property)]
         fn capabilities(&self) -> zbus::Result<Vec<u32>>;
-    
+
         /// Checkpoints property
         #[dbus_proxy(property)]
         fn checkpoints(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
-    
+
         /// Connectivity property
         #[dbus_proxy(property)]
         fn connectivity(&self) -> zbus::Result<u32>;
-    
+
         /// ConnectivityCheckAvailable property
         #[dbus_proxy(property)]
         fn connectivity_check_available(&self) -> zbus::Result<bool>;
-    
+
         /// ConnectivityCheckEnabled property
         #[dbus_proxy(property)]
         fn connectivity_check_enabled(&self) -> zbus::Result<bool>;
         #[dbus_proxy(property)]
         fn set_connectivity_check_enabled(&self, value: bool) -> zbus::Result<()>;
-    
+
         /// ConnectivityCheckUri property
         #[dbus_proxy(property)]
         fn connectivity_check_uri(&self) -> zbus::Result<String>;
-    
+
         /// Devices property
         #[dbus_proxy(property)]
         fn devices(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
-    
+
         /// GlobalDnsConfiguration property
         #[dbus_proxy(property)]
         fn global_dns_configuration(
@@ -959,65 +957,65 @@ pub mod NetworkManager {
             &self,
             value: std::collections::HashMap<&str, zbus::zvariant::Value<'_>>,
         ) -> zbus::Result<()>;
-    
+
         /// Metered property
         #[dbus_proxy(property)]
         fn metered(&self) -> zbus::Result<u32>;
-    
+
         /// NetworkingEnabled property
         #[dbus_proxy(property)]
         fn networking_enabled(&self) -> zbus::Result<bool>;
-    
+
         /// PrimaryConnection property
         #[dbus_proxy(property)]
         fn primary_connection(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-    
+
         /// PrimaryConnectionType property
         #[dbus_proxy(property)]
         fn primary_connection_type(&self) -> zbus::Result<String>;
-    
+
         /// RadioFlags property
         #[dbus_proxy(property)]
         fn radio_flags(&self) -> zbus::Result<u32>;
-    
+
         /// Startup property
         #[dbus_proxy(property)]
         fn startup(&self) -> zbus::Result<bool>;
-    
+
         ///// State property
         //#[dbus_proxy(property)]
         //fn state(&self) -> zbus::Result<u32>;
-    
+
         /// Version property
         #[dbus_proxy(property)]
         fn version(&self) -> zbus::Result<String>;
-    
+
         /// WimaxEnabled property
         #[dbus_proxy(property)]
         fn wimax_enabled(&self) -> zbus::Result<bool>;
         #[dbus_proxy(property)]
         fn set_wimax_enabled(&self, value: bool) -> zbus::Result<()>;
-    
+
         /// WimaxHardwareEnabled property
         #[dbus_proxy(property)]
         fn wimax_hardware_enabled(&self) -> zbus::Result<bool>;
-    
+
         /// WirelessEnabled property
         #[dbus_proxy(property)]
         fn wireless_enabled(&self) -> zbus::Result<bool>;
         #[dbus_proxy(property)]
         fn set_wireless_enabled(&self, value: bool) -> zbus::Result<()>;
-    
+
         /// WirelessHardwareEnabled property
         #[dbus_proxy(property)]
         fn wireless_hardware_enabled(&self) -> zbus::Result<bool>;
-    
+
         /// WwanEnabled property
         #[dbus_proxy(property)]
         fn wwan_enabled(&self) -> zbus::Result<bool>;
         #[dbus_proxy(property)]
         fn set_wwan_enabled(&self, value: bool) -> zbus::Result<()>;
-    
+
         /// WwanHardwareEnabled property
         #[dbus_proxy(property)]
         fn wwan_hardware_enabled(&self) -> zbus::Result<bool>;
@@ -1034,15 +1032,14 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Generic")]
         trait Generic {
             /// HwAddress property
             #[dbus_proxy(property)]
             fn hw_address(&self) -> zbus::Result<String>;
-        
+
             /// TypeDescription property
             #[dbus_proxy(property)]
             fn type_description(&self) -> zbus::Result<String>;
@@ -1060,9 +1057,8 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.IP4Config")]
         trait IP4Config {
             /// AddressData property
@@ -1070,55 +1066,55 @@ pub mod NetworkManager {
             fn address_data(
                 &self,
             ) -> zbus::Result<Vec<std::collections::HashMap<String, zbus::zvariant::OwnedValue>>>;
-        
+
             /// Addresses property
             #[dbus_proxy(property)]
             fn addresses(&self) -> zbus::Result<Vec<Vec<u32>>>;
-        
+
             /// DnsOptions property
             #[dbus_proxy(property)]
             fn dns_options(&self) -> zbus::Result<Vec<String>>;
-        
+
             /// DnsPriority property
             #[dbus_proxy(property)]
             fn dns_priority(&self) -> zbus::Result<i32>;
-        
+
             /// Domains property
             #[dbus_proxy(property)]
             fn domains(&self) -> zbus::Result<Vec<String>>;
-        
+
             /// Gateway property
             #[dbus_proxy(property)]
             fn gateway(&self) -> zbus::Result<String>;
-        
+
             /// NameserverData property
             #[dbus_proxy(property)]
             fn nameserver_data(
                 &self,
             ) -> zbus::Result<Vec<std::collections::HashMap<String, zbus::zvariant::OwnedValue>>>;
-        
+
             /// Nameservers property
             #[dbus_proxy(property)]
             fn nameservers(&self) -> zbus::Result<Vec<u32>>;
-        
+
             /// RouteData property
             #[dbus_proxy(property)]
             fn route_data(
                 &self,
             ) -> zbus::Result<Vec<std::collections::HashMap<String, zbus::zvariant::OwnedValue>>>;
-        
+
             /// Routes property
             #[dbus_proxy(property)]
             fn routes(&self) -> zbus::Result<Vec<Vec<u32>>>;
-        
+
             /// Searches property
             #[dbus_proxy(property)]
             fn searches(&self) -> zbus::Result<Vec<String>>;
-        
+
             /// WinsServerData property
             #[dbus_proxy(property)]
             fn wins_server_data(&self) -> zbus::Result<Vec<String>>;
-        
+
             /// WinsServers property
             #[dbus_proxy(property)]
             fn wins_servers(&self) -> zbus::Result<Vec<u32>>;
@@ -1136,23 +1132,22 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Macvlan")]
         trait Macvlan {
             /// Mode property
             #[dbus_proxy(property)]
             fn mode(&self) -> zbus::Result<String>;
-        
+
             /// NoPromisc property
             #[dbus_proxy(property)]
             fn no_promisc(&self) -> zbus::Result<bool>;
-        
+
             /// Parent property
             #[dbus_proxy(property)]
             fn parent(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// Tap property
             #[dbus_proxy(property)]
             fn tap(&self) -> zbus::Result<bool>;
@@ -1170,19 +1165,18 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.VPN.Connection")]
         trait Connection {
             ///// VpnStateChanged signal
             //#[dbus_proxy(signal)]
             //fn vpn_state_changed(&self, state: u32, reason: u32) -> zbus::Result<()>;
-        
+
             /// Banner property
             #[dbus_proxy(property)]
             fn banner(&self) -> zbus::Result<String>;
-        
+
             /// VpnState property
             #[dbus_proxy(property)]
             fn vpn_state(&self) -> zbus::Result<u32>;
@@ -1200,9 +1194,8 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Dummy")]
         trait Dummy {
             /// HwAddress property
@@ -1222,9 +1215,8 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Veth")]
         trait Veth {
             /// Peer property
@@ -1244,9 +1236,8 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.OvsInterface")]
         trait OvsInterface {}
     }
@@ -1262,9 +1253,8 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Wpan")]
         trait Wpan {
             /// HwAddress property
@@ -1284,19 +1274,18 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Bond")]
         trait Bond {
             /// Carrier property
             #[dbus_proxy(property)]
             fn carrier(&self) -> zbus::Result<bool>;
-        
+
             /// HwAddress property
             #[dbus_proxy(property)]
             fn hw_address(&self) -> zbus::Result<String>;
-        
+
             /// Slaves property
             #[dbus_proxy(property)]
             fn slaves(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
@@ -1314,9 +1303,8 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Vrf")]
         trait Vrf {
             /// Table property
@@ -1336,27 +1324,26 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Modem")]
         trait Modem {
             /// Apn property
             #[dbus_proxy(property)]
             fn apn(&self) -> zbus::Result<String>;
-        
+
             /// CurrentCapabilities property
             #[dbus_proxy(property)]
             fn current_capabilities(&self) -> zbus::Result<u32>;
-        
+
             /// DeviceId property
             #[dbus_proxy(property)]
             fn device_id(&self) -> zbus::Result<String>;
-        
+
             /// ModemCapabilities property
             #[dbus_proxy(property)]
             fn modem_capabilities(&self) -> zbus::Result<u32>;
-        
+
             /// OperatorCode property
             #[dbus_proxy(property)]
             fn operator_code(&self) -> zbus::Result<String>;
@@ -1374,29 +1361,28 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.PPP")]
         trait PPP {
             /// NeedSecrets method
             fn need_secrets(&self) -> zbus::Result<(String, String)>;
-        
+
             /// SetIfindex method
             fn set_ifindex(&self, ifindex: i32) -> zbus::Result<()>;
-        
+
             /// SetIp4Config method
             fn set_ip4_config(
                 &self,
                 config: std::collections::HashMap<&str, zbus::zvariant::Value<'_>>,
             ) -> zbus::Result<()>;
-        
+
             /// SetIp6Config method
             fn set_ip6_config(
                 &self,
                 config: std::collections::HashMap<&str, zbus::zvariant::Value<'_>>,
             ) -> zbus::Result<()>;
-        
+
             /// SetState method
             fn set_state(&self, state: u32) -> zbus::Result<()>;
         }
@@ -1413,17 +1399,16 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Settings.Connection")]
         trait Connection {
             /// ClearSecrets method
             fn clear_secrets(&self) -> zbus::Result<()>;
-        
+
             /// Delete method
             fn delete(&self) -> zbus::Result<()>;
-        
+
             /// GetSecrets method
             fn get_secrets(
                 &self,
@@ -1434,7 +1419,7 @@ pub mod NetworkManager {
                     std::collections::HashMap<String, zbus::zvariant::OwnedValue>,
                 >,
             >;
-        
+
             /// GetSettings method
             fn get_settings(
                 &self,
@@ -1444,10 +1429,10 @@ pub mod NetworkManager {
                     std::collections::HashMap<String, zbus::zvariant::OwnedValue>,
                 >,
             >;
-        
+
             /// Save method
             fn save(&self) -> zbus::Result<()>;
-        
+
             /// Update method
             fn update(
                 &self,
@@ -1456,7 +1441,7 @@ pub mod NetworkManager {
                     std::collections::HashMap<&str, zbus::zvariant::Value<'_>>,
                 >,
             ) -> zbus::Result<()>;
-        
+
             /// Update2 method
             fn update2(
                 &self,
@@ -1467,7 +1452,7 @@ pub mod NetworkManager {
                 flags: u32,
                 args: std::collections::HashMap<&str, zbus::zvariant::Value<'_>>,
             ) -> zbus::Result<std::collections::HashMap<String, zbus::zvariant::OwnedValue>>;
-        
+
             /// UpdateUnsaved method
             fn update_unsaved(
                 &self,
@@ -1476,23 +1461,23 @@ pub mod NetworkManager {
                     std::collections::HashMap<&str, zbus::zvariant::Value<'_>>,
                 >,
             ) -> zbus::Result<()>;
-        
+
             /// Removed signal
             #[dbus_proxy(signal)]
             fn removed(&self) -> zbus::Result<()>;
-        
+
             /// Updated signal
             #[dbus_proxy(signal)]
             fn updated(&self) -> zbus::Result<()>;
-        
+
             /// Filename property
             #[dbus_proxy(property)]
             fn filename(&self) -> zbus::Result<String>;
-        
+
             /// Flags property
             #[dbus_proxy(property)]
             fn flags(&self) -> zbus::Result<u32>;
-        
+
             /// Unsaved property
             #[dbus_proxy(property)]
             fn unsaved(&self) -> zbus::Result<bool>;
@@ -1510,55 +1495,54 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.IPTunnel")]
         trait IPTunnel {
             /// EncapsulationLimit property
             #[dbus_proxy(property)]
             fn encapsulation_limit(&self) -> zbus::Result<u8>;
-        
+
             /// Flags property
             #[dbus_proxy(property)]
             fn flags(&self) -> zbus::Result<u32>;
-        
+
             /// FlowLabel property
             #[dbus_proxy(property)]
             fn flow_label(&self) -> zbus::Result<u32>;
-        
+
             /// InputKey property
             #[dbus_proxy(property)]
             fn input_key(&self) -> zbus::Result<String>;
-        
+
             /// Local property
             #[dbus_proxy(property)]
             fn local(&self) -> zbus::Result<String>;
-        
+
             /// Mode property
             #[dbus_proxy(property)]
             fn mode(&self) -> zbus::Result<u32>;
-        
+
             /// OutputKey property
             #[dbus_proxy(property)]
             fn output_key(&self) -> zbus::Result<String>;
-        
+
             /// Parent property
             #[dbus_proxy(property)]
             fn parent(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// PathMtuDiscovery property
             #[dbus_proxy(property)]
             fn path_mtu_discovery(&self) -> zbus::Result<bool>;
-        
+
             /// Remote property
             #[dbus_proxy(property)]
             fn remote(&self) -> zbus::Result<String>;
-        
+
             /// Tos property
             #[dbus_proxy(property)]
             fn tos(&self) -> zbus::Result<u8>;
-        
+
             /// Ttl property
             #[dbus_proxy(property)]
             fn ttl(&self) -> zbus::Result<u8>;
@@ -1576,19 +1560,18 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Checkpoint")]
         trait Checkpoint {
             /// Created property
             #[dbus_proxy(property)]
             fn created(&self) -> zbus::Result<i64>;
-        
+
             /// Devices property
             #[dbus_proxy(property)]
             fn devices(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
-        
+
             /// RollbackTimeout property
             #[dbus_proxy(property)]
             fn rollback_timeout(&self) -> zbus::Result<u32>;
@@ -1606,15 +1589,14 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Lowpan")]
         trait Lowpan {
             /// HwAddress property
             #[dbus_proxy(property)]
             fn hw_address(&self) -> zbus::Result<String>;
-        
+
             /// Parent property
             #[dbus_proxy(property)]
             fn parent(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
@@ -1632,9 +1614,8 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Adsl")]
         trait Adsl {
             /// Carrier property
@@ -1654,9 +1635,8 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.WifiP2P")]
         trait WifiP2P {
             /// StartFind method
@@ -1664,22 +1644,22 @@ pub mod NetworkManager {
                 &self,
                 options: std::collections::HashMap<&str, zbus::zvariant::Value<'_>>,
             ) -> zbus::Result<()>;
-        
+
             /// StopFind method
             fn stop_find(&self) -> zbus::Result<()>;
-        
+
             /// PeerAdded signal
             #[dbus_proxy(signal)]
             fn peer_added(&self, peer: zbus::zvariant::ObjectPath<'_>) -> zbus::Result<()>;
-        
+
             /// PeerRemoved signal
             #[dbus_proxy(signal)]
             fn peer_removed(&self, peer: zbus::zvariant::ObjectPath<'_>) -> zbus::Result<()>;
-        
+
             /// HwAddress property
             #[dbus_proxy(property)]
             fn hw_address(&self) -> zbus::Result<String>;
-        
+
             /// Peers property
             #[dbus_proxy(property)]
             fn peers(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
@@ -1697,23 +1677,22 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Vlan")]
         trait Vlan {
             /// Carrier property
             #[dbus_proxy(property)]
             fn carrier(&self) -> zbus::Result<bool>;
-        
+
             /// HwAddress property
             #[dbus_proxy(property)]
             fn hw_address(&self) -> zbus::Result<String>;
-        
+
             /// Parent property
             #[dbus_proxy(property)]
             fn parent(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// VlanId property
             #[dbus_proxy(property)]
             fn vlan_id(&self) -> zbus::Result<u32>;
@@ -1731,9 +1710,8 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.OvsPort")]
         trait OvsPort {
             /// Slaves property
@@ -1753,9 +1731,8 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.OvsBridge")]
         trait OvsBridge {
             /// Slaves property
@@ -1775,17 +1752,20 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.AgentManager")]
         trait AgentManager {
             /// Register method
             fn register(&self, identifier: &str) -> zbus::Result<()>;
-        
+
             /// RegisterWithCapabilities method
-            fn register_with_capabilities(&self, identifier: &str, capabilities: u32) -> zbus::Result<()>;
-        
+            fn register_with_capabilities(
+                &self,
+                identifier: &str,
+                capabilities: u32,
+            ) -> zbus::Result<()>;
+
             /// Unregister method
             fn unregister(&self) -> zbus::Result<()>;
         }
@@ -1802,62 +1782,64 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Wireless")]
         trait Wireless {
             /// GetAccessPoints method
             fn get_access_points(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
-        
+
             /// GetAllAccessPoints method
             fn get_all_access_points(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
-        
+
             /// RequestScan method
             fn request_scan(
                 &self,
                 options: std::collections::HashMap<&str, zbus::zvariant::Value<'_>>,
             ) -> zbus::Result<()>;
-        
+
             /// AccessPointAdded signal
             #[dbus_proxy(signal)]
-            fn access_point_added(&self, access_point: zbus::zvariant::ObjectPath<'_>) -> zbus::Result<()>;
-        
+            fn access_point_added(
+                &self,
+                access_point: zbus::zvariant::ObjectPath<'_>,
+            ) -> zbus::Result<()>;
+
             /// AccessPointRemoved signal
             #[dbus_proxy(signal)]
             fn access_point_removed(
                 &self,
                 access_point: zbus::zvariant::ObjectPath<'_>,
             ) -> zbus::Result<()>;
-        
+
             /// AccessPoints property
             #[dbus_proxy(property)]
             fn access_points(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
-        
+
             /// ActiveAccessPoint property
             #[dbus_proxy(property)]
             fn active_access_point(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// Bitrate property
             #[dbus_proxy(property)]
             fn bitrate(&self) -> zbus::Result<u32>;
-        
+
             /// HwAddress property
             #[dbus_proxy(property)]
             fn hw_address(&self) -> zbus::Result<String>;
-        
+
             /// LastScan property
             #[dbus_proxy(property)]
             fn last_scan(&self) -> zbus::Result<i64>;
-        
+
             /// Mode property
             #[dbus_proxy(property)]
             fn mode(&self) -> zbus::Result<u32>;
-        
+
             /// PermHwAddress property
             #[dbus_proxy(property)]
             fn perm_hw_address(&self) -> zbus::Result<String>;
-        
+
             /// WirelessCapabilities property
             #[dbus_proxy(property)]
             fn wireless_capabilities(&self) -> zbus::Result<u32>;
@@ -1875,9 +1857,8 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.DHCP6Config")]
         trait DHCP6Config {
             /// Options property
@@ -1899,59 +1880,58 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Macsec")]
         trait Macsec {
             /// CipherSuite property
             #[dbus_proxy(property)]
             fn cipher_suite(&self) -> zbus::Result<u64>;
-        
+
             /// EncodingSa property
             #[dbus_proxy(property)]
             fn encoding_sa(&self) -> zbus::Result<u8>;
-        
+
             /// Encrypt property
             #[dbus_proxy(property)]
             fn encrypt(&self) -> zbus::Result<bool>;
-        
+
             /// Es property
             #[dbus_proxy(property)]
             fn es(&self) -> zbus::Result<bool>;
-        
+
             /// IcvLength property
             #[dbus_proxy(property)]
             fn icv_length(&self) -> zbus::Result<u8>;
-        
+
             /// IncludeSci property
             #[dbus_proxy(property)]
             fn include_sci(&self) -> zbus::Result<bool>;
-        
+
             /// Parent property
             #[dbus_proxy(property)]
             fn parent(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// Protect property
             #[dbus_proxy(property)]
             fn protect(&self) -> zbus::Result<bool>;
-        
+
             /// ReplayProtect property
             #[dbus_proxy(property)]
             fn replay_protect(&self) -> zbus::Result<bool>;
-        
+
             /// Scb property
             #[dbus_proxy(property)]
             fn scb(&self) -> zbus::Result<bool>;
-        
+
             /// Sci property
             #[dbus_proxy(property)]
             fn sci(&self) -> zbus::Result<u64>;
-        
+
             /// Validation property
             #[dbus_proxy(property)]
             fn validation(&self) -> zbus::Result<String>;
-        
+
             /// Window property
             #[dbus_proxy(property)]
             fn window(&self) -> zbus::Result<u32>;
@@ -1969,19 +1949,18 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.OlpcMesh")]
         trait OlpcMesh {
             /// ActiveChannel property
             #[dbus_proxy(property)]
             fn active_channel(&self) -> zbus::Result<u32>;
-        
+
             /// Companion property
             #[dbus_proxy(property)]
             fn companion(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// HwAddress property
             #[dbus_proxy(property)]
             fn hw_address(&self) -> zbus::Result<String>;
@@ -1999,19 +1978,18 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Bridge")]
         trait Bridge {
             /// Carrier property
             #[dbus_proxy(property)]
             fn carrier(&self) -> zbus::Result<bool>;
-        
+
             /// HwAddress property
             #[dbus_proxy(property)]
             fn hw_address(&self) -> zbus::Result<String>;
-        
+
             /// Slaves property
             #[dbus_proxy(property)]
             fn slaves(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
@@ -2029,19 +2007,18 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Bluetooth")]
         trait Bluetooth {
             /// BtCapabilities property
             #[dbus_proxy(property)]
             fn bt_capabilities(&self) -> zbus::Result<u32>;
-        
+
             /// HwAddress property
             #[dbus_proxy(property)]
             fn hw_address(&self) -> zbus::Result<String>;
-        
+
             /// Name property
             #[dbus_proxy(property)]
             fn name(&self) -> zbus::Result<String>;
@@ -2059,17 +2036,16 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device")]
         trait Device {
             /// Delete method
             fn delete(&self) -> zbus::Result<()>;
-        
+
             /// Disconnect method
             fn disconnect(&self) -> zbus::Result<()>;
-        
+
             /// GetAppliedConnection method
             fn get_applied_connection(
                 &self,
@@ -2081,7 +2057,7 @@ pub mod NetworkManager {
                 >,
                 u64,
             )>;
-        
+
             /// Reapply method
             fn reapply(
                 &self,
@@ -2092,141 +2068,141 @@ pub mod NetworkManager {
                 version_id: u64,
                 flags: u32,
             ) -> zbus::Result<()>;
-        
+
             ///// StateChanged signal
             //#[dbus_proxy(signal)]
             //fn state_changed(&self, new_state: u32, old_state: u32, reason: u32) -> zbus::Result<()>;
-        
+
             /// ActiveConnection property
             #[dbus_proxy(property)]
             fn active_connection(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// Autoconnect property
             #[dbus_proxy(property)]
             fn autoconnect(&self) -> zbus::Result<bool>;
             #[dbus_proxy(property)]
             fn set_autoconnect(&self, value: bool) -> zbus::Result<()>;
-        
+
             /// AvailableConnections property
             #[dbus_proxy(property)]
             fn available_connections(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
-        
+
             /// Capabilities property
             #[dbus_proxy(property)]
             fn capabilities(&self) -> zbus::Result<u32>;
-        
+
             /// DeviceType property
             #[dbus_proxy(property)]
             fn device_type(&self) -> zbus::Result<u32>;
-        
+
             /// Dhcp4Config property
             #[dbus_proxy(property)]
             fn dhcp4_config(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// Dhcp6Config property
             #[dbus_proxy(property)]
             fn dhcp6_config(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// Driver property
             #[dbus_proxy(property)]
             fn driver(&self) -> zbus::Result<String>;
-        
+
             /// DriverVersion property
             #[dbus_proxy(property)]
             fn driver_version(&self) -> zbus::Result<String>;
-        
+
             /// FirmwareMissing property
             #[dbus_proxy(property)]
             fn firmware_missing(&self) -> zbus::Result<bool>;
-        
+
             /// FirmwareVersion property
             #[dbus_proxy(property)]
             fn firmware_version(&self) -> zbus::Result<String>;
-        
+
             /// HwAddress property
             #[dbus_proxy(property)]
             fn hw_address(&self) -> zbus::Result<String>;
-        
+
             /// Interface property
             #[dbus_proxy(property)]
             fn interface(&self) -> zbus::Result<String>;
-        
+
             /// InterfaceFlags property
             #[dbus_proxy(property)]
             fn interface_flags(&self) -> zbus::Result<u32>;
-        
+
             /// Ip4Address property
             #[dbus_proxy(property)]
             fn ip4_address(&self) -> zbus::Result<u32>;
-        
+
             /// Ip4Config property
             #[dbus_proxy(property)]
             fn ip4_config(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// Ip4Connectivity property
             #[dbus_proxy(property)]
             fn ip4_connectivity(&self) -> zbus::Result<u32>;
-        
+
             /// Ip6Config property
             #[dbus_proxy(property)]
             fn ip6_config(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-        
+
             /// Ip6Connectivity property
             #[dbus_proxy(property)]
             fn ip6_connectivity(&self) -> zbus::Result<u32>;
-        
+
             /// IpInterface property
             #[dbus_proxy(property)]
             fn ip_interface(&self) -> zbus::Result<String>;
-        
+
             /// LldpNeighbors property
             #[dbus_proxy(property)]
             fn lldp_neighbors(
                 &self,
             ) -> zbus::Result<Vec<std::collections::HashMap<String, zbus::zvariant::OwnedValue>>>;
-        
+
             /// Managed property
             #[dbus_proxy(property)]
             fn managed(&self) -> zbus::Result<bool>;
             #[dbus_proxy(property)]
             fn set_managed(&self, value: bool) -> zbus::Result<()>;
-        
+
             /// Metered property
             #[dbus_proxy(property)]
             fn metered(&self) -> zbus::Result<u32>;
-        
+
             /// Mtu property
             #[dbus_proxy(property)]
             fn mtu(&self) -> zbus::Result<u32>;
-        
+
             /// NmPluginMissing property
             #[dbus_proxy(property)]
             fn nm_plugin_missing(&self) -> zbus::Result<bool>;
-        
+
             /// Path property
             #[dbus_proxy(property)]
             fn path(&self) -> zbus::Result<String>;
-        
+
             /// PhysicalPortId property
             #[dbus_proxy(property)]
             fn physical_port_id(&self) -> zbus::Result<String>;
-        
+
             /// Ports property
             #[dbus_proxy(property)]
             fn ports(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
-        
+
             /// Real property
             #[dbus_proxy(property)]
             fn real(&self) -> zbus::Result<bool>;
-        
+
             /// State property
             #[dbus_proxy(property)]
             fn state(&self) -> zbus::Result<u32>;
-        
+
             /// StateReason property
             #[dbus_proxy(property)]
             fn state_reason(&self) -> zbus::Result<(u32, u32)>;
-        
+
             /// Udi property
             #[dbus_proxy(property)]
             fn udi(&self) -> zbus::Result<String>;
@@ -2244,9 +2220,8 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.SecretAgent")]
         trait SecretAgent {
             /// CancelGetSecrets method
@@ -2255,7 +2230,7 @@ pub mod NetworkManager {
                 connection_path: &zbus::zvariant::ObjectPath<'_>,
                 setting_name: &str,
             ) -> zbus::Result<()>;
-        
+
             /// DeleteSecrets method
             fn delete_secrets(
                 &self,
@@ -2265,7 +2240,7 @@ pub mod NetworkManager {
                 >,
                 connection_path: &zbus::zvariant::ObjectPath<'_>,
             ) -> zbus::Result<()>;
-        
+
             /// GetSecrets method
             fn get_secrets(
                 &self,
@@ -2283,7 +2258,7 @@ pub mod NetworkManager {
                     std::collections::HashMap<String, zbus::zvariant::OwnedValue>,
                 >,
             >;
-        
+
             /// SaveSecrets method
             fn save_secrets(
                 &self,
@@ -2307,9 +2282,8 @@ pub mod NetworkManager {
         /// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
         /// section of the zbus documentation.
         ///
-        
         use zbus::dbus_proxy;
-        
+
         #[dbus_proxy(interface = "org.freedesktop.NetworkManager.DnsManager")]
         trait DnsManager {
             /// Configuration property
@@ -2317,11 +2291,11 @@ pub mod NetworkManager {
             fn configuration(
                 &self,
             ) -> zbus::Result<Vec<std::collections::HashMap<String, zbus::zvariant::OwnedValue>>>;
-        
+
             /// Mode property
             #[dbus_proxy(property)]
             fn mode(&self) -> zbus::Result<String>;
-        
+
             /// RcManager property
             #[dbus_proxy(property)]
             fn rc_manager(&self) -> zbus::Result<String>;
