@@ -7,7 +7,7 @@
 // is disabled on docs.rs.  In that case we include an empty main
 
 #[cfg(feature = "proto")]
-fn main() {
+fn build_proto() {
     use protoc_rust::Customize;
     use std::{env, fs, path::Path};
 
@@ -31,4 +31,21 @@ fn main() {
 }
 
 #[cfg(not(feature = "proto"))]
-fn main() {}
+fn build_proto() {}
+
+#[cfg(feature = "mblog-gtk")]
+fn build_resources() {
+    gtk::gio::compile_resources(
+        "resources",
+        "resources/resources.gresources.xml",
+        "resources.gresource",
+    );
+}
+
+#[cfg(not(feature = "mblog-gtk"))]
+fn build_resources() {}
+
+fn main() {
+    build_proto();
+    build_resources();
+}
