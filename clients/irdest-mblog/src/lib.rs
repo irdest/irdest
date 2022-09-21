@@ -1,9 +1,117 @@
 use anyhow::{anyhow, Result};
+use protobuf::Message as _;
 use ratman_client::{Address, RatmanIpc};
+use std::convert::TryFrom;
 
 #[cfg(feature = "proto")]
 pub mod proto {
     include!(concat!(env!("OUT_DIR"), "/proto_gen/mod.rs"));
+}
+
+#[derive(Debug, Clone)]
+pub struct Message {
+    pub sender: Option<Address>,
+    pub payload: Payload,
+}
+
+impl Message {
+    pub fn new<T: Into<Payload>>(p: T) -> Self {
+        Self {
+            sender: None,
+            payload: p.into(),
+        }
+    }
+
+    pub fn into_proto(self) -> proto::feed::Message {
+        proto::feed::Message {
+            payload: Some(self.payload.into()),
+            ..Default::default()
+        }
+    }
+}
+
+impl TryFrom<&ratman_client::Message> for Message {
+    type Error = anyhow::Error;
+
+    fn try_from(msg: &ratman_client::Message) -> Result<Self, Self::Error> {
+        let p = proto::feed::Message::parse_from_bytes(&msg.get_payload()[..])?;
+        Ok(Self {
+            sender: Some(msg.get_sender()),
+            payload: p.payload.ok_or(anyhow!("message has no payload?"))?.into(),
+        })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum Payload {
+    Post(Post),
+}
+
+impl From<Post> for Payload {
+    fn from(p: Post) -> Self {
+        Self::Post(p)
+    }
+}
+
+impl From<proto::feed::Message_oneof_payload> for Payload {
+    fn from(v: proto::feed::Message_oneof_payload) -> Self {
+        use proto::feed::Message_oneof_payload;
+        match v {
+            Message_oneof_payload::post(p) => Self::Post(p.into()),
+        }
+    }
+}
+
+impl Into<proto::feed::Message_oneof_payload> for Payload {
+    fn into(self) -> proto::feed::Message_oneof_payload {
+        use proto::feed::Message_oneof_payload;
+        match self {
+            Self::Post(p) => Message_oneof_payload::post(p.into()),
+        }
+    }
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct Post {
+    pub author: Author,
+    pub text: String,
+}
+
+impl From<proto::feed::Post> for Post {
+    fn from(v: proto::feed::Post) -> Self {
+        Self {
+            author: v.author.unwrap_or_default().into(),
+            text: v.text,
+        }
+    }
+}
+
+impl Into<proto::feed::Post> for Post {
+    fn into(self) -> proto::feed::Post {
+        let mut p = proto::feed::Post::new();
+        p.set_author(self.author.into());
+        p.set_text(self.text);
+        p
+    }
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct Author {
+    pub nick: String,
+}
+
+impl From<proto::feed::Author> for Author {
+    fn from(v: proto::feed::Author) -> Self {
+        Self { nick: v.nick }
+    }
+}
+
+impl Into<proto::feed::Author> for Author {
+    fn into(self) -> proto::feed::Author {
+        let mut a = proto::feed::Author::new();
+        a.set_nick(self.nick);
+        a
+    }
 }
 
 /// Loads an address from a file ('addr' in the system-appropriate config dir), or

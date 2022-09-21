@@ -1,8 +1,8 @@
 use anyhow::Result;
 use clap::Parser;
-use irdest_mblog::proto::feed::Post;
-use protobuf::Message;
+use irdest_mblog::{Message, Payload};
 use ratman_client::{Address, RatmanIpc};
+use std::convert::TryFrom;
 
 /// sample microblog client - cli receiver.
 #[derive(Parser, Debug)]
@@ -25,13 +25,13 @@ async fn main() -> Result<()> {
     };
 
     let ipc = RatmanIpc::default_with_addr(addr).await?;
-    while let Some((tt, msg)) = ipc.next().await {
-        match Post::parse_from_bytes(&msg.get_payload()[..]) {
-            Ok(post) => {
-                println!("{}: {}", post.author.unwrap_or_default().nick, post.text);
-            }
+    while let Some((tt, ratmsg)) = ipc.next().await {
+        match Message::try_from(&ratmsg) {
+            Ok(msg) => match msg.payload {
+                Payload::Post(p) => println!("{}: {}", p.author.nick, p.text),
+            },
             Err(e) => {
-                eprintln!("[invalid message]: {:}\n{:?} {:?}", e, tt, msg);
+                eprintln!("[invalid message]: {:}\n{:?} {:?}", e, tt, ratmsg);
             }
         };
     }

@@ -4,6 +4,12 @@
 
 syntax = "proto3";
 
+message Message {
+    oneof payload {
+        Post post = 1;
+    }
+}
+
 message Author {
     string nick = 1;
 }

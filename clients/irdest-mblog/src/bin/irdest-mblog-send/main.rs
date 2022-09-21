@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
-use irdest_mblog::proto::feed::{Author, Post};
-use protobuf::Message;
+use irdest_mblog::{Author, Message, Post};
+use protobuf::Message as _;
 use ratman_client::{Address, RatmanIpc};
 
 const NAMESPACE: [u8; 32] = [
@@ -37,20 +37,16 @@ async fn main() -> Result<()> {
         irdest_mblog::load_or_create_addr().await?
     };
 
-    // There has to be a less awkward way to construct this.
-    let mut post = Post {
+    // Create a message.
+    let msg = Message::new(Post {
+        author: Author { nick: args.nick },
         text: args.text,
-        ..Default::default()
-    };
-    post.set_author(Author {
-        nick: args.nick,
-        ..Default::default()
     });
 
     // Connect and send!
     RatmanIpc::default_with_addr(addr)
         .await?
-        .flood(NAMESPACE.into(), post.write_to_bytes()?)
+        .flood(NAMESPACE.into(), msg.into_proto().write_to_bytes()?)
         .await?;
 
     Ok(())
