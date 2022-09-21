@@ -10,7 +10,7 @@
 use crate::Identity;
 use async_std::sync::RwLock;
 use curve25519_dalek::edwards::CompressedEdwardsY;
-use ed25519_dalek::{ExpandedSecretKey, PublicKey, SecretKey, Signature};
+use ed25519_dalek::{ExpandedSecretKey, PublicKey, SecretKey, Signature, Signer, Verifier};
 use rand::rngs::OsRng;
 use std::collections::BTreeMap;
 use std::convert::TryInto;
@@ -20,13 +20,12 @@ use x25519_dalek::{PublicKey as X25519Pubkey, SharedSecret, StaticSecret as X255
 ///
 /// The public key represents an address on the Irdest network
 pub struct Keypair {
-    _pub: PublicKey,
-    secr: SecretKey,
+    inner: ed25519_dalek::Keypair,
 }
 
 impl Keypair {
     fn to_expanded(&self) -> ExpandedSecretKey {
-        ExpandedSecretKey::from(&self.secr)
+        ExpandedSecretKey::from(&self.inner.secret)
     }
 }
 
@@ -44,12 +43,17 @@ impl Keystore {
 
     /// Create a new address keypair
     pub async fn create_address(&self) -> Identity {
-        let secr = SecretKey::generate(&mut OsRng {});
-        let _pub = PublicKey::from(&secr);
-        let id = Identity::from_bytes(_pub.as_bytes());
+        let secret = SecretKey::generate(&mut OsRng {});
+        let public = PublicKey::from(&secret);
+        let id = Identity::from_bytes(public.as_bytes());
 
         let mut map = self.inner.write().await;
-        map.insert(id, Keypair { _pub, secr });
+        map.insert(
+            id,
+            Keypair {
+                inner: ed25519_dalek::Keypair { public, secret },
+            },
+        );
         id
     }
 
@@ -81,19 +85,15 @@ impl Keystore {
         Some(self_x25519_secret.diffie_hellman(&peer_x25519_public))
     }
 
-    pub async fn sign_manifest(
-        &self,
-        _self: Identity,
-        peer: Identity,
-        msg: &[u8],
-    ) -> Option<Signature> {
+    pub async fn sign_manifest(&self, _self: Identity, msg: &[u8]) -> Option<Signature> {
         let map = self.inner.read().await;
         let self_keypair = map.get(&_self)?;
+        Some(self_keypair.inner.sign(msg))
+    }
 
-        let self_expanded = self_keypair.to_expanded();
+    pub fn verify_manifest(&self, peer: Identity, msg: &[u8], signature: Signature) -> Option<()> {
         let peer_pubkey = PublicKey::from_bytes(peer.as_bytes()).ok()?;
-
-        Some(self_expanded.sign(msg, &peer_pubkey))
+        peer_pubkey.verify(msg, &signature).ok()
     }
 }
 
@@ -117,4 +117,23 @@ async fn shared_key() {
 
     // Outside the universe
     assert_eq!(alice_to_bob.as_bytes(), bob_to_alice.as_bytes());
+}
+
+#[async_std::test]
+async fn manifest_signature() {
+    let store = Keystore::new();
+
+    // Computer A
+    let alice = store.create_address().await;
+    let manifest = vec![7, 6, 9, 6, 5, 8, 7, 4, 3, 6, 8, 8, 5, 5, 7, 8, 5, 5, 87];
+    let signature = store
+        .sign_manifest(alice, manifest.as_slice())
+        .await
+        .unwrap();
+
+    // Computer B
+    assert_eq!(
+        store.verify_manifest(alice, manifest.as_slice(), signature),
+        Some(())
+    )
 }
