@@ -42,13 +42,16 @@ bincode = "1.0"
 byteorder = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 protobuf = "2.19"
-rand_core = "0.6"
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "1.0"
 tracing = "0.1"
 tracing-futures = "0.2"
 twox-hash = "1.5"
+
 x25519-dalek = "2.0.0-pre.1"
+ed25519-dalek = "1.0.0"
+curve25519-dalek = "3.0.0"
+rand = "0.7"
 
 # Sub-components
 clockctrl = { version = "0.1", path = "../utils/clockctrl" }

@@ -9,13 +9,25 @@
 
 use crate::Identity;
 use async_std::sync::RwLock;
-use rand_core::OsRng;
-use std::{collections::BTreeMap, convert::TryInto};
-use x25519_dalek::{PublicKey, SharedSecret, StaticSecret};
+use curve25519_dalek::edwards::CompressedEdwardsY;
+use ed25519_dalek::{ExpandedSecretKey, PublicKey, SecretKey, Signature};
+use rand::rngs::OsRng;
+use std::collections::BTreeMap;
+use std::convert::TryInto;
+use x25519_dalek::{PublicKey as X25519Pubkey, SharedSecret, StaticSecret as X25519Secret};
 
+/// An ed25519 keypair
+///
+/// The public key represents an address on the Irdest network
 pub struct Keypair {
     _pub: PublicKey,
-    secr: StaticSecret,
+    secr: SecretKey,
+}
+
+impl Keypair {
+    fn to_expanded(&self) -> ExpandedSecretKey {
+        ExpandedSecretKey::from(&self.secr)
+    }
 }
 
 pub struct Keystore {
@@ -32,7 +44,7 @@ impl Keystore {
 
     /// Create a new address keypair
     pub async fn create_address(&self) -> Identity {
-        let secr = StaticSecret::new(OsRng);
+        let secr = SecretKey::generate(&mut OsRng {});
         let _pub = PublicKey::from(&secr);
         let id = Identity::from_bytes(_pub.as_bytes());
 
@@ -45,9 +57,43 @@ impl Keystore {
         let map = self.inner.read().await;
         let self_keypair = map.get(&_self)?;
 
-        let peer: [u8; 32] = peer.as_bytes().try_into().ok()?;
-        let peer_pubkey = PublicKey::from(peer);
-        Some(self_keypair.secr.diffie_hellman(&peer_pubkey))
+        // Here we're taking an private key on the edwards curve and
+        // transform it to a private key on the montgomery curve.
+        // This is done via the `ExpandedSecretKey` type, which does
+        // this transformation internally, while also adding another
+        // 32 bytes of "nonce", which we discard.
+        let self_x25519_secret = {
+            let self_expanded = self_keypair.to_expanded();
+            let self_montgomery: [u8; 32] = self_expanded.to_bytes()[..32].try_into().ok()?;
+            X25519Secret::from(self_montgomery)
+        };
+
+        // The public key represents a compressed point on the edwards
+        // curve, which can be decompressed, and then transformed to a
+        // point on the montgomery curve.
+        let peer_x25519_public = {
+            let peer_compressed = CompressedEdwardsY::from_slice(peer.as_bytes());
+            let peer_edwards = peer_compressed.decompress().unwrap();
+            let peer_montgomery = peer_edwards.to_montgomery();
+            X25519Pubkey::from(peer_montgomery.to_bytes())
+        };
+
+        Some(self_x25519_secret.diffie_hellman(&peer_x25519_public))
+    }
+
+    pub async fn sign_manifest(
+        &self,
+        _self: Identity,
+        peer: Identity,
+        msg: &[u8],
+    ) -> Option<Signature> {
+        let map = self.inner.read().await;
+        let self_keypair = map.get(&_self)?;
+
+        let self_expanded = self_keypair.to_expanded();
+        let peer_pubkey = PublicKey::from_bytes(peer.as_bytes()).ok()?;
+
+        Some(self_expanded.sign(msg, &peer_pubkey))
     }
 }
 
@@ -63,9 +109,11 @@ async fn shared_key() {
 
     // Computer A
     let alice_to_bob = store.diffie_hellman(alice, bob).await.unwrap();
+    println!("A->B {:?}", alice_to_bob.as_bytes());
 
     // Computer B
     let bob_to_alice = store.diffie_hellman(bob, alice).await.unwrap();
+    println!("A->B {:?}", bob_to_alice.as_bytes());
 
     // Outside the universe
     assert_eq!(alice_to_bob.as_bytes(), bob_to_alice.as_bytes());
