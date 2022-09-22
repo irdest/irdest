@@ -163,35 +163,35 @@ pub async fn run_app(cfg: Config) -> std::result::Result<(), ()> {
     #[cfg(feature = "dashboard")]
     let mut registry = prometheus_client::registry::Registry::default();
 
-    // Load peers or throw an error about missing cli data!
-    let peers: Vec<_> = match cfg
-        .peers
-        .as_ref()
-        .map(|s| s.replace(" ", "\n").to_owned())
-        .or(cfg.peer_file.as_ref().and_then(|path| {
-            let mut f = File::open(path).ok()?;
-            let mut buf = String::new();
-            f.read_to_string(&mut buf).ok()?;
-            Some(buf)
-        }))
-        .or(if cfg.no_peering {
-            Some("".into())
-        } else {
-            None
-        }) {
-        Some(peer_str) => peer_str.split("\n").map(|s| s.trim().to_owned()).collect(),
-        None if !cfg.accept_unknown_peers => {
-            daemon::elog("Failed to initialise ratmand: missing peers data!", 2)
-        }
-        None => vec![],
-    };
-
     let r = Router::new();
 
     #[cfg(feature = "dashboard")]
     r.register_metrics(&mut registry);
 
     if !cfg.no_inet {
+        // Load peers or throw an error about missing cli data!
+        let peers: Vec<_> = match cfg
+            .peers
+            .as_ref()
+            .map(|s| s.replace(" ", "\n").to_owned())
+            .or(cfg.peer_file.as_ref().and_then(|path| {
+                let mut f = File::open(path).ok()?;
+                let mut buf = String::new();
+                f.read_to_string(&mut buf).ok()?;
+                Some(buf)
+            }))
+            .or(if cfg.no_peering {
+                Some("".into())
+            } else {
+                None
+            }) {
+            Some(peer_str) => peer_str.split("\n").map(|s| s.trim().to_owned()).collect(),
+            None if !cfg.accept_unknown_peers => {
+                daemon::elog("Failed to initialise ratmand: missing peers data!", 2)
+            }
+            None => vec![],
+        };
+
         let tcp = match Inet::start(&cfg.inet_bind).await {
             Ok(tcp) => {
                 // Open the UPNP port if the user enabled this feature
