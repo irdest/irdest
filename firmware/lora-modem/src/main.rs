@@ -12,6 +12,7 @@ use hal::pac;
 use hal::rcc::RccExt;
 use hal::serial::config::Config;
 use hal::spi::Spi;
+use hal::time::U32Ext;
 
 #[allow(unused_imports)]
 use panic_semihosting; // When a panic occurs, dump it to openOCD
@@ -20,7 +21,7 @@ use panic_semihosting; // When a panic occurs, dump it to openOCD
 // check your local lora band frequency before building
 const FREQUENCY: i64 = 868;
 const MTU: usize = 255;
-const BAUDRATE: usize = 9600;
+const BAUDRATE: u32 = 9600;
 
 #[entry]
 fn main() -> ! {

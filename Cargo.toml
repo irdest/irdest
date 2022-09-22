@@ -29,6 +29,9 @@ members = [
     "clients/android-vpn/jni",
     "clients/irdest-echo",
     "clients/irdest-proxy",
+]
 
+exclude = [
     # Firmware abstractions and crates
+    "firmware/lora-modem",
 ]
