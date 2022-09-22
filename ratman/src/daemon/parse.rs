@@ -115,19 +115,21 @@ pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
             match (id, token) {
                 // FIXME: validate token
                 (id, token) if id.len() != 0 && token.len() != 0 => {
-                    let id = Identity::from_bytes(id.as_slice());
-                    let _ = r.add_user(id).await;
-                    r.online(id).await.unwrap();
-                    send_online_ack(io, id).await?;
                     debug!("Authorisation for known client");
+                    let id = Identity::from_bytes(id.as_slice());
+                    let _ = r.add_user().await;
+                    r.online(id).await?;
+
+                    send_online_ack(io, id).await?;
                     Ok(Some((id, vec![])))
                 }
                 (id, token) if id.len() == 0 && token.len() == 0 => {
-                    let id = Identity::random();
-                    r.add_user(id).await.unwrap();
-                    r.online(id).await.unwrap();
-                    send_online_ack(io, id).await?;
                     debug!("Authorisation for new client");
+                    let id = Identity::random();
+                    r.add_existing_user(id).await?;
+                    r.online(id).await?;
+
+                    send_online_ack(io, id).await?;
                     Ok(Some((id, vec![])))
                 }
                 _ => {

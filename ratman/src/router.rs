@@ -1,6 +1,7 @@
 use crate::{
     clock::{ClockCtrl, Tasks},
     core::Core,
+    crypto::Keystore,
     Identity, Message, MsgId, Protocol, Recipient,
 };
 use async_std::sync::Arc;
@@ -17,6 +18,7 @@ use types::{Result, TimePair};
 pub struct Router {
     inner: Arc<Core>,
     proto: Arc<Protocol>,
+    keys: Arc<Keystore>,
 }
 
 impl Router {
@@ -28,7 +30,8 @@ impl Router {
     pub fn new() -> Self {
         let proto = Protocol::new();
         let inner = Arc::new(Core::init());
-        Self { inner, proto }
+        let keys = Arc::new(Keystore::new());
+        Self { inner, proto, keys }
     }
 
     /// Register metrics with a Prometheus registry.
@@ -69,7 +72,12 @@ impl Router {
     ///
     /// Ratman will listen for messages to local identities and offer
     /// them up for polling via the Router API.
-    pub async fn add_user(&self, id: Identity) -> Result<()> {
+    pub async fn add_user(&self) -> Result<Identity> {
+        let id = self.keys.create_address().await;
+        self.inner.add_local(id).await.map(|_| id)
+    }
+
+    pub async fn add_existing_user(&self, id: Identity) -> Result<()> {
         self.inner.add_local(id).await
     }
 
