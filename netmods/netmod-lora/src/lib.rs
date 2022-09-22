@@ -11,9 +11,11 @@ use serialport::TTYPort;
 use std::io::prelude::*;
 use std::time::Duration;
 
-const RADIO_MTU: usize = 255;
-const BUFFER_SIZE: usize = 32;
-const IRDEST_MAGIC: u8 = 0xCA;
+
+const BUFFER_SIZE: usize = 32; // sets the depth of the netmod's recieve buffer. 
+
+const IRDEST_MAGIC: u8 = 0xCA; // sets the unique protocol identifier for irdest traffic, changing will split the network.
+const RADIO_MTU: usize = 255; // sets the size of data block expected by the modem. This is correct for sx127x based modems.
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug)]
@@ -99,18 +101,28 @@ impl LoraEndpoint {
     }
 
     async fn read_serial(self: Arc<Self>, c: channel::Sender<Frame>) {
-        let buffer: [u8; RADIO_MTU] = [0; RADIO_MTU];
+        let mut buffer: [u8; RADIO_MTU] = [0; RADIO_MTU];
         loop {
-            let mut rx_packet = LoraPacket::decode(buffer).unwrap();
+            match self.serial.lock().await.read_exact(&mut buffer) {
+                Ok(()) => (),
+                Err(e) if e.kind() == std::io::ErrorKind::TimedOut => continue,
+                Err(e) => panic!("{:?}", e),
+            }
+            
+            let rx_packet = match LoraPacket::decode(buffer) {
+                Ok(p) => p,
+                Err(e) => {
+                    println!("bad packet {:?}", e);
+                    continue;
+                },
+            };
 
             // check header format is correct.
             if rx_packet.header.magic != IRDEST_MAGIC {
                 continue;
             }
             
-
-            self.serial.lock().await.read_exact(&mut rx_packet.payload).unwrap();
-            let frame = decode_frame(&mut buffer.as_slice()).unwrap();
+            let frame = decode_frame(&mut rx_packet.payload.as_slice()).unwrap();
             c.send(frame).await.unwrap();
         }
     }
