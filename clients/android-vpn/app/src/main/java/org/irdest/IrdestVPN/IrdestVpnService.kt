@@ -10,6 +10,7 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.util.concurrent.atomic.AtomicReference
 
 /* Local tun interface address*/
 // IpV4
@@ -20,35 +21,93 @@ const val VPN_DNS = "8.8.8.8"
 const val VPN_ADDRESS_V6 = "2001:db8::1"
 const val VPN_ROUTE_V6 = "::" // Intercept all
 
+@SuppressLint("NewApi")
 class IrdestVpnService : VpnService() {
     private val TAG = IrdestVpnService::class.java.simpleName
 
     private val NOTIFICATION_CHANNEL_ID = "IrdestVpn"
-    private lateinit var clientIntent: Intent
+    private lateinit var notificationClientIntent: Intent
+
+    private val ratmandThread = AtomicReference<Thread>()
 
     private lateinit var vpnInterface: ParcelFileDescriptor
     private lateinit var connection: Connection
+
+    val exceptionHandler = object : Thread.UncaughtExceptionHandler {
+        override fun uncaughtException(t: Thread, e: Throwable) {
+            Log.e(TAG, "uncaughtExceptionHandler: ", e)
+        }
+    }
 
     @SuppressLint("NewApi")
     override fun onCreate() {
         super.onCreate()
         // When user click the foreground notification, this activity will be opened.
-        clientIntent = Intent(this, MainActivity::class.java)
-
-        // Start foreground service
-        startForegroundService()
-        updateForegroundNotification(R.string.connecting)
+        notificationClientIntent = Intent(this, MainActivity::class.java)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.getStringExtra("ACTION") == "disconnect") {
-            // onDestroy()
             disconnect()
             return Service.START_NOT_STICKY
         } else {
             connect()
             return Service.START_STICKY
         }
+    }
+
+    private fun connect() {
+        // Become a foreground service.
+        startForegroundService()
+        updateForegroundNotification(R.string.connecting)
+
+        // Run `ratmand` router
+        runRatmand()
+
+        try {
+            openTun()
+            // Receive from local and send to remote network.
+            val inputStream =
+                FileInputStream(vpnInterface.fileDescriptor)
+                .channel
+            // Receive from remote and send to local network.
+            val outputStream =
+                FileOutputStream(vpnInterface.fileDescriptor)
+                .channel
+
+            connection = Connection(inputStream, outputStream)
+        }
+        catch (e: Exception) {
+            Log.e(TAG, "connect: Failed to open tun interface", e)
+        }
+        finally {
+            connection.connect()
+            updateForegroundNotification(R.string.connected)
+        }
+    }
+
+    private fun runRatmand() {
+        val thread = Thread(Ratmand())
+        thread.isDaemon = true
+        thread.stackTrace
+        thread.uncaughtExceptionHandler = exceptionHandler
+
+        // Simply replace any existing `ratmand` thread with the new one.
+        setRatmandThread(thread)
+        thread.start()
+    }
+
+    private fun setRatmandThread(thr: Thread) {
+        ratmandThread.getAndSet(thr)?.interrupt()
+    }
+
+    private fun disconnect() {
+        ratmandThread.get().interrupt()
+        connection.disconnect()
+        vpnInterface.close()
+        stopForeground(true)
+        stopSelf()
+        Log.i(TAG, "stopVPN: Vpn service is stopped")
     }
 
     @Throws(NullPointerException::class)
@@ -62,40 +121,6 @@ class IrdestVpnService : VpnService() {
         Log.d(TAG, "openTun: New tun interface is created")
     }
 
-    @SuppressLint("NewApi")
-    private fun connect() {
-        try {
-            openTun()
-            // Receive from local and send to remote network.
-            val inputStream =
-                FileInputStream(vpnInterface.fileDescriptor)
-                .channel
-            // Receive from remote and send to local network.
-            val outputStream =
-                FileOutputStream(vpnInterface.fileDescriptor)
-                .channel
-
-            connection = Connection(inputStream, outputStream)
-            // TODO: Connect to remote server & protect tunnel
-        }
-        catch (e: Exception) {
-            Log.e(TAG, "connect: Failed to open tun interface", e)
-        }
-        finally {
-            connection.connect()
-            updateForegroundNotification(R.string.connected)
-        }
-    }
-
-    private fun disconnect() {
-        connection.disconnect()
-        vpnInterface?.close()
-        stopForeground(true)
-        stopSelf()
-        Log.i(TAG, "stopVPN: Vpn service is stopped")
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
     private fun startForegroundService() {
         (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
             .createNotificationChannel(
@@ -106,16 +131,15 @@ class IrdestVpnService : VpnService() {
                 )
             )
 
-        applicationContext.startForegroundService(clientIntent)
+        applicationContext.startForegroundService(notificationClientIntent)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     private fun updateForegroundNotification(msg: Int) {
         val configureIntent =
             PendingIntent.getActivity(
                 this,
                 0,
-                clientIntent,
+                notificationClientIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT)
 
         startForeground(

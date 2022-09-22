@@ -9,6 +9,7 @@ import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import java.io.File
+import java.util.concurrent.atomic.AtomicReference
 
 class MainActivity : AppCompatActivity() {
     private val TAG = MainActivity::class.java.simpleName
@@ -19,8 +20,6 @@ class MainActivity : AppCompatActivity() {
         init {
             System.loadLibrary("ratman_android")
         }
-
-        val rat = Ratmand()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,6 +27,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         // Check if data file is exist if not create one.
+        // kinda first thing to do: move this config handling to new class
         val data_file = File(applicationContext.filesDir, DATA_FILE)
         if (!data_file.exists()) {
             Log.i(TAG, "onCreate: Data file is not existed create new file")
@@ -36,7 +36,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private var resultLauncher = registerForActivityResult(
+    private val permissionActivityLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
             startService(getService())
@@ -44,11 +44,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun startVpn(view: View) {
-        Log.d(TAG, "startVpn: Connect button is clicked")
-        // Ask for permission
+        // Prepare the app to become the user's current VPN service.
+        // If user hasn't already given permission `VpnService.prepare()`
+        // returns an activity intent. `permissionActivityLauncher` uses this intent
+        // to start a system activity that asks for permission.
         var intent = VpnService.prepare(this)
+
         if (intent != null) {
-            resultLauncher.launch(intent)
+            permissionActivityLauncher.launch(intent)
         } else {
             startService(getService())
         }
@@ -62,15 +65,5 @@ class MainActivity : AppCompatActivity() {
 
     private fun getService() : Intent {
         return Intent(this, IrdestVpnService::class.java)
-    }
-
-    fun runRatman(view: View) {
-        Log.d(TAG, "runRatman: Run ratman buntton is clicked")
-        rat.runRatmand("test");
-    }
-
-    fun stopRatmand(view: View) {
-        Log.d(TAG, "stopRatmand: Stop ratmand buttion is clicked")
-        rat.stopRatmand()
     }
 }

@@ -10,6 +10,27 @@ use std::error::Error;
 use netmod_mem::MemMod;
 use ratman::Router;
 
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "C" fn Java_org_irdest_IrdestVPN_Ratmand_receiveLog(env: JNIEnv, _: JClass) {
+    android_logger::init_once(
+        Config::default()
+            .with_tag("ratmand-android-logger")
+            .with_min_level(Level::Trace),
+    );
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "C" fn Java_org_irdest_IrdestVPN_Ratmand_ratrun(env: JNIEnv, _: JClass) {
+    let mut cfg = daemon::config::Config::new();
+    cfg.accept_unknown_peers = true;
+    info!("@android-dev#: config => {:?}", cfg);
+
+    // Run ratmand.
+    async_std::task::block_on(ratman::daemon::startup::run_app(cfg)).unwrap();
+}
+
 // Run ratman for the simple android test.
 async fn router_testing() -> Result<(), Box<dyn Error>> {
     // Build a simple channel in memory
@@ -42,31 +63,4 @@ async fn router_testing() -> Result<(), Box<dyn Error>> {
     // $ Registered address: [...]
     // $ Registered a new address!  You may now run `ratcat` to send data
     Ok(())
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "C" fn Java_org_irdest_IrdestVPN_Ratmand_ratrun(
-    env: JNIEnv,
-    _: JClass,
-    _test_string: JString,
-) -> jstring {
-    // Ignoring the test_string which comes from the android application.
-
-    // Send log to logcat
-    android_logger::init_once(
-        Config::default()
-            .with_tag("ratmand-android-logger")
-            .with_min_level(Level::Trace),
-    );
-
-    let mut cfg = daemon::config::Config::new();
-    cfg.accept_unknown_peers = true;
-    info!("@android-dev#: config => {:?}", cfg);
-
-    async_std::task::block_on(ratman::daemon::startup::run_app(cfg)).unwrap();
-
-    env.new_string("Testing is running 🐲")
-        .expect("Error: can't not make java string!")
-        .into_inner()
 }

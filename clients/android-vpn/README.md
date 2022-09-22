@@ -16,7 +16,6 @@ It shows rust log on logcat(android).
 - Overall refactoring.
 - Implements `WebView` for `dashboard`.
 - Update docker image.
-- Implements disconnect function for `ratmand`, `irdest-proxy`.
 
 ### Rust on android.
 `IrdestVPN` uses Mozila's project [rust-android](https://github.com/mozilla/rust-android-gradle) to deploy rust library on android. Here is nice step by step guild about [Building and Deploying a Rust library on Android](https://mozilla.github.io/firefox-browser-architecture/experiments/2017-09-21-rust-on-android.html).
