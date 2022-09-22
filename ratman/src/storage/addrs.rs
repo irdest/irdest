@@ -11,27 +11,22 @@ pub struct LocalAddress {
 }
 
 impl LocalAddress {
-    pub fn new(id: Identity, pw: &str, bare_key: &[u8]) -> Self {
+    pub fn new(id: Identity, bare_key: &[u8]) -> Self {
         Self {
             id,
-            key: EncryptedKey::new(pw, bare_key),
+            key: EncryptedKey::new(bare_key),
         }
     }
 }
 
-/// Represents an address key that's encrypted with a user's
-/// passphrase
+/// Represents an encrypted address key
 #[derive(Ord, PartialOrd, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EncryptedKey {
     inner: Vec<u8>,
 }
 
 impl EncryptedKey {
-    fn new(pw: &str, _bare: &[u8]) -> Self {
+    fn new(_bare: &[u8]) -> Self {
         Self { inner: vec![] }
-    }
-
-    pub fn decrypt(&self, pw: &str) -> Vec<u8> {
-        todo!()
     }
 }

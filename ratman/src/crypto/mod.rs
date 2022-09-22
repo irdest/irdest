@@ -7,7 +7,7 @@
 //! An address corresponds to the public key of a key pair, where the
 //! private key is not shared outside the router.
 
-use crate::Identity;
+use crate::{storage::addrs::LocalAddress, Identity};
 use async_std::sync::RwLock;
 use curve25519_dalek::edwards::CompressedEdwardsY;
 use ed25519_dalek::{ExpandedSecretKey, PublicKey, SecretKey, Signature, Signer, Verifier};
@@ -31,14 +31,29 @@ impl Keypair {
 
 pub struct Keystore {
     inner: RwLock<BTreeMap<Identity, Keypair>>,
+    pw: String,
 }
 
 impl Keystore {
-    // TODO: load existing keys from database
     pub fn new() -> Self {
         Self {
             inner: RwLock::new(BTreeMap::new()),
+            pw: "using this as a user password for now :)".into(),
         }
+    }
+
+    pub async fn add_address(&self, id: Identity, key_data: &[u8]) -> Option<()> {
+        let mut map = self.inner.write().await;
+        let secret = SecretKey::from_bytes(key_data).ok()?;
+        let public = PublicKey::from(&secret);
+
+        map.insert(
+            id,
+            Keypair {
+                inner: ed25519_dalek::Keypair { public, secret },
+            },
+        );
+        Some(())
     }
 
     /// Create a new address keypair
@@ -55,6 +70,16 @@ impl Keystore {
             },
         );
         id
+    }
+
+    /// Get all currently registered local addresses and encrypted keys
+    pub async fn get_all(&self) -> Vec<LocalAddress> {
+        self.inner
+            .read()
+            .await
+            .iter()
+            .map(|(id, Keypair { .. })| LocalAddress::new(*id, &vec![]))
+            .collect()
     }
 
     pub async fn diffie_hellman(&self, _self: Identity, peer: Identity) -> Option<SharedSecret> {
@@ -85,13 +110,15 @@ impl Keystore {
         Some(self_x25519_secret.diffie_hellman(&peer_x25519_public))
     }
 
-    pub async fn sign_manifest(&self, _self: Identity, msg: &[u8]) -> Option<Signature> {
+    /// Sign a payload with your secret key
+    pub async fn sign_msg(&self, _self: Identity, msg: &[u8]) -> Option<Signature> {
         let map = self.inner.read().await;
         let self_keypair = map.get(&_self)?;
         Some(self_keypair.inner.sign(msg))
     }
 
-    pub fn verify_manifest(&self, peer: Identity, msg: &[u8], signature: Signature) -> Option<()> {
+    /// Verify the signature of a payload with a peer's public key (address)
+    pub fn verify_msg(&self, peer: Identity, msg: &[u8], signature: Signature) -> Option<()> {
         let peer_pubkey = PublicKey::from_bytes(peer.as_bytes()).ok()?;
         peer_pubkey.verify(msg, &signature).ok()
     }
@@ -127,13 +154,13 @@ async fn manifest_signature() {
     let alice = store.create_address().await;
     let manifest = vec![7, 6, 9, 6, 5, 8, 7, 4, 3, 6, 8, 8, 5, 5, 7, 8, 5, 5, 87];
     let signature = store
-        .sign_manifest(alice, manifest.as_slice())
+        .sign_message(alice, manifest.as_slice())
         .await
         .unwrap();
 
     // Computer B
     assert_eq!(
-        store.verify_manifest(alice, manifest.as_slice(), signature),
+        store.verify_message(alice, manifest.as_slice(), signature),
         Some(())
     )
 }

@@ -2,6 +2,7 @@ use crate::{
     clock::{ClockCtrl, Tasks},
     core::Core,
     crypto::Keystore,
+    storage::addrs::LocalAddress,
     Identity, Message, MsgId, Protocol, Recipient,
 };
 use async_std::sync::Arc;
@@ -77,11 +78,25 @@ impl Router {
         self.inner.add_local(id).await.map(|_| id)
     }
 
+    /// Load an existing address and key
+    pub async fn load_address(&self, id: Identity, key_data: &[u8]) -> Result<()> {
+        self.keys.add_address(id, key_data).await.unwrap();
+        self.inner.add_local(id).await
+    }
+
+    // This function used to be needed because we weren't creating an
+    // ID and key internally.
+    #[deprecated]
     pub async fn add_existing_user(&self, id: Identity) -> Result<()> {
         self.inner.add_local(id).await
     }
 
-    /// Remove a local identity, discarding imcomplete messages
+    /// Get locally registered addresses
+    pub async fn local_addrs(&self) -> Vec<LocalAddress> {
+        self.keys.get_all().await
+    }
+
+    /// Remove a local address, discarding imcomplete messages
     ///
     /// Ratman will by default remove all cached frames from the
     /// collector.  Optionally these frames can be moved into the
@@ -90,10 +105,10 @@ impl Router {
         self.inner.rm_local(id).await
     }
 
-    /// Set a user ID as online and broadcast announcements
+    /// Set an address as online and broadcast announcements
     ///
-    /// This function will return an error if the user is already
-    /// marked as online, or if no such user is known to the router
+    /// This function will return an error if the address is already
+    /// marked as online, or if no such address is known to the router
     pub async fn online(&self, id: Identity) -> Result<()> {
         self.inner.known(id, true).await?;
         Arc::clone(&self.proto)
@@ -101,7 +116,7 @@ impl Router {
             .await
     }
 
-    /// Set a user ID as offline and stop broadcasts
+    /// Set an address as offline and stop broadcasts
     pub async fn offline(&self, id: Identity) -> Result<()> {
         self.inner.known(id, true).await?;
         self.proto.offline(id).await

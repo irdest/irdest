@@ -4,6 +4,7 @@
 
 use crate::{
     daemon::{env_xdg_data, parse},
+    storage::addrs::LocalAddress,
     Router,
 };
 use async_std::{
@@ -98,19 +99,22 @@ async fn load_users(router: &Router, path: PathBuf) -> Vec<Identity> {
         Err(_) => return vec![],
     }
 
-    match serde_json::from_str::<Vec<Identity>>(&json) {
+    match serde_json::from_str::<Vec<LocalAddress>>(&json) {
         Ok(vec) => {
-            for addr in &vec {
-                trace!("Loading addr {}", addr);
-                let e1 = router.add_user(*addr).await;
-                let e2 = router.online(*addr).await;
+            for LocalAddress { ref id, .. } in &vec {
+                trace!("Loading addr {}", id);
+                let e1 = router.add_existing_user(*id).await;
+                let e2 = router.online(*id).await;
+
+                let key_data = [0]; // FIXME
+                router.load_address(*id, &key_data).await.unwrap();
 
                 if e1.is_err() || e2.is_err() {
-                    warn!("Failed to load address: {}", addr);
+                    warn!("Failed to load address: {}", id);
                 }
             }
 
-            vec
+            vec.into_iter().map(|l| l.id).collect()
         }
         Err(_) => vec![],
     }
@@ -146,7 +150,7 @@ impl<'a> DaemonState<'a> {
     /// Call this function after new user registrations to ensure we
     /// remember them next time
     pub(crate) async fn sync_users(&self) -> Result<()> {
-        fn sync_blocking(path: PathBuf, users: Vec<Identity>) -> Result<()> {
+        fn sync_blocking(path: PathBuf, users: Vec<LocalAddress>) -> Result<()> {
             let mut f = OpenOptions::new()
                 .create(true)
                 .truncate(true)
@@ -166,8 +170,9 @@ impl<'a> DaemonState<'a> {
 
         let path = Os::match_os().data_path();
 
-        let ids: Vec<_> = self.online.lock().await.iter().map(|(k, _)| *k).collect();
-        spawn_blocking(move || sync_blocking(path, ids)).await?;
+        let addrs = self.router.local_addrs().await;
+        // let ids: Vec<_> = self.online.lock().await.iter().map(|(k, _)| *k).collect();
+        spawn_blocking(move || sync_blocking(path, addrs)).await?;
         Ok(())
     }
 
