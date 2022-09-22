@@ -27,6 +27,7 @@ mod data;
 mod protocol;
 mod router;
 mod slicer;
+mod storage;
 
 #[cfg(feature = "daemon")]
 pub mod daemon;
