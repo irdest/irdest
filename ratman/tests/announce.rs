@@ -37,11 +37,9 @@ async fn announce_and_discover() -> Result<()> {
     r3.add_endpoint(mm3).await;
 
     // Create two users and add them to the routers
-    let u1 = Identity::random();
-    r1.add_user(u1).await?;
+    let u1 = r1.add_user().await?;
 
-    let u3 = Identity::random();
-    r3.add_user(u3).await?;
+    let u3 = r3.add_user().await?;
 
     // And mark them "online"
     r1.online(u1).await?;

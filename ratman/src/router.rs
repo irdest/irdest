@@ -208,11 +208,8 @@ async fn matching_payloads() {
     r1.add_endpoint(m1).await;
     r2.add_endpoint(m2).await;
 
-    let u1 = Identity::random();
-    let u2 = Identity::random();
-
-    r1.add_user(u1).await.unwrap();
-    r2.add_user(u2).await.unwrap();
+    let u1 = r1.add_user().await.unwrap();
+    let u2 = r2.add_user().await.unwrap();
 
     r1.online(u1).await.unwrap();
     r2.online(u2).await.unwrap();

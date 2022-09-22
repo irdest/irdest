@@ -111,14 +111,14 @@ impl Keystore {
     }
 
     /// Sign a payload with your secret key
-    pub async fn sign_msg(&self, _self: Identity, msg: &[u8]) -> Option<Signature> {
+    pub async fn sign_message(&self, _self: Identity, msg: &[u8]) -> Option<Signature> {
         let map = self.inner.read().await;
         let self_keypair = map.get(&_self)?;
         Some(self_keypair.inner.sign(msg))
     }
 
     /// Verify the signature of a payload with a peer's public key (address)
-    pub fn verify_msg(&self, peer: Identity, msg: &[u8], signature: Signature) -> Option<()> {
+    pub fn verify_message(&self, peer: Identity, msg: &[u8], signature: Signature) -> Option<()> {
         let peer_pubkey = PublicKey::from_bytes(peer.as_bytes()).ok()?;
         peer_pubkey.verify(msg, &signature).ok()
     }

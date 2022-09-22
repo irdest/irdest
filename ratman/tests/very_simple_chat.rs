@@ -65,11 +65,9 @@ async fn build_network() -> Result<()> {
     r3.add_endpoint(mm3).await;
 
     // Create two users and add them to the routers
-    let u1 = dbg!(Identity::random());
-    r1.add_user(u1).await?;
+    let u1 = dbg!(r1.add_user().await?);
 
-    let u3 = dbg!(Identity::random());
-    r3.add_user(u3).await?;
+    let u3 = dbg!(r3.add_user().await?);
 
     // And mark them "online"
     r1.online(u1).await?;

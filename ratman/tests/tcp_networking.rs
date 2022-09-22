@@ -55,12 +55,10 @@ async fn announce_over_inet() {
 
     /////// Create some identities and announce people
 
-    let u1 = Identity::random();
-    r1.add_user(u1).await.unwrap();
+    let u1 = r1.add_user().await.unwrap();
     r1.online(u1).await.unwrap();
 
-    let u3 = Identity::random();
-    r3.add_user(u3).await.unwrap();
+    let u3 = r3.add_user().await.unwrap();
     r3.online(u3).await.unwrap();
 
     task::sleep(Duration::from_millis(500)).await;
@@ -99,12 +97,10 @@ async fn flood_over_inet() {
 
     /////// Create some identities and announce people
 
-    let u1 = Identity::random();
-    r1.add_user(u1).await.unwrap();
+    let u1 = r1.add_user().await.unwrap();
     r1.online(u1).await.unwrap();
 
-    let u3 = Identity::random();
-    r3.add_user(u3).await.unwrap();
+    let u3 = r3.add_user().await.unwrap();
     r3.online(u3).await.unwrap();
 
     let flood_ns = Identity::random();
