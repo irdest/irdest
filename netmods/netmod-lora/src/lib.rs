@@ -148,8 +148,15 @@ impl Endpoint for LoraEndpoint {
         let mut payload = vec![];
         encode_frame(&mut payload, &frame).unwrap();
 
-        assert_eq!(payload.len(), PAYLOAD_SIZE);
+        loop {
+            if payload.len() == PAYLOAD_SIZE {
+                break;
+            }
+            payload.push(0);
+        }
 
+        assert_eq!(payload.len(), PAYLOAD_SIZE);
+        
         let payload = payload.as_slice().try_into().unwrap();
 
         let tx_packet = LoraPacket { header, payload };
