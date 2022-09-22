@@ -81,9 +81,9 @@ pub struct LoraEndpoint {
 }
 
 impl LoraEndpoint {
-    pub fn spawn() -> Arc<Self> {
+    pub fn spawn(port: &str, baud: u32) -> Arc<Self> {
         let (tx, rx) = channel::bounded(BUFFER_SIZE);
-        let serial = serialport::new("/dev/ttyUSB0", 115_200)
+        let serial = serialport::new(port, baud)
             .timeout(Duration::from_millis(10))
             .open_native()
             .expect("Failed to open port");
