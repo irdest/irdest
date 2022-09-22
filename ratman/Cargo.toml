@@ -26,8 +26,12 @@ required-features = ["util"]
 
 [features]
 default = ["daemon", "util", "prometheus-client"]
+
+# Additional driver features
 inet = ["netmod-inet"]
 lan = ["netmod-lan"]
+lora = ["netmod-lora"]
+
 upnp = ["igd", "ipnetwork", "pnet"]
 daemon = ["cli", "inet", "lan", "upnp", "syslog"]
 util = ["cli", "ratman-client"]
@@ -78,6 +82,7 @@ prometheus-client = { version = "0.16", optional = true }
 # Bundled network modules are all optional dependencies
 netmod-inet = { path = "../netmods/netmod-inet", version = "0.4", optional = true }
 netmod-lan = { path = "../netmods/netmod-lan", version = "0.2", optional = true }
+netmod-lora = { path = "../netmods/netmod-lora", version = "0.1", optional = true }
 
 [dev-dependencies]
 bincode = "1.2"

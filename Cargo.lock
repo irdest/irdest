@@ -1873,6 +1873,7 @@ dependencies = [
  "ipnetwork",
  "netmod-inet",
  "netmod-lan",
+ "netmod-lora",
  "netmod-mem",
  "nix 0.23.1",
  "openapi_type",

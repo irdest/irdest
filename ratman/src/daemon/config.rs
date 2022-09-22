@@ -20,6 +20,10 @@ pub struct Config {
     pub discovery_iface: Option<String>,
     pub no_discovery: bool,
 
+    pub lora_port: Option<String>,
+    pub lora_baud: u32,
+    pub no_lora: bool,
+
     pub peers: Option<String>,
     pub peer_file: Option<String>,
     pub no_peering: bool,
@@ -122,6 +126,10 @@ impl Default for Config {
             discovery_port: 9001,
             discovery_iface: None,
             no_discovery: false,
+
+            lora_port: None,
+            lora_baud: 9600,
+            no_lora: true,
 
             peers: None,
             peer_file: None,

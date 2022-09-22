@@ -7,6 +7,9 @@ use crate::{daemon::config::Config, *};
 use netmod_inet::InetEndpoint as Inet;
 use netmod_lan::{default_iface, Endpoint as LanDiscovery};
 
+#[cfg(feature = "lora")]
+use netmod_lora::LoraEndpoint;
+
 use clap::{App, Arg, ArgMatches};
 use nix::sys::{
     resource::{getrlimit, Resource},
@@ -83,6 +86,17 @@ pub fn build_cli() -> ArgMatches<'static> {
             Arg::with_name("NO_DISCOVERY")
                 .long("no-discovery")
                 .help("Disable the local multicast peer discovery mechanism")
+        )
+        .arg(
+            {
+                let arg = Arg::with_name("NO_LORA")
+                .long("no-lora")
+                    .help("Disable the lora modem driver");
+
+                #[cfg(not(feature = "lora"))]
+                let arg = arg.hidden(true);
+                arg
+            }
         )
         .arg(
             Arg::with_name("PEERS")
@@ -208,6 +222,17 @@ pub async fn run_app(cfg: Config) -> std::result::Result<(), ()> {
             ),
             Err(e) => warn!("Failed to setup local peer discovery: {}", e),
         }
+    }
+
+    #[cfg(feature = "lora")]
+    if !cfg.no_lora {
+        let lora = LoraEndpoint::spawn(
+            cfg.lora_port
+                .expect("You must provide a lora serial port path!")
+                .as_str(),
+            cfg.lora_baud,
+        );
+        r.add_endpoint(lora).await;
     }
 
     // If dashboard is enabled
