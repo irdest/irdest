@@ -1,10 +1,11 @@
 # Summary
 
 - [Introduction](./index.md)
-- [Concepts & Ideas](./concepts.md)
 - [About this manual](./manual.md)
-- [Available clients](./clients.md)
-- [Nix builds](./nix.md)
+- [Concepts & Ideas](./concepts.md)
+- [Installation](./install/index.md)
+  - [Build from source](./install/build.md)
+  - [Available clients](./install/clients.md)
 - [Setup Guides](./guides/index.md)
   - [Basic setup](./guides/01_basic.md)
   - [LoRa wireless](./guides/03_lora.md)
