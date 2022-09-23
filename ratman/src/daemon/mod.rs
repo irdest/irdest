@@ -10,7 +10,7 @@ mod parse;
 mod peers;
 pub mod pidfile;
 pub mod startup;
-mod state;
+pub(crate) mod state;
 mod transform;
 
 #[cfg(feature = "upnp")]
