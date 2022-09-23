@@ -3,10 +3,10 @@
 This manual is split into four sections:
 
 - **Explanation** (mainly [Concepts & Ideas](./concepts.md))
-- **Tutorials**, step-by-step instructions for beginners
-- **"How to"**, outline on how to do specific in-depth tasks for
+- **[Setup guides](guides/index.md)**, step-by-step instructions for beginners
+- **["How to"](how-to/index.md)**, outline on how to do specific in-depth tasks for
   people with some existing Irdest experience
-- **Reference**, lookup for different configuration values or
+- **[Reference](reference/index.md)**, lookup for different configuration values or
   behaviours
 
 
