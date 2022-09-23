@@ -2,7 +2,7 @@ use crate::{
     clock::{ClockCtrl, Tasks},
     core::Core,
     crypto::Keystore,
-    storage::addrs::LocalAddress,
+    storage::{addrs::LocalAddress, db::Db},
     Address, Message, MsgId, Protocol, Recipient,
 };
 use async_std::sync::Arc;
@@ -20,6 +20,7 @@ pub struct Router {
     inner: Arc<Core>,
     proto: Arc<Protocol>,
     pub(crate) keys: Arc<Keystore>,
+    db: Arc<Db>,
 }
 
 impl Router {
@@ -32,7 +33,13 @@ impl Router {
         let proto = Protocol::new();
         let inner = Arc::new(Core::init());
         let keys = Arc::new(Keystore::new());
-        Self { inner, proto, keys }
+        let db = Arc::new(Db::new());
+        Self {
+            inner,
+            proto,
+            keys,
+            db,
+        }
     }
 
     /// Register metrics with a Prometheus registry.
