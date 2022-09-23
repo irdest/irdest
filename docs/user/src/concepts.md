@@ -24,37 +24,61 @@ for handing out addresses.  Every computer self-generates new
 addresses as they are needed.  The chance of collision in a 32 byte
 (256 bit) address space are extremely small.
 
+
 ## Ratman architecture
 
-An Irdest network is created by the Ratman router daemon.  This is a
-program running on your computer that connects with other instances of
-Ratman and facilitates the exchange of messages by applications via
-direct links and intermediary routes.
+The Ratman router daemon is a program running on your computer that
+connects with other instances of itself and facilitates the exchange
+of messages by applications via direct links and intermediary routes.
+Importantly Ratman is not part of the kernel, which allows it to
+support a wider range of operating systems.
 
 *basic irdest network outline*
 
-Irdest is a mesh network, which means that anyone on the network can
-communicate with each other by passing messages to participants in
-between you and your recipient.
+Connecting different Ratman instances together is done via
+connection-specific "drivers".  Each driver allows Ratman to connect
+(or "peer") with another instances of Ratman.  For example
+`netmod-inet` allows Ratman to connect via the internet, `netmod-lora`
+via a [LoRa wireless](../guides/03-lora.md) modem, etc.
 
+Because Ratman is not part of your operating system specific
+applications are needed to interact with the Irdest network.  For this
+Ratman provides a "client API" for registering addresses and sending/
+receiving messages.  A simply utility program called `ratcat` is
+included in every Ratman installation.  Additionally there is a proxy
+service called `irdest-proxy` which can be used to tunnel "legacy" IP
+network traffic through an Irdest network.
 
-
-Two other important concepts for Ratman are netmod drivers and
-clients.  Consider the following graphic.
-
-*insert Irdest stack graphic*
-
-Ratman is a userspace routing daemon, meaning that it works outside of
-your kernel.  This is done to be more platform independent and support
-a wider range of operating systems!  To handle the actual connections
-with other Ratman routers (called "peering") we use
-connection-specific drivers called "Netmods".
+Check the [available clients](../clients.md) page for details on what
+Irdest applications are available on your platform!
 
 
 ## Routing
 
+Irdest is a mesh network, which means that anyone on the network can
+communicate with anyone else by passing messages to participants in
+between you and your recipient.  This also means that there is no
+central authority on how data is transported.
 
+**While there are a lot of technical specifics to how this works, it
+can be useful to understand the basic principle of how data is routed
+through an Irdest network.**
 
-## What next?
+When registering an address Ratman starts announcing this address to
+other Ratman instances it is peered to.  This allows these routers to
+send data to the address via the connection that they discovered it.
 
+Any incoming announcement is then forwarded (or "replicated") to any
+other Ratman instance (i.e. every connection except the one that the
+announcement was initially provided by).
 
+This mechanism allows an address to (sooner or later) be known by the
+entire network without any centralised look-up authorities.
+
+When sending a message to a particular address a router checks which
+connection the address was announced through, and then sends data in
+that direction.  This is repeated by any intermediary router until the
+message reaches its destination!
+
+**This means that no single network participant can know the layout
+(or "topology") of the network!**

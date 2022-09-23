@@ -2,9 +2,9 @@
 
 - [Introduction](./index.md)
 - [Concepts & Ideas](./concepts.md)
+- [About this manual](./manual.md)
 - [Available clients](./clients.md)
 - [Nix builds](./nix.md)
-- [Building this manual](./manual.md)
 - [Setup Guides](./guides/index.md)
   - [Basic setup](./guides/01_basic.md)
   - [LoRa wireless](./guides/03_lora.md)
