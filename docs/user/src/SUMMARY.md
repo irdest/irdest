@@ -9,6 +9,7 @@
 - [Setup Guides](./guides/index.md)
   - [Basic setup](./guides/01_basic.md)
   - [LoRa wireless](./guides/03_lora.md)
+- [How to...](./how-to/index.md)
 - [Reference](./reference/index.md)
 
 <!-- - [Ratman](./ratman/index.md) -->
