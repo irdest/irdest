@@ -50,10 +50,6 @@ pub fn elog<S: Into<String>>(msg: S, code: u16) -> ! {
     std::process::exit(code.into());
 }
 
-pub(crate) fn env_xdg_data() -> Option<String> {
-    std::env::var("XDG_DATA_HOME").ok()
-}
-
 pub fn setup_logging(lvl: &str, syslog: bool) {
     let filter = EnvFilter::default()
         .add_directive(match lvl {
