@@ -3,7 +3,7 @@ use crate::{
     core::Core,
     crypto::Keystore,
     storage::addrs::LocalAddress,
-    Identity, Message, MsgId, Protocol, Recipient,
+    Address, Message, MsgId, Protocol, Recipient,
 };
 use async_std::sync::Arc;
 use netmod::Endpoint;
@@ -73,13 +73,13 @@ impl Router {
     ///
     /// Ratman will listen for messages to local identities and offer
     /// them up for polling via the Router API.
-    pub async fn add_user(&self) -> Result<Identity> {
+    pub async fn add_user(&self) -> Result<Address> {
         let id = self.keys.create_address().await;
         self.inner.add_local(id).await.map(|_| id)
     }
 
     /// Load an existing address and key
-    pub async fn load_address(&self, id: Identity, key_data: &[u8]) -> Result<()> {
+    pub async fn load_address(&self, id: Address, key_data: &[u8]) -> Result<()> {
         self.keys.add_address(id, key_data).await.unwrap();
         self.inner.add_local(id).await
     }
@@ -87,7 +87,7 @@ impl Router {
     // This function used to be needed because we weren't creating an
     // ID and key internally.
     #[deprecated]
-    pub async fn add_existing_user(&self, id: Identity) -> Result<()> {
+    pub async fn add_existing_user(&self, id: Address) -> Result<()> {
         self.inner.add_local(id).await
     }
 
@@ -101,7 +101,7 @@ impl Router {
     /// Ratman will by default remove all cached frames from the
     /// collector.  Optionally these frames can be moved into the
     /// journal with low priority instead.
-    pub async fn del_user(&self, id: Identity, _keep: bool) -> Result<()> {
+    pub async fn del_user(&self, id: Address, _keep: bool) -> Result<()> {
         self.inner.rm_local(id).await
     }
 
@@ -109,7 +109,7 @@ impl Router {
     ///
     /// This function will return an error if the address is already
     /// marked as online, or if no such address is known to the router
-    pub async fn online(&self, id: Identity) -> Result<()> {
+    pub async fn online(&self, id: Address) -> Result<()> {
         self.inner.known(id, true).await?;
         Arc::clone(&self.proto)
             .online(id, Arc::clone(&self.inner))
@@ -117,18 +117,18 @@ impl Router {
     }
 
     /// Set an address as offline and stop broadcasts
-    pub async fn offline(&self, id: Identity) -> Result<()> {
+    pub async fn offline(&self, id: Address) -> Result<()> {
         self.inner.known(id, true).await?;
         self.proto.offline(id).await
     }
 
     /// Check the local routing table for a user ID
-    pub async fn known(&self, id: Identity) -> Result<()> {
+    pub async fn known(&self, id: Address) -> Result<()> {
         self.inner.known(id, false).await
     }
 
     /// Check for newly discovered users on the network
-    pub async fn discover(&self) -> Identity {
+    pub async fn discover(&self) -> Address {
         self.inner.discover().await
     }
 
@@ -140,8 +140,8 @@ impl Router {
     /// Send a flood message into the network
     pub async fn flood(
         &self,
-        sender: Identity,
-        scope: Identity,
+        sender: Address,
+        scope: Address,
         payload: Vec<u8>,
         sign: Vec<u8>,
     ) -> Result<MsgId> {
@@ -190,7 +190,7 @@ impl Router {
     }
 
     /// Return a list of all known addresses
-    pub async fn known_addresses(&self) -> Vec<(Identity, bool)> {
+    pub async fn known_addresses(&self) -> Vec<(Address, bool)> {
         self.inner.all_addrs().await
     }
 }
@@ -215,7 +215,7 @@ async fn matching_payloads() {
     r2.online(u2).await.unwrap();
 
     let msg = Message {
-        id: Identity::random(),
+        id: Address::random(),
         sender: u1,
         recipient: Recipient::Standard(vec![u2]),
         payload: vec![1, 3, 1, 2],

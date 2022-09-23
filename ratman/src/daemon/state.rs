@@ -22,9 +22,9 @@ use std::{
     io::{Read, Write},
     path::PathBuf,
 };
-use types::Identity;
+use types::Address;
 
-pub(crate) type OnlineMap = Arc<Mutex<BTreeMap<Identity, Option<Io>>>>;
+pub(crate) type OnlineMap = Arc<Mutex<BTreeMap<Address, Option<Io>>>>;
 
 #[derive(Clone)]
 pub(crate) enum Io {
@@ -86,7 +86,7 @@ impl Os {
     }
 }
 
-async fn load_users(router: &Router, path: PathBuf) -> Vec<Identity> {
+async fn load_users(router: &Router, path: PathBuf) -> Vec<Address> {
     debug!("Loading registered users from file {:?}", path);
     let mut f = match File::open(path) {
         Ok(f) => f,
@@ -181,7 +181,7 @@ impl<'a> DaemonState<'a> {
     }
 
     /// Listen for new connections on a socket address
-    pub(crate) async fn listen_for_connections(&mut self) -> Result<Option<(Identity, Io)>> {
+    pub(crate) async fn listen_for_connections(&mut self) -> Result<Option<(Address, Io)>> {
         while let Some(stream) = self.listen.next().await {
             let mut stream = stream?;
 
@@ -193,7 +193,7 @@ impl<'a> DaemonState<'a> {
                 // An anonymous client doesn't need an entry in the
                 // lookup table because no message will ever be
                 // addressed to it
-                Ok(None) => return Ok(Some((Identity::random(), Io::Tcp(stream)))),
+                Ok(None) => return Ok(Some((Address::random(), Io::Tcp(stream)))),
                 Err(e) => {
                     error!("Encountered error during auth: {}", e);
                     break;

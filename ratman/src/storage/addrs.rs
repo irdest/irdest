@@ -1,4 +1,4 @@
-use crate::Identity;
+use crate::Address;
 use serde::{Deserialize, Serialize};
 
 /// A local address on the network.
@@ -6,12 +6,12 @@ use serde::{Deserialize, Serialize};
 /// This structure is only used for local storage.
 #[derive(Ord, PartialOrd, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LocalAddress {
-    pub(crate) id: Identity,
+    pub(crate) id: Address,
     pub(crate) key: EncryptedKey,
 }
 
 impl LocalAddress {
-    pub fn new(id: Identity, bare_key: &[u8]) -> Self {
+    pub fn new(id: Address, bare_key: &[u8]) -> Self {
         Self {
             id,
             key: EncryptedKey::new(bare_key),

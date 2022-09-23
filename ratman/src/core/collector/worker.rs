@@ -8,12 +8,12 @@
 use super::{Locked, State};
 use crate::{Message, Payload};
 use async_std::sync::Arc;
-use types::{Frame, SeqBuilder, SeqId};
+use types::{Frame, Id, SeqBuilder};
 
 /// A self contained sub-task that collects frames into messages
 pub(super) struct Worker {
     /// The sequence of the message being collected
-    seq: SeqId,
+    seq: Id,
     /// The buffer of existing messages
     buf: Locked<Vec<Frame>>,
     /// Collector reference for control flow
@@ -22,7 +22,7 @@ pub(super) struct Worker {
 
 impl Worker {
     /// Create a new collector task for a collector parent
-    pub(super) fn new(seq: SeqId, parent: Arc<State>) -> Self {
+    pub(super) fn new(seq: Id, parent: Arc<State>) -> Self {
         Self {
             seq,
             parent,
@@ -93,7 +93,7 @@ fn join_frames(buf: &mut Vec<Frame>, new: Frame) -> Option<Message> {
 }
 
 #[cfg(test)]
-use types::{Identity, Recipient};
+use types::{Address, Recipient};
 
 // This test is broken because currently it just creates a sequence of
 // bytes that can then not be deserialised by bincode into a Payload
@@ -102,9 +102,9 @@ use types::{Identity, Recipient};
 #[ignore]
 #[test]
 fn join_frame_simple() {
-    let sender = Identity::random();
-    let recp = Identity::random();
-    let seqid = Identity::random();
+    let sender = Address::random();
+    let recp = Address::random();
+    let seqid = Address::random();
 
     let mut seq = SeqBuilder::new(sender, Recipient::Standard(vec![recp]), seqid)
         .add((0..10).into_iter().collect())

@@ -15,11 +15,11 @@ use types::{
         all_peers, api_peers, api_setup, online_ack, ApiMessageEnum, Peers, Peers_Type, Receive,
         Send, Setup, Setup_Type,
     },
-    encode_message, parse_message, write_with_length, Error as ParseError, Identity, Recipient,
+    encode_message, parse_message, write_with_length, Address, Error as ParseError, Recipient,
     Result as ParseResult,
 };
 
-async fn handle_send(r: &Router, online: &OnlineMap, _self: Identity, send: Send) -> Result<()> {
+async fn handle_send(r: &Router, online: &OnlineMap, _self: Address, send: Send) -> Result<()> {
     debug!("Queuing message to send");
     for msg in transform::send_to_message(send) {
         let Message {
@@ -79,7 +79,7 @@ async fn handle_peers(io: &mut Io, r: &Router, peers: Peers) -> Result<()> {
     Ok(())
 }
 
-async fn send_online_ack<Io: Write + Unpin>(io: &mut Io, id: Identity) -> ParseResult<()> {
+async fn send_online_ack<Io: Write + Unpin>(io: &mut Io, id: Address) -> ParseResult<()> {
     let ack = encode_message(api_setup(online_ack(id)))?;
     write_with_length(io, &ack).await?;
     Ok(())
@@ -99,7 +99,7 @@ async fn send_online_ack<Io: Write + Unpin>(io: &mut Io, id: Identity) -> ParseR
 pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
     io: &mut Io,
     r: &Router,
-) -> ParseResult<Option<(Identity, Vec<u8>)>> {
+) -> ParseResult<Option<(Address, Vec<u8>)>> {
     debug!("Handle authentication request for new connection");
 
     let one_of = parse_message(io)
@@ -116,7 +116,7 @@ pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
                 // FIXME: validate token
                 (id, token) if id.len() != 0 && token.len() != 0 => {
                     debug!("Authorisation for known client");
-                    let id = Identity::from_bytes(id.as_slice());
+                    let id = Address::from_bytes(id.as_slice());
                     let _ = r.add_user().await;
                     r.online(id).await?;
 
@@ -125,7 +125,7 @@ pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
                 }
                 (id, token) if id.len() == 0 && token.len() == 0 => {
                     debug!("Authorisation for new client");
-                    let id = Identity::random();
+                    let id = Address::random();
                     r.add_existing_user(id).await?;
                     r.online(id).await?;
 
@@ -148,7 +148,7 @@ pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
 }
 
 /// Parse messages from a stream until it terminates
-pub(crate) async fn parse_stream(router: Router, online: OnlineMap, _self: Identity, mut io: Io) {
+pub(crate) async fn parse_stream(router: Router, online: OnlineMap, _self: Address, mut io: Io) {
     loop {
         // Match on the msg type and call the appropriate handler
         match parse_message(io.as_io()).await.map(|msg| msg.inner) {

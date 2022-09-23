@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use clap::{App, Arg};
-use ratman_client::{Identity, RatmanIpc};
+use ratman_client::{Address, RatmanIpc};
 
 const ASCII: &str = r#"      ,     .             
       (\,;,/)                    (\,/)
@@ -52,7 +52,7 @@ async fn connect_ipc(bind: &str) -> Result<RatmanIpc, Box<dyn std::error::Error>
     Ok(RatmanIpc::anonymous(bind).await?)
 }
 
-async fn get_peers(ipc: &RatmanIpc) -> Result<Vec<Identity>, Box<dyn std::error::Error>> {
+async fn get_peers(ipc: &RatmanIpc) -> Result<Vec<Address>, Box<dyn std::error::Error>> {
     Ok(ipc.get_peers().await?)
 }
 

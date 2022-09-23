@@ -169,7 +169,7 @@ mod metrics {
     #[derive(Clone, Hash, PartialEq, Eq, Encode)]
     pub(super) struct Labels {
         pub recp_type: RecipientType,
-        pub recp_id: types::Identity,
+        pub recp_id: types::Address,
     }
 
     #[derive(Clone, Hash, PartialEq, Eq)]

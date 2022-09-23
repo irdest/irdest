@@ -3,10 +3,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use serde::{Deserialize, Serialize};
-use types::{Identity, Recipient, TimePair};
+use types::{Address, Recipient, TimePair};
 
 /// A unique, randomly generated message ID
-pub type MsgId = Identity;
+pub type MsgId = Address;
 
 /// An atomic message with a variable sized payload
 ///
@@ -20,7 +20,7 @@ pub struct Message {
     /// A random message ID
     pub id: MsgId,
     /// Sender of a message
-    pub sender: Identity,
+    pub sender: Address,
     /// Final recipient of a message
     pub recipient: Recipient,
     /// The timestamp at which this message was received

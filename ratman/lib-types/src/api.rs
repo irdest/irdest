@@ -9,11 +9,11 @@ pub use crate::proto::api::{
     Send, Send_Type, Setup, Setup_Type,
 };
 use crate::proto::message::Message;
-use crate::Identity;
+use crate::Address;
 
 //////////// SEND type
 
-fn send(msg: Message, t: Send_Type, scope: Option<Identity>) -> Send {
+fn send(msg: Message, t: Send_Type, scope: Option<Address>) -> Send {
     let mut send = Send::new();
     send.set_field_type(t);
     send.set_msg(msg);
@@ -30,7 +30,7 @@ pub fn send_default(msg: Message) -> Send {
 }
 
 /// Create a new flood send message
-pub fn send_flood(msg: Message, scope: Identity) -> Send {
+pub fn send_flood(msg: Message, scope: Address) -> Send {
     send(msg, Send_Type::FLOOD, Some(scope))
 }
 
@@ -63,7 +63,7 @@ pub fn online_init() -> Setup {
 }
 
 /// Create an online message with ID and token
-pub fn online(id: Identity, token: Vec<u8>) -> Setup {
+pub fn online(id: Address, token: Vec<u8>) -> Setup {
     let mut setup = Setup::new();
     setup.set_field_type(Setup_Type::ONLINE);
     setup.set_id(id.as_bytes().to_vec());
@@ -72,7 +72,7 @@ pub fn online(id: Identity, token: Vec<u8>) -> Setup {
 }
 
 /// Create an offline message
-pub fn offline(id: Identity, token: Vec<u8>) -> Setup {
+pub fn offline(id: Address, token: Vec<u8>) -> Setup {
     let mut setup = Setup::new();
     setup.set_field_type(Setup_Type::OFFLINE);
     setup.set_id(id.as_bytes().to_vec());
@@ -80,7 +80,7 @@ pub fn offline(id: Identity, token: Vec<u8>) -> Setup {
     setup
 }
 
-pub fn online_ack(id: Identity) -> Setup {
+pub fn online_ack(id: Address) -> Setup {
     let mut setup = Setup::new();
     setup.set_field_type(Setup_Type::ACK);
     setup.set_id(id.as_bytes().to_vec());
@@ -96,7 +96,7 @@ pub fn anonymous() -> Setup {
 //////////// PEERS type
 
 /// Create a new discovery message
-pub fn discovery(id: Identity) -> Peers {
+pub fn discovery(id: Address) -> Peers {
     let mut peers = Peers::new();
     peers.set_field_type(Peers_Type::DISCOVER);
     peers.set_peers(
@@ -110,7 +110,7 @@ pub fn discovery(id: Identity) -> Peers {
 }
 
 /// Construct a response including "all peers"
-pub fn all_peers(ids: Vec<Identity>) -> Peers {
+pub fn all_peers(ids: Vec<Address>) -> Peers {
     let mut peers = Peers::new();
     peers.set_field_type(Peers_Type::RESP);
     peers.set_peers(

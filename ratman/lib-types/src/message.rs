@@ -8,20 +8,20 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "proto")]
 pub use crate::proto::message::Message as ProtoMessage;
 
-use crate::{timepair::TimePair, Identity};
+use crate::{timepair::TimePair, Address};
 
 /// Specify the message recipient
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Recipient {
-    Standard(Vec<Identity>),
-    Flood(Identity),
+    Standard(Vec<Address>),
+    Flood(Address),
 }
 
 impl Recipient {
     /// Return the scope of this recipient
     ///
     /// This is either the target user identity or the flood scope
-    pub fn scope(&self) -> Option<Identity> {
+    pub fn scope(&self) -> Option<Address> {
         match self {
             Self::Standard(id) => id.first().map(|x| x.clone()),
             Self::Flood(scope) => Some(*scope),
@@ -29,17 +29,17 @@ impl Recipient {
     }
 
     /// Create a standard message recipient
-    pub fn standard<T: Into<Vec<Identity>>>(addrs: T) -> Self {
+    pub fn standard<T: Into<Vec<Address>>>(addrs: T) -> Self {
         Self::Standard(addrs.into())
     }
     /// Create a flood message recipient
-    pub fn flood(namespace: Identity) -> Self {
+    pub fn flood(namespace: Address) -> Self {
         Self::Flood(namespace)
     }
 }
 
-impl From<Vec<Identity>> for Recipient {
-    fn from(vec: Vec<Identity>) -> Self {
+impl From<Vec<Address>> for Recipient {
+    fn from(vec: Vec<Address>) -> Self {
         Self::Standard(vec)
     }
 }
@@ -50,8 +50,8 @@ impl From<Vec<Identity>> for Recipient {
 /// namespace on the network.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Message {
-    id: Identity,
-    sender: Identity,
+    id: Address,
+    sender: Address,
     recipient: Recipient,
     time: TimePair,
     payload: Vec<u8>,
@@ -60,13 +60,13 @@ pub struct Message {
 
 impl Message {
     pub fn new(
-        sender: Identity,
+        sender: Address,
         recipient: impl Into<Recipient>,
         payload: Vec<u8>,
         signature: Vec<u8>,
     ) -> Self {
         Message {
-            id: Identity::random(),
+            id: Address::random(),
             recipient: recipient.into(),
             time: TimePair::sending(),
             sender,
@@ -79,15 +79,15 @@ impl Message {
         self.payload.clone()
     }
 
-    pub fn get_sender(&self) -> Identity {
+    pub fn get_sender(&self) -> Address {
         self.sender.clone()
     }
 
     // return protobuf type Message.
     #[cfg(feature = "proto")]
     pub fn received(
-        id: Identity,
-        sender: Identity,
+        id: Address,
+        sender: Address,
         recipient: Recipient,
         payload: Vec<u8>,
         timesig: String,
@@ -137,18 +137,18 @@ impl From<ProtoMessage> for Message {
             Some(Recipient_oneof_inner::std(ref mut std)) => Recipient::Standard(
                 std.take_standard()
                     .into_iter()
-                    .map(|id| Identity::from_bytes(&id))
+                    .map(|id| Address::from_bytes(&id))
                     .collect(),
             ),
             Some(Recipient_oneof_inner::flood_scope(ref id)) => {
-                Recipient::Flood(Identity::from_bytes(id))
+                Recipient::Flood(Address::from_bytes(id))
             }
             _ => unreachable!(),
         };
 
         Message {
-            id: Identity::from_bytes(msg.get_id()),
-            sender: Identity::from_bytes(msg.get_id()),
+            id: Address::from_bytes(msg.get_id()),
+            sender: Address::from_bytes(msg.get_id()),
             recipient,
             time: TimePair::from_string(msg.get_time()),
             payload: msg.get_payload().to_vec(),

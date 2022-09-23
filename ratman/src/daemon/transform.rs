@@ -5,7 +5,7 @@
 use crate::{Message, MsgId};
 use types::{
     api::{Send, Send_Type},
-    Identity, Recipient, TimePair,
+    Address, Recipient, TimePair,
 };
 
 /// Turn an API `Send` to a `Message`
@@ -19,9 +19,9 @@ pub(crate) fn send_to_message(s: Send) -> Vec<Message> {
             .get_std()
             .get_standard()
             .into_iter()
-            .map(|addr| Recipient::Standard(vec![Identity::from_bytes(&addr)]))
+            .map(|addr| Recipient::Standard(vec![Address::from_bytes(&addr)]))
             .collect(),
-        Send_Type::FLOOD => vec![Recipient::Flood(Identity::from_bytes(s.scope.as_slice()))],
+        Send_Type::FLOOD => vec![Recipient::Flood(Address::from_bytes(s.scope.as_slice()))],
     };
     let timesig = TimePair::sending();
 
@@ -31,7 +31,7 @@ pub(crate) fn send_to_message(s: Send) -> Vec<Message> {
         .into_iter()
         .map(|recipient| Message {
             id: MsgId::random(),
-            sender: Identity::from_bytes(s.get_msg().sender.as_slice()),
+            sender: Address::from_bytes(s.get_msg().sender.as_slice()),
             recipient,
             payload: s.get_msg().payload.clone(),
             timesig: timesig.clone(),

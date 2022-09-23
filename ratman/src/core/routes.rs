@@ -13,7 +13,7 @@ use async_std::{
 };
 use netmod::Target;
 use std::collections::BTreeMap;
-use types::Identity;
+use types::Address;
 
 /// A netmod endpoint ID and an endpoint target ID
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -32,8 +32,8 @@ pub(crate) enum RouteType {
 /// persistence relationships.  It can update entries for topology
 /// changes, but these are not carried between sessions.
 pub(crate) struct RouteTable {
-    routes: Arc<Mutex<BTreeMap<Identity, RouteType>>>,
-    new: IoPair<Identity>,
+    routes: Arc<Mutex<BTreeMap<Address, RouteType>>>,
+    new: IoPair<Address>,
     #[cfg(feature = "dashboard")]
     metrics: metrics::RouteTableMetrics,
 }
@@ -58,7 +58,7 @@ impl RouteTable {
     ///
     /// If the Id was not previously known to the router, it is queued
     /// to the `new` set which can be polled by calling `discovered().await`.
-    pub(crate) async fn update(self: &Arc<Self>, if_: u8, t: Target, id: Identity) {
+    pub(crate) async fn update(self: &Arc<Self>, if_: u8, t: Target, id: Address) {
         let mut tbl = self.routes.lock().await;
         let route = RouteType::Remote(EpTargetPair(if_, t));
 
@@ -76,12 +76,12 @@ impl RouteTable {
     }
 
     /// Poll the set of newly discovered users
-    pub(crate) async fn discover(&self) -> Identity {
+    pub(crate) async fn discover(&self) -> Address {
         self.new.1.recv().await.unwrap()
     }
 
     /// Track a local ID in the routes table
-    pub(crate) async fn add_local(&self, id: Identity) -> Result<()> {
+    pub(crate) async fn add_local(&self, id: Address) -> Result<()> {
         match self.routes.lock().await.insert(id, RouteType::Local) {
             Some(_) => Err(Error::DuplicateAddress),
             None => {
@@ -98,7 +98,7 @@ impl RouteTable {
     }
 
     /// Check if a user is locally known
-    pub(crate) async fn local(&self, id: Identity) -> Result<()> {
+    pub(crate) async fn local(&self, id: Address) -> Result<()> {
         match self.reachable(id).await {
             Some(RouteType::Local) => Ok(()),
             _ => Err(Error::NoAddress),
@@ -106,7 +106,7 @@ impl RouteTable {
     }
 
     /// Delete an entry from the routing table
-    pub(crate) async fn delete(&self, id: Identity) -> Result<()> {
+    pub(crate) async fn delete(&self, id: Address) -> Result<()> {
         match self.routes.lock().await.remove(&id) {
             Some(_kind) => {
                 #[cfg(feature = "dashboard")]
@@ -121,7 +121,7 @@ impl RouteTable {
     }
 
     /// Get all users in the routing table
-    pub(crate) async fn all(&self) -> Vec<(Identity, RouteType)> {
+    pub(crate) async fn all(&self) -> Vec<(Address, RouteType)> {
         self.routes
             .lock()
             .await
@@ -135,7 +135,7 @@ impl RouteTable {
     /// **Note**: this function may panic if no entry was found, and
     /// returns `None` if the specified ID isn't remote.  To get more
     /// control over how the table is queried, use `reachable` instead
-    pub(crate) async fn resolve(&self, id: Identity) -> Option<EpTargetPair> {
+    pub(crate) async fn resolve(&self, id: Address) -> Option<EpTargetPair> {
         match self.routes.lock().await.get(&id).cloned()? {
             RouteType::Remote(ep) => Some(ep),
             RouteType::Local => None,
@@ -143,7 +143,7 @@ impl RouteTable {
     }
 
     /// Check if an ID is reachable via currently known routes
-    pub(crate) async fn reachable(&self, id: Identity) -> Option<RouteType> {
+    pub(crate) async fn reachable(&self, id: Address) -> Option<RouteType> {
         self.routes.lock().await.get(&id).cloned()
     }
 }

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use async_std::net::SocketAddr;
-use ratman_client::Identity;
+use ratman_client::Address;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
@@ -12,7 +12,7 @@ use std::{
     path::PathBuf,
 };
 
-pub type Routes = BTreeMap<IpSpace, (InOrOut, Identity)>;
+pub type Routes = BTreeMap<IpSpace, (InOrOut, Address)>;
 
 /// Encode the current routing configuration
 ///
@@ -22,11 +22,11 @@ pub type Routes = BTreeMap<IpSpace, (InOrOut, Identity)>;
 #[derive(Default, Serialize, Deserialize)]
 pub struct Config {
     /// Inlet addresses per-route
-    pub addresses: BTreeMap<String, Identity>,
+    pub addresses: BTreeMap<String, Address>,
 }
 
 impl Config {
-    pub fn get_address(&self, ip: &IpSpace) -> Identity {
+    pub fn get_address(&self, ip: &IpSpace) -> Address {
         *self
             .addresses
             .get(&ip.to_string())
@@ -57,7 +57,7 @@ impl Config {
             // If this inlet route is new we generate a unique address for it
             let ip_str = ip.to_string();
             if !cfg.addresses.contains_key(&ip_str) {
-                cfg.addresses.insert(ip_str, Identity::random());
+                cfg.addresses.insert(ip_str, Address::random());
             }
         }
 
@@ -122,7 +122,7 @@ pub enum InOrOut {
 }
 
 /// Parse a single line of configuration into a routing tuple
-fn parse_line(line: &str) -> Option<(IpSpace, (InOrOut, Identity))> {
+fn parse_line(line: &str) -> Option<(IpSpace, (InOrOut, Address))> {
     if line.contains("<-") {
         parse_outgoing(line)
     } else if line.contains("->") {
@@ -133,17 +133,17 @@ fn parse_line(line: &str) -> Option<(IpSpace, (InOrOut, Identity))> {
     }
 }
 
-fn parse_outgoing(line: &str) -> Option<(IpSpace, (InOrOut, Identity))> {
+fn parse_outgoing(line: &str) -> Option<(IpSpace, (InOrOut, Address))> {
     let split: Vec<_> = line.split("<-").collect();
     let socket = IpSpace::Single(split.get(0)?.trim().parse().ok()?);
-    let id = Identity::from_string(&split.get(1)?.trim().to_string());
+    let id = Address::from_string(&split.get(1)?.trim().to_string());
     Some((socket, (InOrOut::Out, id)))
 }
 
-fn parse_incoming(line: &str) -> Option<(IpSpace, (InOrOut, Identity))> {
+fn parse_incoming(line: &str) -> Option<(IpSpace, (InOrOut, Address))> {
     let split: Vec<_> = line.split("->").collect();
     let socket = IpSpace::Single(split.get(0)?.trim().parse().ok()?);
-    let id = Identity::from_string(&split.get(1)?.trim().to_string());
+    let id = Address::from_string(&split.get(1)?.trim().to_string());
     Some((socket, (InOrOut::In, id)))
 }
 
@@ -163,7 +163,7 @@ fn test_parse_line_out() {
             );
 
             assert_eq!(io, InOrOut::Out);
-            assert_eq!(id, Identity::from_string(&"7053-2C1D-15D9-4D30-4FC5-4663-28BD-2E0C-F33D-0D49-2E28-6C1F-5649-6922-7DA8-B7A5".to_owned()))
+            assert_eq!(id, Address::from_string(&"7053-2C1D-15D9-4D30-4FC5-4663-28BD-2E0C-F33D-0D49-2E28-6C1F-5649-6922-7DA8-B7A5".to_owned()))
         }
         _ => panic!("invalid parse"),
     }
@@ -185,7 +185,7 @@ fn test_parse_line_in() {
             );
 
             assert_eq!(io, InOrOut::In);
-            assert_eq!(id, Identity::from_string(&"7053-2C1D-15D9-4D30-4FC5-4663-28BD-2E0C-F33D-0D49-2E28-6C1F-5649-6922-7DA8-B7A5".to_owned()))
+            assert_eq!(id, Address::from_string(&"7053-2C1D-15D9-4D30-4FC5-4663-28BD-2E0C-F33D-0D49-2E28-6C1F-5649-6922-7DA8-B7A5".to_owned()))
         }
         _ => panic!("invalid parse"),
     }

@@ -44,4 +44,4 @@ pub use crate::{
     router::Router,
 };
 pub use netmod;
-pub use types::{Error, Identity, Recipient, Result, TimePair, ID_LEN};
+pub use types::{Address, Error, Recipient, Result, TimePair, ID_LEN};

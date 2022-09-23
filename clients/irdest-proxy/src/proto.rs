@@ -1,21 +1,21 @@
-use ratman_client::Identity;
+use ratman_client::Address;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct Envelope {
-    pub session: Identity,
+    pub session: Address,
     pub data: Option<Vec<u8>>,
 }
 
 impl Envelope {
-    pub fn with_session(session: Identity, data: Vec<u8>) -> Self {
+    pub fn with_session(session: Address, data: Vec<u8>) -> Self {
         Self {
             session,
             data: Some(data),
         }
     }
 
-    pub fn end(session: Identity) -> Self {
+    pub fn end(session: Address) -> Self {
         Self {
             session,
             data: None,

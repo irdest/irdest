@@ -24,19 +24,19 @@ use std::{
     sync::atomic::{AtomicBool, Ordering},
     time::Duration,
 };
-use types::{Error, Frame, Identity, Result};
+use types::{Address, Error, Frame, Result};
 
 /// A payload that represents a RATMAN-protocol message
 #[derive(Debug, Serialize, Deserialize)]
 enum ProtoPayload {
     /// A network-wide announcement message
-    Announce { id: Identity, no_sync: bool },
+    Announce { id: Address, no_sync: bool },
 }
 
 /// Provide a builder API to construct different types of Messages
 #[derive(Default)]
 pub(crate) struct Protocol {
-    online: Mutex<BTreeMap<Identity, Arc<AtomicBool>>>,
+    online: Mutex<BTreeMap<Address, Arc<AtomicBool>>>,
     #[cfg(feature = "dashboard")]
     metrics: metrics::Metrics,
 }
@@ -52,7 +52,7 @@ impl Protocol {
     }
 
     /// Dispatch a task to announce a user periodically
-    pub(crate) async fn online(self: Arc<Self>, id: Identity, core: Arc<Core>) -> Result<()> {
+    pub(crate) async fn online(self: Arc<Self>, id: Address, core: Arc<Core>) -> Result<()> {
         let mut map = self.online.lock().await;
         if map.get(&id).map(|arc| arc.load(Ordering::Relaxed)) == Some(true) {
             // If a user is already online we don't have to do anything
@@ -85,7 +85,7 @@ impl Protocol {
         Ok(())
     }
 
-    pub(crate) async fn offline(&self, id: Identity) -> Result<()> {
+    pub(crate) async fn offline(&self, id: Address) -> Result<()> {
         info!("Setting address {} to 'offline'", id);
         self.online
             .lock()
@@ -96,7 +96,7 @@ impl Protocol {
     }
 
     /// Try to parse a frame as an announcement
-    pub(crate) fn is_announce(f: &Frame) -> Option<Identity> {
+    pub(crate) fn is_announce(f: &Frame) -> Option<Address> {
         let Frame { ref payload, .. } = f;
 
         bincode::deserialize(payload)
@@ -107,7 +107,7 @@ impl Protocol {
     }
 
     /// Build an announcement message for a user
-    fn announce(sender: Identity) -> Frame {
+    fn announce(sender: Address) -> Frame {
         let payload = bincode::serialize(&ProtoPayload::Announce {
             id: sender,
             no_sync: true,

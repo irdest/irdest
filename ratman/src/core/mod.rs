@@ -23,7 +23,7 @@ pub(self) use journal::Journal;
 pub(self) use routes::{EpTargetPair, RouteTable, RouteType};
 pub(self) use switch::Switch;
 
-use crate::{Identity, Message};
+use crate::{Address, Message};
 use async_std::sync::Arc;
 use netmod::Endpoint;
 use types::{Error, Frame, Result};
@@ -105,7 +105,7 @@ impl Core {
     }
 
     /// Check if an Id is present in the routing table
-    pub(crate) async fn known(&self, id: Identity, local: bool) -> Result<()> {
+    pub(crate) async fn known(&self, id: Address, local: bool) -> Result<()> {
         if local {
             self.routes.local(id).await
         } else {
@@ -117,7 +117,7 @@ impl Core {
     }
 
     /// Returns users that were newly discovered in the network
-    pub(crate) async fn discover(&self) -> Identity {
+    pub(crate) async fn discover(&self) -> Address {
         self.routes.discover().await
     }
 
@@ -139,17 +139,17 @@ impl Core {
     }
 
     /// Add a local user endpoint
-    pub(crate) async fn add_local(&self, id: Identity) -> Result<()> {
+    pub(crate) async fn add_local(&self, id: Address) -> Result<()> {
         self.routes.add_local(id).await
     }
 
     /// Remove a local user endpoint
-    pub(crate) async fn rm_local(&self, id: Identity) -> Result<()> {
+    pub(crate) async fn rm_local(&self, id: Address) -> Result<()> {
         self.routes.delete(id).await
     }
 
     /// Return all known addresses
-    pub(crate) async fn all_addrs(&self) -> Vec<(Identity, bool)> {
+    pub(crate) async fn all_addrs(&self) -> Vec<(Address, bool)> {
         self.routes
             .all()
             .await

@@ -11,10 +11,10 @@ use async_std::{
     net::TcpStream,
     sync::{Arc, RwLock},
 };
-use ratman_client::Identity;
+use ratman_client::Address;
 use std::collections::BTreeMap;
 
-pub type SessionMap = Arc<RwLock<BTreeMap<Identity, TcpStream>>>;
+pub type SessionMap = Arc<RwLock<BTreeMap<Address, TcpStream>>>;
 
 /// The main proxy server state
 pub struct Server {

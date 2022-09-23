@@ -1,6 +1,6 @@
 //! Networking frames
 
-use ratman_types::{Identity, ID_LEN};
+use ratman_types::{Address, ID_LEN};
 use serde::{Deserialize, Serialize};
 
 /// Describes an endpoint's send target
@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Target {
     /// Send message to all reachable endpoints
-    Flood(Identity),
+    Flood(Address),
     /// Encodes a specific target ID
     Single(u16),
 }

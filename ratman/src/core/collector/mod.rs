@@ -30,7 +30,7 @@ use async_std::{
 };
 use std::collections::BTreeMap;
 use tracing_futures::Instrument;
-use types::{Frame, SeqId};
+use types::{Frame, Id};
 
 pub(self) type Locked<T> = Arc<Mutex<T>>;
 
@@ -43,7 +43,7 @@ pub(self) use worker::Worker;
 /// The main collector management structure and API facade
 pub(crate) struct Collector {
     state: Arc<State>,
-    workers: Locked<BTreeMap<SeqId, Arc<Worker>>>,
+    workers: Locked<BTreeMap<Id, Arc<Worker>>>,
 }
 
 impl Collector {
@@ -59,7 +59,7 @@ impl Collector {
     ///
     /// This function can spawn new workers when needed
     #[cfg(test)]
-    pub(crate) async fn queue(&self, seq: SeqId, f: Frame) {
+    pub(crate) async fn queue(&self, seq: Id, f: Frame) {
         trace!("Queuing frame for collection");
         self.state.queue(seq, f).await;
 
@@ -71,7 +71,7 @@ impl Collector {
 
     /// Queue the work, and spawn a worker if required
     #[instrument(skip(self, f), level = "trace")]
-    pub(crate) async fn queue_and_spawn(&self, seq: SeqId, f: Frame) {
+    pub(crate) async fn queue_and_spawn(&self, seq: Id, f: Frame) {
         self.state.queue(seq, f).await;
 
         let mut map = self.workers.lock().await;
@@ -103,12 +103,12 @@ impl Collector {
 
     /// Get raw access to a worker poll cycle, for testing purposes
     #[cfg(test)]
-    async fn get_worker(&self, seq: SeqId) -> Arc<Worker> {
+    async fn get_worker(&self, seq: Id) -> Arc<Worker> {
         Arc::clone(&self.workers.lock().await.get(&seq).unwrap())
     }
 
     /// Spawn an async task runner for a worker
-    async fn spawn_worker(&self, seq: SeqId) {
+    async fn spawn_worker(&self, seq: Id) {
         let workers = Arc::clone(&self.workers);
 
         let worker = {
@@ -133,14 +133,14 @@ impl Collector {
 }
 
 #[cfg(test)]
-use crate::Identity;
+use crate::Address;
 
 #[test]
 fn queue_one() {
     use crate::{Slicer, TimePair};
     use types::Recipient;
 
-    let (sender, recipient, id) = (Identity::random(), Identity::random(), Identity::random());
+    let (sender, recipient, id) = (Address::random(), Address::random(), Address::random());
     let mut seq = Slicer::slice(
         128,
         Message {
@@ -183,7 +183,7 @@ fn queue_many() {
     use crate::{Slicer, TimePair};
     use types::Recipient;
 
-    let (sender, recipient, id) = (Identity::random(), Identity::random(), Identity::random());
+    let (sender, recipient, id) = (Address::random(), Address::random(), Address::random());
     let seq = Slicer::slice(
         8,
         Message {

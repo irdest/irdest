@@ -8,7 +8,7 @@ use async_std::{
 };
 use clap::{App, Arg};
 // use directories::ProjectDirs;
-use ratman_client::{Identity, RatmanIpc, Receive_Type};
+use ratman_client::{Address, RatmanIpc, Receive_Type};
 use serde::{Deserialize, Serialize};
 use std::{os::unix::prelude::AsRawFd, path::PathBuf};
 
@@ -74,7 +74,7 @@ pub fn build_cli() -> App<'static, 'static> {
 
 #[derive(Serialize, Deserialize)]
 struct Config {
-    addr: Identity,
+    addr: Address,
     token: Vec<u8>,
 }
 
@@ -111,7 +111,7 @@ async fn send(
     recp: &str,
     msg: Option<&str>,
 ) -> Result<usize, Box<dyn std::error::Error>> {
-    let recp = Identity::from_string(&recp.to_string());
+    let recp = Address::from_string(&recp.to_string());
 
     // Either turn the provided string message into a byte array or read from stdin
     match msg.map(|s| s.as_bytes().to_vec()) {
@@ -224,7 +224,7 @@ async fn main() {
 
     //// Check if a sender address was provided via CLI options
     if let Some(addr) = m.value_of("SENDER") {
-        cfg.addr = Identity::from_string(&addr.to_owned());
+        cfg.addr = Address::from_string(&addr.to_owned());
     }
 
     //// We always need to connect to the IPC backend with our address

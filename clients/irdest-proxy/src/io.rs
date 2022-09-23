@@ -3,29 +3,25 @@ use async_std::{
     io::{self, ReadExt, WriteExt},
     net::TcpStream,
 };
-use ratman_client::{Identity, RatmanIpc, Receive_Type};
+use ratman_client::{Address, RatmanIpc, Receive_Type};
 
 /// Connect to the router with a fixed address
-pub async fn connect_with_address(bind: Option<&str>, addr: Identity) -> io::Result<RatmanIpc> {
+pub async fn connect_with_address(bind: Option<&str>, addr: Address) -> io::Result<RatmanIpc> {
     Ok(match bind {
         Some(bind) => RatmanIpc::connect(bind, Some(addr)).await,
         None => RatmanIpc::default_with_addr(addr).await,
     }?)
 }
 
-pub async fn terminate_session(
-    addr: Identity,
-    session: Identity,
-    ipc: &RatmanIpc,
-) -> io::Result<()> {
+pub async fn terminate_session(addr: Address, session: Address, ipc: &RatmanIpc) -> io::Result<()> {
     let env = Envelope::end(session).encode();
     ipc.send_to(addr, env).await?;
     Ok(())
 }
 
 pub async fn from_tcp_to_ratman(
-    addr: Identity,
-    session: Identity,
+    addr: Address,
+    session: Address,
     tcp: &mut TcpStream,
     ipc: &RatmanIpc,
 ) -> io::Result<()> {
@@ -42,7 +38,7 @@ pub async fn from_tcp_to_ratman(
 }
 
 /// Get a message for a session from Ratman
-pub async fn from_ratman(ipc: &RatmanIpc) -> Option<(Identity, Option<Vec<u8>>)> {
+pub async fn from_ratman(ipc: &RatmanIpc) -> Option<(Address, Option<Vec<u8>>)> {
     ipc.next()
         .await
         .filter(|(t, _)| t == &Receive_Type::DEFAULT)

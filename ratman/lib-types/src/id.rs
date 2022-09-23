@@ -11,30 +11,37 @@ use std::{
 /// Length of the identity buffer to align with an ed25519 pubkey
 pub const ID_LEN: usize = 32;
 
-/// A generic object identifier
+/// A cryptographic address on an Irdest network
 ///
-/// Ratman is a userspace router with no concept of link layer
-/// identities, network IDs are chosen to be fixed size byte arrays.
-/// It's left to the implementing application to map these to some
-/// useful source of identity.  This crate also provides a hashing
-/// constructor behind the `digest` feature flag which can be used to
-/// hash a secret to derive the identity value.
+/// An address is 32 bytes long and represents an ed25519 public key.
+/// Each address is thus backed by an ed25519 private key, which can
+/// be used for signatures, and to establish a shared secret with any
+/// other address via a x25519 diffie-hellman.  Since every address is
+/// its own public key, no additional information needs to be
+/// exchanged for encryption to a particular recipient.
 ///
-/// Whatever scheme is chosen, two principles about identity must not
-/// be violated:
+/// Ratman also supports namespaced flood messages.  A flood message
+/// can be encrypted for a particular namespace address, meaning that
+/// only applications that have been distributed with the private key
+/// can read the messages addressed to the namespace.
 ///
-/// 1. There are no identity collisions
-/// 2. Identities don't change mid-route
+/// Note: this type used to be called `Identity`.  Random 32 byte
+/// object identifier are used in various places around the code base
+/// to make any object uniquely identifiable.  For these cases, please
+/// use the [`Id`](Id) type instead!
 #[derive(Copy, Clone, Hash, PartialOrd, Ord, PartialEq, Eq)]
-pub struct Identity([u8; ID_LEN]);
+pub struct Address([u8; ID_LEN]);
 
-impl Debug for Identity {
+/// A random object identifier
+pub type Id = Address;
+
+impl Debug for Address {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "<ID: {}>", hex::encode_upper(self))
     }
 }
 
-impl Display for Identity {
+impl Display for Address {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -50,13 +57,13 @@ impl Display for Identity {
     }
 }
 
-impl Encode for Identity {
+impl Encode for Address {
     fn encode(&self, w: &mut dyn std::io::Write) -> std::io::Result<()> {
         write!(w, "{:}", self)
     }
 }
 
-impl Identity {
+impl Address {
     /// Create an identity from the first 16 bytes of a vector
     ///
     /// This function will panic, if the provided vector isn't long
@@ -150,35 +157,35 @@ impl Identity {
 }
 
 /// Implement RAW `From` binary array
-impl From<[u8; ID_LEN]> for Identity {
+impl From<[u8; ID_LEN]> for Address {
     fn from(i: [u8; ID_LEN]) -> Self {
         Self(i)
     }
 }
 
 /// Implement RAW `From` binary (reference) array
-impl From<&[u8; ID_LEN]> for Identity {
+impl From<&[u8; ID_LEN]> for Address {
     fn from(i: &[u8; ID_LEN]) -> Self {
         Self(i.clone())
     }
 }
 
 /// Implement binary array `From` RAW
-impl From<Identity> for [u8; ID_LEN] {
-    fn from(i: Identity) -> Self {
+impl From<Address> for [u8; ID_LEN] {
+    fn from(i: Address) -> Self {
         i.0
     }
 }
 
 /// Implement binary array `From` RAW reference
-impl From<&Identity> for [u8; ID_LEN] {
-    fn from(i: &Identity) -> Self {
+impl From<&Address> for [u8; ID_LEN] {
+    fn from(i: &Address) -> Self {
         i.0.clone()
     }
 }
 
 /// Implement RAW identity to binary array reference
-impl AsRef<[u8]> for Identity {
+impl AsRef<[u8]> for Address {
     fn as_ref(&self) -> &[u8] {
         &self.0
     }
@@ -187,7 +194,7 @@ impl AsRef<[u8]> for Identity {
 /// Iterator for iterating over `Identity`
 pub struct Iter {
     index: usize,
-    ident: Identity,
+    ident: Address,
 }
 
 impl Iterator for Iter {
@@ -199,7 +206,7 @@ impl Iterator for Iter {
     }
 }
 
-impl IntoIterator for Identity {
+impl IntoIterator for Address {
     type Item = u8;
     type IntoIter = Iter;
     fn into_iter(self) -> Self::IntoIter {
@@ -210,7 +217,7 @@ impl IntoIterator for Identity {
     }
 }
 
-impl Serialize for Identity {
+impl Serialize for Address {
     fn serialize<S>(&self, ser: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -223,7 +230,7 @@ impl Serialize for Identity {
     }
 }
 
-impl<'de> Deserialize<'de> for Identity {
+impl<'de> Deserialize<'de> for Address {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -233,7 +240,7 @@ impl<'de> Deserialize<'de> for Identity {
         struct IdentityVisitor;
 
         impl IdentityVisitor {
-            fn from_str<E: Error>(v: &str) -> Result<Identity, E> {
+            fn from_str<E: Error>(v: &str) -> Result<Address, E> {
                 let v: Vec<u8> = v
                     .split("-")
                     .map(|s| hex::decode(s).map_err(|e| E::custom(e)))
@@ -247,7 +254,7 @@ impl<'de> Deserialize<'de> for Identity {
                 Self::from_bytes(&v)
             }
 
-            fn from_bytes<E: Error, V: AsRef<[u8]>>(v: V) -> Result<Identity, E> {
+            fn from_bytes<E: Error, V: AsRef<[u8]>>(v: V) -> Result<Address, E> {
                 let v = v.as_ref();
                 if v.len() != ID_LEN {
                     return Err(E::custom(format!(
@@ -257,7 +264,7 @@ impl<'de> Deserialize<'de> for Identity {
                     )));
                 }
 
-                Ok(Identity(v.iter().enumerate().take(ID_LEN).fold(
+                Ok(Address(v.iter().enumerate().take(ID_LEN).fold(
                     [0; ID_LEN],
                     |mut buf, (i, u)| {
                         buf[i] = *u;
@@ -268,7 +275,7 @@ impl<'de> Deserialize<'de> for Identity {
         }
 
         impl<'de> Visitor<'de> for IdentityVisitor {
-            type Value = Identity;
+            type Value = Address;
 
             fn expecting(&self, f: &mut Formatter) -> fmt::Result {
                 write!(
@@ -325,7 +332,7 @@ mod test {
     #[cfg(not(features = "aligned"))]
     fn json_serde() {
         let s = b"Yes, we will make total destroy.";
-        let i = Identity::truncate(&s.to_vec());
+        let i = Address::truncate(&s.to_vec());
         let v = serde_json::to_string(&i).unwrap();
         assert_eq!(
             v,
@@ -339,7 +346,7 @@ mod test {
     #[cfg(not(features = "aligned"))]
     fn bincode_serde() {
         let s = b"Yes, we will make total destroy.";
-        let i = Identity::truncate(&s.to_vec());
+        let i = Address::truncate(&s.to_vec());
         let v: Vec<u8> = bincode::serialize(&i).unwrap();
         assert_eq!(
             v,

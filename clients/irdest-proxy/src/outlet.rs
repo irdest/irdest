@@ -4,7 +4,7 @@ use crate::{
     server::SessionMap,
 };
 use async_std::{io, net::TcpStream, task};
-use ratman_client::Identity;
+use ratman_client::Address;
 
 pub struct Outlet {
     map: SessionMap,
@@ -15,12 +15,12 @@ impl Outlet {
         map: &SessionMap,
         bind: Option<&str>,
         ip: &IpSpace,
-        addr: Identity,
+        addr: Address,
     ) -> io::Result<()> {
         task::block_on(Self { map: map.clone() }.spawn(bind, ip, addr))
     }
 
-    async fn spawn(self, bind: Option<&str>, ip: &IpSpace, addr: Identity) -> io::Result<()> {
+    async fn spawn(self, bind: Option<&str>, ip: &IpSpace, addr: Address) -> io::Result<()> {
         let socket_addr = ip.socket_addr().clone();
         let ipc = connect_with_address(bind, addr).await?;
 

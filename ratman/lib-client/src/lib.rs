@@ -38,7 +38,7 @@ use async_std::{
     net::TcpStream,
     task,
 };
-pub use types::{api::Receive_Type, Error, Identity, Message, Result, TimePair};
+pub use types::{api::Receive_Type, Address, Error, Message, Result, TimePair};
 use types::{
     api::{
         self, ApiMessageEnum,
@@ -56,9 +56,9 @@ use types::{
 #[derive(Clone)]
 pub struct RatmanIpc {
     socket: TcpStream,
-    addr: Identity,
+    addr: Address,
     recv: Receiver<(Receive_Type, Message)>,
-    disc: Receiver<Identity>,
+    disc: Receiver<Address>,
 }
 
 impl RatmanIpc {
@@ -67,7 +67,7 @@ impl RatmanIpc {
         Self::connect("127.0.0.1:9020", None).await
     }
 
-    pub async fn default_with_addr(addr: Identity) -> Result<Self> {
+    pub async fn default_with_addr(addr: Address) -> Result<Self> {
         Self::connect("127.0.0.1:9020", Some(addr)).await
     }
 
@@ -76,7 +76,7 @@ impl RatmanIpc {
     /// `socket_addr` refers to the local address the Ratman daemon is
     /// listening on.  `addr` refers to the Ratman cryptographic
     /// routing address associated with your application
-    pub async fn connect(socket_addr: &str, addr: Option<Identity>) -> Result<RatmanIpc> {
+    pub async fn connect(socket_addr: &str, addr: Option<Address>) -> Result<RatmanIpc> {
         let mut socket = TcpStream::connect(socket_addr).await?;
 
         // Introduce ourselves to the daemon
@@ -93,7 +93,7 @@ impl RatmanIpc {
             Ok(Some(one_of)) => match one_of {
                 ApiMessageEnum::setup(ref s) if s.field_type == ACK => {
                     if s.id.len() > 0 {
-                        Identity::from_bytes(s.get_id())
+                        Address::from_bytes(s.get_id())
                     } else {
                         panic!("failed to initialise new address!");
                     }
@@ -125,7 +125,7 @@ impl RatmanIpc {
         let introduction = api::api_setup(api::anonymous());
         write_with_length(&mut socket, &encode_message(introduction)?).await?;
 
-        let addr = Identity::random(); // Never used
+        let addr = Address::random(); // Never used
         let (_, recv) = unbounded(); // Never used
         let (_, disc) = unbounded(); // Never used
         Ok(Self {
@@ -137,12 +137,12 @@ impl RatmanIpc {
     }
 
     /// Return the currently assigned address
-    pub fn address(&self) -> Identity {
+    pub fn address(&self) -> Address {
         self.addr
     }
 
     /// Send some data to a remote peer
-    pub async fn send_to(&self, recipient: Identity, payload: Vec<u8>) -> Result<()> {
+    pub async fn send_to(&self, recipient: Address, payload: Vec<u8>) -> Result<()> {
         let msg = api::api_send(api::send_default(
             Message::new(
                 self.addr,
@@ -158,7 +158,7 @@ impl RatmanIpc {
     }
 
     /// Send some data to a remote peer
-    pub async fn flood(&self, namespace: Identity, payload: Vec<u8>) -> Result<()> {
+    pub async fn flood(&self, namespace: Address, payload: Vec<u8>) -> Result<()> {
         let msg = api::api_send(api::send_flood(
             Message::new(
                 self.addr,
@@ -180,12 +180,12 @@ impl RatmanIpc {
     }
 
     /// Listen for the next address discovery event
-    pub async fn discover(&self) -> Option<Identity> {
+    pub async fn discover(&self) -> Option<Address> {
         self.disc.recv().await.ok()
     }
 
     /// Get all currently known peers for this router
-    pub async fn get_peers(&self) -> Result<Vec<Identity>> {
+    pub async fn get_peers(&self) -> Result<Vec<Address>> {
         let msg = api::api_peers(api::peers_req());
         write_with_length(&mut self.socket.clone(), &encode_message(msg)?).await?;
 
@@ -195,7 +195,7 @@ impl RatmanIpc {
         {
             Ok(Some(one_of)) => match one_of {
                 ApiMessageEnum::peers(s) if s.field_type == RESP => {
-                    Ok(s.peers.iter().map(|p| Identity::from_bytes(p)).collect())
+                    Ok(s.peers.iter().map(|p| Address::from_bytes(p)).collect())
                 }
                 _ => unreachable!(),
             },
@@ -207,7 +207,7 @@ impl RatmanIpc {
 async fn run_receive(
     mut socket: TcpStream,
     tx: Sender<(Receive_Type, Message)>,
-    dtx: Sender<Identity>,
+    dtx: Sender<Address>,
 ) {
     loop {
         trace!("Reading message from stream...");
@@ -233,7 +233,7 @@ async fn run_receive(
                 }
                 ApiMessageEnum::peers(peers) if peers.get_field_type() == DISCOVER => {
                     match peers.peers.get(0) {
-                        Some(p) => match dtx.send(Identity::from_bytes(p)).await {
+                        Some(p) => match dtx.send(Address::from_bytes(p)).await {
                             Ok(_) => {}
                             _ => {
                                 error!("Failed to send discovery to client poller...");

@@ -6,7 +6,7 @@
 
 use async_std::task;
 use netmod_inet::InetEndpoint;
-use ratman::{Identity, Router};
+use ratman::{Address, Router};
 use std::time::Duration;
 use tracing::warn;
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
@@ -103,7 +103,7 @@ async fn flood_over_inet() {
     let u3 = r3.add_user().await.unwrap();
     r3.online(u3).await.unwrap();
 
-    let flood_ns = Identity::random();
+    let flood_ns = Address::random();
 
     task::sleep(Duration::from_millis(500)).await;
     r1.flood(u1, flood_ns, vec![1, 3, 1, 2], vec![])

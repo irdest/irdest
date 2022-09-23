@@ -13,7 +13,7 @@
 //! then add two interfaces to the middle router.
 
 use netmod_mem::MemMod;
-use ratman::{Identity, Result, Router};
+use ratman::{Address, Result, Router};
 
 #[async_std::test]
 async fn announce_and_discover() -> Result<()> {

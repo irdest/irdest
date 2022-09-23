@@ -1,14 +1,11 @@
 //! Sequence handling module
 
 use crate::{Error, Frame, Identity, Recipient};
+use ratman_types::Id;
 use {
     std::hash::{BuildHasher, Hasher},
     twox_hash::{RandomXxHashBuilder64 as RXHash64, XxHash64},
 };
-
-/// A unique identifier to represents a sequence of frames
-#[deprecated]
-pub type SeqId = Identity;
 
 /// An XxHash signature and initialisation seed
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -52,12 +49,12 @@ pub struct SeqData {
     /// A hash signature of the payload
     pub sig: XxSignature,
     /// Global frame sequence ID
-    pub seqid: SeqId,
+    pub seqid: Id,
     /// Next sequenced Frame SIG
     pub next: Option<u64>,
 }
 
-/// Utility wrapping around `Vec<Frame>` with `SeqId` initialisation.
+/// Utility wrapping around `Vec<Frame>` with `Id` initialisation.
 ///
 /// This type implements a builder, which is initialised with header
 /// data, then filled with various sliced payloads, and then made into
@@ -65,7 +62,7 @@ pub struct SeqData {
 #[deprecated]
 pub struct SeqBuilder {
     #[doc(hidden)]
-    pub seqid: SeqId,
+    pub seqid: Id,
     #[doc(hidden)]
     pub sender: Identity,
     #[doc(hidden)]
@@ -76,7 +73,7 @@ pub struct SeqBuilder {
 
 impl SeqBuilder {
     /// Initialise a Sequence builder
-    pub fn new(sender: Identity, recp: Recipient, seqid: SeqId) -> Self {
+    pub fn new(sender: Identity, recp: Recipient, seqid: Id) -> Self {
         Self {
             sender,
             recp,
@@ -210,7 +207,7 @@ impl SeqBuilder {
     }
 
     /// Read the sequence ID back from the builder
-    pub fn seqid(&self) -> &SeqId {
+    pub fn seqid(&self) -> &Id {
         &self.seqid
     }
 

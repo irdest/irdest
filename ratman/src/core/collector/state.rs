@@ -13,12 +13,12 @@ use async_std::{
 };
 use std::collections::{BTreeMap, VecDeque};
 use task_notify::Notify;
-use types::{Frame, SeqId};
+use types::{Frame, Id};
 
 /// Local frame collector state holder
 #[derive(Default)]
 pub(super) struct State {
-    incoming: Notify<Locked<Notify<BTreeMap<SeqId, Notify<VecDeque<Frame>>>>>>,
+    incoming: Notify<Locked<Notify<BTreeMap<Id, Notify<VecDeque<Frame>>>>>>,
     done: Locked<Notify<VecDeque<Message>>>,
 }
 
@@ -56,7 +56,7 @@ impl State {
     }
 
     /// Poll for new work on a particular frame sequence
-    pub(super) async fn get(&self, seq: &SeqId) -> Frame {
+    pub(super) async fn get(&self, seq: &Id) -> Frame {
         let incoming = Arc::clone(&self.incoming);
         future::poll_fn(|ctx| {
             let lock = &mut incoming.lock();
@@ -85,7 +85,7 @@ impl State {
     }
 
     /// Queue a new frame to the state
-    pub(super) async fn queue(&self, seq: SeqId, frame: Frame) {
+    pub(super) async fn queue(&self, seq: Id, frame: Frame) {
         let mut map = self.incoming.lock().await;
         let vec = map.entry(seq).or_default();
         vec.push_back(frame);

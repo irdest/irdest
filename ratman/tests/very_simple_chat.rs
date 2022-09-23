@@ -17,7 +17,7 @@
 use async_std::task;
 use bincode;
 use netmod_mem::MemMod;
-use ratman::{Identity, Message, MsgId, Recipient, Result, Router, TimePair};
+use ratman::{Address, Message, MsgId, Recipient, Result, Router, TimePair};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
@@ -29,7 +29,7 @@ struct ChatMessage {
 }
 
 impl ChatMessage {
-    fn to_msg(&self, sender: Identity, recp: Identity) -> Message {
+    fn to_msg(&self, sender: Address, recp: Address) -> Message {
         let payload = bincode::serialize(self).unwrap();
         let recipient = Recipient::Standard(vec![recp]);
 
