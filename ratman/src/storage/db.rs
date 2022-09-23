@@ -1,4 +1,4 @@
-use sled::{Db as Handle, open};
+use sled::{open, Db as Handle};
 
 use crate::daemon::state::data_path;
 
@@ -8,6 +8,8 @@ pub(crate) struct Db(Handle);
 
 impl Db {
     pub(crate) fn new() -> Db {
+        // there should only be one ratman daemon per device, so there's no need
+        // for a unique db per-process. $datadir/db suffices as a path.
         let path = data_path().join("db");
         let handle = open(path).unwrap();
         Db(handle)
