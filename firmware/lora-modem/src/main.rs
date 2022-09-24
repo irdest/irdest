@@ -80,6 +80,7 @@ fn main() -> ! {
     let mut index = 0;
 
     loop {
+        //hprint!("l");
         match uart_rx.read() {
             Ok(c) => {
                 buffer[index] = c;
@@ -93,11 +94,11 @@ fn main() -> ! {
                     index = 0;
                 }
             }
-            Err(WouldBlock) => (),
+            Err(WouldBlock) => (), //hprintln!("b"),
             Err(e) => hprintln!("s_err:{:?}", e),
         }
 
-        let poll = lora.poll_irq(Some(30)); //TODO: Figure out how long this really is and how long it should be.
+        let poll = lora.poll_irq(Some(1)); //TODO: Figure out how long this really is and how long it should be.
         match poll {
             Ok(size) => {
                 let buffer = lora.read_packet().unwrap(); // Received buffer. NOTE: 255 bytes are always returned

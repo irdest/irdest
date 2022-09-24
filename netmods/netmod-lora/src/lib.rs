@@ -129,7 +129,14 @@ impl LoraEndpoint {
                 continue;
             }
             
-            let frame = decode_frame(&mut rx_packet.payload.as_slice()).unwrap();
+            let frame = match decode_frame(&mut rx_packet.payload.as_slice()){
+                Ok(f) => f,
+                Err(e) => {
+                    error!("failed to decode packet: {}", e);
+                    continue;
+                },    
+            };
+
             c.send(frame).await.unwrap();
         }
         error!("serial read loop exited!");
@@ -175,9 +182,12 @@ impl Endpoint for LoraEndpoint {
 
         trace!("ready to send packet");
 
-        self.serial.lock().await.write(&buffer).unwrap();
+        trace!("{:?}", buffer);
 
-        trace!("sending complete");
+        match self.serial.lock().await.write_all(&buffer) {
+            Ok(()) => trace!("sending complete"),
+            Err(e) => error!("Serial Write error: {}", e),
+        }
 
         Ok(())
     }
