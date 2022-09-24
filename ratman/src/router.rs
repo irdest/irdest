@@ -20,7 +20,9 @@ pub struct Router {
     inner: Arc<Core>,
     proto: Arc<Protocol>,
     pub(crate) keys: Arc<Keystore>,
-    db: Arc<Db>,
+    db: Arc<Db>, // TODO: may better be put somewhere else?
+                 // interaction with the db only happens through the router's API.
+                 // TODO: does this need Arc
 }
 
 impl Router {
