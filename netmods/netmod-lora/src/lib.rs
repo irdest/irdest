@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
+#[macro_use]
+extern crate tracing;
+
 use netmod::{Endpoint, Frame, Target};
 use netmod::Result as NMResult;
 use irdest_firmware_util::{decode_frame, encode_frame};
@@ -97,10 +100,12 @@ impl LoraEndpoint {
 
         task::spawn(Self::read_serial(this.clone(), tx));
 
+        info!("Created Successfully!");
         this
     }
 
     async fn read_serial(self: Arc<Self>, c: channel::Sender<Frame>) {
+        debug!("Starting serial Read loop");
         let mut buffer: [u8; RADIO_MTU] = [0; RADIO_MTU];
         loop {
             match self.serial.lock().await.read_exact(&mut buffer) {
@@ -112,10 +117,12 @@ impl LoraEndpoint {
             let rx_packet = match LoraPacket::decode(buffer) {
                 Ok(p) => p,
                 Err(e) => {
-                    println!("bad packet {:?}", e);
+                    info!("bad packet {:?}", e);
                     continue;
                 },
             };
+
+            trace!("recieved packet");
 
             // check header format is correct.
             if rx_packet.header.magic != IRDEST_MAGIC {
@@ -125,6 +132,7 @@ impl LoraEndpoint {
             let frame = decode_frame(&mut rx_packet.payload.as_slice()).unwrap();
             c.send(frame).await.unwrap();
         }
+        error!("serial read loop exited!");
     }
 }
 
@@ -135,7 +143,9 @@ impl Endpoint for LoraEndpoint {
     }
 
     async fn send(&self, frame: Frame, _target: Target, exclude: Option<u16>) -> NMResult<()> {
+        trace!("start send packet");
         if exclude.is_some() {
+            debug!("packet rejected");
             return Ok(());
         }
 
@@ -163,7 +173,11 @@ impl Endpoint for LoraEndpoint {
 
         let buffer = tx_packet.encode();
 
+        trace!("ready to send packet");
+
         self.serial.lock().await.write(&buffer).unwrap();
+
+        trace!("sending complete");
 
         Ok(())
     }
