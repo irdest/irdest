@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
-use irdest_mblog::{Author, Message, Post};
+use irdest_mblog::{Message, Post};
 use protobuf::Message as _;
 use ratman_client::{Address, RatmanIpc};
 
@@ -39,7 +39,7 @@ async fn main() -> Result<()> {
 
     // Create a message.
     let msg = Message::new(Post {
-        author: Author { nick: args.nick },
+        nick: args.nick,
         text: args.text,
     });
 

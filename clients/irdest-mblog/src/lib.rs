@@ -73,14 +73,14 @@ impl Into<proto::feed::Message_oneof_payload> for Payload {
 
 #[derive(Default, Debug, Clone)]
 pub struct Post {
-    pub author: Author,
+    pub nick: String,
     pub text: String,
 }
 
 impl From<proto::feed::Post> for Post {
     fn from(v: proto::feed::Post) -> Self {
         Self {
-            author: v.author.unwrap_or_default().into(),
+            nick: v.nick,
             text: v.text,
         }
     }
@@ -89,28 +89,9 @@ impl From<proto::feed::Post> for Post {
 impl Into<proto::feed::Post> for Post {
     fn into(self) -> proto::feed::Post {
         let mut p = proto::feed::Post::new();
-        p.set_author(self.author.into());
+        p.set_nick(self.nick);
         p.set_text(self.text);
         p
-    }
-}
-
-#[derive(Default, Debug, Clone)]
-pub struct Author {
-    pub nick: String,
-}
-
-impl From<proto::feed::Author> for Author {
-    fn from(v: proto::feed::Author) -> Self {
-        Self { nick: v.nick }
-    }
-}
-
-impl Into<proto::feed::Author> for Author {
-    fn into(self) -> proto::feed::Author {
-        let mut a = proto::feed::Author::new();
-        a.set_nick(self.nick);
-        a
     }
 }
 

@@ -28,7 +28,7 @@ async fn main() -> Result<()> {
     while let Some((tt, ratmsg)) = ipc.next().await {
         match Message::try_from(&ratmsg) {
             Ok(msg) => match msg.payload {
-                Payload::Post(p) => println!("{}: {}", p.author.nick, p.text),
+                Payload::Post(p) => println!("{}: {}", p.nick, p.text),
             },
             Err(e) => {
                 eprintln!("[invalid message]: {:}\n{:?} {:?}", e, tt, ratmsg);

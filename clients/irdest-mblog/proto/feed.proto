@@ -10,11 +10,7 @@ message Message {
     }
 }
 
-message Author {
-    string nick = 1;
-}
-
 message Post {
-    Author author = 1;
+    string nick = 1;
     string text = 2;
 }
