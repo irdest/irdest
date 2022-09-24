@@ -4,6 +4,7 @@
 , libsodium
 , pkg-config
 , gtk4
+, glib
 }:
 
 rustPlatform.buildRustPackage rec {
@@ -21,6 +22,7 @@ rustPlatform.buildRustPackage rec {
 
   nativeBuildInputs = [
     protobuf
+    glib
     pkg-config
   ];
 
