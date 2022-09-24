@@ -22,7 +22,7 @@ required-features = [ "mblog-cli" ]
 [features]
 default = [ "proto" ]
 proto = [ "protobuf", "protoc-rust" ]
-mblog-gtk = [ "proto", "gtk" ]
+mblog-gtk = [ "proto", "gtk", "once_cell" ]
 mblog-cli = [ "clap" ]
 
 [dependencies]
@@ -37,6 +37,7 @@ clap = { version = "3.2", optional = true, features = ["derive", "wrap_help", "c
 
 # GTK frontend only
 gtk = { version = "0.4.8", package = "gtk4", optional = true }
+once_cell = { version = "1", optional = true }
 
 [build-dependencies]
 gtk = { version = "0.4.8", package = "gtk4", optional = true }

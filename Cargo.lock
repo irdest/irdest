@@ -1816,6 +1816,7 @@ dependencies = [
  "clap 3.2.22",
  "directories",
  "gtk4",
+ "once_cell",
  "protobuf",
  "protoc-rust",
  "ratman-client",

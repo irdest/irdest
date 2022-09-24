@@ -8,7 +8,7 @@ pub mod proto {
     include!(concat!(env!("OUT_DIR"), "/proto_gen/mod.rs"));
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Message {
     pub sender: Option<Address>,
     pub payload: Payload,
@@ -42,7 +42,7 @@ impl TryFrom<&ratman_client::Message> for Message {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Payload {
     Post(Post),
 }
@@ -71,7 +71,7 @@ impl Into<proto::feed::Message_oneof_payload> for Payload {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Post {
     pub nick: String,
     pub text: String,

@@ -1,6 +1,7 @@
 use gtk::prelude::*;
 use gtk::Application;
 
+mod post;
 mod window;
 
 fn main() {
