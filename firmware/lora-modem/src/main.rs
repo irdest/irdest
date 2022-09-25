@@ -5,10 +5,16 @@ use cortex_m_rt::entry;
 use stm32f4xx_hal as hal;
 use stm32f4xx_hal::prelude::*;
 
+use core::cell::RefCell;
+use cortex_m::interrupt::Mutex;
+use cortex_m::interrupt::free as critical;
+
 use cortex_m_semihosting::*;
+
 use hal::block;
 use hal::gpio::GpioExt;
 use hal::pac;
+use stm32f4xx_hal::pac::{interrupt, Interrupt};
 use hal::rcc::RccExt;
 use hal::serial::config::Config;
 use hal::spi::Spi;
@@ -22,6 +28,23 @@ use panic_semihosting; // When a panic occurs, dump it to openOCD
 const FREQUENCY: i64 = 868;
 const MTU: usize = 255;
 const BAUDRATE: u32 = 9600;
+
+struct Datapacket {
+    index: usize,
+    data: [u8; MTU],
+}
+
+impl Datapacket {
+    const fn new() -> Self {
+        Self {
+            index:0,
+            data: [0; MTU],
+        }
+    }
+}
+
+static G_BUFFER: Mutex<RefCell<Datapacket>> = Mutex::new(RefCell::new(Datapacket::new()));
+static G_UART_RX: Mutex<RefCell<Option<hal::serial::Rx<hal::pac::USART2>>>> = Mutex::new(RefCell::new(None));
 
 #[entry]
 fn main() -> ! {
@@ -65,6 +88,14 @@ fn main() -> ! {
         .unwrap()
         .split();
 
+    uart_rx.listen();    
+
+    critical(move |lock| {*G_UART_RX.borrow(lock).borrow_mut() = Some(uart_rx)});
+
+    unsafe {
+        cortex_m::peripheral::NVIC::unmask(Interrupt::USART2);
+    }
+
     hprintln!("Configuring UART OK");
 
     let mut lora = match sx127x_lora::LoRa::new(spi, cs, reset, FREQUENCY, cp.SYST.delay(&clocks)) {
@@ -76,31 +107,29 @@ fn main() -> ! {
 
     hprintln!("Configuring Radio OK");
 
-    let mut buffer: [u8; MTU] = [0; MTU];
-    let mut index = 0;
-
     loop {
-        //hprint!("l");
-        match uart_rx.read() {
-            Ok(c) => {
-                buffer[index] = c;
-                index += 1;
-                if index == MTU {
-                    let transmit = lora.transmit_payload_busy(buffer, index);
-                    match transmit {
-                        Ok(_) => hprintln!("tx_c"),
-                        Err(e) => hprintln!("tx_err:{:?}", e),
-                    }
-                    index = 0;
+        let mut i = 0;
+        critical(|lock| {
+            let mut d = G_BUFFER.borrow(lock).borrow_mut();
+            i = d.index;
+            if d.index >= MTU {
+                let transmit = lora.transmit_payload_busy(d.data, d.index);
+                match transmit {
+                    Ok(_) => hprintln!("tx_c"),
+                    Err(e) => hprintln!("tx_err:{:?}", e),
                 }
+                d.index = 0;
             }
-            Err(WouldBlock) => (), //hprintln!("b"),
-            Err(e) => hprintln!("s_err:{:?}", e),
-        }
+        });
+
+        //hprintln!("l {}", i);
 
         let poll = lora.poll_irq(Some(1)); //TODO: Figure out how long this really is and how long it should be.
         match poll {
             Ok(size) => {
+                if size != 255 {
+                    hprintln!("s_err {}", size);
+                }
                 let buffer = lora.read_packet().unwrap(); // Received buffer. NOTE: 255 bytes are always returned
                 for i in 0..size {
                     block!(uart_tx.write(buffer[i]));
@@ -109,4 +138,40 @@ fn main() -> ! {
             Err(_e) => {} //hprintln!("Timeout"),
         }
     }
+}
+
+#[interrupt]
+fn USART2() {
+    static mut UART_RX: Option<hal::serial::Rx<hal::pac::USART2>> = None;
+
+    let uart_rx = UART_RX.get_or_insert_with(|| {
+        critical(|lock| {
+            // Move serial device here, leaving a None in its place
+            G_UART_RX.borrow(lock).replace(None).unwrap()
+        })
+    });
+
+    critical(|lock| {
+        let mut d = G_BUFFER.borrow(lock).borrow_mut();
+        loop {
+            match uart_rx.read() {
+                Ok(c) => {
+                    let i = d.index;
+                    if i == 0 {
+                        if c == 202 {
+                            d.data[i] = c;
+                            d.index += 1;
+                        }
+                    } else {
+                        if i < MTU {
+                            d.data[i] = c;
+                            d.index += 1;
+                        }
+                    }
+                }
+                Err(hal::nb::Error::WouldBlock) => break, //hprintln!("b"),
+                Err(e) => hprintln!("s_err:{:?}", e),
+            }
+        }
+    });
 }

@@ -40,6 +40,7 @@ const PAYLOAD_SIZE: usize = RADIO_MTU - std::mem::size_of::<CtrlHeader>();
 
 #[derive(Debug)]
 enum LoraPacketError {
+    InvalidMagicNumber(u8),
     ControlCodeError(u8),
 }
 
@@ -66,6 +67,9 @@ impl LoraPacket {
     }
 
     fn decode(data: [u8; RADIO_MTU]) -> Result<Self, LoraPacketError> {
+        if data[0] != IRDEST_MAGIC {
+            return Err(LoraPacketError::InvalidMagicNumber(data[0]));
+        }
         let magic = data[0];
         let length = data[2];
         let packet_type = match data[1] {
@@ -113,6 +117,8 @@ impl LoraEndpoint {
                 Err(e) if e.kind() == std::io::ErrorKind::TimedOut => continue,
                 Err(e) => panic!("{:?}", e),
             }
+
+            trace!("rx <= {:?}", buffer);
             
             let rx_packet = match LoraPacket::decode(buffer) {
                 Ok(p) => p,
@@ -124,11 +130,6 @@ impl LoraEndpoint {
 
             trace!("recieved packet");
 
-            // check header format is correct.
-            if rx_packet.header.magic != IRDEST_MAGIC {
-                continue;
-            }
-            
             let frame = match decode_frame(&mut rx_packet.payload.as_slice()){
                 Ok(f) => f,
                 Err(e) => {
@@ -182,7 +183,7 @@ impl Endpoint for LoraEndpoint {
 
         trace!("ready to send packet");
 
-        trace!("{:?}", buffer);
+        trace!("tx => {:?}", buffer);
 
         match self.serial.lock().await.write_all(&buffer) {
             Ok(()) => trace!("sending complete"),
