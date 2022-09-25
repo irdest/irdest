@@ -6,6 +6,7 @@
 , rustPlatform
 , protobuf
 , libsodium
+, libudev-zero
 , pkg-config
 }:
 
@@ -41,6 +42,7 @@ rustPlatform.buildRustPackage rec {
 
   buildInputs = [
     libsodium
+    libudev-zero
   ];
 
   SODIUM_USE_PKG_CONFIG = 1;
