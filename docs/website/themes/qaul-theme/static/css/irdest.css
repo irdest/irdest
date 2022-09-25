@@ -178,3 +178,15 @@ th {
     text-align: start;
     padding-right: 45px;
 }
+
+.download-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding-bottom: 1rem;
+    margin-top: 0;
+}
+
+h1:has(+ .download-header) {
+    display: none;
+}
