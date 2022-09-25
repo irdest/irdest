@@ -1,6 +1,7 @@
-use sled::{open, Db as Handle};
-
 use crate::daemon::state::data_path;
+
+use sled::{open, Db as Handle, Error::Io};
+use std::io::ErrorKind::PermissionDenied;
 
 /// A database newtype, abstracting internal Db operations
 pub(crate) struct Db(Handle);
@@ -19,7 +20,12 @@ impl Db {
         unsafe {
             if let None = HANDLE {
                 let path = data_path().join("db");
-                let handle = open(path).unwrap();
+                let handle = match open(path) {
+                    // TODO: DO NOT HARDCODE TMPDIR
+                    Err(Io(e)) if e.kind() == PermissionDenied => open("/tmp/irdest/db").unwrap(),
+                    Ok(db) => db,
+                    _ => panic!("unsupported Db open"),
+                };
                 HANDLE = Some(handle)
             }
         }
