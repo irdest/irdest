@@ -3,14 +3,14 @@ Title: Downloads
 layout: page
 ---
 
-Before downloading, please beware that this is **alpha stage
-software** and as such it will have bugs and produce crashes.  Please
-do not expect to be able to rely on this software in production
-setups.
+> Before downloading, please beware that this is **alpha stage
+> software** and as such it will have bugs and produce crashes.
+> Please do not expect to be able to rely on this software in your
+> day-to-day setup.
 
-That being said: we want to improve Irdest for everyone so if you
-experience a crash, please report the issue to our [issue
-tracker][issues] or our [community mailing ist][mail]!
+> That being said: we want to improve Irdest for everyone so if you
+> experience a crash, please report the issue to our [issue
+> tracker][issues] or our [community mailing ist][mail]!
 
 [issues]: https://git.irde.st/we/irdest/-/issues
 [mail]: https://lists.irde.st/archives/list/community@lists.irde.st/
@@ -19,7 +19,7 @@ tracker][issues] or our [community mailing ist][mail]!
 <img src="/img/ratman-banner.png" width="800px" />
 
 The main way to use Irdest at the moment is by installing and
-configuring the *Ratman* decentralised peer-to-peer routing daemon.
+configuring the **Ratman routing daemon**.
 
 
 ### Distribution packages

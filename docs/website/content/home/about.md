@@ -1,19 +1,19 @@
 ---
-Introduction_Title: What is irdest?
+Introduction_Title: What is Irdest?
 Introduction: |
 
-    Irdest is a **decentralised networking research project** that
-    explores different technologies and ideas on how to build more
-    sustainable, user-controlled communication networks.
+    **Irdest is a networking research project** that explores
+    different technologies and ideas on how to build more sustainable,
+    user-controlled communication networks.
 
     Whether you are connected to the internet via your home ISP
     (internet service provider) or via a mobile phone network,
     powerful and complex organisations sit between you and your
     ability to communicate with other people.
 
-    As part of an **Irdest network** your home computer, laptop,
+    As part of an *Irdest network* your home computer, laptop,
     router, phone, etc connect to each other directly, creating a
-    **dynamic mesh network**.  This means that the communication
+    *dynamic mesh network*.  This means that the communication
     infrastructure that we collectively rely on to organise ourselves
     needs to in turn become collectively organised and managed.  This
     approach is very different from the "internet service" you usually
@@ -24,46 +24,33 @@ Introduction: |
     research in this field and make it more accessible to end-users
     and curious software developers alike.
 
-    With the Irdest SDK you can write applications that are **native
-    to a decentralised mesh network** and don't require a central
-    server, or access to the internet to operate!
+    With the Irdest SDK you can write applications that are *native to
+    a decentralised mesh network* and don't require a central server,
+    or access to the internet to operate!
 
-Meshing_Title: What is a mesh network?
+Meshing_Title: How does Irdest work?
 Meshing: |
-    **Irdest** is a research project that aims to create tools for the
-    next internet.  These tools allow devices like laptops and
-    smartphones to create dynamic **mesh networks** over Bluetooth and
-    direct WiFi connections, rather than relying on internet access
-    via a mobile network.  This **decentralised and open network**
-    extends across any irdest-enabled device, so that if two people
-    aren't close enough to each other for their devices to connect
-    directly, data can be sent via other devices in the middle,
-    without those devices being able to read or change the messages
-    passing through it.
 
-    The main component of Irdest is **Ratman**, a decentralised and
-    peer-to-peer packet router.  Ratman provides applications with a
-    simple API to interact with a mesh network, without having to
-    solve a lot of complicated routing problems, or configuring large
-    amount of software.  In the backend Ratman connects to other
-    Ratman instances via network channel specific drivers, which
-    allows the network to grow easily across network boundaries.
+    At the heart of an Irdest network sits *Ratman, a router that runs
+    on phones, computers, laptops,* and other devices.  Different
+    Ratman instances can be connected over a wide range of connection
+    types.
 
-    In traditional network infrastructure there is a centralised point
-    between you and the Internet: your Internet service provider (ISP).
-    Whether you're using a  mobile network tower or a broadband connection,
-    your access to the Internet is controlled by a central authority.  This
-    means that a entity can monitor or censor your internet traffic.
+    Communicating between Ratman instances works seemlessly, the same
+    way as devices on a WiFi network can, with the added ability to
+    link these networks over long distances or across the entire
+    world.
 
-    In a mesh network there is no network owner. Instead, every user's devices
-    link together directly to create a new network where data can flow
-    without regulation or control.
+    Connections between Ratman instances can be created via local
+    networks, long-range LoRa modems, peer-to-peer Wireless
+    connections, or over the internet as a VPN-like network.
 
-    To create these connections, devices can use a variety of methods,
-    such as WiFi and Bluetooth, or plain network cables to create links
-    with other irdest users around them.
+    Applications using an Irdest network can discover and connect with
+    each other by first connecting to a local Ratman instance.  _The
+    range of possible applications using this technology is
+    limitless._
 
-    The network that is created by irdest can serve two purposes:
-    to connect you with people around you to run applications specifically
-    made for irdest, or to act as a tunnel to the traditional Internet.
+    For a more detailed explanation you should check out the
+    ["Concepts & Ideas"](https://docs.irde.st/user/concepts.html)
+    section user manual.
 ---

@@ -1,20 +1,29 @@
 ---
-Contribute_Title: Want to learn more?
+Contribute_Title: What next?
 Contribute: |
 
-    Check out the [downloads](/downloads) section of the website to
-    see how to setup and use Irdest software.
+    Go to the [Downloads](/downloads) section of the website to learn
+    more about available application bundles, packages, and
+    installers.
 
-    **Do you have questions about the project or want to talk to us about
-    irdest?  Check out the [Community](/community) page to learn how.**
-    
-    If you have trouble setting up the Ratman server, check out the 
-    [Learn](/learn#manuals) page to find user manuals, and documentation
-    on both code-internals, and irdest protocol descriptions.
+    We also recommend you read the [user
+    manual](https://docs.irde.st/user/) to familiarise yourself with
+    some basic technical concepts currently required to operate an
+    Irdest network!
+
+    ## Questions?
+
+    Check out the [Learn](/learn#manuals) page where we collect
+    community resources, manuals, and guides.
+
+    Is your use-case not covered by any manual or guide?  Check out
+    the [Community](/community) page to learn how to get in touch
+    with us.
+
 Funding_Title: Funding & Partnerships
 Funding: |
     The Irdest project does not work alone, and we are always looking for
-    collaboration opportunities.  Please don't hesitante to contact us!
+    collaboration opportunities.  Please don't hesitate to contact us!
 
     <div class="sponsors">
         <a href="https://nlnet.nl/project/Irdest/"><img class="sponsor" src="img/nlnet.svg" /></a>

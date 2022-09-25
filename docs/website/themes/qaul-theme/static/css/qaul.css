@@ -1,16 +1,23 @@
 body {
     display: flex;
-    font-size: 1.35em;
     flex-direction: column;
     margin: 0;
-    font-family: sans-serif;
     background: #e0e2e2;
-    font-weight: 300;
     min-height: 100vh;
+}
+
+html {
+    font-family: sans-serif;
+    font-size: 1.35em;
+    font-weight: 300;
 }
 
 strong {
     font-weight: 400;
+}
+
+em {
+    font-weight: 300;
 }
 
 dt {
