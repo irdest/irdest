@@ -2,6 +2,34 @@
 Introduction_Title: What is irdest?
 Introduction: |
 
+    Irdest is a **decentralised networking research project** that
+    explores different technologies and ideas on how to build more
+    sustainable, user-controlled communication networks.
+
+    Whether you are connected to the internet via your home ISP
+    (internet service provider) or via a mobile phone network,
+    powerful and complex organisations sit between you and your
+    ability to communicate with other people.
+
+    As part of an **Irdest network** your home computer, laptop,
+    router, phone, etc connect to each other directly, creating a
+    **dynamic mesh network**.  This means that the communication
+    infrastructure that we collectively rely on to organise ourselves
+    needs to in turn become collectively organised and managed.  This
+    approach is very different from the "internet service" you usually
+    currently buy from a company.
+
+    **A lot of decentralised networking technology already exists!** A
+    primary motivation for the Irdest project is to take decades of
+    research in this field and make it more accessible to end-users
+    and curious software developers alike.
+
+    With the Irdest SDK you can write applications that are **native
+    to a decentralised mesh network** and don't require a central
+    server, or access to the internet to operate!
+
+Meshing_Title: What is a mesh network?
+Meshing: |
     **Irdest** is a research project that aims to create tools for the
     next internet.  These tools allow devices like laptops and
     smartphones to create dynamic **mesh networks** over Bluetooth and
@@ -21,8 +49,6 @@ Introduction: |
     Ratman instances via network channel specific drivers, which
     allows the network to grow easily across network boundaries.
 
-Meshing_Title: What is a mesh network?
-Meshing: |
     In traditional network infrastructure there is a centralised point
     between you and the Internet: your Internet service provider (ISP).
     Whether you're using a  mobile network tower or a broadband connection,

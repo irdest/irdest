@@ -10,7 +10,7 @@ body {
 }
 
 strong {
-    font-weight: 600;
+    font-weight: 400;
 }
 
 dt {
@@ -93,12 +93,12 @@ header.block, footer.block {
 .intro-item {
     display: flex;
     align-items: center;
-    margin-bottom: 1em;
+    margin-bottom: 2em;
     line-height: 1.25em;
 }
 
 .intro-item img {
-    padding-right: 1em;
+    padding-right: 2em;
     color: #EFEFEF;
     height: 4em;
 }
@@ -110,7 +110,7 @@ header.block, footer.block {
 .intro-col h2 {
     margin: 0.1em 0;
     font-size: 1em;
-    font-weight: 800;
+    font-weight: 600;
 }
 
 .intro-col p { margin: 0.5em 0; }
@@ -121,8 +121,12 @@ header.block, footer.block {
 }
 
 .block-content h1 {
-    margin-top: 2em;
     font-size: 1.75em;
+}
+
+.block-content p {
+    line-height: 1.4em;
+    margin-bottom: 1.25em;
 }
 
 .block-contribute {
