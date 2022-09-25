@@ -1,24 +1,21 @@
-body {
+html, body {
     display: flex;
     flex-direction: column;
     margin: 0;
     background: #e0e2e2;
     min-height: 100vh;
-}
-
-html {
-    font-family: sans-serif;
-    font-size: 1.35em;
+    font-family: "TypoPRO Source Sans Pro", sans-serif;
+    font-size: 1.35rem;
     font-weight: 300;
 }
 
-strong {
+/* strong {
     font-weight: 400;
 }
 
 em {
     font-weight: 300;
-}
+} */
 
 dt {
     margin-top: 1em;
@@ -141,8 +138,8 @@ header.block, footer.block {
     color: #EFEFEF;
 }
 
-.block-contribute a {
-    color: #FFFFFF;
+a {
+    color: inherit;
 }
 
 .twocol {
