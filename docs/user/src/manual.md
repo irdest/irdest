@@ -3,11 +3,14 @@
 This manual is split into four sections:
 
 - **Explanation** (mainly [Concepts & Ideas](./concepts.md))
-- **[Setup guides](guides/index.md)**, step-by-step instructions for beginners
-- **["How to"](how-to/index.md)**, outline on how to do specific in-depth tasks for
-  people with some existing Irdest experience
-- **[Reference](reference/index.md)**, lookup for different configuration values or
-  behaviours
+- **[Installation](install/index.md)**, instructions on how to install
+  Irdest tools on your system
+- **[Setup guides](guides/index.md)**, step-by-step configuration
+  instructions for beginners
+- **["How to"](how-to/index.md)**, instructions on how to do specific
+  in-depth tasks for people with some Irdest experience
+- **[Reference](reference/index.md)**, look-up for different
+  configuration values or behaviours
 
 
 ## Building this manual

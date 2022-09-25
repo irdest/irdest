@@ -75,8 +75,7 @@ follows:
 
 ```console
 $ nix-build nix/ -A irdest-bundle
-$  result/
-bin/ docs/ firmware/ LICENSE README.html
+$ result/install  # then run the installer
 ```
 
 You can also fetch development dependencies by running `nix-shell` in
