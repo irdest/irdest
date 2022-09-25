@@ -5,7 +5,7 @@ html, body {
     background: #e0e2e2;
     min-height: 100vh;
     font-family: "TypoPRO Source Sans Pro", sans-serif;
-    font-size: 1.35rem;
+    font-size: 1.2rem;
     font-weight: 300;
 }
 
@@ -27,7 +27,7 @@ p,li {
 }
 
 .wrap {
-    width: 70ch;
+    width: 78ch;
     max-width: 100%;
 }
 
@@ -77,16 +77,16 @@ header.block, footer.block {
     color: #EFEFEF;
 }
 
-.title hr {
-    background: #EAEAEA;
-    border: none;
-    height: 1px;
-}
-
 .title h1 {
     font-size: 1.75em;
-    margin-top: 2em;
-    margin-bottom: 0;
+    margin-top: 1rem;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: solid 1px white;
+}
+
+.title p {
+    margin: 0;
 }
 
 .block-intro {
@@ -97,8 +97,8 @@ header.block, footer.block {
 .intro-item {
     display: flex;
     align-items: center;
-    margin-bottom: 2em;
-    line-height: 1.25em;
+    margin-bottom: 1.5rem;
+    line-height: 1.5rem;
 }
 
 .intro-item img {
@@ -157,8 +157,8 @@ a {
 }
 
 .sponsor {
-    padding: 1em;
-    height: 8em;
+    padding: 1rem;
+    height: 8rem;
 }
 
 th {
