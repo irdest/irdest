@@ -190,3 +190,15 @@ th {
 h1:has(+ .download-header) {
     display: none;
 }
+
+.community-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding-bottom: 1rem;
+    margin-top: 0;
+}
+
+.community-header > img {
+    transform: scaleX(-1);
+}

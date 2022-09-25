@@ -1,7 +1,8 @@
 ---
-title: Community
 layout: page
 ---
+
+<h1 class="community-header">Community <img src="/img/ratman.png" height="200px" /></h1>
 
 
 Do you have questions about irdest?  Trouble setting up your client?
