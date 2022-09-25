@@ -1,6 +1,6 @@
 use crate::daemon::state::data_path;
 
-use sled::{open, Db as Handle, Error::Io};
+use sled::{open, Db as Handle, Error::Io, Lazy};
 use std::io::ErrorKind::PermissionDenied;
 
 /// A database newtype, abstracting internal Db operations
@@ -16,20 +16,14 @@ impl Db {
         // for a unique db per-process. $datadir/db suffices as a path.
         // This invariant is broken in some tests, so we resort to this hack for
         // now, until the tests stop spawning many routers in the same filesystem.
-        static mut HANDLE: Option<Handle> = None;
-        unsafe {
-            if let None = HANDLE {
-                let path = data_path().join("db");
-                let handle = match open(path) {
-                    // TODO: DO NOT HARDCODE TMPDIR
-                    Err(Io(e)) if e.kind() == PermissionDenied => open("/tmp/irdest/db").unwrap(),
-                    Ok(db) => db,
-                    _ => panic!("unsupported Db open"),
-                };
-                HANDLE = Some(handle)
-            }
-        }
-        Db(unsafe { HANDLE.clone().unwrap() })
+        static HANDLE: Lazy<Handle, fn() -> Handle> =
+            Lazy::new(|| match open(data_path().join("db")) {
+                // TODO: DO NOT HARDCODE TMPDIR
+                Err(Io(e)) if e.kind() == PermissionDenied => open("/tmp/irdest/db").unwrap(),
+                Err(e) => panic!("open failure: {}", e),
+                Ok(db) => db,
+            });
+        Db(HANDLE.clone())
     }
 }
 
