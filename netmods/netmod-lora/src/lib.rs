@@ -3,9 +3,9 @@
 #[macro_use]
 extern crate tracing;
 
-use netmod::{Endpoint, Frame, Target};
-use netmod::Result as NMResult;
 use irdest_firmware_util::{decode_frame, encode_frame};
+use netmod::Result as NMResult;
+use netmod::{Endpoint, Frame, Target};
 
 use async_std::{channel, sync::Arc, sync::Mutex, task};
 use async_trait::async_trait;
@@ -14,8 +14,7 @@ use serialport::TTYPort;
 use std::io::prelude::*;
 use std::time::Duration;
 
-
-const BUFFER_SIZE: usize = 32; // sets the depth of the netmod's recieve buffer. 
+const BUFFER_SIZE: usize = 32; // sets the depth of the netmod's recieve buffer.
 
 const IRDEST_MAGIC: u8 = 0xCA; // sets the unique protocol identifier for irdest traffic, changing will split the network.
 const RADIO_MTU: usize = 255; // sets the size of data block expected by the modem. This is correct for sx127x based modems.
@@ -52,7 +51,6 @@ struct LoraPacket {
 }
 
 impl LoraPacket {
-    
     // HERE BE DRAGONS: ENDIANESS NOT HANDLED!
     fn encode(&self) -> [u8; RADIO_MTU] {
         let mut out = [0; RADIO_MTU];
@@ -60,8 +58,8 @@ impl LoraPacket {
         out[1] = self.header.packet_type as u8;
         out[2] = self.header.length;
         // todo mut slice writeall
-        for i in 0 .. PAYLOAD_SIZE {
-            out[i+3] = self.payload[i];
+        for i in 0..PAYLOAD_SIZE {
+            out[i + 3] = self.payload[i];
         }
         out
     }
@@ -78,9 +76,16 @@ impl LoraPacket {
             _ => Err(LoraPacketError::ControlCodeError(data[1])),
         }?;
 
-        let header = CtrlHeader { magic, packet_type, length };
-        
-        Ok(Self{header, payload: data[3..].try_into().unwrap()})
+        let header = CtrlHeader {
+            magic,
+            packet_type,
+            length,
+        };
+
+        Ok(Self {
+            header,
+            payload: data[3..].try_into().unwrap(),
+        })
     }
 }
 
@@ -118,29 +123,28 @@ impl LoraEndpoint {
                 Err(e) => panic!("{:?}", e),
             }
 
-            trace!("rx <= {:?}", buffer);
-            
+            // trace!("rx <= {:?}", buffer);
+
             let rx_packet = match LoraPacket::decode(buffer) {
                 Ok(p) => p,
                 Err(e) => {
-                    info!("bad packet {:?}", e);
+                    info!("rx bad packet {:?}", e);
                     continue;
-                },
+                }
             };
 
             trace!("recieved packet");
 
-            let frame = match decode_frame(&mut rx_packet.payload.as_slice()){
+            let frame = match decode_frame(&mut rx_packet.payload.as_slice()) {
                 Ok(f) => f,
                 Err(e) => {
-                    error!("failed to decode packet: {}", e);
+                    error!("failed to decode recieved packet: {}", e);
                     continue;
-                },    
+                }
             };
 
             c.send(frame).await.unwrap();
         }
-        error!("serial read loop exited!");
     }
 }
 
@@ -151,9 +155,8 @@ impl Endpoint for LoraEndpoint {
     }
 
     async fn send(&self, frame: Frame, _target: Target, exclude: Option<u16>) -> NMResult<()> {
-        trace!("start send packet");
         if exclude.is_some() {
-            debug!("packet rejected");
+            warn!("Cannot send messages containing exlude fields");
             return Ok(());
         }
 
@@ -174,19 +177,17 @@ impl Endpoint for LoraEndpoint {
         }
 
         assert_eq!(payload.len(), PAYLOAD_SIZE);
-        
+
         let payload = payload.as_slice().try_into().unwrap();
 
         let tx_packet = LoraPacket { header, payload };
 
         let buffer = tx_packet.encode();
 
-        trace!("ready to send packet");
-
-        trace!("tx => {:?}", buffer);
+        // trace!("tx => {:?}", buffer);
 
         match self.serial.lock().await.write_all(&buffer) {
-            Ok(()) => trace!("sending complete"),
+            Ok(()) => trace!("Sent Packet"),
             Err(e) => error!("Serial Write error: {}", e),
         }
 
@@ -195,6 +196,7 @@ impl Endpoint for LoraEndpoint {
 
     async fn next(&self) -> NMResult<(Frame, Target)> {
         let frame = self.rx.recv().await.unwrap();
+        trace!("delivering frame to deamon");
         Ok((frame, Target::Single(0)))
     }
 }

@@ -6,19 +6,19 @@ use stm32f4xx_hal as hal;
 use stm32f4xx_hal::prelude::*;
 
 use core::cell::RefCell;
-use cortex_m::interrupt::Mutex;
 use cortex_m::interrupt::free as critical;
+use cortex_m::interrupt::Mutex;
 
 use cortex_m_semihosting::*;
 
 use hal::block;
 use hal::gpio::GpioExt;
 use hal::pac;
-use stm32f4xx_hal::pac::{interrupt, Interrupt};
 use hal::rcc::RccExt;
 use hal::serial::config::Config;
 use hal::spi::Spi;
 use hal::time::U32Ext;
+use stm32f4xx_hal::pac::{interrupt, Interrupt};
 
 #[allow(unused_imports)]
 use panic_semihosting; // When a panic occurs, dump it to openOCD
@@ -37,14 +37,15 @@ struct Datapacket {
 impl Datapacket {
     const fn new() -> Self {
         Self {
-            index:0,
+            index: 0,
             data: [0; MTU],
         }
     }
 }
 
 static G_BUFFER: Mutex<RefCell<Datapacket>> = Mutex::new(RefCell::new(Datapacket::new()));
-static G_UART_RX: Mutex<RefCell<Option<hal::serial::Rx<hal::pac::USART2>>>> = Mutex::new(RefCell::new(None));
+static G_UART_RX: Mutex<RefCell<Option<hal::serial::Rx<hal::pac::USART2>>>> =
+    Mutex::new(RefCell::new(None));
 
 #[entry]
 fn main() -> ! {
@@ -88,9 +89,9 @@ fn main() -> ! {
         .unwrap()
         .split();
 
-    uart_rx.listen();    
+    uart_rx.listen();
 
-    critical(move |lock| {*G_UART_RX.borrow(lock).borrow_mut() = Some(uart_rx)});
+    critical(move |lock| *G_UART_RX.borrow(lock).borrow_mut() = Some(uart_rx));
 
     unsafe {
         cortex_m::peripheral::NVIC::unmask(Interrupt::USART2);
@@ -122,9 +123,7 @@ fn main() -> ! {
             }
         });
 
-        //hprintln!("l {}", i);
-
-        let poll = lora.poll_irq(Some(1)); //TODO: Figure out how long this really is and how long it should be.
+        let poll = lora.poll_irq(Some(1));
         match poll {
             Ok(size) => {
                 if size != 255 {
@@ -135,7 +134,7 @@ fn main() -> ! {
                     block!(uart_tx.write(buffer[i]));
                 }
             }
-            Err(_e) => {} //hprintln!("Timeout"),
+            Err(_e) => {}
         }
     }
 }
@@ -169,7 +168,7 @@ fn USART2() {
                         }
                     }
                 }
-                Err(hal::nb::Error::WouldBlock) => break, //hprintln!("b"),
+                Err(hal::nb::Error::WouldBlock) => break,
                 Err(e) => hprintln!("s_err:{:?}", e),
             }
         }
