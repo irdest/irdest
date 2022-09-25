@@ -26,7 +26,10 @@ use panic_semihosting; // When a panic occurs, dump it to openOCD
 // Configuring this wrong can get you in trouble with the law,
 // check your local lora band frequency before building
 const FREQUENCY: i64 = 868;
+// This is hardware dependant, don't change this.
 const MTU: usize = 255;
+// This value can be configured for faster serial but needs to
+// also be changed in ratmand's config
 const BAUDRATE: u32 = 9600;
 
 struct Datapacket {
