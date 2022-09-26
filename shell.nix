@@ -6,7 +6,7 @@
  * 
  */
 
-with import <nixpkgs> {};
+with import (import nix/sources.nix).nixpkgs {};
 
 stdenv.mkDerivation {
   name = "irdest-base";
