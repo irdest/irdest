@@ -2,7 +2,7 @@
 // #[cfg(not(feature = "std"))] // <-- this doesn't seem to work?
 // #![no_std]
 
-use ratman_types::{Frame, Identity, Recipient, SeqData, XxSignature};
+use ratman_types::{Address, Frame, Recipient, SeqData, XxSignature};
 use std::io::{Read, Write};
 
 struct SeqDataEncoded {
@@ -66,7 +66,7 @@ impl From<SeqDataEncoded> for SeqData {
             XxSignature { sig, seed }
         };
 
-        let seqid = Identity::from_bytes(&enc.seqid);
+        let seqid = Address::from_bytes(&enc.seqid);
 
         let next = {
             if enc.next[0] == true as u8 {
@@ -132,14 +132,14 @@ fn read_exactly(size: usize, reader: &mut impl Read) -> Result<Vec<u8>, std::io:
 pub fn decode_frame<T: Read>(stream: &mut T) -> Result<Frame, std::io::Error> {
     // Read 32 bytes
     let sender_buf = read_exactly(32, stream)?;
-    let sender = Identity::from_bytes(&sender_buf);
+    let sender = Address::from_bytes(&sender_buf);
 
     // Read 33 bytes
     let recipient_match = read_exactly(1, stream)?;
     let recipient_buf = read_exactly(32, stream)?;
     let recipient = match recipient_match[0] {
-        0x13 => Recipient::Standard(vec![Identity::from_bytes(&recipient_buf)]),
-        0x12 => Recipient::Flood(Identity::from_bytes(&recipient_buf)),
+        0x13 => Recipient::Standard(vec![Address::from_bytes(&recipient_buf)]),
+        0x12 => Recipient::Flood(Address::from_bytes(&recipient_buf)),
         code => panic!("Invalid recipient code: {}", code), // TODO: don't panic here
     };
 
