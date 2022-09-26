@@ -24,6 +24,19 @@ Because there is no strict training requirements for operating LoRa equipment th
   * Which frequencies you can transmit on.
   * Some Juristictions may also have restrictions on what content can be transmitted.
 
+Most Nations are very vigelent about how their radio spectrum is used, and will have deployed a network of listening stations to enforce breaches of radio law. These matters today are sadly often considered to be matters of national security, and the law will not be lenient on a hacker playing with a radio. 
+
+If you violate broadcasting laws reprocussions can include:
+ 
+ * Heafty Fines (in the order of 10's of thousands of €/$/£'s)
+ * Court apearences, and a criminal record
+ * Confisation of any radio equiment, probation terms which prevent aquiring more.
+ * Revocation of any radio licences you may hold
+ * In extreme cases, or repeated offences, jail time.
+ * Irdest additionally transmits encrypted data, which means if you give the authorities a reason to you may be charged with Espionage, Terrorism, or Computer Misuse. 
+
+Any and all of these have life changing side effects, most severe of which is you'll likely loose whatever cushy tech job you currently work now, and won't be able to get another one. If you're charged with Computer Misuse in the US, you're not touching a computer again for 10 years. If you're charged with something worse... that doesn't bear writing in a readme.
+
 ### First thing's first. Irdest is a research project, do not deploy this.
 Irdest is a not ready for deployment, it's LoRa components do not implement any guarentees of complience with any regions laws, it particularly agregiously violates the duty cycle requirements. Irdest currently is only suitible for use in a labrotory environment for short term usage.
 
