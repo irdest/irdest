@@ -11,12 +11,12 @@ you will need:
 | [Seeed Studio Dragino Lora Shield 868m](https://eu.mouser.com/ProductDetail/Seeed-Studio/114990615?qs=GZwCxkjl%252BU02ODDBHQ6wrw%3D%3D)  | LoRa wireless shield - Arduino Uno Formatted. | This module was selected as it fits directly on our dev board making development much easier. The module listed here is tuned for the European frequency band. Care must be taken to purchase the appropriate module for your region, more info below. The firmware supports any sx127 series modem, which is available on a wide range of hats, shields etc.                    |
 
 
-## A VERY SERIOUS WARNING ABOUT WORKING WITH RADIOS
+## A Very Serious Warning About Working With Radios
 **LoRa is a low level radio protocol. Unlike most common wifi and bluetooth modules LoRa radios will not hold your hand or stop you from getting yourself into trouble.**
 
-LoRa exists in the ISM band of the radio spectrum, this band is regulated such that a user does not require a standard broadcast or operator licence to transmit in this band. 
+LoRa exists in the ISM band of the radio spectrum, this band is regulated such that a user does not require a standard broadcast or operator licence to transmit. 
 
-Because there is no strict training requirements for operating LoRa equipment there is the dangerous possiblity that an uninformed operator could begin transmitting without knowlege of their legal requirements. Among other things the LoRa band has regional restrictions on:
+Because there are no strict training requirements for operating LoRa equipment there is the dangerous possiblity that an uninformed operator could begin transmitting without knowlege of their legal requirements. Among other things the LoRa band has regional restrictions on:
 
   * How much power you can transmit with
   * What equipment you can use to transmit
@@ -24,13 +24,13 @@ Because there is no strict training requirements for operating LoRa equipment th
   * Which frequencies you can transmit on.
   * Some Juristictions may also have restrictions on what content can be transmitted.
 
-Most Nations are very vigelent about how their radio spectrum is used, and will have deployed a network of listening stations to enforce breaches of radio law. These matters today are sadly often considered to be matters of national security, and the law will not be lenient on a hacker playing with a radio. 
+Most Nations are very vigelent about how their radio spectrum is used, and have deployed a network of listening stations to enforce breaches of radio law. Sadly breaches are often considered to be matters of national security, and the law will not likely be lenient on a hacker playing with a radio. 
 
 If you violate broadcasting laws reprocussions can include:
  
  * Heafty Fines (in the order of 10's of thousands of €/$/£'s)
  * Court apearences, and a criminal record
- * Confisation of any radio equiment, probation terms which prevent aquiring more.
+ * Confisation of any radio equiment, and probation terms which prevent aquiring more.
  * Revocation of any radio licences you may hold
  * In extreme cases, or repeated offences, jail time.
  * Irdest additionally transmits encrypted data, which means if you give the authorities a reason to you may be charged with Espionage, Terrorism, or Computer Misuse. 
@@ -50,7 +50,7 @@ Different parts of the world slice up the radio spectrum for different users dif
   * 486Mhz (China)
   * Others depending on region. 
 
-Your equipment and software must both be configured for the correct frequency band. Very unfun things happen when you do not do this. For instance in europe the American LoRa band (915MHz) overlaps with the european emergency services backup frequencies. Transmitting on these frequencies is a severe criminal offence which may even result in jail time. 
+Your equipment and software must both be configured for the correct frequency band. Very unfun things happen when you do not do this. For instance in europe the American LoRa band (915MHz) overlaps with the european emergency services backup frequencies. Transmitting on these frequencies is a severe criminal offense. 
 
 ### Duty Cycle
 LoRa's use of the ISM band is stipulated under the condition that no site (transmitter) will actively transmit for more than 1% of the time. This is calculated as no more than 36 seconds in any 1 hour window. Violation of this requirement can cause harmful interferance with other users of the LoRa network. Keep in mind that LoRa can have a range of up to 10Km, so you likely will not know of this interferance until a police officer comes to tell you to stop. **Irdest will violate this 1% requirement and likely interfere with other LoRa users**
@@ -65,7 +65,7 @@ Assembling the radio components is easy. press the radio shield into the arduino
 Make sure you select small low gain antenna for a lab setup, and where possible possition your lab as low as possible in the world. Underground is best. If you're particularly paranoid you can put your test setup in a shielded box or faraday cage.
 
 ### 2. Go read the warning about radios section (yes again!)
-**IRDEST IS NOT COMPLIENT WITH RADIO LAWS YOU SHOULDN'T BE DOING THIS UNLESS YOU KNOW WHAT YOU'RE DOING**
+**Reminder:** Irdest is not yet complient with all LoRa radio requrements, only build a test environment low down, with low power antenne, and operate it for as short as needed to run your test.
 
 ### 3. Prepare the software.
 The FREQUENCY field in `<repo_root>/firmware/lora-modem/src/main.rs` needs to be set for your region.
@@ -76,6 +76,8 @@ The FREQUENCY field in `<repo_root>/firmware/lora-modem/src/main.rs` needs to be
 Anywhere else contact us and we'll help you figure it out, cos it's not always clear how the different ISM bands map onto this one i64 value from our driver crate provider.
 
 You may also want to consider reducing the frequency of announcements, as that is hardcoded into the firmware.
+
+*How?*
 
 ### 4. Configure Ratman
 First ensure ratmand has been run (and shut down) at least once, so that config files can be generated.
@@ -101,7 +103,9 @@ The following steps need to be run from the firmware directory, so switch into `
 
 in one terminal run `sudo openocd` (also needs to be in the firmware dir) This will open the debug port the the microcontroller and start a socket for gdb to connect to. Your dev board should now have a rapidly flashing green/red LED on it.
 
-Next in a second terminal run `cargo run` this will compile the software and start a gdb session which will upload the firmware to the microcontroller. After a few moments for the upload to complete you will be met with at `(gdb)` prompt. The microcontroller's CPU is halted at the beginning of main and ready to start. type `c` followed by enter to start the firmware.
+Next in a second terminal run `cargo run --release` this will compile the software and start a gdb session which will upload the firmware to the microcontroller. The release flag is always required due to the very tight timing requirements faced by processing serial data on a microcontroller.
+
+After a few moments for the upload to complete you will be met with at `(gdb)` prompt. The microcontroller's CPU is halted at the beginning of main and ready to start. type `c` followed by enter to start the firmware.
 
 ### 6. Start ratman
 For testing we disable the inet driver, start ratman with the following call:
