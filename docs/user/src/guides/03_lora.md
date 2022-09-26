@@ -55,17 +55,63 @@ Your equipment and software must both be configured for the correct frequency ba
 ### Duty Cycle
 LoRa's use of the ISM band is stipulated under the condition that no site (transmitter) will actively transmit for more than 1% of the time. This is calculated as no more than 36 seconds in any 1 hour window. Violation of this requirement can cause harmful interferance with other users of the LoRa network. Keep in mind that LoRa can have a range of up to 10Km, so you likely will not know of this interferance until a police officer comes to tell you to stop. **Irdest will violate this 1% requirement and likely interfere with other LoRa users**
 
+## Setup
+OK so you're mad enough to try this:
+### 1. Collect equiment and prepare environment
+The BoM table above specifies the parts for one station. For a useful setup you'll need at least two. In addition you'll also need a mini-USB cable and a seperate computer for each station. Both Ratmand and the radio's debug bridge can only be run once on a computer, so you really will need two computers, sorry.
 
-## Frequency Setup
+Assembling the radio components is easy. press the radio shield into the arduino connector on the CPU dev board. Next three jumpers SV2, SV3, SV4 need to be switched such that they connect the two pins twoward the back of the dev board, furthest from the antenna connector, on each jumper respectively. Finally connect the antenna. 
 
-Please check your frequency allocations [here](wikipedia-whatever)...
+Make sure you select small low gain antenna for a lab setup, and where possible possition your lab as low as possible in the world. Underground is best. If you're particularly paranoid you can put your test setup in a shielded box or faraday cage.
 
+### 2. Go read the warning about radios section (yes again!)
+**IRDEST IS NOT COMPLIENT WITH RADIO LAWS YOU SHOULDN'T BE DOING THIS UNLESS YOU KNOW WHAT YOU'RE DOING**
 
-## Building/ flashing firmware
+### 3. Prepare the software.
+The FREQUENCY field in `<repo_root>/firmware/lora-modem/src/main.rs` needs to be set for your region.
 
+ * 868 for europe
+ * 915 for North America
 
-## Configuring Ratman
+Anywhere else contact us and we'll help you figure it out, cos it's not always clear how the different ISM bands map onto this one i64 value from our driver crate provider.
 
+You may also want to consider reducing the frequency of announcements, as that is hardcoded into the firmware.
+
+### 4. Configure Ratman
+First ensure ratmand has been run (and shut down) at least once, so that config files can be generated.
+
+Next plug your dev board in and search for it's serial port path. It should be in the form of `/dev/ttyACMx` where x is a number.
+
+modify your `~/.config/ratmand/config.json` to include 
+
+```json
+  "lora_port": "/dev/ttyACMx", #your path here
+  "lora_baud": 9600,
+  "no_lora": false,
+```
+
+### 5. Build software
+To build you will need to install the arm thumbv7em-none-eabihf target, the easiest way to do this is to run:
+```bash
+rustup target install thumbv7em-none-eabihf
+```
+You will also need to install arm-none-eabi-gdb. This is packaged on Ubuntu and Arch, there's a copr on Fedora.
+
+The following steps need to be run from the firmware directory, so switch into `firmware/lora-modem`. 
+
+in one terminal run `sudo openocd` (also needs to be in the firmware dir) This will open the debug port the the microcontroller and start a socket for gdb to connect to. Your dev board should now have a rapidly flashing green/red LED on it.
+
+Next in a second terminal run `cargo run` this will compile the software and start a gdb session which will upload the firmware to the microcontroller. After a few moments for the upload to complete you will be met with at `(gdb)` prompt. The microcontroller's CPU is halted at the beginning of main and ready to start. type `c` followed by enter to start the firmware.
+
+### 6. Start ratman
+For testing we disable the inet driver, start ratman with the following call:
+```bash
+cargo run --features lora --bin ratmand -- --no-inet --no-discovery -v trace
+```
+
+### 7. Testing
+
+*TODO*
 
 ## Demonstration
 
