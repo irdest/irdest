@@ -12,16 +12,36 @@ you will need:
 
 
 ## A VERY SERIOUS WARNING ABOUT WORKING WITH RADIOS
+**LoRa is a low level radio protocol. Unlike most common wifi and bluetooth modules LoRa radios will not hold your hand or stop you from getting yourself into trouble.**
 
-The LoRa frequency band is allocated to users **per region**!  If you
-violate your region's frequency standards **you may run into trouble
-with your local frequency management agency!** Please check and
-double-check that the frequency band that Ratman is configured to is
-**correct for your region!**
+LoRa exists in the ISM band of the radio spectrum, this band is regulated such that a user does not require a standard broadcast or operator licence to transmit in this band. 
 
-Please also note that tuning Ratman broadcast parameters past legal
-limits is not supported and the Irdest project is not responsible for
-misconfigurations on your system!
+Because there is no strict training requirements for operating LoRa equipment there is the dangerous possiblity that an uninformed operator could begin transmitting without knowlege of their legal requirements. Among other things the LoRa band has regional restrictions on:
+
+  * How much power you can transmit with
+  * What equipment you can use to transmit
+  * How frequently and at what length you can transmit for (duty cycle)
+  * Which frequencies you can transmit on.
+  * Some Juristictions may also have restrictions on what content can be transmitted.
+
+### First thing's first. Irdest is a research project, do not deploy this.
+Irdest is a not ready for deployment, it's LoRa components do not implement any guarentees of complience with any regions laws, it particularly agregiously violates the duty cycle requirements. Irdest currently is only suitible for use in a labrotory environment for short term usage.
+
+Naturally Irdest comes with no warrenties of merchentablity, fitness for use, or even being legal to operate. We will not be held responisible if you are found in violation of your local radio laws though using our hardware or software (which you will be, and you will be caught)
+
+### Frequencies
+Different parts of the world slice up the radio spectrum for different users differently. Because of this LoRa exists at different frequency bands:
+
+  * 868Mhz (Europe)
+  * 915Mhz (North America)
+  * 486Mhz (China)
+  * Others depending on region. 
+
+Your equipment and software must both be configured for the correct frequency band. Very unfun things happen when you do not do this. For instance in europe the American LoRa band (915MHz) overlaps with the european emergency services backup frequencies. Transmitting on these frequencies is a severe criminal offence which may even result in jail time. 
+
+### Duty Cycle
+LoRa's use of the ISM band is stipulated under the condition that no site (transmitter) will actively transmit for more than 1% of the time. This is calculated as no more than 36 seconds in any 1 hour window. Violation of this requirement can cause harmful interferance with other users of the LoRa network. Keep in mind that LoRa can have a range of up to 10Km, so you likely will not know of this interferance until a police officer comes to tell you to stop. **Irdest will violate this 1% requirement and likely interfere with other LoRa users**
+
 
 ## Frequency Setup
 
