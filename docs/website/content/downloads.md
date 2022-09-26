@@ -2,7 +2,7 @@
 layout: page
 ---
 
-<h1 class="download-header">Downloads <img src="/img/ratman.png" height="200px" /></h1>
+<h1 class="download-header">Irdest Downloads <img src="/img/ratman.png" height="200px" /></h1>
 
 Before downloading, please beware that this is **alpha stage
 software** and as such it will have bugs and produce crashes.  Please

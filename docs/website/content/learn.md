@@ -1,5 +1,5 @@
 ---
-Title: Learn about irdest
+Title: Learn about Irdest
 layout: learning
 User_Title: For end-users
 Devs_Title: For developers

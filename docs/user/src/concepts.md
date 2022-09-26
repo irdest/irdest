@@ -14,7 +14,7 @@ its own address space and routing rules.  **An Irdest network does not
 use IP addresses!**
 
 Instead an address is a cryptographic key.  This allows all network
-traffic to be encrypted and signed by default!
+traffic to be encrypted and verified by default!
 
 Because of the cryptographic nature of an address, a computer can also
 have many addresses registered at the same time.  Different addresses
@@ -27,8 +27,8 @@ addresses as they are needed.
 ## Ratman architecture
 
 The Ratman router daemon is a program running on your computer that
-connects with other instances of itself and facilitates the exchange
-of messages by applications via direct links and intermediary routes.
+connects with other router instances and facilitates the exchange of
+messages by applications via direct links and intermediary routes.
 Importantly Ratman is not part of the kernel, which allows it to
 support a wider range of operating systems.
 

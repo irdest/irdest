@@ -2,7 +2,7 @@
 Contribute_Title: What next?
 Contribute: |
 
-    Go to the [Downloads](/downloads) section of the website to learn
+    Go to the [Download](/download) section of the website to learn
     more about available application bundles, packages, and
     installers.
 
@@ -11,7 +11,7 @@ Contribute: |
     some basic technical concepts currently required to operate an
     Irdest network!
 
-    ## Questions?
+    # Questions?
 
     Check out the [Learn](/learn#manuals) page where we collect
     community resources, manuals, and guides.

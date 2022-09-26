@@ -31,10 +31,10 @@ Introduction: |
 Meshing_Title: How does Irdest work?
 Meshing: |
 
-    At the heart of an Irdest network sits *Ratman, a router that runs
-    on phones, computers, laptops,* and other devices.  Different
-    Ratman instances can be connected over a wide range of connection
-    types.
+    At the heart of an Irdest network sits Ratman, a *router
+    application* that runs on phones, computers, laptops, and other
+    devices.  Different Ratman instances can be connected over a wide
+    range of connection types.
 
     Communicating between Ratman instances works seemlessly, the same
     way as devices on a WiFi network can, with the added ability to
@@ -52,5 +52,5 @@ Meshing: |
 
     For a more detailed explanation you should check out the
     ["Concepts & Ideas"](https://docs.irde.st/user/concepts.html)
-    section user manual.
+    section in the user manual.
 ---
