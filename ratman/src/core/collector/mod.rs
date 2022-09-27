@@ -137,11 +137,11 @@ use crate::Address;
 
 #[test]
 fn queue_one() {
-    use crate::{Slicer, TimePair};
+    use crate::{TransportSlicer, TimePair};
     use types::Recipient;
 
     let (sender, recipient, id) = (Address::random(), Address::random(), Address::random());
-    let mut seq = Slicer::slice(
+    let mut seq = TransportSlicer::slice(
         128,
         Message {
             id,
@@ -180,11 +180,11 @@ fn queue_one() {
 #[ignore]
 #[test]
 fn queue_many() {
-    use crate::{Slicer, TimePair};
+    use crate::{TransportSlicer, TimePair};
     use types::Recipient;
 
     let (sender, recipient, id) = (Address::random(), Address::random(), Address::random());
-    let seq = Slicer::slice(
+    let seq = TransportSlicer::slice(
         8,
         Message {
             id,

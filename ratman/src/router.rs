@@ -19,7 +19,7 @@ use types::{Result, TimePair};
 pub struct Router {
     inner: Arc<Core>,
     proto: Arc<Protocol>,
-    keys: Arc<Keystore>,
+    pub(crate) keys: Arc<Keystore>,
 }
 
 impl Router {

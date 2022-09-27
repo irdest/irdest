@@ -1977,6 +1977,7 @@ dependencies = [
  "curve25519-dalek",
  "directories",
  "ed25519-dalek",
+ "eris",
  "igd",
  "ipnetwork",
  "netmod-inet",

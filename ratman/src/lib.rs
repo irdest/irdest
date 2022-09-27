@@ -35,7 +35,7 @@ pub mod daemon;
 use async_std::channel::{Receiver, Sender};
 
 // Provide exports to the rest of the crate
-pub(crate) use crate::{core::Core, data::Payload, protocol::Protocol, slicer::Slicer};
+pub(crate) use crate::{core::Core, data::Payload, protocol::Protocol, slicer::TransportSlicer};
 pub(crate) type IoPair<T> = (Sender<T>, Receiver<T>);
 
 // Public API facade

@@ -98,7 +98,7 @@ use types::{Address, Recipient};
 // This test is broken because currently it just creates a sequence of
 // bytes that can then not be deserialised by bincode into a Payload
 // type.  The problem is that we want to manually build up a sequence
-// of three frames to not rely on the Slicer in this test.
+// of three frames to not rely on the TransportSlicer in this test.
 #[ignore]
 #[test]
 fn join_frame_simple() {
