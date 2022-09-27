@@ -2,6 +2,7 @@ use gtk::prelude::*;
 use gtk::Application;
 
 mod post;
+mod topic;
 mod window;
 
 fn main() {
@@ -15,8 +16,8 @@ fn main() {
         .build();
 
     app.connect_activate(|app| {
-        let window = window::Window::new(app);
-        window.present();
+        let window = window::MBlogWindow::new(app);
+        window.show();
     });
 
     app.run();
