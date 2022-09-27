@@ -1,41 +1,29 @@
 # Script that triggers the pipelines for rust-components of `irdest`
 
-bundle-ratman:
+bundle-irdest-aarch64:
   tags: [ irdest-nix ]
   stage: bundle
-  dependencies:
-    - build-installer-static
-    - build-ratman-static
-    - build-manual
+  # needs: [ build-ratman-static build-irdest-proxy-static build-irdest-installer-static ]
   script:
-    - mkdir ratman-bundle-x86_64 && cd ratman-bundle-x86_64
-    - cp -rv ../dist .
-    - cp -rv ../docs/man .
-    - cp -rv ../result-ratman/bin .
-    - cp -rv ../result-installer/bin/* .
-    - cp -rv ../result-manual-user manual
-    - cd ..
-    - tar cvf ratman-bundle-x86_64.tar.gz ratman-bundle-x86_64/
+    - nix-env -iA cachix -f https://cachix.org/api/v1/install
+    - cachix use irdest -O ~/.config/nix
+    - nix-build nix -A pkgsCross.aarch64-multiplatform.pkgsStatic.stdenv -A pkgsCross.aarch64-multiplatform.pkgsStatic.buildPackages.rustc.all -A pkgsCross.aarch64-multiplatform.pkgsStatic.buildPackages.cargo -o toolchain
+    - cachix push irdest ./toolchain* || echo "couldn't push"
+    - nix-build nix -A pkgsCross.aarch64-multiplatform.pkgsStatic.irdest-bundle -o result-bundle
   artifacts:
     paths:
-      - ratman-bundle-x86_64.tar.gz
+      - result-bundle/*
 
-bundle-ratman-aarch64:
+bundle-irdest:
   tags: [ irdest-nix ]
   stage: bundle
-  dependencies:
-    - build-installer-static-aarch64
-    - build-ratman-static-aarch64
-    - build-manual
+  # needs: [ build-ratman-static-aarch64 build-irdest-proxy-static-aarch64 build-irdest-installer-static-aarch64 ]
   script:
-    - mkdir ratman-bundle-aarch64  && cd ratman-bundle-aarch64
-    - cp -rv ../dist .
-    - cp -rv ../docs/man .
-    - cp -rv ../result-ratman/bin .
-    - cp -rv ../result-installer/bin/* .
-    - cp -rv ../result-manual-user manual
-    - cd ..
-    - tar cvf ratman-bundle-aarch64.tar.gz ratman-bundle-aarch64/
+    - nix-env -iA cachix -f https://cachix.org/api/v1/install
+    - cachix use irdest -O ~/.config/nix
+    - nix-build nix -A pkgsStatic.buildPackages.rustc.all -A pkgsStatic.buildPackages.cargo -o toolchain
+    - cachix push irdest ./toolchain* || echo "couldn't push"
+    - nix-build nix -A pkgsStatic.irdest-bundle -o result-bundle
   artifacts:
     paths:
-      - ratman-bundle-aarch64.tar.gz
+      - result-bundle/*
