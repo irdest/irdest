@@ -24,8 +24,8 @@ pub struct Config {
     pub lora_baud: u32,
     pub no_lora: bool,
 
-    pub ethernet_iface: Option<String>,
-    pub no_ethernet: bool,
+    pub datalink_iface: Option<String>,
+    pub no_datalink: bool,
     pub ssid: Option<String>,
 
     pub peers: Option<String>,
@@ -82,10 +82,10 @@ impl Config {
 
         self.no_dashboard |= m.is_present("NO_DASHBOARD");
 
-        self.no_ethernet |= m.is_present("NO_ETHERNET");
+        self.no_datalink |= m.is_present("NO_DATALINK");
 
-        if let Some(ethernet_iface) = m.value_of("ETHERNET_IFACE") {
-            self.ethernet_iface = Some(ethernet_iface.into());
+        if let Some(datalink_iface) = m.value_of("DATALINK_IFACE") {
+            self.datalink_iface = Some(datalink_iface.into());
         }
 
         if let Some(ssid) = m.value_of("SSID") {
@@ -145,8 +145,8 @@ impl Default for Config {
             lora_baud: 9600,
             no_lora: true,
 
-            ethernet_iface: None,
-            no_ethernet: true,
+            datalink_iface: None,
+            no_datalink: true,
             ssid: Some("irdest".into()),
 
             peers: None,

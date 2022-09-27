@@ -238,8 +238,6 @@ async fn configure_network_manager<'a>(
 impl Endpoint {
     /// Create a new endpoint and spawn a dispatch task
     pub fn spawn(iface: Option<&str>, ssid: Option<&str>) -> Arc<Self> {
-        info!("Initializing ethernet endpoint...");
-
         task::block_on(async move {
             let nmconn = Arc::new(Connection::system().await.unwrap());
             let iface_str = configure_network_manager(&nmconn, iface, ssid)

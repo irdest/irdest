@@ -1519,6 +1519,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "netmod-datalink"
+version = "0.2.0"
+dependencies = [
+ "async-std",
+ "async-trait",
+ "bincode",
+ "libc",
+ "nix 0.25.0",
+ "pnet 0.31.0",
+ "pnet_datalink 0.31.0",
+ "ratman-netmod",
+ "ratman-types",
+ "serde",
+ "task-notify",
+ "tracing",
+ "useful-netmod-bits",
+ "zbus",
+ "zbus-nm",
+]
+
+[[package]]
 name = "netmod-fuzz"
 version = "0.1.0"
 dependencies = [
@@ -1579,27 +1600,6 @@ dependencies = [
  "async-std",
  "async-trait",
  "ratman-netmod",
-]
-
-[[package]]
-name = "netmod-raw"
-version = "0.2.0"
-dependencies = [
- "async-std",
- "async-trait",
- "bincode",
- "libc",
- "nix 0.25.0",
- "pnet 0.31.0",
- "pnet_datalink 0.31.0",
- "ratman-netmod",
- "ratman-types",
- "serde",
- "task-notify",
- "tracing",
- "useful-netmod-bits",
- "zbus",
- "zbus-nm",
 ]
 
 [[package]]
@@ -2245,11 +2245,11 @@ dependencies = [
  "ed25519-dalek",
  "igd",
  "ipnetwork 0.18.0",
+ "netmod-datalink",
  "netmod-inet",
  "netmod-lan",
  "netmod-lora",
  "netmod-mem",
- "netmod-raw",
  "nix 0.23.1",
  "openapi_type",
  "pnet 0.28.0",

@@ -100,12 +100,12 @@ pub fn build_cli() -> ArgMatches<'static> {
             })
         .arg(
             {
-                let arg = Arg::with_name("ETHERNET_IFACE")
+                let arg = Arg::with_name("DATALINK_IFACE")
                     .takes_value(true)
-                    .long("ethernet-iface")
-                    .help("Specify ethernet interface.");
+                    .long("datalink-iface")
+                    .help("Specify datalink interface.");
 
-                #[cfg(not(feature = "raw"))]
+                #[cfg(not(feature = "datalink"))]
                 let arg = arg.hidden(true);
                 arg
             })
@@ -116,18 +116,18 @@ pub fn build_cli() -> ArgMatches<'static> {
                     .long("ssid")
                     .help("Specify SSID for wireless interface");
 
-                #[cfg(not(feature = "raw"))]
+                #[cfg(not(feature = "datalink"))]
                 let arg = arg.hidden(true);
                 arg
             }
         )
         .arg(
             {
-                let arg = Arg::with_name("NO_ETHERNET")
-                    .long("no-ethernet")
-                    .help("Disables ethernet driver");
+                let arg = Arg::with_name("NO_DATALINK")
+                    .long("no-datalink")
+                    .help("Disables datalink driver");
 
-                #[cfg(not(feature = "raw"))]
+                #[cfg(not(feature = "datalink"))]
                 let arg = arg.hidden(true);
                 arg
             }
@@ -279,12 +279,12 @@ pub async fn run_app(cfg: Config) -> std::result::Result<(), ()> {
         }
     }
 
-    #[cfg(feature = "raw")]
-    if !cfg.no_ethernet {
-        use netmod_raw::Endpoint as Ethernet;
+    #[cfg(feature = "datalink")]
+    if !cfg.no_datalink {
+        use netmod_datalink::Endpoint as Datalink;
 
-        r.add_endpoint(Ethernet::spawn(
-            cfg.ethernet_iface.as_ref().map(|s| s.as_str()),
+        r.add_endpoint(Datalink::spawn(
+            cfg.datalink_iface.as_ref().map(|s| s.as_str()),
             cfg.ssid.as_ref().map(|s| s.as_str()),
         ))
         .await;

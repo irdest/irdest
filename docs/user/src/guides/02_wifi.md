@@ -14,24 +14,24 @@ it accesses Linux's ethernet network stack directly.
 At the moment, there are 3 ways of using the raw networking module that powers 
 the wifi connectivity depending on how you supply the configuration to the 
 module. The configuration fields of interest are called `ssid` and 
-`ethernet-iface`. The first expects the **utf-8 ONLY** ssid name and the 
+`datalink-iface`. The first expects the **utf-8 ONLY** ssid name and the 
 second expects the OS's interface name, such as wlan0, wlp1s0, wlo0, etc. They 
 can be configured as follows:
 
 1. Remove the SSID field from config.json and only supply the interface field. 
 The endpoint will attempt to connect directly to the given device. This works 
-well for accessing local peers over ethernet and in cases where manual 
+well for accessing local peers over wifi or ethernet and in cases where manual
 configuration of the wireless device is desired.
 
-2. Provide both the SSID and interface fields. The endpoint will then attempt to
-use NetworkManager to scan for the given SSID and connect to it. If it is not
-found, a new ad-hoc network will be created that can then be joined from other
-device.
+2. Provide both the SSID and interface fields. The endpoint will then attempt 
+to use NetworkManager to scan for the given SSID and connect to it. If it is 
+not found, a new ad-hoc network will be created that can then be joined from
+other device.
 
-3. Provide only the SSID and remove interface field. The endpoint will attempt to
-scan over all available wireless interfaces to find the given SSID. If it is not
-found, a device will be picked and a new ad-hoc network will be created that can
-then be joined from other devices.
+3. Provide only the SSID and remove interface field. The endpoint will attempt
+to scan over all available wireless interfaces to find the given SSID. If it is
+not found, a device will be picked and a new ad-hoc network will be created
+that can then be joined from other devices.
 
 ## Advanced configuration (manual)
 
