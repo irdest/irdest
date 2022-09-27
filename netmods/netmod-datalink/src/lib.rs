@@ -151,10 +151,10 @@ async fn create_new_network<'a, 'b>(
             let devices =
                 stream::iter(nm.get_all_devices().await.unwrap()).filter_map(|item| async move {
                     //HACK: Same type checking hack again.
-                    match NMDeviceWifi::from_device(nm, &item).await {
-                        Ok(_) => Some(item),
-                        Err(_) => None,
-                    }
+                    NMDeviceWifi::from_device(nm, &item)
+                        .await
+                        .ok()
+                        .map(|_| item)
                 });
             pin_mut!(devices);
             devices
