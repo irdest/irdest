@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2019-2021 Yureka Lilian <yuka@yuka.dev>
+// SPDX-FileCopyrightText: 2022 Yureka Lilian <yuka@yuka.dev>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
