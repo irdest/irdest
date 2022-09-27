@@ -1,10 +1,6 @@
 use std::collections::HashMap;
-use std::future::Future;
 
-use zbus::{
-    export::{async_trait::async_trait, futures_util::StreamExt},
-    Result,
-};
+use zbus::{export::async_trait::async_trait, Result};
 use zvariant::Value;
 
 use crate::{proxies::NetworkManager::DeviceWireless::WirelessProxy, NMClient};
@@ -41,22 +37,12 @@ impl<'a> NMDeviceWifi<'a> {
     ///asynchronous closure. The SSIDs can then be found by calling get_all_access_points.
     ///
     ///
-    pub async fn request_scan<F, C>(&self, options: ScanOptions<'a>, callback: C) -> Result<()>
-    where
-        F: Future<Output = ()>,
-        C: FnOnce() -> F,
-    {
-        self.proxy.request_scan(options).await.unwrap();
+    pub async fn request_scan(&self, options: ScanOptions<'a>) -> Result<()> {
+        self.proxy.request_scan(options).await
+    }
 
-        let current_stamp = self.proxy.receive_last_scan_changed().await.next().await;
-
-        match current_stamp {
-            Some(_) => {
-                callback().await;
-                Ok(())
-            }
-            None => Err(zbus::Error::InvalidReply), // This really should not ever occur.
-        }
+    pub async fn last_scan(&self) -> Result<i64> {
+        self.proxy.last_scan().await
     }
 
     //PERF: Iterator is still foreign to me and Vec is easy. Lazy evaluation is probably sensible here.

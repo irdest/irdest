@@ -64,27 +64,28 @@ async fn scan_wireless_for_ssid<'a>(
         }
 
         if let Ok(wireless) = NMDeviceWifi::from_device(&nm, &device).await {
-            let mut aps = None;
+            let timestamp = nix::time::clock_gettime(nix::time::ClockId::CLOCK_BOOTTIME).unwrap();
+            let time = timestamp.tv_sec() * 1000 + timestamp.tv_nsec() / 1000000;
+            let scan_options = HashMap::from([("ssids", Value::from(vec![ssid.as_bytes()]))]);
 
             //Look for an ssid across all wireless devices
-            wireless
-                .request_scan(HashMap::new(), || async {
-                    aps = Some(wireless.get_all_access_points().await.unwrap());
-                })
-                .await
-                .unwrap();
+            wireless.request_scan(scan_options).await.unwrap();
 
             info!("Scanning for SSID on {}...", dev_iface);
 
-            future::timeout(Duration::from_secs(30), async {
-                while aps.is_none() {
-                    task::sleep(Duration::from_secs(1)).await;
-                }
-            })
-            .await
-            .unwrap_or_else(|_| warn!("Scan timed out on {}.", dev_iface));
+            task::block_on(async {
+                future::timeout(Duration::from_secs(30), async {
+                    while time > wireless.last_scan().await.unwrap() {
+                        task::sleep(Duration::from_secs(1)).await;
+                    }
+                })
+                .await
+                .unwrap_or_else(|_| warn!("Scan timed out on {}.", dev_iface));
+            });
 
-            for ap in aps.unwrap() {
+            let aps = wireless.get_all_access_points().await.unwrap();
+
+            for ap in aps {
                 if let Ok(ap_ssid) = ap.get_ssid().await {
                     if ssid == String::from_utf8_lossy(&ap_ssid) {
                         //HACK: This function should be returning AP and there should be a trait
