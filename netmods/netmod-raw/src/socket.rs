@@ -9,7 +9,6 @@ use useful_netmod_bits::framing::{Envelope, FrameExt};
 
 use async_std::{
     future::{self, Future},
-    io::WriteExt,
     pin::Pin,
     sync::{Arc, Mutex, RwLock},
     task::{self, Poll},
@@ -25,6 +24,7 @@ use netmod::Target;
 use nix::errno::Errno;
 use std::collections::VecDeque;
 use std::error::Error;
+use std::io::Write;
 use task_notify::Notify;
 
 /// Wraps the pnet ethernet channel and the input queue
@@ -140,14 +140,13 @@ impl Socket {
 
     #[instrument(skip(arc, table), level = "trace")]
     fn incoming_handle(arc: Arc<Self>, table: Arc<AddrTable<MacAddr>>) {
-        task::spawn(async move {
+        task::spawn_blocking(move || {
             loop {
                 let mut buf = vec![0; 1500];
 
-                let mut rx = arc.rx.lock_arc().await;
+                let mut rx = task::block_on(async { arc.rx.lock_arc().await });
 
                 match rx.next() {
-                    //PERF: this probably blocks
                     Ok(packet) => {
                         let packet = EthernetPacket::new(packet).unwrap();
 
@@ -159,7 +158,7 @@ impl Socket {
 
                         let peer = packet.get_source();
 
-                        match buf.write_all(packet.payload()).await {
+                        match buf.write_all(packet.payload()) {
                             Ok(()) => (),
                             Err(_) => {
                                 warn!("Failed to write packet to buffer. Supported MTU is 1500.")
@@ -167,27 +166,29 @@ impl Socket {
                         };
 
                         let env = Envelope::from_bytes(&buf);
-                        match env {
-                            Envelope::Announce => {
-                                trace!("Recieving announce");
-                                table.set(peer).await;
-                                arc.multicast(&Envelope::Reply).await;
-                            }
-                            Envelope::Reply => {
-                                trace!("Recieving announce reply");
-                                table.set(peer).await;
-                            }
-                            Envelope::Data(vec) => {
-                                trace!("Recieved data frame");
-                                let frame = bincode::deserialize(&vec).unwrap();
-                                let id = table.id(peer.into()).await.unwrap();
+                        task::block_on(async {
+                            match env {
+                                Envelope::Announce => {
+                                    trace!("Receiving announce");
+                                    table.set(peer).await;
+                                    arc.multicast(&Envelope::Reply).await;
+                                }
+                                Envelope::Reply => {
+                                    trace!("Receiving announce reply");
+                                    table.set(peer).await;
+                                }
+                                Envelope::Data(vec) => {
+                                    trace!("Received data frame");
+                                    let frame = bincode::deserialize(&vec).unwrap();
+                                    let id = table.id(peer.into()).await.unwrap();
 
-                                // Append to the inbox and wake
-                                let mut inbox = arc.inbox.write().await;
-                                inbox.push_back(FrameExt(frame, Target::Single(id)));
-                                Notify::wake(&mut inbox);
+                                    // Append to the inbox and wake
+                                    let mut inbox = arc.inbox.write().await;
+                                    inbox.push_back(FrameExt(frame, Target::Single(id)));
+                                    Notify::wake(&mut inbox);
+                                }
                             }
-                        }
+                        })
                     }
                     Err(error) => {
                         //NOTE: See issue #86442. Nix hopefully won't be necessary for most of this
