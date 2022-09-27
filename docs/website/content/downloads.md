@@ -19,8 +19,9 @@ tracker][issues] or our [community mailing ist][mail]!
 
 <!-- <img src="/img/ratman-banner.png" width="800px" /> -->
 
-The main way to use Irdest at the moment is by installing and
-configuring the **Ratman routing daemon**.
+There are several ways to install Irdest.  Check the instructions for
+your platform below.  Currently only **Linux** systems running
+**systemd** are actively being tested on!
 
 
 ### Distribution packages
