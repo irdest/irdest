@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019-2021 Yureka Lilian <yuka@yuka.dev>
+// SPDX-FileCopyrightText: 2022 Christopher A. Grant <grantchristophera@gmail.com>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 

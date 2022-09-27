@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2022 Katharina Fey <kookie@spacekookie.de>
 // SPDX-FileCopyrightText: 2022 Lux <lux@lux.name>
+// SPDX-FileCopyrightText: 2022 Christopher A. Grant <grantchristophera@gmail.com>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 

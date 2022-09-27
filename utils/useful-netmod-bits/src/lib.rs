@@ -2,8 +2,5 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-//! # hi
-//!
-
 pub mod addrs;
 pub mod framing;
