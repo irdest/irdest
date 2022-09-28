@@ -30,6 +30,14 @@ fn display_base32(bytes: &[u8]) -> String {
     base32::encode(base32::Alphabet::RFC4648 { padding: false }, bytes)
 }
 
+// Really only useful for decoding variable length test data
+#[cfg(test)]
+fn vardecode_base32(s: &str) -> Result<Vec<u8>> {
+    let buf = base32::decode(base32::Alphabet::RFC4648 { padding: false }, s)
+        .ok_or(Error::InvalidBase32)?;
+    Ok(buf)
+}
+
 fn decode_base32<const BS: usize>(s: &str) -> Result<[u8; BS]> {
     match base32::decode(base32::Alphabet::RFC4648 { padding: false }, s)
         .ok_or(Error::InvalidBase32)

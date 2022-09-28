@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 Katharina Fey <kookie@spacekookie.de>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 use crate::{
     Block, BlockKey, BlockReference, BlockSize, BlockStorage, MemoryStorage, ReadCapability,
 };
@@ -75,19 +79,19 @@ impl TestVectorContent {
 
 #[derive(Debug)]
 pub struct TestHarness {
-    blocks: Box<MemoryStorage>,
+    blocks: MemoryStorage,
     read_cap: ReadCapability,
-    _test: Box<TestVectorContent>,
+    _test: TestVectorContent,
 }
 
 impl TestHarness {
-    async fn load(path: &Path) -> Option<Self> {
+    async fn load(path: &Path) -> Option<Box<Self>> {
         let mut buf = String::new();
         let mut f = File::open(path).unwrap();
         f.read_to_string(&mut buf).unwrap();
 
-        let vector_content: Box<TestVectorContent> = match serde_json::from_str(buf.as_str()) {
-            Ok(v) => Box::new(v),
+        let vector_content: TestVectorContent = match serde_json::from_str(buf.as_str()) {
+            Ok(v) => v,
             Err(e) => {
                 eprintln!("Error: {:?}.", e);
                 return None;
@@ -95,58 +99,88 @@ impl TestHarness {
         };
 
         let read_cap = ReadCapability::try_from(&vector_content.read_capability).ok()?;
-        let blocks = vector_content
-            .blocks_to_blocks()
-            .await
-            .ok()
-            .map(Into::into)?;
+        let blocks = vector_content.blocks_to_blocks().await.ok()?;
 
-        Some(Self {
+        Some(Box::new(Self {
             blocks,
             read_cap,
             _test: vector_content,
-        })
+        }))
     }
+}
+
+async fn verify_input_content(harness: &TestHarness) -> bool {
+    let input_content = crate::vardecode_base32(&harness._test.content).unwrap();
+
+    let secret: [u8; 32] = crate::decode_base32(harness._test.convergence_secret.as_str()).unwrap();
+    let block_size = match harness._test.block_size {
+        1024 => BlockSize::_1K,
+        32768 => BlockSize::_32K,
+        _ => unreachable!(),
+    };
+    let mut new_store = MemoryStorage::new();
+
+    let new_read_cap = crate::encode(
+        &mut input_content.as_slice(),
+        &secret,
+        block_size,
+        &mut new_store,
+    )
+    .await
+    .unwrap();
+
+    harness.blocks == new_store && harness.read_cap.root_reference == new_read_cap.root_reference
+}
+
+async fn run_test_for_vector(path: &Path, tx: async_std::channel::Sender<()>) {
+    let harness = match TestHarness::load(path).await {
+        Some(h) => Box::new(h),
+        _ => {
+            eprintln!(
+                "An error occured loading {:?} and the test will now fail!",
+                path
+            );
+            std::process::exit(2);
+        }
+    };
+
+    println!(
+        "Loading file: {:?} has resulted in {} blocks",
+        path,
+        harness.blocks.len()
+    );
+
+    // Decode input content and verify that this results in the same
+    // set of blocks as in the test harness file!
+    assert!(verify_input_content(&harness).await);
+
+    // If we reach this point this vector was successfully parsed,
+    // decoded, and re-encoded.
+    tx.send(()).await.unwrap();
 }
 
 #[async_std::test]
 async fn run_vectors() {
-    for res in std::fs::read_dir("./res/eris-test-vectors")
+    let mut test_vectors = std::fs::read_dir("./res/eris-test-vectors")
         .unwrap()
         .filter_map(|res| match res {
             Ok(entry) if entry.file_name().to_str().unwrap().ends_with(".json") => Some(entry),
-            Ok(entry) => {
-                eprintln!("Ignoring: {:?}", entry.file_name().to_str().unwrap());
-                None
-            }
             _ => None, // Not important?
         })
-    {
+        .collect::<Vec<_>>();
+    test_vectors
+        .as_mut_slice()
+        .sort_by_key(|entry| entry.file_name().to_str().unwrap().to_owned());
+
+    for res in test_vectors {
+        // We do this little dance here because otherwise it's very
+        // easy to get stack overflow errors in this test scenario!
         let path = res.path();
-        let harness = match TestHarness::load(path.as_path()).await {
-            Some(h) => Box::new(h),
-            None => {
-                eprintln!(
-                    "An error occured loading {:?} and will thus be skipped!",
-                    path
-                );
-                continue;
-            }
-        };
+        let (tx, rx) = async_std::channel::bounded(1);
+        async_std::task::spawn(async move {
+            run_test_for_vector(path.as_path(), tx).await;
+        });
 
-        println!(
-            "Loading file: {:?} has resulted in {} blocks",
-            path,
-            harness.blocks.len()
-        );
-
-        // let mut buf = vec![];
-        // crate::decode(&mut buf, &harness.read_cap, &harness.blocks)
-        //     .await
-        //     .unwrap();
-
-        // if let Some(input) = std::str::from_utf8(&buf).ok() {
-        //     println!("Input data: {}", input);
-        // }
+        rx.recv().await.unwrap();
     }
 }
