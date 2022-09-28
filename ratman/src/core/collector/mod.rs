@@ -137,7 +137,7 @@ use crate::Address;
 
 #[test]
 fn queue_one() {
-    use crate::{TransportSlicer, TimePair};
+    use crate::{TimePair, TransportSlicer};
     use types::Recipient;
 
     let (sender, recipient, id) = (Address::random(), Address::random(), Address::random());
@@ -180,7 +180,7 @@ fn queue_one() {
 #[ignore]
 #[test]
 fn queue_many() {
-    use crate::{TransportSlicer, TimePair};
+    use crate::{TimePair, TransportSlicer};
     use types::Recipient;
 
     let (sender, recipient, id) = (Address::random(), Address::random(), Address::random());
