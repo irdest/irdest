@@ -6,7 +6,7 @@
 //! Slices `Message` into a series of Frames
 
 use crate::{Message, Payload, Router};
-use eris::{Block, BlockSize, MemoryStorage};
+use async_eris::{Block, BlockSize, MemoryStorage};
 use types::{Frame, SeqBuilder};
 
 /// Slices messages into managable chunks
@@ -54,7 +54,7 @@ impl BlockSlicer {
             .await
             .expect("Failed to perform diffie-hellman");
 
-        eris::encode(
+        async_eris::encode(
             &mut msg.payload.as_slice(),
             key.as_bytes(),
             BlockSize::_1K,
