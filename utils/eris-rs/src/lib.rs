@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2022 Yureka Lilian <yuka@yuka.dev>
+// SPDX-FileCopyrightText: 2022 Katharina Fey <kookie@spacekookie.de>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
@@ -6,6 +7,9 @@ mod enc;
 pub use enc::{encode, encode_const, BlockSize, Encoder};
 mod dec;
 pub use dec::{decode, decode_const, Error, Result};
+
+#[cfg(test)]
+mod tests;
 
 use async_trait::async_trait;
 use blake2::{digest::consts::U32, Blake2b, Digest};
@@ -18,18 +22,48 @@ fn display_base32(bytes: &[u8]) -> String {
     base32::encode(base32::Alphabet::RFC4648 { padding: false }, bytes)
 }
 
+fn decode_base32(s: &str) -> Result<[u8; 32]> {
+    match base32::decode(base32::Alphabet::RFC4648 { padding: false }, s)
+        .ok_or(Error::InvalidBase32)
+    {
+        Ok(v) if v.len() == 32 => Ok(v.try_into().map_err(|_| Error::InvalidBase32)?),
+        Ok(_) => Err(Error::InvalidBase32),
+        Err(e) => Err(e),
+    }
+}
+
+/// A 32 byte block reference identifier
 #[derive(Clone, PartialEq, Eq, Hash, Deref, From, Display, DebugCustom)]
 #[display(fmt = "{}", "display_base32(&self.0)")]
 #[debug(fmt = "{}", "self")]
 pub struct BlockReference([u8; 32]);
 
+impl TryFrom<&String> for BlockReference {
+    type Error = Error;
+    fn try_from(s: &String) -> Result<BlockReference> {
+        let buf = decode_base32(s.as_str())?;
+        Ok(BlockReference(buf))
+    }
+}
+
+/// Represents a 32 byte ChaCha20 key for encryption
 #[derive(Clone, Deref, From, Display, DebugCustom)]
 #[display(fmt = "{}", "display_base32(&self.0)")]
 #[debug(fmt = "{}", "self")]
 pub struct BlockKey([u8; 32]);
 
-type RKPair = (BlockReference, BlockKey);
+impl TryFrom<&String> for BlockKey {
+    type Error = Error;
+    fn try_from(s: &String) -> Result<BlockKey> {
+        let buf = decode_base32(s.as_str())?;
+        Ok(BlockKey(buf))
+    }
+}
 
+#[doc(hidden)] // Only exposed for tests
+pub type RKPair = (BlockReference, BlockKey);
+
+/// An encoded data block of size `BLOCKSIZE`
 #[derive(Deref, DerefMut, From, Display, DebugCustom)]
 #[display(fmt = "{}", "display_base32(&self.0)")]
 #[debug(fmt = "{}", "self")]

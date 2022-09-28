@@ -19,6 +19,9 @@ pub enum Error {
     NonstandardBlockSize,
     #[error("Unexpected block size")]
     UnexpectedBlockSize,
+    /// Mostly used for testing
+    #[error("Invalid base32 encoding")]
+    InvalidBase32,
 }
 
 pub type Result<T = ()> = std::result::Result<T, Error>;
@@ -38,6 +41,8 @@ fn unpad(input: &mut &[u8]) -> Result {
     }
 }
 
+/// Decode a message from its `ReadCapability`, a block storage
+/// medium, and an async write medium.
 pub async fn decode<S: BlockStorage<1024> + BlockStorage<{ 32 * 1024 }>, W: AsyncWrite + Unpin>(
     target: &mut W,
     read_capability: &ReadCapability,
@@ -49,6 +54,7 @@ pub async fn decode<S: BlockStorage<1024> + BlockStorage<{ 32 * 1024 }>, W: Asyn
         _ => Err(Error::NonstandardBlockSize),
     }
 }
+
 pub async fn decode_const<S: BlockStorage<BS>, W: AsyncWrite + Unpin, const BS: usize>(
     target: &mut W,
     read_capability: &ReadCapability,
