@@ -75,12 +75,28 @@ impl Message {
         }
     }
 
-    pub fn get_payload(&self) -> Vec<u8> {
-        self.payload.clone()
+    pub fn get_id(&self) -> Id {
+        self.id.clone()
     }
 
     pub fn get_sender(&self) -> Address {
         self.sender.clone()
+    }
+
+    pub fn get_recipient(&self) -> Recipient {
+        self.recipient.clone()
+    }
+
+    pub fn get_time(&self) -> TimePair {
+        self.time.clone()
+    }
+
+    pub fn get_payload(&self) -> Vec<u8> {
+        self.payload.clone()
+    }
+
+    pub fn get_signature(&self) -> Vec<u8> {
+        self.signature.clone()
     }
 
     // return protobuf type Message.
