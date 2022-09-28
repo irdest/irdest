@@ -75,6 +75,7 @@ impl Into<proto::feed::Message_oneof_payload> for Payload {
 pub struct Post {
     pub nick: String,
     pub text: String,
+    pub topic: String,
 }
 
 impl From<proto::feed::Post> for Post {
@@ -82,6 +83,7 @@ impl From<proto::feed::Post> for Post {
         Self {
             nick: v.nick,
             text: v.text,
+            topic: v.topic,
         }
     }
 }
@@ -91,6 +93,7 @@ impl Into<proto::feed::Post> for Post {
         let mut p = proto::feed::Post::new();
         p.set_nick(self.nick);
         p.set_text(self.text);
+        p.set_topic(self.topic);
         p
     }
 }

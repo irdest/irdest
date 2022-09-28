@@ -10,7 +10,7 @@ glib::wrapper! {
 impl From<Post> for PostObject {
     fn from(p: Post) -> Self {
         // TODO: Can we like, not re-construct the inner Post from props here?
-        Object::new(&[("nick", &p.nick), ("text", &p.text)])
+        Object::new(&[("nick", &p.nick), ("text", &p.text), ("topic", &p.topic)])
             .expect("Failed to convert `Post` into `PostObject`.")
     }
 }
@@ -21,6 +21,7 @@ impl From<PostObject> for Post {
         Self {
             nick: obj.property::<String>("nick"),
             text: obj.property::<String>("text"),
+            topic: obj.property::<String>("topic"),
         }
     }
 }
@@ -100,11 +101,13 @@ mod tests {
         let post = Post {
             nick: "mike".into(),
             text: "hello, joe".into(),
+            topic: "erlang".into(),
         };
 
         let obj: PostObject = post.clone().into();
         assert_eq!("mike".to_string(), obj.property::<String>("nick"));
         assert_eq!("hello, joe".to_string(), obj.property::<String>("text"));
+        assert_eq!("erlang".to_string(), obj.property::<String>("topic"));
 
         assert_eq!(post, obj.into());
     }

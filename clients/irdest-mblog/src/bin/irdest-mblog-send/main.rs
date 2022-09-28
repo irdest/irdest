@@ -18,8 +18,12 @@ struct Args {
     addr: Option<String>,
 
     /// Specify a nickname.
-    #[clap(short, long)]
+    #[clap(short, long, required = true)]
     nick: String,
+
+    /// Topic to post to, eg. `general`.
+    #[clap(short, long, required = true)]
+    topic: String,
 
     /// Text to send.
     #[clap()]
@@ -41,6 +45,7 @@ async fn main() -> Result<()> {
     let msg = Message::new(Post {
         nick: args.nick,
         text: args.text,
+        topic: args.topic,
     });
 
     // Connect and send!

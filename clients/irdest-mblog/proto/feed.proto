@@ -13,4 +13,5 @@ message Message {
 message Post {
     string nick = 1;
     string text = 2;
+    string topic = 3;
 }
