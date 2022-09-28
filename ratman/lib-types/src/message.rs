@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "proto")]
 pub use crate::proto::message::Message as ProtoMessage;
 
-use crate::{timepair::TimePair, Address};
+use crate::{timepair::TimePair, Address, Id};
 
 /// Specify the message recipient
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -50,7 +50,7 @@ impl From<Vec<Address>> for Recipient {
 /// namespace on the network.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Message {
-    id: Address,
+    id: Id,
     sender: Address,
     recipient: Recipient,
     time: TimePair,
@@ -66,7 +66,7 @@ impl Message {
         signature: Vec<u8>,
     ) -> Self {
         Message {
-            id: Address::random(),
+            id: Id::random(),
             recipient: recipient.into(),
             time: TimePair::sending(),
             sender,
