@@ -78,7 +78,7 @@ tide = { version = "0.16", optional = true }
 rust-embed = { version = "6.3", optional = true }
 openapi_type = { version = "0.4", optional = true }
 prometheus-client = { version = "0.16", optional = true }
-eris = { version = "0.1", path = "../utils/eris-rs" }
+async-eris = { version = "0.1", path = "../utils/eris-rs" }
 
 # Bundled network modules are all optional dependencies
 netmod-inet = { path = "../netmods/netmod-inet", version = "0.4", optional = true }

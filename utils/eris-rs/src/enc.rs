@@ -28,12 +28,20 @@ pub struct Encoder<'a, S: BlockStorage<BS>, const BS: usize> {
     pub block_storage: &'a mut S,
 }
 
+/// Supported block sizes by this implementation
 #[derive(Clone, Copy, Debug)]
 pub enum BlockSize {
     _1K,
     _32K,
 }
 
+/// Encode an async read stream into a set of blocks
+///
+/// Blocks are asynchronously streamed into the `block_storage` (which
+/// may simply be in-memory, but could be on-disk for larger payloads).
+///
+/// This function returns a `ReadCapability`, which acts as a manifest
+/// for the generated blocks.
 pub async fn encode<S: BlockStorage<1024> + BlockStorage<32768>, R: AsyncRead + Unpin>(
     content: &mut R,
     convergence_secret: &[u8; 32],

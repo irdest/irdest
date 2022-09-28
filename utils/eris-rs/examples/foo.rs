@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
+use async_eris as eris;
 use eris::{BlockSize, MemoryStorage};
 
 #[async_std::main]
