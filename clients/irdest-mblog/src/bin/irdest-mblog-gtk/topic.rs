@@ -27,11 +27,10 @@ impl Topics {
 
 pub struct Topic {
     inner: GtkBox,
-    footer: TopicFooter,
 }
 
 impl Topic {
-    pub fn new(initialise: impl Fn(&GtkBox)) -> Self {
+    pub fn empty() -> Self {
         let footer = TopicFooter::new();
         let inner = BoxBuilder::new()
             .orientation(Orientation::Vertical)
@@ -43,10 +42,7 @@ impl Topic {
             .halign(Align::Fill)
             .valign(Align::Fill)
             .build();
-
-        initialise(&inner);
-        inner.append(&footer.inner);
-        Self { inner, footer }
+        Self { inner }
     }
 
     pub fn add_message(&self, msg: &str) {

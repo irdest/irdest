@@ -1,0 +1,17 @@
+Ui outline
+==========
+
+- Main Window
+  - HeaderBar
+  - RootContainer (Box vertical)
+    - ParentContainer (Box horizontal)
+      - StackSidebar
+      - ContentContainer (Box vertical)
+        - Stack
+          - Topic (Box vertical)
+        - ContentFooter (Box horizontal)
+    - StatusBar
+
+- State (Arc<T>)
+  - RatmanIpc
+  - Database

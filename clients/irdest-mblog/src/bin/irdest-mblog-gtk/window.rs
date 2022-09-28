@@ -1,13 +1,15 @@
+use crate::header::Header;
 use crate::topic::{Topic, Topics};
 use gtk::prelude::*;
 use gtk::{
-    builders::BoxBuilder, Application, ApplicationWindow, Box as GtkBox, Button, Label as GtkLabel,
-    Orientation, Stack, StackSidebar, Window,
+    builders::BoxBuilder, Application, ApplicationWindow, Box as GtkBox, Button, HeaderBar,
+    Label as GtkLabel, Orientation, Stack, StackSidebar, Statusbar, Window,
 };
 
 pub struct MBlogWindow {
     inner: ApplicationWindow,
     topics: Topics,
+    header: Header,
 }
 
 impl MBlogWindow {
@@ -20,30 +22,41 @@ impl MBlogWindow {
             .build();
 
         let topics = Topics::new();
+        let header = Header::new();
+        inner.set_titlebar(Some(&header.inner));
 
-        // The main layout is a box with two segments
+        let container = GtkBox::new(Orientation::Vertical, 0);
+
+        let status_bar = Statusbar::new();
+        status_bar.push(0, "Just kinda vibin...");
+
+        let sb = status_bar.clone();
+        header.add_action(move || sb.pop(0));
+
+        // the main layout is a box with two segments
         let layout = GtkBox::new(Orientation::Horizontal, 0);
         layout.append(&topics.sidebar);
         layout.append(&topics.stack);
 
+        container.append(&layout);
+        container.append(&status_bar);
+
         // Add the layout to the window
-        inner.set_child(Some(&layout));
+        inner.set_child(Some(&container));
 
         // Create topic A
-        let topic_a = Topic::new(|layout| {
-            let label = GtkLabel::new(Some("Here be networking talk"));
-            layout.append(&label);
-        });
+        let topic_a = Topic::empty();
         topics.add_topic("networking.irdest.general", topic_a);
 
         // Create topic B
-        let topic_b = Topic::new(|layout| {
-            let label = GtkLabel::new(Some("Here be bug talk"));
-            layout.append(&label);
-        });
+        let topic_b = Topic::empty();
         topics.add_topic("networking.irdest.bugs", topic_b);
 
-        Self { inner, topics }
+        Self {
+            inner,
+            topics,
+            header,
+        }
     }
 
     pub fn show(&self) {

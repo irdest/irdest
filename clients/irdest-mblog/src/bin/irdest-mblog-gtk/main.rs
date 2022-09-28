@@ -1,6 +1,7 @@
 use gtk::prelude::*;
 use gtk::Application;
 
+mod header;
 mod post;
 mod topic;
 mod window;
