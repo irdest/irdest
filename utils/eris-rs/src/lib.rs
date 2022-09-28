@@ -11,6 +11,14 @@ pub use dec::{decode, decode_const, Error, Result};
 #[cfg(test)]
 mod tests;
 
+/// The target specification this implementation supports
+///
+/// Blocks encoded with a later specification MAY still correctly
+/// decode, but no guarantees can be made.  If you find that some
+/// content encoded with a compatible library does NOT correctly
+/// decode, please get in touch!
+pub const TARGET_SPECIFICATION: &str = "1.0.0";
+
 use async_trait::async_trait;
 use blake2::{digest::consts::U32, Blake2b, Digest};
 use chacha20::cipher::{KeyIvInit, StreamCipher};
@@ -22,12 +30,12 @@ fn display_base32(bytes: &[u8]) -> String {
     base32::encode(base32::Alphabet::RFC4648 { padding: false }, bytes)
 }
 
-fn decode_base32(s: &str) -> Result<[u8; 32]> {
+fn decode_base32<const BS: usize>(s: &str) -> Result<[u8; BS]> {
     match base32::decode(base32::Alphabet::RFC4648 { padding: false }, s)
         .ok_or(Error::InvalidBase32)
     {
-        Ok(v) if v.len() == 32 => Ok(v.try_into().map_err(|_| Error::InvalidBase32)?),
-        Ok(_) => Err(Error::InvalidBase32),
+        Ok(v) if v.len() == BS => Ok(v.try_into().map_err(|_| Error::InvalidBase32)?),
+        Ok(_) => Err(Error::UnexpectedBlockSize),
         Err(e) => Err(e),
     }
 }
@@ -68,6 +76,14 @@ pub type RKPair = (BlockReference, BlockKey);
 #[display(fmt = "{}", "display_base32(&self.0)")]
 #[debug(fmt = "{}", "self")]
 pub struct Block<const BS: usize>([u8; BS]);
+
+impl<const BS: usize> TryFrom<&String> for Block<BS> {
+    type Error = Error;
+    fn try_from(s: &String) -> Result<Block<BS>> {
+        let buf = decode_base32(s.as_str())?;
+        Ok(Block(buf))
+    }
+}
 
 #[async_trait]
 pub trait BlockStorage<const BS: usize> {

@@ -1,8 +1,9 @@
-use crate::{BlockKey, BlockReference, BlockSize, RKPair, ReadCapability};
+use crate::{
+    Block, BlockKey, BlockReference, BlockSize, BlockStorage, MemoryStorage, ReadCapability,
+};
 use serde::{Deserialize, Serialize};
 
-use std::collections::HashMap;
-use std::convert::TryInto;
+use std::collections::BTreeMap;
 use std::{fs::File, io::Read, path::Path};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -16,51 +17,16 @@ pub struct ReadCapabilityTest {
     pub root_key: String,
 }
 
-impl TryInto<ReadCapability> for ReadCapabilityTest {
+impl TryFrom<&ReadCapabilityTest> for ReadCapability {
     type Error = crate::Error;
 
-    fn try_into(self) -> Result<ReadCapability, Self::Error> {
-        ReadCapability {
-            root_reference: BlockReference::try_from(&self.root_reference)?,
-            root_key: BlockKey::try_from(&self.root_key)?,
-            level: self.level,
-            block_size: self.block_size,
-        };
-
-        // let base32_alphabet = base32::Alphabet::RFC4648 { padding: false };
-        // match base32::decode(base32_alphabet, &self.root_key) {
-        //     Some(root_key) => match base32::decode(base32_alphabet, &self.root_reference) {
-        //         Some(root_reference) => {
-
-        //             let mut reference: [u8; 32] = Default::default();
-        //             let mut key: [u8; 32] = Default::default();
-        //             key.copy_from_slice(&root_key);
-        //             reference.copy_from_slice(&root_reference);
-
-        //             let root =
-
-        //             let root = ReferenceKeyPair {
-        //                 reference: reference,
-        //                 key: key,
-        //             };
-        //             let block_size = match self.block_size {
-        //                 1024 => BlockSize::_1K,
-        //                 32768 => BlockSize::_32K,
-        //                 _ => return Err(()),
-        //             };
-        //             Ok(ReadCapability {
-        //                 root_reference,
-        //                 root_key: root,
-        //                 level: self.level,
-        //                 block_size: block_size,
-        //             })
-        //         }
-        //         None => Err(()),
-        //     },
-        //     None => Err(()),
-        // }
-
-        todo!()
+    fn try_from(cap_test: &ReadCapabilityTest) -> Result<Self, Self::Error> {
+        Ok(ReadCapability {
+            root_reference: BlockReference::try_from(&cap_test.root_reference)?,
+            root_key: BlockKey::try_from(&cap_test.root_key)?,
+            level: cap_test.level,
+            block_size: cap_test.block_size,
+        })
     }
 }
 
@@ -79,28 +45,108 @@ pub struct TestVectorContent {
     #[serde(rename = "read-capability")]
     pub read_capability: ReadCapabilityTest,
     pub urn: String,
-    pub blocks: HashMap<String, String>,
+    pub blocks: BTreeMap<String, String>,
+}
+
+impl TestVectorContent {
+    pub async fn blocks_to_blocks(&self) -> Result<MemoryStorage, crate::Error> {
+        let mut store = MemoryStorage::new();
+
+        for (block_id, block) in self.blocks.iter() {
+            let block_ref = BlockReference::try_from(block_id)?;
+            match self.read_capability.block_size {
+                1024 => {
+                    let block = Block::<1024>::try_from(block)?;
+                    assert_eq!(block_ref, block.reference());
+                    store.store(&block).await.unwrap();
+                }
+                32768 => {
+                    let block = Block::<32768>::try_from(block)?;
+                    assert_eq!(block_ref, block.reference());
+                    store.store(&block).await.unwrap();
+                }
+                _ => panic!("Unsupported block size!"),
+            };
+        }
+
+        Ok(store)
+    }
 }
 
 #[derive(Debug)]
-pub struct TestVector {
-    pub file_name: String,
-    pub data: TestVectorContent,
+pub struct TestHarness {
+    blocks: Box<MemoryStorage>,
+    read_cap: ReadCapability,
+    _test: Box<TestVectorContent>,
 }
 
-fn load_and_run(path: &Path) {
-    let mut buf = String::new();
-    let mut f = File::open(path).unwrap();
-    f.read_to_string(&mut buf).unwrap();
+impl TestHarness {
+    async fn load(path: &Path) -> Option<Self> {
+        let mut buf = String::new();
+        let mut f = File::open(path).unwrap();
+        f.read_to_string(&mut buf).unwrap();
+
+        let vector_content: Box<TestVectorContent> = match serde_json::from_str(buf.as_str()) {
+            Ok(v) => Box::new(v),
+            Err(e) => {
+                eprintln!("Error: {:?}.", e);
+                return None;
+            }
+        };
+
+        let read_cap = ReadCapability::try_from(&vector_content.read_capability).ok()?;
+        let blocks = vector_content
+            .blocks_to_blocks()
+            .await
+            .ok()
+            .map(Into::into)?;
+
+        Some(Self {
+            blocks,
+            read_cap,
+            _test: vector_content,
+        })
+    }
 }
 
-#[test]
-fn run_vectors() {
-    std::fs::read_dir("./res/eris-test-vectors")
+#[async_std::test]
+async fn run_vectors() {
+    for res in std::fs::read_dir("./res/eris-test-vectors")
         .unwrap()
         .filter_map(|res| match res {
             Ok(entry) if entry.file_name().to_str().unwrap().ends_with(".json") => Some(entry),
-            _ => None,
+            Ok(entry) => {
+                eprintln!("Ignoring: {:?}", entry.file_name().to_str().unwrap());
+                None
+            }
+            _ => None, // Not important?
         })
-        .for_each(|res| println!("{:?}", res));
+    {
+        let path = res.path();
+        let harness = match TestHarness::load(path.as_path()).await {
+            Some(h) => Box::new(h),
+            None => {
+                eprintln!(
+                    "An error occured loading {:?} and will thus be skipped!",
+                    path
+                );
+                continue;
+            }
+        };
+
+        println!(
+            "Loading file: {:?} has resulted in {} blocks",
+            path,
+            harness.blocks.len()
+        );
+
+        // let mut buf = vec![];
+        // crate::decode(&mut buf, &harness.read_cap, &harness.blocks)
+        //     .await
+        //     .unwrap();
+
+        // if let Some(input) = std::str::from_utf8(&buf).ok() {
+        //     println!("Input data: {}", input);
+        // }
+    }
 }
