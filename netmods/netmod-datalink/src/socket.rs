@@ -72,32 +72,19 @@ impl Socket {
         self.send_inner(env, MacAddr::broadcast()).await;
     }
 
-    pub(crate) async fn send_multiple(
-        &self,
-        env: &Envelope,
-        peers: &Vec<MacAddr>,
-        exclude: MacAddr,
-    ) {
+    pub(crate) async fn send_multiple(&self, env: &Envelope, peers: &Vec<MacAddr>) {
         let mut tx = self.tx.lock_arc().await;
 
         let payload = env.as_bytes();
         let packet_size = payload.len() + EthernetPacket::minimum_packet_size();
 
         let mut index = 0;
-
-        // - 1 accounts for the excluded peer
-        tx.build_and_send(peers.len() - 1, packet_size, &mut |new_packet| {
+        tx.build_and_send(peers.len(), packet_size, &mut |new_packet| {
             let mut new_packet = MutableEthernetPacket::new(new_packet).unwrap();
 
             new_packet.set_source(self.iface.mac.unwrap());
 
-            let mut dest = peers[index];
-            if dest == exclude {
-                index += 1;
-                dest = peers[index];
-            }
-
-            new_packet.set_destination(dest);
+            new_packet.set_destination(peers[index]);
             index += 1;
 
             new_packet.set_ethertype(CUSTOM_ETHERTYPE);

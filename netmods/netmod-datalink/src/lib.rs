@@ -287,14 +287,20 @@ impl EndpointExt for Endpoint {
             }
             Target::Flood(_) => match exclude {
                 Some(u) => {
-                    let peers = self.addrs.all().await;
                     let exc = self
                         .addrs
                         .addr(u)
                         .await
                         .expect("Router sent invalid exclude id.");
+                    let peers = self
+                        .addrs
+                        .all()
+                        .await
+                        .into_iter()
+                        .filter(|&addr| addr != exc)
+                        .collect();
 
-                    self.socket.send_multiple(&env, &peers, exc).await;
+                    self.socket.send_multiple(&env, &peers).await;
                 }
                 None => self.socket.multicast(&env).await,
             },
