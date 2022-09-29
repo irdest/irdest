@@ -1,5 +1,6 @@
 use gtk::{gio::SimpleAction, glib, prelude::*, Application};
 
+mod footer;
 mod header;
 mod post;
 mod topic;
@@ -12,9 +13,10 @@ fn main() {
         .expect("failed to register resources; this should never happen");
 
     let app = Application::builder()
-        .application_id("org.irdest.irdest-mblog")
+        .application_id("org.irdest.mblog_gtk")
         .build();
 
+    // TODO: replace with gio::ActionEntry::builder in the future
     let action = SimpleAction::new("quit", None);
     action.connect_activate(glib::clone!(@weak app => move |_, _| { app.quit() }));
     app.add_action(&action);

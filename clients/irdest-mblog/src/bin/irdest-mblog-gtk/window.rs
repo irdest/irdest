@@ -1,5 +1,8 @@
-use crate::header::Header;
-use crate::topic::{Topic, Topics};
+use crate::{
+    footer::Footer,
+    header::Header,
+    topic::{Topic, Topics},
+};
 use gtk::prelude::*;
 use gtk::{
     builders::BoxBuilder, Application, ApplicationWindow, Box as GtkBox, Button, HeaderBar,
@@ -10,6 +13,7 @@ pub struct MBlogWindow {
     inner: ApplicationWindow,
     topics: Topics,
     header: Header,
+    footer: Footer,
 }
 
 impl MBlogWindow {
@@ -30,13 +34,19 @@ impl MBlogWindow {
         let status_bar = Statusbar::new();
         status_bar.push(0, "Establishing connection to Ratman daemon...");
 
-        // let sb = status_bar.clone();
-        // header.add_action(move || sb.pop(0));
-
         // the main layout is a box with two segments
         let layout = GtkBox::new(Orientation::Horizontal, 0);
         layout.append(&topics.sidebar);
-        layout.append(&topics.stack);
+
+        let footer = Footer::new();
+
+        // This layout appends a footer under the topic stack so we
+        // can re-use the same message footer for all topics.
+        let topic_footer_layout = GtkBox::new(Orientation::Vertical, 0);
+        topic_footer_layout.set_vexpand(true);
+        topic_footer_layout.append(&topics.stack);
+        topic_footer_layout.append(&footer.inner);
+        layout.append(&topic_footer_layout);
 
         container.append(&layout);
         container.append(&status_bar);
@@ -56,6 +66,7 @@ impl MBlogWindow {
             inner,
             topics,
             header,
+            footer,
         }
     }
 
