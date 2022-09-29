@@ -8,7 +8,7 @@ use ratman::daemon;
 use std::error::Error;
 
 use netmod_mem::MemMod;
-use ratman::{Identity, Router};
+use ratman::Router;
 
 // Run ratman for the simple android test.
 async fn router_testing() -> Result<(), Box<dyn Error>> {
@@ -22,8 +22,7 @@ async fn router_testing() -> Result<(), Box<dyn Error>> {
     r1.add_endpoint(mm1).await;
 
     // Create a user and add them to the router
-    let u1 = Identity::random();
-    r1.add_user(u1).await?;
+    let u1 = r1.add_user().await?;
 
     // And mark router "online"
     r1.online(u1).await?;

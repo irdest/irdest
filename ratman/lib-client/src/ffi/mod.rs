@@ -3,7 +3,7 @@ use jni::{
     JNIEnv,
 };
 use std::ffi::{CStr, CString};
-use types::{Identity, Message};
+use types::{Address, Message};
 
 pub(crate) fn into_jstring<'a>(env: &'a JNIEnv, s: String) -> JString<'a> {
     env.new_string(s).unwrap()
@@ -59,12 +59,12 @@ impl JavaId {
         .unwrap()
     }
 
-    pub(crate) fn from_identity(id: Identity) -> Self {
+    pub(crate) fn from_address(id: Address) -> Self {
         Self(id.to_string())
     }
 
-    pub(crate) fn into_identity(self) -> Identity {
-        Identity::from_string(&self.0)
+    pub(crate) fn into_address(self) -> Address {
+        Address::from_string(&self.0)
     }
 }
 
