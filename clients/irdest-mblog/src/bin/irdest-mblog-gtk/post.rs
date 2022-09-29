@@ -58,6 +58,7 @@ mod imp {
                 vec![
                     ParamSpecString::builder("nick").build(),
                     ParamSpecString::builder("text").build(),
+                    ParamSpecString::builder("topic").build(),
                 ]
             });
             PROPERTIES.as_ref()
@@ -75,6 +76,11 @@ mod imp {
                         .get()
                         .expect("The value needs to be of type `String`.");
                 }
+                "topic" => {
+                    self.data.borrow_mut().topic = value
+                        .get()
+                        .expect("The value needs to be of type `String`.");
+                }
                 _ => unimplemented!(),
             }
         }
@@ -83,6 +89,7 @@ mod imp {
             match pspec.name() {
                 "nick" => self.data.borrow().nick.to_value(),
                 "text" => self.data.borrow().text.to_value(),
+                "topic" => self.data.borrow().topic.to_value(),
                 _ => unimplemented!(),
             }
         }
