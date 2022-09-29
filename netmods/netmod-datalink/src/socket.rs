@@ -25,7 +25,6 @@ use netmod::Target;
 use nix::errno::Errno;
 use std::collections::VecDeque;
 use std::error::Error;
-use std::io::Write;
 use task_notify::Notify;
 
 /// Wraps the pnet ethernet channel and the input queue
@@ -86,7 +85,8 @@ impl Socket {
 
         let mut index = 0;
 
-        tx.build_and_send(peers.len(), packet_size, &mut |new_packet| {
+        // - 1 accounts for the excluded peer
+        tx.build_and_send(peers.len() - 1, packet_size, &mut |new_packet| {
             let mut new_packet = MutableEthernetPacket::new(new_packet).unwrap();
 
             new_packet.set_source(self.iface.mac.unwrap());
@@ -143,8 +143,6 @@ impl Socket {
     fn incoming_handle(arc: Arc<Self>, table: Arc<AddrTable<MacAddr>>) {
         task::spawn_blocking(move || {
             loop {
-                let mut buf = vec![0; 1500];
-
                 let mut rx = task::block_on(async { arc.rx.lock_arc().await });
 
                 match rx.next() {
@@ -155,16 +153,13 @@ impl Socket {
                             continue;
                         }
 
-                        dbg!(&packet);
-
                         let peer = packet.get_source();
 
-                        match buf.write_all(packet.payload()) {
-                            Ok(()) => (),
-                            Err(_) => {
-                                warn!("Failed to write packet to buffer. Supported MTU is 1500.")
-                            }
-                        };
+                        if peer == arc.iface.mac.unwrap() {
+                            continue;
+                        }
+
+                        let buf = packet.payload().to_owned();
 
                         let env = Envelope::from_bytes(&buf);
                         task::block_on(async {
