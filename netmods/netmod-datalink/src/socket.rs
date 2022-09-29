@@ -176,12 +176,13 @@ impl Socket {
                                 Envelope::Data(vec) => {
                                     trace!("Received data frame");
                                     let frame = bincode::deserialize(&vec).unwrap();
-                                    let id = table.id(peer.into()).await.unwrap();
 
-                                    // Append to the inbox and wake
-                                    let mut inbox = arc.inbox.write().await;
-                                    inbox.push_back(FrameExt(frame, Target::Single(id)));
-                                    Notify::wake(&mut inbox);
+                                    if let Some(id) = table.id(peer).await {
+                                        // Append to the inbox and wake
+                                        let mut inbox = arc.inbox.write().await;
+                                        inbox.push_back(FrameExt(frame, Target::Single(id)));
+                                        Notify::wake(&mut inbox);
+                                    }
                                 }
                             }
                         })
