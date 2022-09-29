@@ -1,5 +1,4 @@
-use gtk::prelude::*;
-use gtk::Application;
+use gtk::{gio::SimpleAction, glib, prelude::*, Application};
 
 mod header;
 mod post;
@@ -15,6 +14,10 @@ fn main() {
     let app = Application::builder()
         .application_id("org.irdest.irdest-mblog")
         .build();
+
+    let action = SimpleAction::new("quit", None);
+    action.connect_activate(glib::clone!(@weak app => move |_, _| { app.quit() }));
+    app.add_action(&action);
 
     app.connect_activate(|app| {
         let window = window::MBlogWindow::new(app);

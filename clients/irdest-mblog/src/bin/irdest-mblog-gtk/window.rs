@@ -28,10 +28,10 @@ impl MBlogWindow {
         let container = GtkBox::new(Orientation::Vertical, 0);
 
         let status_bar = Statusbar::new();
-        status_bar.push(0, "Just kinda vibin...");
+        status_bar.push(0, "Establishing connection to Ratman daemon...");
 
-        let sb = status_bar.clone();
-        header.add_action(move || sb.pop(0));
+        // let sb = status_bar.clone();
+        // header.add_action(move || sb.pop(0));
 
         // the main layout is a box with two segments
         let layout = GtkBox::new(Orientation::Horizontal, 0);
