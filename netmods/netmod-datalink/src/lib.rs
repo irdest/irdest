@@ -132,12 +132,12 @@ async fn create_new_network<'a, 'b>(
         //NOTE: The docs are wrong again. address-data does not work with manual.
         (
             "ipv4",
-            HashMap::from([
-                ("method", Value::from("manual")),
-                ("addresses", Value::from(vec![vec![1u32, 1u32, 0u32]])),
-            ]),
+            HashMap::from([("method", Value::from("link-local"))]),
         ),
-        ("ipv6", HashMap::from([("method", Value::from("disabled"))])),
+        (
+            "ipv6",
+            HashMap::from([("method", Value::from("link-local"))]),
+        ),
     ]);
 
     let device = match iface {
