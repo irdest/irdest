@@ -36,10 +36,10 @@ impl TopicCreator {
         );
 
         let area = inner.content_area();
-        area.set_margin_top(64);
-        area.set_margin_bottom(64);
-        area.set_margin_start(64);
-        area.set_margin_end(64);
+        area.set_margin_top(32);
+        area.set_margin_bottom(32);
+        area.set_margin_start(32);
+        area.set_margin_end(32);
         area.set_hexpand(true);
         area.set_vexpand(true);
         area.set_spacing(8);
@@ -47,11 +47,12 @@ impl TopicCreator {
 
         let up_row = GtkBox::new(Orientation::Vertical, 0);
 
-        up_row.append(&create_label("Create a new Topic!"));
         up_row.append(&create_label(
             "A topic consists of a CATEGORY, a NAMESPACE, and a TOPIC NAME.",
         ));
-        up_row.append(&create_label("No spaces are allowed!"));
+        up_row.append(&create_label("No spaces are allowed in any segment!"));
+        up_row.append(&create_label("Use `-` or `_` instead."));
+        up_row.set_margin_bottom(16);
 
         let down_row = GtkBox::new(Orientation::Horizontal, 0);
         down_row.append(&Label::new(Some("/")));
