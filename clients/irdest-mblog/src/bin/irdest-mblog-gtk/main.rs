@@ -4,6 +4,7 @@ mod footer;
 mod header;
 mod post;
 mod topic;
+mod topic_creator;
 mod window;
 
 fn main() {

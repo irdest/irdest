@@ -26,7 +26,7 @@ impl MBlogWindow {
             .build();
 
         let topics = Topics::new();
-        let header = Header::new();
+        let header = Header::new(inner.clone());
         inner.set_titlebar(Some(&header.inner));
 
         let container = GtkBox::new(Orientation::Vertical, 0);

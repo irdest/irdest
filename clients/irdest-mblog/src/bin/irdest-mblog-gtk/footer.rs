@@ -1,4 +1,4 @@
-use gtk::{builders::BoxBuilder, prelude::*, Box as GtkBox, Button, Entry, Orientation};
+use gtk::{builders::BoxBuilder, prelude::*, Box as GtkBox, Button, Entry, Orientation, TextView};
 
 pub struct Footer {
     pub inner: GtkBox,
@@ -12,9 +12,11 @@ impl Footer {
             .margin_end(4)
             .hexpand(true)
             .build();
-        let entry = Entry::new();
+        let entry = TextView::new();
         entry.set_hexpand(true);
-        let send = Button::from_icon_name("send-symbolic");
+        entry.set_monospace(true);
+
+        let send = Button::from_icon_name("media-record-symbolic");
         inner.append(&entry);
         inner.append(&send);
 

@@ -1,7 +1,9 @@
+use crate::topic_creator::TopicCreator;
 use gtk::{
     gio::{Menu, MenuItem},
+    glib,
     prelude::*,
-    Button, HeaderBar, Label, MenuButton,
+    ApplicationWindow, Button, HeaderBar, Label, MenuButton,
 };
 
 pub struct Header {
@@ -12,12 +14,13 @@ pub struct Header {
 }
 
 impl Header {
-    pub fn new() -> Header {
+    pub fn new(parent: ApplicationWindow) -> Header {
         let inner = HeaderBar::new();
         inner.set_show_title_buttons(true);
         inner.set_title_widget(Some(&Label::new(Some("Irdest mblog"))));
 
         let add_topic = Button::from_icon_name("folder-new-symbolic");
+        add_topic.connect_clicked(glib::clone!(@weak parent => move |_| TopicCreator::new(parent)));
 
         let menu_button = MenuButton::new();
         menu_button.set_icon_name("open-menu");
