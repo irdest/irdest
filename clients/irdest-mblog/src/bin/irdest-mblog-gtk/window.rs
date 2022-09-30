@@ -3,11 +3,13 @@ use crate::{
     header::Header,
     topic::{Topic, Topics},
 };
+use async_std::sync::Arc;
 use gtk::prelude::*;
 use gtk::{
     builders::BoxBuilder, Application, ApplicationWindow, Box as GtkBox, Button, HeaderBar,
     Label as GtkLabel, Orientation, Stack, StackSidebar, Statusbar, Window,
 };
+use irdest_mblog::Lookup;
 
 pub struct MBlogWindow {
     inner: ApplicationWindow,
@@ -25,8 +27,19 @@ impl MBlogWindow {
             .title("Irdest mblog")
             .build();
 
+        // Just hard-code a list of topics for now
+        let lookup = Arc::new(Lookup::populate(vec![
+            "/net/irdest/general",
+            "/net/irdest/bugs",
+            "/net/irdest/off-topic",
+            "/comp/nixos/general",
+            "/sci/radio/general",
+            "/local/berlin/rave",
+            "/local/berlin/afra",
+        ]));
+
         let topics = Topics::new();
-        let header = Header::new(inner.clone());
+        let header = Header::new(inner.clone(), Arc::clone(&lookup));
         inner.set_titlebar(Some(&header.inner));
 
         let container = GtkBox::new(Orientation::Vertical, 0);
@@ -54,13 +67,11 @@ impl MBlogWindow {
         // Add the layout to the window
         inner.set_child(Some(&container));
 
-        // Create topic A
-        let topic_a = Topic::empty();
-        topics.add_topic("networking.irdest.general", topic_a);
-
-        // Create topic B
-        let topic_b = Topic::empty();
-        topics.add_topic("networking.irdest.bugs", topic_b);
+        // Add all known topics to the list
+        for topic in lookup.all() {
+            let t = Topic::empty();
+            topics.add_topic(topic.as_str(), t);
+        }
 
         Self {
             inner,

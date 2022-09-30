@@ -1,7 +1,11 @@
+mod lookup;
+
 use anyhow::{anyhow, Result};
 use protobuf::Message as _;
 use ratman_client::{Address, RatmanIpc};
 use std::convert::TryFrom;
+
+pub use lookup::Lookup;
 
 #[cfg(feature = "proto")]
 pub mod proto {

@@ -19,7 +19,7 @@ fn main() {
 
     // TODO: replace with gio::ActionEntry::builder in the future
     let action = SimpleAction::new("quit", None);
-    action.connect_activate(glib::clone!(@weak app => move |_, _| { app.quit() }));
+    action.connect_activate(glib::clone!(@weak app => move |_, _| app.quit()));
     app.add_action(&action);
 
     app.connect_activate(|app| {
