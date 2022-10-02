@@ -1,23 +1,28 @@
-Issue Fix
----
-<!-- NOTE: Each MR should be linked to an Issue, exempting cases of highly trivial MRs -->
-Fixes #[issue number]
+### Description
+
+<!-- A short description of the changes implemented by this MR -->
 
 
-Description
----
-<!-- Clear and concise code change description. Also, you can include checklist of changes made if the MR is large -->
+### Type
+
+Choose one: `Bug Fix` | `Feature` | `Documentation` | `Testing` | `Maintenance` | `Other`
 
 
-Alternative(s) considered
----
-<!-- Have you considered any alternatives? And if so, why have you chosen the approach in this PR? -->
+### Issue Fixes
+
+<!-- Link any issues that are affected (closed/ revised/ ...) by this MR -->
 
 
-Type
----
-Choose one: (Bug fix | Feature | Documentation | Testing | Code health | Other)
+### Additional context
+
+<!-- Optional: a more in-depth explanation of this MRs design -->
 
 
-Screenshots (if applicable)
----
+### Alternatives
+
+<!-- Optional: design alternatives you have considered for this MR -->
+
+
+### Screenshots (if applicable)
+
+<!-- Optional: include screenshots of your work -->

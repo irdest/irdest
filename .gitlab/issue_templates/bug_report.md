@@ -1,35 +1,45 @@
-Describe the bug
----
-<!-- A clear and concise description of what the bug is. -->
+### Describe the bug
 
-Component
----
-<!-- like: irdest-core | hubd | alexandria | libopus-sys | android-tracing | android-client etc | unknown(if unsure). -->
-
-To Reproduce
----
-Steps to reproduce the behavior:
+<!-- A short description of what the bug is. -->
 
 
-Expected behavior
----
-<!-- A clear and concise description of what you expected to happen. -->
+### Component
+
+<!--
+Select one (or more): 
+
+`ratman`, `ratcat`, `netmod-inet`, `netmod-lan`, `netmod-lora` (etc),
+`irdest-proxy`, `irdest-mblog`, `irdest-android-vpn` | `unknown` (if
+unsure)
+-->
 
 
-Screenshots(If Applicable)
----
+### To Reproduce
+
+<!-- Steps to reproduce the behavior. -->
+
+
+### Expected behavior
+
+<!-- A short description of what you expected to happen. -->
+
+
+### Environment:
+
+<!--
+(Please try to be as specific as possible) - e.g.,
+
+* OS/ Kernel (with version):
+* Distribution (if applicable):
+* ... etc
+-->
+
+
+### Screenshots (if applicable)
+
 <!-- If applicable, add screenshots to help explain your problem. -->
 
 
-Environment:
----
-<!-- (Please try to be as specific as possible) - e.g.,
-* OS(with version)
-* Distribution(if applicable):
-* ... etc
-->
+### Additional context
 
-
-Additional context
----
 <!-- Add any other context that could be from past issues/MRs about the problem here. -->
