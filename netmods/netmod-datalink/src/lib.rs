@@ -192,7 +192,20 @@ async fn configure_network_manager<'a>(
     let res = match (iface, ssid) {
         (_, Some(s)) => {
             let (conn, device, obj) = match scan_wireless_for_ssid(&nm, iface, s).await {
-                Some((device, ap)) => (HashMap::new(), device, ap),
+                Some((device, ap)) => (
+                    HashMap::from([
+                        (
+                            "ipv4",
+                            HashMap::from([("method", Value::from("link-local"))]),
+                        ),
+                        (
+                            "ipv6",
+                            HashMap::from([("method", Value::from("link-local"))]),
+                        ),
+                    ]),
+                    device,
+                    ap,
+                ),
                 None => {
                     let (device, config) = create_new_network(&nm, iface, s).await;
                     (config, device, "/".try_into().unwrap())
