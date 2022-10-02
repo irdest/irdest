@@ -122,7 +122,7 @@ async fn create_new_network<'a, 'b>(
             "802-11-wireless",
             HashMap::from([
                 ("ssid", Value::from(ssid.as_bytes())),
-                ("mode", Value::from("adhoc")),
+                ("mode", Value::from("ap")),
                 ("band", Value::from("bg")),
                 ("channel", Value::from(1u32)),
             ]),
