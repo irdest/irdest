@@ -16,10 +16,10 @@ mod journal;
 mod routes;
 mod switch;
 
+pub(self) use self::journal::Journal;
 pub(self) use collector::Collector;
 pub(self) use dispatch::Dispatch;
 pub(self) use drivers::DriverMap;
-pub(self) use journal::Journal;
 pub(self) use routes::{EpTargetPair, RouteTable, RouteType};
 pub(self) use switch::Switch;
 

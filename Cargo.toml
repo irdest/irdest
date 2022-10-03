@@ -18,6 +18,7 @@ members = [
     "utils/task-notify",
     "utils/tracing-syslog",
     "utils/cchamt",
+    "utils/journal",
 
     # Available netmod drivers
     "netmods/netmod-fuzz",

@@ -1381,6 +1381,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8eaf4bc02d17cbdd7ff4c7438cafcdf7fb9a4613313ad11b4f8fefe7d3fa0130"
 
 [[package]]
+name = "journal"
+version = "0.1.0"
+dependencies = [
+ "cchamt",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "js-sys"
 version = "0.3.56"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2105,6 +2114,7 @@ dependencies = [
  "eris",
  "igd",
  "ipnetwork",
+ "journal",
  "netmod-inet",
  "netmod-lan",
  "netmod-lora",
