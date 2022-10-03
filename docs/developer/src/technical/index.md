@@ -1,11 +1,11 @@
 # Technical Documentation
 
-Welcome to the Irdest technical documentation.  This tree of documents
-is meant to give you an overview into the various components that make
-up the Irdest project, as well as their inner workings.
+This is the Irdest technical documentation tree; it consists of
+documents meant to give you an overview into the various components
+that make up the Irdest project, as well as their inner workings.
 
-This manual is relevant for both **Irdest hackers**, and **Irdest
-application developers**.
+This manual is a good starting point both to those interested in
+*hacking on Irdest*, and *developing applications* on top of it.
 
 
 ## Introduction
@@ -24,11 +24,6 @@ of these layers.  **BUT...** the layers between the OSI model and
 Irdest don't map directly onto each other and are only meant to
 illustrate difference in hardware access, user access, and scope.
 
-Nothing stops you from implementing a netmod for a high-level protocol
-like XMPP or a client for a low-level protocol like ARP.
-Alternatively, think about the two layers in Ratman's architecture as
-"address scope" and "wire scope".
-
 ![](/assets/overview.svg)
 
 [osi]: https://en.wikipedia.org/wiki/OSI_model
@@ -42,13 +37,18 @@ Following is a short overview of layers in Irdest.
 | Session              | Integration shims | `irdest-proxy`, `ratcat`, ...                  |
 | Application          | Clients           | `irdest-ping`, `irdest-mblog`, ... your app?   |
 
+(While the following sections mention the OSI layers it's important to
+keep in mind that this is by convention.  Nothing stops you from
+implementing a netmod for a high-level protocol like XMPP or a client
+for a low-level protocol like ARP.  Alternatively, you can think of
+the two layers in Ratman's API architecture as "address scope" and
+"wire scope")
 
 ### Network drivers
 
 Network drivers establish and manage connections with peers via
 different underlying transport mechanisms.  A driver (in the irdest
-jargon called a "netmod") is initialised and bound to the process
-running the irdest router, and long-running.
+jargon called a "netmod") is initialised by the Irdest router Ratman.
 
 This allows the core of Ratman to remain relatively platform agnostic,
 while letting platform-specific drivers handle any quirks of the
@@ -69,15 +69,16 @@ mechanism however (either via `.so` object loading or an IPC socket).
 
 ### Ratman: the Irdest router
 
-Ratman/ `ratmand` is a decentralised packet router daemon.  It comes
-with a small set of utilities such as `ratcat` (a `netcat` analog),
-`ratctl` (a `batctl` analog), and a simple management web UI.
+Ratman/ `ratmand` is a decentralised router daemon.  It comes with a
+small set of utilities such as `ratcat` (a `netcat` analog), `ratctl`
+(a `batctl` analog), and a simple management web UI.
 
 Clients communicate with Ratman via a local TCP socket and protobuf
 envelope schema.  For most use-cases we recommend the
 [`ratman-client`](https://crates.io/crates/ratman-client) library.
-Alternative implementations don't currently exist and this API is also
-extremely unstable, so please be aware of this for the time being!
+Alternative implementations don't currently exist and *this API is
+also extremely unstable*, so please be aware of this for the time
+being!
 
 In the OSI model, this maps _roughly_ to layer 3 and 4.
 
@@ -100,29 +101,29 @@ applications that rely on them.
 
 ### Clients
 
-The Irdest project is mainly focused on developing Ratman and its
-associated drivers and shims.  We do however hope to provide some good
-examples of applications written _specifically_ for an Irdest network
-to inspire other developers, and showcase to users how these
-technologies can be used.  This also aims to make the on-boarding
-process less daunting.
+These are applications that use Ratman for their networking (either
+natively or via an integration shim).
 
-Currently the only graphical client is `irdest-mblog`, which
-implements a decentralised usenet-style forum model.
+The Irdest project develops a few of these as demonstrations as to
+what is possible to do with the Irdest network.  While we of course
+hope that the Irdest application bundle makes onboarding into the
+network easier, we encourage others to work on top of this platform,
+or bridge it to other decentralised networking platforms.
 
+Irdest comes with a few command-line applications and Irdest mblog, a
+Gtk usenet-inspired microblogging app!
+    
 
 ## What next?
 
 If you are interested in writing an application for Irdest, or porting
-your existing application's networking to use Irdest in the
-background, these sections are for you.
+another application to use Irdest, you should familiarise yourself
+with the Ratman client SDK first.
 
-- [Ratman overview](./ratman/index.html)
-- [Ratman client lib](./ratman/client.html)
-- [Bibliography](./bib.html)
+If you want to get started hacking on Irdest, check out the "Hacking"
+section.  In either case you may also want to read "Ratman internals"!
+
+- [Ratman SDK](./ratman/client.html)
+- [Ratman internals](./ratman/index.html)
 - [Hacking on Irdest](./hacking.html)
-
-If you want to work on a specific issue in Ratman or the drivers, we
-recommend you check out the [issue
-tracker](https://git.irde.st/we/irdest/-/issues), or come talk to us
-in our [Matrix channel](https://matrix.to/#/#chat:irde.st)!
+- [Bibliography](./bib.html)

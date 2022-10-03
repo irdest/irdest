@@ -20,8 +20,33 @@ tracker][issues] or our [community mailing ist][mail]!
 <!-- <img src="/img/ratman-banner.png" width="800px" /> -->
 
 There are several ways to install Irdest.  Check the instructions for
-your platform below.  Currently only **Linux** systems running
-**systemd** are actively being tested on!
+your platform below.
+
+<div class="tabs">
+   <div class="tab">
+       <input type="radio" id="tab-1" name="tab-group-1" checked>
+       <label for="tab-1">Linux</label>
+       <div class="content">
+           <p>Currently only **Linux** systems running **systemd** are actively being tested on!</p>
+       </div> 
+   </div>
+   <div class="tab">
+       <input type="radio" id="tab-2" name="tab-group-1">
+       <label for="tab-2">macOS</label>
+       <div class="content">
+           <p>Static (stand-alone) builds for macOS are available on both x86_64 and aarch64!</p>
+       </div> 
+   </div>
+    <div class="tab">
+       <input type="radio" id="tab-3" name="tab-group-1">
+       <label for="tab-3">Other</label>
+       <div class="content">
+           stuff
+       </div> 
+   </div>
+</div>
+
+
 
 
 ### Distribution packages

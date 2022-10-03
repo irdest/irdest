@@ -228,3 +228,50 @@ h1:has(+ .download-header) {
     font-weight: 800;
     height: 1.5rem;
 }
+
+.tabs {
+    position: relative;   
+    min-height: 200px; /* This part sucks */
+    clear: both;
+    margin: 25px 0;
+}
+
+.tab {
+    float: left;
+}
+
+.tab label {
+    background: black;
+    color: white;
+    padding: 10px; 
+    border: 1px solid black; 
+    margin-left: -1px; 
+    position: relative;
+    left: 1px; 
+}
+
+.tab [type=radio] {
+    display: none;   
+}
+
+.content {
+    position: absolute;
+    top: 28px;
+    left: 0;
+    background: #e0e2e2;
+    right: 0;
+    bottom: 0;
+    padding: 20px;
+    border: 1px solid black; 
+}
+
+[type=radio]:checked ~ label {
+    background: #2f556b;
+    color: white;
+    border-bottom: 1px solid black;
+    z-index: 2;
+}
+
+[type=radio]:checked ~ label ~ .content {
+    z-index: 1;
+}

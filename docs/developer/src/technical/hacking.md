@@ -55,8 +55,10 @@ need to disable all default features, then select a new set of
 features as follows:
 
 ```console
-$ cargo build -p ratman --release --disable-default-features --features "cli inet lan upnp"
+$ cargo build -p ratman --release --disable-default-features \
+                        --features "cli datalink inet lan lora upnp"
 ...
+[cargo goes brrr]
 ```
 
 
@@ -80,7 +82,8 @@ long as you have `gtk4` installed on your system (or using the Nix
 environment).
 
 ```console
-$ cargo build --bin irdest-mblog-gtk --features "mblog-gtk"
+$ cd client/irdest-mblog
+$ cargo build --release --bin irdest-mblog-gtk --features "mblog-gtk"
 ...
 ```
 

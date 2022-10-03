@@ -34,9 +34,8 @@ applications (which will probably change in the future!)
 
 When your application is given an address you should store it in your
 application state somewhere, along with the corresponding auth token.
-These will be important the next time your application starts.  **For
-added security you may want to encrypt this data with a user
-password!**
+These will be important the next time your application starts.  *For
+added security you should encrypt this data with a user password!*
 
 
 ### Message sending and receiving
@@ -52,10 +51,10 @@ routed to the destination where they will leave the network and be
 processed by the target application (or dropped).
 
 **Flood** messages are sent to every device and address on the
-network, to allow for network-wide announcements.  Under the hood the
-address announcement protocol uses Flood messages.  To limit the
-amount of relevant Flood messages an application has to deal with,
-they are namespaced.  The namespace itself is also an Irdest address.
+network, to allow for network-wide announcements (this is also how
+your address announces itself!)  To limit the amount of relevant Flood
+messages an application has to deal with, they are namespaced.  The
+namespace itself is also an Irdest address.
 
 So for example a **standard** message sent to
 `ECB4-30B9-4416-C403-716F-601F-FC56-9AD3-BD2E-3892-227A-84AD-E6FC-A1CE-0A92-03F6`
@@ -64,5 +63,35 @@ address.
 
 A **flood** message sent to
 `ECB4-30B9-4416-C403-716F-601F-FC56-9AD3-BD2E-3892-227A-84AD-E6FC-A1CE-0A92-03F6`
-will be delivered to _all applications_ that are listening on this
+will be delivered to all applications that are _listening_ on this
 namespace.
+
+
+### API Example: `irdest-echo`
+
+This is a small program demonstrating the most basic usage of the
+ratman-client SDK.  At start-up it registers a new address, listens to
+any incoming messages, and returns them as they are to the sender.
+
+```rust
+use ratman_client::{RatmanIpc, Receive_Type};
+
+#[async_std::main]
+async fn main() {
+    let ipc = RatmanIpc::default()
+        .await
+        .expect("Failed to connect to Ratman daemon!");
+
+    println!("Listening on address: {}", ipc.address());
+    while let Some((tt, msg)) = ipc.next().await {
+        // Ignore flood messages
+        if tt == Receive_Type::FLOOD {
+            continue;
+        }
+
+        // Get the message sender identity and reply
+        let sender = msg.get_sender();
+        ipc.send_to(sender, msg.get_payload()).await.unwrap();
+    }
+}
+```

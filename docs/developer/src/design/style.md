@@ -17,7 +17,8 @@ submission adheres to these styles!**
   an MR!
 * **Add the [SDX
   header](https://git.irde.st/we/irdest/-/blob/develop/ratman/Cargo.toml#L1-2)
-  to any file that are changed significantly/ created!**
+  to any file that are changed significantly/ created!** ([what is
+  SDX](https://reuse.software/)?)
 * If a code block (for example a complex `match`) becomes less
   readable by letting `rustfmt` format it you MAY annotate it with
   `#[rustfmt(ignore)]`!
