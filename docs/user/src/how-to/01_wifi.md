@@ -58,20 +58,26 @@ Ensure that you have the correct permissions. This means you can
 either run the process as root (not recommended) or with CAP_NET_RAW
 and CAP_NET_ADMIN.
 
-See `man capabilities(7)` for more details.
+You should be able to set the required permissions by running the following
+command as root:
+`setcap cap_net_raw,cap_net_admin+eip [path/to/ratmand]`
 
-### Ratman does not automatically connect to the network
 
-It is currently unclear why this happens. At the moment, the easiest
-way to resolve this problem is to use `nmtui` and connect to the
-ad-hoc network manually. It will likely fail to connect on nmtui,
-however it usually works if you edit the connection, manually set an
-ipv4 address and enable automatic connection. Feel free to set the ip
-address to anything above `0.0.0.0`.  There are no subnetworks, so the
-netmask should be set to `/0`.
+See `man capabilities` and `man setcap` for more details.
+
+### Network Manager configuration times out
+
+This is generally due to issues with device drivers. There's a good chance that
+your device drivers:
+- are improperly configured
+- are buggy
+- do not support being set to AP mode
+
+
+The devs are working on a list of recommended hardware.
 
 ### Why can't I connect to the internet?
 
-This endpoint captures all packets sent to the given device. If you
-had any higher level network protocols operating on it, you're out of
-luck.
+This endpoint captures all packets sent to the given device. If you had any
+higher level network protocols operating on it, you're out of luck at the
+moment. This may change in the future.
