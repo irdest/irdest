@@ -70,3 +70,27 @@ package with cargo.
 $ cargo build -p irdest-echo --release
 ...
 ```
+
+
+## Building irdest-mblog
+
+`irdest-mblog` is probably the most complete user-facing application
+that is native to the Irdest network.  You can build it with Cargo, as
+long as you have `gtk4` installed on your system (or using the Nix
+environment).
+
+```console
+$ cargo build --bin irdest-mblog-gtk --features "mblog-gtk"
+...
+```
+
+## What now?
+
+Check the issue tracker for ["good first
+issues"](https://git.irde.st/we/irdest/-/issues/?sort=created_date&state=opened&label_name%5B%5D=L%3A%20good%20first%20issue&first_page_size=20)
+if you are completely new to Irdest, and additionally ["help
+wanted"](https://git.irde.st/we/irdest/-/issues/?sort=created_date&state=opened&label_name%5B%5D=L%3A%20help%20wanted&first_page_size=20)
+issues if you already have some experience with the code-base.
+
+Please also don't hesitate to ask us any questions!  We're very happy
+to help :)

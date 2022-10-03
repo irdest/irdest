@@ -73,13 +73,11 @@ with a small set of utilities such as `ratcat` (a `netcat` analog),
 
 Clients communicate with Ratman via a local TCP socket and protobuf
 envelope schema.  For most use-cases we recommend the
-[`ratman-client`] library.  Alternative implementations don't
-currently exist and this API is also extremely unstable, so please be
-aware of this for the time being!
+[`ratman-client`](https://crates.io/crates/ratman-client) library.
+Alternative implementations don't currently exist and this API is also
+extremely unstable, so please be aware of this for the time being!
 
 In the OSI model, this maps _roughly_ to layer 3 and 4.
-
-[`ratman-client`]: https://crates.io/crates/ratman-client
 
 
 ### Integration shims
@@ -123,8 +121,6 @@ background, these sections are for you.
 - [Hacking on Irdest](./hacking.html)
 
 If you want to work on a specific issue in Ratman or the drivers, we
-recommend you check out the [issue tracker], or come talk to us in our
-[Matrix channel]!
-
-[issue tracker]: https://git.irde.st/we/irdest/-/issues
-[Matrix channel]: https://matrix.to/#/#chat:irde.st
+recommend you check out the [issue
+tracker](https://git.irde.st/we/irdest/-/issues), or come talk to us
+in our [Matrix channel](https://matrix.to/#/#chat:irde.st)!
