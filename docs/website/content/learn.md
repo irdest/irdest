@@ -1,6 +1,10 @@
 ---
 Title: Learn about Irdest
 layout: learning
+Intro: |
+    Our documentation is split by target audience.  We would also like to
+    collect community resources, so if you write a guide, tutorial, etc
+    please get in touch about getting it linked on this page!
 User_Title: For end-users
 Devs_Title: For developers
 Users: |

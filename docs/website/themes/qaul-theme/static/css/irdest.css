@@ -203,6 +203,19 @@ h1:has(+ .download-header) {
     transform: scaleX(-1);
 }
 
+.learn-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding-bottom: 1rem;
+    margin-top: 0;
+}
+
+.learn-header > img {
+    transform: scaleY(-1);
+}
+
+
 .not-web3 {
     display: flex;
     flex-direction: column;

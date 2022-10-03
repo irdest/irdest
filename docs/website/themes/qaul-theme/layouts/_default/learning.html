@@ -1,8 +1,11 @@
 {{ define "main" }}
 <main class="block block-content">
   <div class="wrap">
-    <h1>{{ .Title }}</h1>
+    <h1></h1>
+    <h1 class="learn-header">{{ .Title }}<img src="/img/ratman.png" height="200px" /></h1>
 
+    <p>{{ .Params.Intro }}</p>
+    
     <div class="twocol">
       <div class="col-padding">
         <h2>{{ .Params.User_Title }}</h2>

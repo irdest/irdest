@@ -3,6 +3,7 @@
 This section outlines some internal concepts that are in use by the
 Ratman routing daemon.
 
+
 ## Gossip announcements
 
 Ratman operates on the [gossip protocol] approach, where each address

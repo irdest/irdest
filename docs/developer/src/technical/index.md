@@ -20,9 +20,14 @@ re-associate a specific device with a specific address.
 
 A lot of traditional networking infrastructures is built up in layers
 (see [OSI model][osi]).  Similarly, the irdest project replicates some
-of these layers.  Note however that the layers between the OSI model
-and Irdest don't map perfectly onto each other and are only meant to
+of these layers.  **BUT...** the layers between the OSI model and
+Irdest don't map directly onto each other and are only meant to
 illustrate difference in hardware access, user access, and scope.
+
+Nothing stops you from implementing a netmod for a high-level protocol
+like XMPP or a client for a low-level protocol like ARP.
+Alternatively, think about the two layers in Ratman's architecture as
+"address scope" and "wire scope".
 
 ![](/assets/overview.svg)
 
@@ -55,10 +60,7 @@ NetworkManager.
 
 Many different drivers can be active on the same device, as long as
 they are connected to the same router.  In the OSI model, this
-_roughly_ maps to layers 1 & 2.  It is absolutely possible to write a
-netmod for a higher level protocol (for example to tunnel Irdest
-traffic over XMPP).  But in most cases, these will be layer 1 & 2
-protocols.
+_roughly_ maps to layers 1 & 2.
 
 Currently a driver needs to be specifically added to `ratmand` and
 included at compile time.  We are working on a dynamic loading

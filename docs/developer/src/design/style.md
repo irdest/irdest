@@ -62,6 +62,7 @@ component identifiers:
 - `netmod/lora`
 - `ratcat`
 - `ratctl`
+- `ratman/client`
 - `ratman/netmod`
 - `ratman/types`
 - `ratman`

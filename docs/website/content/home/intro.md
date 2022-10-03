@@ -6,7 +6,7 @@ Resilient: |
     of digital connections (i.e. internet service providers).  _Irdest side-steps
     existing infrastructure_ to allow network participants to take ownership
     of the infrastructure together.  This also makes it much harder to censor or control.
-Extensible_Title: Utilise an extensible architecture
+Extensible_Title: Make use of an extensible architecture
 Extensible: |
     An Irdest network can be composed of both devices and other
     networks, creating a network of networks; _a new internet_.  With

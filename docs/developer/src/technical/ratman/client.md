@@ -30,12 +30,13 @@ well!
 
 An address for Ratman is associated with a cryptographic key pair.
 Currently we don't expose the private key from the router to
-applications (which will change in the future!)
+applications (which will probably change in the future!)
 
 When your application is given an address you should store it in your
 application state somewhere, along with the corresponding auth token.
-These will be important the next time your application starts.  For
-added security you may want to encrypt this data.
+These will be important the next time your application starts.  **For
+added security you may want to encrypt this data with a user
+password!**
 
 
 ### Message sending and receiving
