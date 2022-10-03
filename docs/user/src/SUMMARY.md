@@ -8,13 +8,7 @@
   - [Available clients](./install/clients.md)
 - [Setup Guides](./guides/index.md)
   - [Basic setup](./guides/01_basic.md)
-  - [LoRa wireless](./guides/03_lora.md)
-- [How to...](./how-to/index.md)
+- [How to](./how-to/index.md)
+  - [Setup WiFi AP](./how-to/01_wifi.md)
+  - [Setup LoRa wireless](./how-to/02_lora.md)
 - [Reference](./reference/index.md)
-
-<!-- - [Ratman](./ratman/index.md) -->
-<!--   - [ratmand](./ratman/ratmand.md) -->
-<!--   - [ratcat](./ratman/ratcat.md) -->
-<!--   - [ratctl](./ratman/ratctl.md) -->
-<!-- - [irdest-echo](./irdest-echo.md) -->
-<!-- - [irdest-proxy](./irdest-proxy.md) -->

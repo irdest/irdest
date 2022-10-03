@@ -1,28 +1,7 @@
 ![](../../assets/ratman-banner.png)
 
-A modular userspace packet router, providing decentralised distance
-vector routing and message delay tolerance.  Ratman is both a Rust
-library and stand-alone and zero-config routing daemon.
-
-Ratman provides a _256-bit address space via ed25519 public keys_.
-This means that messages are end-to-end encrypted and authenticated at
-the transport level.  An address is announced via gossip protocol
-routing to other network participants.
-
-Ratman somewhat exists outside the OSI layer scopes.  On one side (the
-"bottom") it binds to _different transport layers_ such as IP, or BLE
-via "net module" drivers.
-
-On the other side (the "top") it provides a protobuf API on a local
-TCP socket for _applications to interact with this network_.  One of
-the core principles of Ratman is to make network roaming easier,
-building a general abstraction over a network, leaving it up to
-drivers to interface with implementation specifics.
-
-This also means that connections in a Ratman network can be ephemeral
-and can sustain long periods of inactivity because of the
-delay-tolerant nature of this routing approach.
-
+This section outlines some internal concepts that are in use by the
+Ratman routing daemon.
 
 ## Gossip announcements
 
@@ -60,6 +39,90 @@ interface over which it thinks it can reach `A` the best (for example
 must be closer to the destination to deliver the packet.
 
 
+### Announcement metadata
+
+As part of the announcement protocol nodes may include metadata in the
+announcement.  According to the current specification draft, it looks
+as follows:
+
+```
+Announcement {
+  origin: {
+    timestamp: "2022-09-19 23:40:27+02:00",
+  },
+  origin_sign: [binary data],
+  
+  peer: {
+    ...
+  },
+  peer_sign: [binary data],
+  
+  route: {
+    mtu: 1211,
+  },
+}
+```
+
+For the following section the `announcement.route.mtu` parameter is
+especially important!
+
+
+## Message slicing & streaming
+
+An incoming message in Ratman is sliced twice: once into cryptographic
+blocks via the [ERIS](https://inqlab.net/projects/eris/) encoding, and
+then again for transport according to the path MTU outlined in the
+previous metadata section.
+
+When slicing ERIS blocks, frames should be filled completely, with
+non-overlapping block boundries.  This makes sure to not send frames
+that contain a lot of zero-padding.
+
+This should be implemented as an iterator/ stream, which consumes at
+iterator/ stream of eris blocks.
+
+
+```
+ERIS block size = 4 bytes.
+Frame size = 5 bytes.
+
+Eris blocks: [1 2 3 4][5 6 7 8][9 10 11]
+Frames:      [1 2 3 4 5][6 7 8 9 10][11]
+```
+
+```
+ERIS block size = 12.
+Frame size = 5.
+
+Eris blocks: [1 2 3 4 5 6 7 8 9 A B C][D E F 10 11 12 13 14 15 16 17 18]
+Frames:      [1 2 3 4 5][6 7 8 9 A][B C D E F][10 11 12 13 14][15 16 17 18]
+```
+
+
+### Selecting frame sizes
+
+The two block sizes supported by ERIS by default are 1kB and 32kB.
+For small messages these wil create a significant amount of overhead,
+especially on low-MTU connections.
+
+For these cases we should have small-message optimisations, based on
+the size of the message, and the path MTU to the recipient.
+
+| Message size | Path MTU    | Selected block size |
+|--------------|-------------|---------------------|
+| < 256 bytes  | -           | 64 bytes            |
+| < 1 kB       | -           | 256 bytes           |
+| < 32 kB      | < 1 kB      | 256 bytes           |
+| < 2 kB       | < 256 bytes | 64 bytes            |
+| > 1kB < 28kB | -           | 1 kB                |
+| -            | -           | 32 kB               |
+
+Messages **larger than 32 kB/ 2 kB on a path MTU of <1 kB/ <256 bytes
+respectively** should be rejected by the sending router. We may want
+to add another small message optimisation between 2kB and 32kB max
+size messages.
+
+
 ## Delay tolerance
 
 This section will be expanded when the implementation of delay
@@ -72,6 +135,7 @@ applications to be aware of long delays and handle them gracefully!
 
 [sneaker net]: https://en.wikipedia.org/wiki/Sneakernet
 
+
 ## Roaming
 
 Because of the distinction between network channels and routing it is
@@ -82,3 +146,9 @@ Irdest network with no knowledge of these network bounds.
 It also means that a network can easily be composed of different
 routing channels.  Local UDP discovery, TCP links across the existing
 internet, Wireless antenna communities, and even phones.
+
+
+## WIP specification
+
+There is a work-in-progress specification available [in the
+wiki](https://hedgedoc.irde.st/X2JBI2rrQ8Oh9Q4yEO7sTQ)!

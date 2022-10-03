@@ -9,6 +9,7 @@
   - [Ratman internals](./technical/ratman/index.md)
   - [Network drivers](./technical/drivers/index.md)
     - [inet](./technical/drivers/inet.md)
+    - [lora](./technical/drivers/lora.md)
   - [ratman-client](./technical/ratman/client.md)
   - [Bibliography](./technical/bib.md)
 - [Design guides](./design/index.md)

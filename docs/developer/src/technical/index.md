@@ -30,45 +30,57 @@ illustrate difference in hardware access, user access, and scope.
 
 Following is a short overview of layers in Irdest.
 
-| OSI Layer            | Irdest Layer      | Component(s)                                 |
-|----------------------|-------------------|----------------------------------------------|
-| Physical & Data link | Network drivers   | `netmod-inet`, `netmod-lan`, ...             |
-| Network & Transport  | Ratman            | `ratman` (and the `ratmand` daemon)          |
-| Session              | Integration shims | `irdest-proxy`, `ratcat`, ...                |
-| Application          | Clients           | `irdest-ping`, `irdest-mblog`, ... your app? |
+| OSI Layer            | Irdest Layer      | Component(s)                                   |
+|----------------------|-------------------|------------------------------------------------|
+| Physical & Data link | Network drivers   | `netmod-inet`, `netmod-lan`, `netmod-lora` ... |
+| Network & Transport  | Ratman            | `ratmand` daemon, `ratman-client` SDK          |
+| Session              | Integration shims | `irdest-proxy`, `ratcat`, ...                  |
+| Application          | Clients           | `irdest-ping`, `irdest-mblog`, ... your app?   |
 
 
 ### Network drivers
 
 Network drivers establish and manage connections with peers via
-different underlying transport mechanisms (for example TCP
-connections, but also more low-level protocols such as PPP).  A driver
-(in the irdest jargon called a "netmod") is initialised and bound to
-the process running the irdest router, and long-running.
+different underlying transport mechanisms.  A driver (in the irdest
+jargon called a "netmod") is initialised and bound to the process
+running the irdest router, and long-running.
+
+This allows the core of Ratman to remain relatively platform agnostic,
+while letting platform-specific drivers handle any quirks of the
+connections that are being established.  For example, the
+`netmod-datalink` module uses NetworkManager to configure a wireless
+AP/ wireless connections to an existing host without user
+intervention.  Ratman itself doesn't need to understand how to talk to
+NetworkManager.
 
 Many different drivers can be active on the same device, as long as
-they are connected to the same router.  In the OSI model, this maps to
-layers 1 & 2.
+they are connected to the same router.  In the OSI model, this
+_roughly_ maps to layers 1 & 2.  It is absolutely possible to write a
+netmod for a higher level protocol (for example to tunnel Irdest
+traffic over XMPP).  But in most cases, these will be layer 1 & 2
+protocols.
 
 Currently a driver needs to be specifically added to `ratmand` and
 included at compile time.  We are working on a dynamic loading
 mechanism however (either via `.so` object loading or an IPC socket).
 
-### Irdest router
 
-Ratman is a decentralised packet router daemon `ratmand`.  It comes
-with a small set of utilities such as `ratcat` (a `netcat` analogue),
-`ratctl` (a `batctl` analogue), and a simple management web UI.
+### Ratman: the Irdest router
+
+Ratman/ `ratmand` is a decentralised packet router daemon.  It comes
+with a small set of utilities such as `ratcat` (a `netcat` analog),
+`ratctl` (a `batctl` analog), and a simple management web UI.
 
 Clients communicate with Ratman via a local TCP socket and protobuf
 envelope schema.  For most use-cases we recommend the
 [`ratman-client`] library.  Alternative implementations don't
-currently exist and this API is also extremely unstable (sorry in
-advance...)
+currently exist and this API is also extremely unstable, so please be
+aware of this for the time being!
 
-In the OSI model, this maps to layer 3 and 4.
+In the OSI model, this maps _roughly_ to layer 3 and 4.
 
 [`ratman-client`]: https://crates.io/crates/ratman-client
+
 
 ### Integration shims
 
@@ -94,6 +106,9 @@ examples of applications written _specifically_ for an Irdest network
 to inspire other developers, and showcase to users how these
 technologies can be used.  This also aims to make the on-boarding
 process less daunting.
+
+Currently the only graphical client is `irdest-mblog`, which
+implements a decentralised usenet-style forum model.
 
 
 ## What next?
