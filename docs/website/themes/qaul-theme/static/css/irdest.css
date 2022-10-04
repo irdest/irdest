@@ -204,15 +204,20 @@ h1:has(+ .download-header) {
 }
 
 .learn-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
+    /* display: flex; */
+    /* justify-content: space-between; */
     padding-bottom: 1rem;
-    margin-top: 0;
+    padding-right: 1ch;
+    background: rgba(224, 226, 226, 0.7);
+    margin: 0;
+    display: inline-block;
 }
 
-.learn-header > img {
-    transform: scaleY(-1);
+.learn-image {
+    /* background: black; */
+    height: 300px;
+    margin-bottom: -1.75em;
+    text-align: right;
 }
 
 
