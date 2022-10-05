@@ -36,7 +36,7 @@ protobuf = { version = "2.19", optional = true }
 clap = { version = "3.2", optional = true, features = ["derive", "wrap_help", "color", "suggestions"] }
 
 # GTK frontend only
-gtk = { version = "0.4.8", package = "gtk4", optional = true }
+gtk = { version = "0.4.8", package = "gtk4", features = ["v4_6"], optional = true }
 once_cell = { version = "1", optional = true }
 
 [build-dependencies]

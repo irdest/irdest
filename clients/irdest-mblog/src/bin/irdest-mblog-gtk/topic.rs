@@ -1,8 +1,10 @@
 use gtk::prelude::*;
 use gtk::{
-    builders::BoxBuilder, Align, Box as GtkBox, Button, Entry, Label as GtkLabel, Orientation,
-    Stack, StackSidebar,
+    builders::BoxBuilder, pango::WrapMode, Align, Box as GtkBox, Button, Entry, Frame,
+    Label as GtkLabel, Label, NaturalWrapMode, Orientation, PolicyType, ScrolledWindow, Stack,
+    StackSidebar,
 };
+use irdest_mblog::Post;
 
 /// Topics UI management container
 pub struct Topics {
@@ -26,13 +28,14 @@ impl Topics {
 }
 
 pub struct Topic {
-    inner: GtkBox,
+    inner: ScrolledWindow,
+    layout: GtkBox,
 }
 
 impl Topic {
     pub fn empty() -> Self {
         let footer = TopicFooter::new();
-        let inner = BoxBuilder::new()
+        let layout = BoxBuilder::new()
             .orientation(Orientation::Vertical)
             .spacing(8)
             .hexpand(true)
@@ -42,12 +45,36 @@ impl Topic {
             .halign(Align::Fill)
             .valign(Align::Fill)
             .build();
-        Self { inner }
+
+        let inner = ScrolledWindow::new();
+        inner.set_child(Some(&layout));
+        inner.set_hscrollbar_policy(PolicyType::Never);
+        inner.set_vscrollbar_policy(PolicyType::Always);
+
+        Self { layout, inner }
     }
 
-    pub fn add_message(&self, msg: &str) {
-        // TODO: create a frame, put the message in there, then add to
-        // the inner box
+    pub fn add_message(&self, msg: &Post) {
+        let frame = Frame::new(None);
+        frame.set_label(Some(msg.nick.as_str()));
+
+        let child = GtkBox::new(Orientation::Vertical, 0);
+        child.set_margin_start(16);
+        child.set_margin_end(16);
+        child.set_margin_top(8);
+        child.set_margin_bottom(8);
+
+        let text = Label::new(Some(msg.text.as_str()));
+        text.set_single_line_mode(false);
+        text.set_natural_wrap_mode(NaturalWrapMode::Word);
+        text.set_wrap_mode(WrapMode::WordChar);
+        text.set_selectable(true);
+        text.set_wrap(true);
+        text.set_halign(Align::Start);
+
+        child.append(&text);
+        frame.set_child(Some(&child));
+        self.layout.append(&frame);
     }
 }
 

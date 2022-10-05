@@ -9,7 +9,7 @@ use gtk::{
     builders::BoxBuilder, Application, ApplicationWindow, Box as GtkBox, Button, HeaderBar,
     Label as GtkLabel, Orientation, Stack, StackSidebar, Statusbar, Window,
 };
-use irdest_mblog::Lookup;
+use irdest_mblog::{Lookup, Post};
 
 pub struct MBlogWindow {
     inner: ApplicationWindow,
@@ -70,6 +70,24 @@ impl MBlogWindow {
         // Add all known topics to the list
         for topic in lookup.all() {
             let t = Topic::empty();
+            t.add_message(&Post {
+                nick: "Alice".into(),
+                text: "Is this thing on??".into(),
+                topic: "".into(),
+            });
+
+            t.add_message(&Post {
+                nick: "Bob".into(),
+                text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Arcu vitae elementum curabitur vitae nunc sed velit. Vel fringilla est ullamcorper eget nulla facilisi etiam. Hac habitasse platea dictumst quisque sagittis purus sit amet volutpat. Suscipit adipiscing bibendum est ultricies integer quis. Quam lacus suspendisse faucibus interdum posuere. Amet nulla facilisi morbi tempus iaculis. Laoreet non curabitur gravida arcu ac. Massa id neque aliquam vestibulum morbi blandit cursus risus. Eu volutpat odio facilisis mauris sit amet massa vitae tortor. Senectus et netus et malesuada fames. Amet nisl suscipit adipiscing bibendum. Amet volutpat consequat mauris nunc congue nisi vitae. Mauris nunc congue nisi vitae suscipit tellus mauris a. Sem et tortor consequat id porta nibh venenatis cras sed. Nisi vitae suscipit tellus mauris a diam maecenas sed. Dui ut ornare lectus sit amet est placerat in.".into(),
+                topic: "".into(),
+            });
+
+            t.add_message(&Post {
+                nick: "Alice".into(),
+                text: "Dude okay we get it, you studied Latin...".into(),
+                topic: "".into(),
+            });
+
             topics.add_topic(topic.as_str(), t);
         }
 
@@ -86,69 +104,3 @@ impl MBlogWindow {
         self.inner.present();
     }
 }
-
-// use glib::Object;
-// use gtk::{gio, glib, Application};
-
-// glib::wrapper! {
-//     pub struct Window(ObjectSubclass<imp::Window>)
-//         @extends gtk::ApplicationWindow, gtk::Window, gtk::Widget,
-//         @implements gio::ActionGroup, gio::ActionMap, gtk::Accessible, gtk::Buildable,
-//                     gtk::ConstraintTarget, gtk::Native, gtk::Root, gtk::ShortcutManager;
-// }
-
-// impl Window {
-//     pub fn new(app: &Application) -> Self {
-//         Object::new(&[("application", app)]).expect("Failed to create Window")
-//     }
-// }
-
-// mod imp {
-//     use glib::subclass::InitializingObject;
-//     use gtk::prelude::*;
-//     use gtk::subclass::prelude::*;
-//     use gtk::{glib, CompositeTemplate};
-
-//     // Object holding the state
-//     #[derive(CompositeTemplate, Default)]
-//     #[template(resource = "/org/irdest/irdest-mblog-gtk/window.ui")]
-//     pub struct Window {}
-
-//     // The central trait for subclassing a GObject
-//     #[glib::object_subclass]
-//     impl ObjectSubclass for Window {
-//         const NAME: &'static str = "IrdestMblogMainWindow";
-//         type Type = super::Window;
-//         type ParentType = gtk::ApplicationWindow;
-
-//         fn class_init(klass: &mut Self::Class) {
-//             klass.bind_template();
-//             klass.bind_template_callbacks();
-//         }
-
-//         fn instance_init(obj: &InitializingObject<Self>) {
-//             obj.init_template();
-//         }
-//     }
-
-//     #[gtk::template_callbacks]
-//     impl Window {
-//         #[template_callback]
-//         fn handle_button_clicked(button: &gtk::Button) {
-//             // Set the label to "Hello World!" after the button has been clicked on
-//             button.set_label("Hello World!");
-//         }
-//     }
-
-//     // Trait shared by all GObjects
-//     impl ObjectImpl for Window {}
-
-//     // Trait shared by all widgets
-//     impl WidgetImpl for Window {}
-
-//     // Trait shared by all windows
-//     impl WindowImpl for Window {}
-
-//     // Trait shared by all application windows
-//     impl ApplicationWindowImpl for Window {}
-// }
