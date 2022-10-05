@@ -24,7 +24,7 @@ of these layers.  **BUT...** the layers between the OSI model and
 Irdest don't map directly onto each other and are only meant to
 illustrate difference in hardware access, user access, and scope.
 
-![](/assets/overview.svg)
+![](../assets/overview.svg)
 
 [osi]: https://en.wikipedia.org/wiki/OSI_model
 
