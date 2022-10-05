@@ -84,6 +84,6 @@ impl EndpointExt for Endpoint {
 pub fn default_iface() -> Option<String> {
     let all = interfaces();
     all.into_iter()
-        .find(|e| e.is_up() && !e.is_loopback() && !e.ips.is_empty())
+        .find(|e| e.is_up() && !e.is_loopback() && e.ips.iter().any(|ip| ip.is_ipv6()))
         .map(|iface| iface.name)
 }
