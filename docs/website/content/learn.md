@@ -2,10 +2,15 @@
 Title: Learn about Irdest
 layout: learning
 Intro: |
-    Our documentation is split by target audience.  We would also like to
-    collect community resources, so if you write a guide, tutorial, etc
-    please get in touch about getting it linked on this page!
-User_Title: For end-users
+    This page outlines available Irdest documentation for both users
+    and developers.  If you are new to Irdest in general we recommend
+    you read the user manual first, even if you also want to develop
+    applications for Irdest.
+
+    We also want to list other community resources that are available
+    either here, or on the community page.  If you wrote a guide,
+    tutorial, or similar, please get in touch!
+User_Title: For users
 Devs_Title: For developers
 Users: |
     This manual is aimed at end-users of irdest.  It guides you through
@@ -23,9 +28,9 @@ Devs: |
     together.
     
     The developer manual gives a broad overview of concepts, 
-    components, and protocols in use by irdest internals.
+    components, and protocols in use by Irdest internals.
     
-    * [Ratman API docs](https://docs.rs/ratman-client/)
     * [Developer Manual](https://docs.irde.st/developer/)
+    * [Ratman API docs](https://docs.rs/ratman-client/)
     * [Bibliography](https://docs.irde.st/developer/technical/bib.html)
 ---

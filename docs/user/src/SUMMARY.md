@@ -5,10 +5,15 @@
 - [Concepts & Ideas](./concepts.md)
 - [Installation](./install/index.md)
   - [Build from source](./install/build.md)
-  - [Available clients](./install/clients.md)
+  - [Stand-alone installer](./install/stand-alone.md)
+  <!-- - [Available clients](./install/clients.md) -->
 - [Setup Guides](./guides/index.md)
   - [Basic setup](./guides/01_basic.md)
 - [How to](./how-to/index.md)
   - [Setup WiFi AP](./how-to/01_wifi.md)
   - [Setup LoRa wireless](./how-to/02_lora.md)
 - [Reference](./reference/index.md)
+  - [ratmand](./reference/ratmand.md)
+  - [ratcat](./reference/ratcat.md)
+  - [ratctl](./reference/ratctl.md)
+

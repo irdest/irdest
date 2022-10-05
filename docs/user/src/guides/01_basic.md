@@ -46,8 +46,8 @@ First, make sure that Ratman is configured to support `inet` peering!
 }
 ```
 
-Download [public-test-network.pm]() and place it next to the Ratman
-configuration.  After that, restart Ratman!
+Download [public-test-network.pm]() (coming soon!) and place it next
+to the Ratman configuration.  After that, restart Ratman!
 
 ```console
 $ systemctl --user restart ratmand

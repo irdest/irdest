@@ -101,7 +101,7 @@ follows
 Other buildable targets or features not enabled by default can be
 found in the [build reference].
 
-### Firmware
+## Firmware
 
 Note that Irdest contains some components that require embedded
 firmware.  This can be found in the `firmware` directory in the Irdest

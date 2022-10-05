@@ -1,19 +1,5 @@
 # Ratman Daemon
 
-The core component behind the Irdest project is `ratmand`, a
-stand-alone, decentralised routing daemon.  Ratman provides an
-alternative address space via 256bit cryptographic keys, while peering
-with different Ratman instances over a variety of transport
-mechanisms.
-
-Currently Ratman can only peer over an existing internet connection
-but this will not always be the case.
-
-
-## Installation
-
-Please refer to [the website](https://irde.st/downloads) on how to install Ratman.
-
 ## State
 
 Ratman stores some amount of state in: 
@@ -173,25 +159,3 @@ generally used.
    component.
  - `trace` -- includes individual step to each operation with no real
    limit on recurrence
-
-
-## Running Ratman with user startup
-
-Because `ratmand` is an alternative network stack, it needs to be
-running for your computer to send and receive messages from the
-network.
-
-Ideally you should install Ratman via your distribution package
-manager which _should_ include a service file.  But in case you are
-using the static binaries from the website, you can use this service
-file instead.
-
-
-```
-[Unit]
-Description = A decentralised and peer-to-peer packet router
-
-[Service]
-## Be sure to check the user manual for details on how to run ratmand
-ExecStart = /path/to/ratmand -f /path/to/peer.file
-```

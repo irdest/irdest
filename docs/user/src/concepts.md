@@ -32,7 +32,7 @@ messages by applications via direct links and intermediary routes.
 Importantly Ratman is not part of the kernel, which allows it to
 support a wider range of operating systems.
 
-*basic irdest network outline*
+![](irdest-network.png)
 
 Connecting different Ratman instances together is done via
 connection-specific "drivers".  Each driver allows Ratman to connect

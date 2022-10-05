@@ -2,7 +2,7 @@
 layout: page
 ---
 
-<div class="title-image"><img src="/img/tobi_delivers_325x350.png" height="350" /></div>
+<div class="title-image"><img src="/img/tobi_delivers_xtra.png" height="350" /></div>
 <h1 class="title-header">Irdest Community</h1>
 
 Do you have questions about irdest?  Trouble setting up your client?
