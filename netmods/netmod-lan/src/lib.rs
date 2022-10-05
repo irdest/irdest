@@ -28,14 +28,23 @@ pub struct Endpoint {
 
 impl Endpoint {
     /// Create a new endpoint and spawn a dispatch task
-    pub fn spawn(iface: &str, port: u16) -> Arc<Self> {
-        task::block_on(async move {
+    pub fn spawn(iface: Option<String>, port: u16) -> std::result::Result<Arc<Self>, ()> {
+        let iface_string = iface
+            .or_else(|| default_iface().map(|iface| {
+                info!("Auto-selected interface '{}' for local peer discovery.  Is this wrong?  Pass --discovery-iface to ratmand instead!", iface);
+                iface
+            }))
+            .ok_or_else(|| {
+                error!("Could not find an interface to bind on.");
+            })?;
+
+        Ok(task::block_on(async move {
             let addrs = Arc::new(AddrTable::new());
             Arc::new(Self {
-                socket: Socket::new(iface, port, Arc::clone(&addrs)).await,
+                socket: Socket::new(&iface_string, port, Arc::clone(&addrs)).await,
                 addrs,
             })
-        })
+        }))
     }
 
     #[cfg(test)]

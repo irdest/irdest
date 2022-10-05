@@ -173,23 +173,6 @@ pub fn build_cli() -> ArgMatches<'static> {
         .get_matches()
 }
 
-// Ok(()) -> all good
-// Err(_) -> emit warning but keep going
-pub async fn setup_local_discovery(
-    r: &Router,
-    c: &Config,
-) -> std::result::Result<(String, u16), String> {
-    let iface = c.discovery_iface.as_ref().map(Into::into).or_else(|| default_iface().map(|iface| {
-        info!("Auto-selected interface '{}' for local peer discovery.  Is this wrong?  Pass --discovery-iface to ratmand instead!", iface);
-        iface
-    })).ok_or("failed to determine interface to bind on".to_string())?;
-
-    r.add_endpoint(LanDiscovery::spawn(&iface, c.discovery_port))
-        .await;
-
-    Ok((iface, c.discovery_port))
-}
-
 pub async fn run_app(cfg: Config) -> std::result::Result<(), ()> {
     // Setup logging
     daemon::setup_logging(&cfg.verbosity, cfg.daemonize);
@@ -250,12 +233,8 @@ pub async fn run_app(cfg: Config) -> std::result::Result<(), ()> {
 
     // If local-discovery is enabled
     if !cfg.no_discovery {
-        match setup_local_discovery(&r, &cfg).await {
-            Ok((iface, port)) => debug!(
-                "Local peer discovery running on interface {}, port {}",
-                iface, port
-            ),
-            Err(e) => warn!("Failed to setup local peer discovery: {}", e),
+        if let Ok(ep) = LanDiscovery::spawn(cfg.discovery_iface, cfg.discovery_port) {
+            r.add_endpoint(ep).await;
         }
     }
 
