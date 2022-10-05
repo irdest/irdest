@@ -1572,7 +1572,7 @@ dependencies = [
  "async-trait",
  "bincode",
  "libc",
- "pnet 0.28.0",
+ "pnet_datalink 0.31.0",
  "ratman-netmod",
  "serde",
  "task-notify",

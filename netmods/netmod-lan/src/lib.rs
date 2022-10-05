@@ -18,7 +18,7 @@ pub(crate) use framing::{Envelope, FrameExt};
 use async_std::{sync::Arc, task};
 use async_trait::async_trait;
 use netmod::{Endpoint as EndpointExt, Frame, Result, Target};
-use pnet::datalink::interfaces;
+use pnet_datalink::interfaces;
 
 #[derive(Clone)]
 pub struct Endpoint {
