@@ -18,7 +18,7 @@ tracker][issues] or our [community mailing ist][mail]!
 There are several ways to install Irdest.  Check the instructions for
 your platform below.
 
-Currently only *Linux* systems running *systemd* are currently actively
+Currently only *Linux* systems running *systemd* are actively being
 tested on!
 
 

@@ -2,9 +2,12 @@
 
 A stand-alone way to install Ratman on a system.  The installer is
 included in the Irdest bundle and statically linked, which means it
-has no external dependencies.  Make sure that you download the bundle
-for the correct CPU architecture (onlny 64bit x86 and 64bit ARM
-available at the moment)!
+has no external dependencies.  You can download a bundle on the
+[website](https://irde.st/download/)!
+
+Make sure that you download the bundle for the correct CPU
+architecture (only 64bit x86 and 64bit ARM available at the moment)!
+
 
 ## Unpack bundle
 

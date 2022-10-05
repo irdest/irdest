@@ -38,7 +38,7 @@ Connecting different Ratman instances together is done via
 connection-specific "drivers".  Each driver allows Ratman to connect
 (or "peer") with other instances of Ratman.  For example `netmod-inet`
 allows Ratman to connect via the internet, `netmod-lora` via a [LoRa
-wireless](../guides/03-lora.md) modem, etc.
+wireless](../how-to/02-lora.md) modem, etc.
 
 Because Ratman is not part of your operating system specific
 applications are needed to interact with the Irdest network.  For this
@@ -47,9 +47,6 @@ receiving messages.  A simple utility program called `ratcat` is
 included in every Ratman installation.  Additionally there is a proxy
 service called `irdest-proxy` which can be used to tunnel IP network
 traffic through an Irdest network.
-
-Check the [available clients](../clients.md) page for details on what
-Irdest applications are available on your platform!
 
 
 ## Routing
