@@ -29,5 +29,3 @@ Devs: |
     * [Developer Manual](https://docs.irde.st/developer/)
     * [Bibliography](https://docs.irde.st/developer/technical/bib.html)
 ---
-
-

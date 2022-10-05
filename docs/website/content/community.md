@@ -2,13 +2,14 @@
 layout: page
 ---
 
-<h1 class="community-header">Irdest Community <img src="/img/tobi_delivers_325x350.png" /></h1>
-
+<div class="title-image"><img src="/img/tobi_delivers_325x350.png" height="350" /></div>
+<h1 class="title-header">Irdest Community</h1>
 
 Do you have questions about irdest?  Trouble setting up your client?
 Or do you want to help out with development?
 
-We have an active community on Matrix!  [Join the Matrix Space](https://matrix.to/#/#irdest:irde.st).
+We have an active community on Matrix!  [Join the Matrix
+Space](https://matrix.to/#/#irdest:irde.st).
 
 Alternatively you can find the most important channels linked directly
 below.  Currently none of the rooms are bridged to IRC.  We are

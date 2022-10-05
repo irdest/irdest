@@ -179,33 +179,11 @@ th {
     padding-right: 45px;
 }
 
-.download-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    padding-bottom: 1rem;
-    margin-top: 0;
-}
-
-h1:has(+ .download-header) {
+h1:has(+ .title-header) {
     display: none;
 }
 
-.community-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    padding-bottom: 1rem;
-    margin-top: 0;
-}
-
-.community-header > img {
-    transform: scaleX(-1);
-}
-
-.learn-header {
-    /* display: flex; */
-    /* justify-content: space-between; */
+.title-header {
     padding-bottom: 1rem;
     padding-right: 1ch;
     background: rgba(224, 226, 226, 0.7);
@@ -213,13 +191,11 @@ h1:has(+ .download-header) {
     display: inline-block;
 }
 
-.learn-image {
-    /* background: black; */
+.title-image {
     height: 300px;
     margin-bottom: -1.75em;
     text-align: right;
 }
-
 
 .not-web3 {
     display: flex;
@@ -227,51 +203,4 @@ h1:has(+ .download-header) {
     background: #FFFF00;
     font-weight: 800;
     height: 1.5rem;
-}
-
-.tabs {
-    position: relative;   
-    min-height: 200px; /* This part sucks */
-    clear: both;
-    margin: 25px 0;
-}
-
-.tab {
-    float: left;
-}
-
-.tab label {
-    background: black;
-    color: white;
-    padding: 10px; 
-    border: 1px solid black; 
-    margin-left: -1px; 
-    position: relative;
-    left: 1px; 
-}
-
-.tab [type=radio] {
-    display: none;   
-}
-
-.content {
-    position: absolute;
-    top: 28px;
-    left: 0;
-    background: #e0e2e2;
-    right: 0;
-    bottom: 0;
-    padding: 20px;
-    border: 1px solid black; 
-}
-
-[type=radio]:checked ~ label {
-    background: #2f556b;
-    color: white;
-    border-bottom: 1px solid black;
-    z-index: 2;
-}
-
-[type=radio]:checked ~ label ~ .content {
-    z-index: 1;
 }
