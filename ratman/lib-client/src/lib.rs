@@ -38,7 +38,7 @@ use async_std::{
     net::TcpStream,
     task,
 };
-pub use types::{api::Receive_Type, Address, Error, Message, Result, TimePair};
+pub use types::{api::Receive_Type, Address, Error, Message, Recipient, Result, TimePair};
 use types::{
     api::{
         self, ApiMessageEnum,
