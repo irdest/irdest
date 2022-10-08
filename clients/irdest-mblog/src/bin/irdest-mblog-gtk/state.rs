@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Result};
-use irdest_mblog::Message;
+use irdest_mblog::{Message, Recipient, NAMESPACE};
+use ratman_client::types::Recipient;
 use ratman_client::RatmanIpc;
 use std::convert::TryFrom;
 
@@ -15,9 +16,15 @@ impl AppState {
     }
 
     pub async fn next(&self) -> Option<Result<Message>> {
-        self.ipc
-            .next()
-            .await
-            .map(|(tt, ratmsg)| Message::try_from(&ratmsg))
+        self.ipc.next().await.and_then(|(tt, ratmsg)| {
+            // Filter out flood messages for the wrong namespace.
+            if let Recipient::Flood(ns) = ratmsg.get_recipient() {
+                if ns != NAMESPACE.into() {
+                    return None;
+                }
+            }
+
+            Some(Message::try_from(&ratmsg))
+        })
     }
 }
