@@ -1,16 +1,23 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
+use irdest_mblog::Message;
 use ratman_client::RatmanIpc;
+use std::convert::TryFrom;
 
 /// Central app state type which handles connection to Ratman
 pub struct AppState {
     ipc: RatmanIpc,
+    db: sled::Db,
 }
 
 impl AppState {
-    pub async fn new() -> Result<Self> {
-        let addr = irdest_mblog::load_or_create_addr().await?;
-        let ipc = RatmanIpc::default_with_addr(addr).await?;
+    pub fn new(ipc: ratman_client::RatmanIpc, db: sled::Db) -> Self {
+        Self { ipc, db }
+    }
 
-        Ok(Self { ipc })
+    pub async fn next(&self) -> Option<Result<Message>> {
+        self.ipc
+            .next()
+            .await
+            .map(|(tt, ratmsg)| Message::try_from(&ratmsg))
     }
 }
