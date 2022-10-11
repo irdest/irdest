@@ -173,6 +173,22 @@ a {
     height: 8rem;
 }
 
+/* we currently have only one table, so we just style that one */
+table {
+    border-collapse: collapse;
+}
+
+td:first-child, tg:first-child {
+    white-space: nowrap;
+    padding: .25rem;
+    padding-right: 1rem;
+    vertical-align: top;
+}
+
+tbody tr:nth-child(odd) {
+    background-color: #ccc;
+}
+
 th {
     border-bottom: 1.5px solid black;
     text-align: start;
