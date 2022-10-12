@@ -1,5 +1,4 @@
 use anyhow::{anyhow, Result};
-use async_std::stream::StreamExt;
 use async_std::sync::Arc;
 use gtk::{gio::SimpleAction, glib, prelude::*, Application};
 
@@ -31,10 +30,11 @@ async fn main() -> Result<()> {
 
     let state = Arc::new(crate::state::AppState::new(ipc, db));
     glib::MainContext::default().spawn_local(async move {
-        while let Some(msgr) = state.next().await {
-            match msgr {
-                Ok(msg) => println!("{:?}", msg),
-                Err(e) => eprintln!("stream error: {}", e),
+        loop {
+            match state.next().await {
+                Ok(None) => {}
+                Ok(Some(msg)) => println!("{:?}", msg),
+                Err(e) => eprintln!("input error: {}", e),
             }
         }
     });

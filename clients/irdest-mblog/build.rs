@@ -26,6 +26,7 @@ fn build_proto() {
         })
         .out_dir(out_path)
         .input("proto/feed.proto")
+        .input("proto/db.proto")
         .run()
         .expect("Failed to compile protobuf schemas!");
 }

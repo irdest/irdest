@@ -1,8 +1,9 @@
 mod lookup;
 
 use anyhow::{anyhow, Result};
+use chrono::{DateTime, Utc};
 use protobuf::Message as _;
-use ratman_client::{Address, RatmanIpc};
+use ratman_client::{Address, Id, RatmanIpc, TimePair};
 use std::convert::TryFrom;
 
 pub use lookup::Lookup;
@@ -18,15 +19,71 @@ pub mod proto {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Message {
+pub struct Envelope {
+    pub header: Header,
+    pub payload: Vec<u8>,
+}
+
+impl Envelope {
+    pub fn message(msg: &ratman_client::Message) -> Self {
+        Self {
+            header: Header::message(&msg),
+            payload: msg.get_payload(),
+        }
+    }
+
+    pub fn into_proto(self) -> proto::db::Envelope {
+        proto::db::Envelope {
+            id: self.header.id.as_bytes().into(),
+            time_ms: self.header.time.timestamp_millis(),
+            sender: self
+                .header
+                .sender
+                .map(|v| v.as_bytes().into())
+                .unwrap_or_default(),
+            payload: self.payload,
+            ..Default::default()
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Header {
+    pub id: Id,
+    pub time: DateTime<Utc>,
     pub sender: Option<Address>,
+}
+
+impl Header {
+    pub fn message(msg: &ratman_client::Message) -> Self {
+        Self {
+            id: msg.get_id(),
+            time: msg.get_time().local(),
+            sender: Some(msg.get_sender()),
+        }
+    }
+}
+
+impl Default for Header {
+    fn default() -> Self {
+        Self {
+            id: Id::random(),
+            time: TimePair::sending().local(),
+            sender: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Message {
+    pub header: Header,
     pub payload: Payload,
 }
 
 impl Message {
     pub fn new<T: Into<Payload>>(p: T) -> Self {
         Self {
-            sender: None,
+            header: Header::default(),
             payload: p.into(),
         }
     }
@@ -45,7 +102,7 @@ impl TryFrom<&ratman_client::Message> for Message {
     fn try_from(msg: &ratman_client::Message) -> Result<Self, Self::Error> {
         let p = proto::feed::Message::parse_from_bytes(&msg.get_payload()[..])?;
         Ok(Self {
-            sender: Some(msg.get_sender()),
+            header: Header::message(msg),
             payload: p.payload.ok_or(anyhow!("message has no payload?"))?.into(),
         })
     }

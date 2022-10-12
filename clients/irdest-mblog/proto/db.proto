@@ -1,0 +1,12 @@
+// SPDX-FileCopyrightText: 2022 embr <hi@liclac.eu>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
+syntax = "proto3";
+
+message Envelope {
+    bytes id = 1;
+    int64 time_ms = 2;
+    bytes sender = 3;
+    bytes payload = 4;
+}
