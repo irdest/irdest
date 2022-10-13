@@ -6,18 +6,24 @@ use std::convert::{TryFrom, TryInto};
 
 /// Central app state type which handles connection to Ratman
 pub struct AppState {
-    ipc: RatmanIpc,
+    ipc: Option<RatmanIpc>,
     db: sled::Db,
 }
 
 impl AppState {
+    pub fn new_offline(db: sled::Db) -> Self {
+        Self { ipc: None, db }
+    }
+
     pub fn new(ipc: ratman_client::RatmanIpc, db: sled::Db) -> Self {
-        Self { ipc, db }
+        Self { ipc: Some(ipc), db }
     }
 
     pub async fn next(&self) -> Result<Option<Message>> {
         if let Some((tt, ratmsg)) = self
             .ipc
+            .as_ref()
+            .unwrap()
             .next()
             .await
             // Drop flood messages for the wrong namespace.
@@ -62,5 +68,54 @@ impl AppState {
             topic_tree.insert(key, data)?;
         }
         Ok(Some(msg))
+    }
+
+    pub fn topics(&self) -> Vec<String> {
+        self.db
+            .tree_names()
+            .iter()
+            .filter_map(|key| std::str::from_utf8(key).ok())
+            .filter_map(|key| key.strip_prefix("posts_to/"))
+            .map(|key| key.into())
+            .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::AppState;
+    use irdest_mblog::{Header, Message, Payload, Post, NAMESPACE};
+    use protobuf::Message as _;
+    use ratman_client::{Address, Id, Recipient};
+
+    #[test]
+    fn test_store_post() {
+        let mut msg = Message {
+            header: Header::default(),
+            payload: Payload::Post(Post {
+                nick: "mike".into(),
+                text: "hello, joe".into(),
+                topic: "comp/lang/erlang".into(),
+            }),
+        };
+        let ratmsg = ratman_client::Message::new(
+            Address::random(),
+            Recipient::Flood(NAMESPACE.into()),
+            msg.clone().into_proto().write_to_bytes().unwrap(),
+            vec![],
+        );
+        msg.header = Header::message(&ratmsg);
+
+        let tmpdir =
+            tempdir::TempDir::new("irdest-mblog-state-test").expect("couldn't create tempdir");
+        let state = AppState::new_offline(sled::open(tmpdir).expect("couldn't open db"));
+        assert_eq!(state.topics(), Vec::<String>::new());
+
+        let msg2 = state
+            .parse_and_store(&ratmsg)
+            .expect("couldn't parse_and_store ratmsg")
+            .expect("no message returned from parse_and_store");
+        assert_eq!(msg, msg2);
+        assert_eq!(state.topics(), vec!["comp/lang/erlang"]);
     }
 }
