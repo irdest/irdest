@@ -143,9 +143,12 @@ mod tests {
         );
         msg.header = Header::message(&ratmsg);
 
+        // Open a blank database in a tempdir.
         let tmpdir =
             tempdir::TempDir::new("irdest-mblog-state-test").expect("couldn't create tempdir");
         let state = AppState::new_offline(sled::open(tmpdir).expect("couldn't open db"));
+
+        // Check that an empty database returns empty lists, not errors.
         assert_eq!(state.topics(), Vec::<String>::new());
         assert_eq!(
             state
@@ -156,6 +159,7 @@ mod tests {
             Vec::<Message>::new()
         );
 
+        // Parse and store the message.
         let msg2 = state
             .parse_and_store(&ratmsg)
             .expect("couldn't parse_and_store ratmsg")
@@ -168,7 +172,23 @@ mod tests {
                 .expect("couldn't iter_topic")
                 .map(|v| v.expect("error in iter_topic"))
                 .collect::<Vec<Message>>(),
-            vec![msg],
+            vec![msg.clone()],
+        );
+
+        // Re-parsing the same message shouldn't insert a duplicate.
+        let msg3 = state
+            .parse_and_store(&ratmsg)
+            .expect("couldn't parse_and_store ratmsg (2)")
+            .expect("no message returned from parse_and_store (2)");
+        assert_eq!(msg, msg3);
+        assert_eq!(state.topics(), vec!["comp/lang/erlang"]);
+        assert_eq!(
+            state
+                .iter_topic("comp/lang/erlang")
+                .expect("couldn't iter_topic")
+                .map(|v| v.expect("error in iter_topic"))
+                .collect::<Vec<Message>>(),
+            vec![msg.clone()],
         );
     }
 }
