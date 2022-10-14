@@ -20,14 +20,14 @@ impl AppState {
     }
 
     pub async fn next(&self) -> Result<Option<Message>> {
-        if let Some((tt, ratmsg)) = self
+        if let Some((_tt, ratmsg)) = self
             .ipc
             .as_ref()
             .unwrap()
             .next()
             .await
             // Drop flood messages for the wrong namespace.
-            .filter(|(tt, ratmsg)| match ratmsg.get_recipient() {
+            .filter(|(_tt, ratmsg)| match ratmsg.get_recipient() {
                 Recipient::Flood(ns) => ns == NAMESPACE.into(),
                 Recipient::Standard(_) => true,
             })
@@ -51,6 +51,9 @@ impl AppState {
 
         // Store new messages in the database.
         let msg = Message::try_from(ratmsg)?;
+        // This is an irrefutable pattern because the Payload enum exists specifically for
+        // future-proofing the wire format, although it currently only has a single option.
+        #[allow(irrefutable_let_patterns)]
         if let Payload::Post(ref post) = msg.payload {
             // Store the raw protobuf message in the database, so that if we receive a
             // message from the ~future~, we don't drop any newfangled fields on the floor.
@@ -120,10 +123,9 @@ impl Iterator for MessageIterator {
 #[cfg(test)]
 mod tests {
     use super::AppState;
-    use anyhow::Result;
     use irdest_mblog::{Header, Message, Payload, Post, NAMESPACE};
     use protobuf::Message as _;
-    use ratman_client::{Address, Id, Recipient};
+    use ratman_client::{Address, Recipient};
 
     #[test]
     fn test_store_post() {
