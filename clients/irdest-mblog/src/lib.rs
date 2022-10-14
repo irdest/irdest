@@ -1,7 +1,7 @@
 mod lookup;
 
 use anyhow::{anyhow, Result};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, TimeZone, Utc};
 use protobuf::Message as _;
 use ratman_client::{Address, Id, RatmanIpc, TimePair};
 use std::convert::TryFrom;
@@ -25,17 +25,21 @@ pub struct Envelope {
 }
 
 impl Envelope {
-    pub fn message(msg: &ratman_client::Message) -> Self {
+    pub fn from_ratmsg(ratmsg: &ratman_client::Message) -> Self {
         Self {
-            header: Header::message(&msg),
-            payload: msg.get_payload(),
+            header: Header::message(&ratmsg),
+            payload: ratmsg.get_payload(),
         }
+    }
+
+    pub fn parse_proto(data: &[u8]) -> Result<Self> {
+        Ok(proto::db::Envelope::parse_from_bytes(data)?.into())
     }
 
     pub fn into_proto(self) -> proto::db::Envelope {
         proto::db::Envelope {
             id: self.header.id.as_bytes().into(),
-            time_ms: self.header.time.timestamp_millis(),
+            time_ns: self.header.time.timestamp_nanos(),
             sender: self
                 .header
                 .sender
@@ -43,6 +47,27 @@ impl Envelope {
                 .unwrap_or_default(),
             payload: self.payload,
             ..Default::default()
+        }
+    }
+
+    pub fn into_message(self) -> Result<Message> {
+        let p = proto::feed::Message::parse_from_bytes(&self.payload[..])?;
+        Ok(Message {
+            header: self.header,
+            payload: p.payload.ok_or(anyhow!("message has no payload?"))?.into(),
+        })
+    }
+}
+
+impl From<proto::db::Envelope> for Envelope {
+    fn from(v: proto::db::Envelope) -> Self {
+        Self {
+            header: Header {
+                id: Id::from_bytes(&v.id[..]),
+                time: chrono::Utc.timestamp_nanos(v.time_ns),
+                sender: Some(Address::from_bytes(&v.sender[..])),
+            },
+            payload: v.payload,
         }
     }
 }

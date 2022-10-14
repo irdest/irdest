@@ -54,7 +54,9 @@ impl AppState {
         if let Payload::Post(ref post) = msg.payload {
             // Store the raw protobuf message in the database, so that if we receive a
             // message from the ~future~, we don't drop any newfangled fields on the floor.
-            let data = Envelope::message(&ratmsg).into_proto().write_to_bytes()?;
+            let data = Envelope::from_ratmsg(&ratmsg)
+                .into_proto()
+                .write_to_bytes()?;
 
             // 1 topic = 1 database tree.
             let topic_tree = self.db.open_tree(format!("posts_to/{}", post.topic))?;
@@ -79,11 +81,46 @@ impl AppState {
             .map(|key| key.into())
             .collect()
     }
+
+    pub fn iter_topic<S: AsRef<str>>(&self, name: S) -> Result<MessageIterator> {
+        Ok(MessageIterator::new(
+            self.db
+                .open_tree(format!("posts_to/{}", name.as_ref()))?
+                .iter(),
+        ))
+    }
+}
+
+pub struct MessageIterator {
+    inner: sled::Iter,
+}
+
+impl MessageIterator {
+    fn new(inner: sled::Iter) -> Self {
+        Self { inner }
+    }
+
+    fn next_(&mut self) -> Result<Option<Message>> {
+        if let Some((_, data)) = self.inner.next().transpose()? {
+            Ok(Some(Envelope::parse_proto(&data)?.into_message()?))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+impl Iterator for MessageIterator {
+    type Item = Result<Message>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next_().transpose()
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::AppState;
+    use anyhow::Result;
     use irdest_mblog::{Header, Message, Payload, Post, NAMESPACE};
     use protobuf::Message as _;
     use ratman_client::{Address, Id, Recipient};
@@ -110,6 +147,14 @@ mod tests {
             tempdir::TempDir::new("irdest-mblog-state-test").expect("couldn't create tempdir");
         let state = AppState::new_offline(sled::open(tmpdir).expect("couldn't open db"));
         assert_eq!(state.topics(), Vec::<String>::new());
+        assert_eq!(
+            state
+                .iter_topic("comp/lang/erlang")
+                .expect("couldn't iter_topic")
+                .map(|v| v.expect("error in iter_topic"))
+                .collect::<Vec<Message>>(),
+            Vec::<Message>::new()
+        );
 
         let msg2 = state
             .parse_and_store(&ratmsg)
@@ -117,5 +162,13 @@ mod tests {
             .expect("no message returned from parse_and_store");
         assert_eq!(msg, msg2);
         assert_eq!(state.topics(), vec!["comp/lang/erlang"]);
+        assert_eq!(
+            state
+                .iter_topic("comp/lang/erlang")
+                .expect("couldn't iter_topic")
+                .map(|v| v.expect("error in iter_topic"))
+                .collect::<Vec<Message>>(),
+            vec![msg],
+        );
     }
 }

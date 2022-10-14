@@ -6,7 +6,7 @@ syntax = "proto3";
 
 message Envelope {
     bytes id = 1;
-    int64 time_ms = 2;
+    int64 time_ns = 2;
     bytes sender = 3;
     bytes payload = 4;
 }
