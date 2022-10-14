@@ -65,7 +65,11 @@ impl From<proto::db::Envelope> for Envelope {
             header: Header {
                 id: Id::from_bytes(&v.id[..]),
                 time: chrono::Utc.timestamp_nanos(v.time_ns),
-                sender: Some(Address::from_bytes(&v.sender[..])),
+                sender: if v.sender.len() > 0 {
+                    Some(Address::from_bytes(&v.sender))
+                } else {
+                    None
+                },
             },
             payload: v.payload,
         }
