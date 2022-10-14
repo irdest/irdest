@@ -16,6 +16,10 @@ let
     ratmand = self.callPackage ./ratmand {};
     ratman-dashboard = self.callPackage ./ratman-dashboard {};
     ratman-tools = self.callPackage ./ratman-tools {};
+
+    nixosTests = super.nixosTests // {
+      simple-two-nodes = self.callPackage ./test/simple-two-nodes.nix {};
+    };
   };
 
 in

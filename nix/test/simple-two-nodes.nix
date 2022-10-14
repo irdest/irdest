@@ -2,11 +2,9 @@
 # SPDX-FileCopyrightText: 2022 Yureka Lilian <yuka@yuka.dev>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+{ pkgs ? import ../. }:
 
-let
-  pkgs = import ../.;
-
-in pkgs.nixosTest {
+pkgs.nixosTest {
   name = "ratman-two-nodes";
 
   nodes =
