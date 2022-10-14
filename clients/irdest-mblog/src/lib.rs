@@ -3,7 +3,7 @@ mod lookup;
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, TimeZone, Utc};
 use protobuf::Message as _;
-use ratman_client::{Address, Id, RatmanIpc, TimePair};
+use ratman_client::{Address, Id, RatmanIpc, Recipient, TimePair};
 use std::convert::TryFrom;
 
 pub use lookup::Lookup;
@@ -45,6 +45,20 @@ impl Envelope {
                 .sender
                 .map(|v| v.as_bytes().into())
                 .unwrap_or_default(),
+            recipient_type: match &self.header.recipient {
+                &Recipient::Flood(_) => proto::db::RecipientType::RECIPIENT_FLOOD,
+                &Recipient::Standard(_) => proto::db::RecipientType::RECIPIENT_STANDARD,
+            },
+            recipients: match self.header.recipient {
+                // Don't store the address if it's Flood(NAMESPACE); it's implicit.
+                Recipient::Flood(a) if a.as_bytes() == &NAMESPACE[..] => vec![].into(),
+                Recipient::Flood(a) => vec![a.as_bytes().into()].into(),
+                Recipient::Standard(aa) => aa
+                    .iter()
+                    .map(|a| a.as_bytes().into())
+                    .collect::<Vec<_>>()
+                    .into(),
+            },
             payload: self.payload,
             ..Default::default()
         }
@@ -70,6 +84,28 @@ impl From<proto::db::Envelope> for Envelope {
                 } else {
                     None
                 },
+                recipient: match v.recipient_type {
+                    proto::db::RecipientType::RECIPIENT_FLOOD => {
+                        // Note: We don't store an address if the destination is Flood(NAMESPACE),
+                        // and assume that any Flood message without an address is for NAMESPACE,
+                        // as this saves 32b + overhead/message for nearly 100% of all messages.
+                        //
+                        // As of writing, we discard all incoming messages for other namespaces,
+                        // but this code will correctly handle them anyway if one is in the DB.
+                        Recipient::Flood(Address::from_bytes(
+                            v.recipients
+                                .first()
+                                .map(|b| &b[..])
+                                .unwrap_or(&NAMESPACE[..]),
+                        ))
+                    }
+                    proto::db::RecipientType::RECIPIENT_STANDARD => Recipient::Standard(
+                        v.recipients
+                            .iter()
+                            .map(|b| Address::from_bytes(&b[..]))
+                            .collect(),
+                    ),
+                },
             },
             payload: v.payload,
         }
@@ -81,6 +117,7 @@ pub struct Header {
     pub id: Id,
     pub time: DateTime<Utc>,
     pub sender: Option<Address>,
+    pub recipient: Recipient,
 }
 
 impl Header {
@@ -89,6 +126,7 @@ impl Header {
             id: msg.get_id(),
             time: msg.get_time().local(),
             sender: Some(msg.get_sender()),
+            recipient: msg.get_recipient(),
         }
     }
 }
@@ -99,6 +137,7 @@ impl Default for Header {
             id: Id::random(),
             time: TimePair::sending().local(),
             sender: None,
+            recipient: Recipient::Flood(NAMESPACE.into()),
         }
     }
 }
@@ -233,5 +272,106 @@ pub async fn load_or_create_addr() -> Result<Address> {
         // Something else went wrong, eg. the file has the wrong permissions set.
         // Don't attempt to clobber it; tell the user and let them figure it out.
         Err(e) => Err(e.into()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ratman_client::Recipient;
+
+    #[test]
+    // The single most common recipient is Flood(NAMESPACE), so we special-case that:
+    // - Envelope->Proto should leave the recipient address field empty.
+    // - Proto->Envelope should decode a missing Flood scope as NAMESPACE.
+    fn test_envelope_proto_flood_our_namespace() {
+        let envl = Envelope {
+            header: Header::default(),
+            payload: vec![],
+        };
+        assert_eq!(envl.header.recipient, Recipient::Flood(NAMESPACE.into()));
+
+        let penvl = envl.clone().into_proto();
+        assert_eq!(
+            penvl.recipient_type,
+            super::proto::db::RecipientType::RECIPIENT_FLOOD
+        );
+        assert_eq!(penvl.get_recipients(), Vec::<Vec<u8>>::new());
+
+        let envl2: Envelope = penvl.into();
+        assert_eq!(envl, envl2);
+    }
+
+    #[test]
+    // Encoding a message to Flood(something else) should round-trip that namespace.
+    // This currently can't actually happen, but we should handle it anyway.
+    fn test_envelope_proto_flood_other_namespace() {
+        let mut envl = Envelope {
+            header: Header::default(),
+            payload: vec![],
+        };
+        let ns: Vec<u8> = NAMESPACE.iter().rev().copied().collect();
+        envl.header.recipient = Recipient::Flood(Address::from_bytes(&ns));
+
+        let penvl = envl.clone().into_proto();
+        assert_eq!(
+            penvl.recipient_type,
+            super::proto::db::RecipientType::RECIPIENT_FLOOD
+        );
+        assert_eq!(penvl.get_recipients(), vec![ns]);
+
+        let envl2: Envelope = penvl.into();
+        assert_eq!(envl, envl2);
+    }
+
+    #[test]
+    // Make sure we can encode recipient=Standard(*) messages to a single recipient.
+    fn test_envelope_proto_standard_one() {
+        let mut envl = Envelope {
+            header: Header::default(),
+            payload: vec![],
+        };
+        let rcpt = Address::random();
+        envl.header.recipient = Recipient::Standard(vec![rcpt]);
+
+        let penvl = envl.clone().into_proto();
+        assert_eq!(
+            penvl.recipient_type,
+            super::proto::db::RecipientType::RECIPIENT_STANDARD
+        );
+        assert_eq!(penvl.get_recipients(), vec![Vec::from(rcpt.as_bytes())]);
+
+        let envl2: Envelope = penvl.into();
+        assert_eq!(envl, envl2);
+    }
+
+    #[test]
+    // Make sure we can encode recipient=Standard(*) messages to a multiple recipients.
+    fn test_envelope_proto_standard_multi() {
+        let mut envl = Envelope {
+            header: Header::default(),
+            payload: vec![],
+        };
+        let rcpt1 = Address::random();
+        let rcpt2 = Address::random();
+        let rcpt3 = Address::random();
+        envl.header.recipient = Recipient::Standard(vec![rcpt1, rcpt2, rcpt3]);
+
+        let penvl = envl.clone().into_proto();
+        assert_eq!(
+            penvl.recipient_type,
+            super::proto::db::RecipientType::RECIPIENT_STANDARD
+        );
+        assert_eq!(
+            penvl.get_recipients(),
+            vec![
+                Vec::from(rcpt1.as_bytes()),
+                Vec::from(rcpt2.as_bytes()),
+                Vec::from(rcpt3.as_bytes())
+            ]
+        );
+
+        let envl2: Envelope = penvl.into();
+        assert_eq!(envl, envl2);
     }
 }

@@ -8,5 +8,12 @@ message Envelope {
     bytes id = 1;
     int64 time_ns = 2;
     bytes sender = 3;
-    bytes payload = 4;
+    RecipientType recipient_type = 4;
+    repeated bytes recipients = 5;
+    bytes payload = 6;
+}
+
+enum RecipientType {
+    RECIPIENT_FLOOD = 0;
+    RECIPIENT_STANDARD = 1;
 }
