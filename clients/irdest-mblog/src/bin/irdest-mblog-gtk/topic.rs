@@ -1,12 +1,17 @@
+use async_std::sync::Arc;
 use gtk::prelude::*;
 use gtk::{
     builders::BoxBuilder, pango::WrapMode, Align, Box as GtkBox, Button, Entry, Frame,
     Label as GtkLabel, Label, NaturalWrapMode, Orientation, PolicyType, ScrolledWindow, Stack,
-    StackSidebar,
+    StackSidebar, Viewport, Widget,
 };
 use irdest_mblog::Post;
+use std::collections::BTreeSet;
+
+use crate::state::AppState;
 
 /// Topics UI management container
+#[derive(Clone)]
 pub struct Topics {
     pub sidebar: StackSidebar,
     pub stack: Stack,
@@ -22,6 +27,23 @@ impl Topics {
         Self { stack, sidebar }
     }
 
+    pub async fn setup_notifier(&self, state: Arc<AppState>) {
+        let previous_topics: BTreeSet<_> = state.topics().into_iter().collect();
+
+        while let Some(_) = state.wait_topics().await {
+            // When this loop runs we need to query topics from the
+            // state database and add any new topics (topics can't be
+            // deleted/ hidden for now)
+
+            let new_topics: BTreeSet<_> = state.topics().into_iter().collect();
+            let diff_topics = new_topics.difference(&previous_topics);
+
+            for topic in diff_topics {
+                self.add_topic(topic.as_str(), Topic::empty());
+            }
+        }
+    }
+
     pub fn add_topic(&self, name: &str, child: Topic) {
         self.stack.add_titled(&child.inner, Some(name), name);
     }
@@ -29,29 +51,15 @@ impl Topics {
 
 pub struct Topic {
     inner: ScrolledWindow,
-    layout: GtkBox,
 }
 
 impl Topic {
     pub fn empty() -> Self {
         let footer = TopicFooter::new();
-        let layout = BoxBuilder::new()
-            .orientation(Orientation::Vertical)
-            .spacing(8)
-            .hexpand(true)
-            .vexpand(true)
-            .margin_start(32)
-            .margin_end(32)
-            .halign(Align::Fill)
-            .valign(Align::Fill)
-            .build();
-
         let inner = ScrolledWindow::new();
-        inner.set_child(Some(&layout));
-        inner.set_hscrollbar_policy(PolicyType::Never);
-        inner.set_vscrollbar_policy(PolicyType::Always);
-
-        Self { layout, inner }
+        let this = Self { inner };
+        this.clear();
+        this
     }
 
     pub fn add_message(&self, msg: &Post) {
@@ -68,13 +76,35 @@ impl Topic {
         text.set_single_line_mode(false);
         text.set_natural_wrap_mode(NaturalWrapMode::Word);
         text.set_wrap_mode(WrapMode::WordChar);
-        text.set_selectable(true);
+        // text.set_selectable(true); // this causes some issues where it auto-selects the first message
         text.set_wrap(true);
         text.set_halign(Align::Start);
 
         child.append(&text);
         frame.set_child(Some(&child));
-        self.layout.append(&frame);
+
+        let inner_child = self.inner.child().unwrap();
+        let inner_viewport = inner_child.downcast_ref::<Viewport>().unwrap();
+        let viewport_child = inner_viewport.child().unwrap();
+        let layout_box = viewport_child.downcast_ref::<GtkBox>().unwrap();
+        layout_box.append(&frame);
+    }
+
+    pub fn clear(&self) {
+        let layout = BoxBuilder::new()
+            .orientation(Orientation::Vertical)
+            .spacing(8)
+            .hexpand(true)
+            .vexpand(true)
+            .margin_start(32)
+            .margin_end(32)
+            .halign(Align::Fill)
+            .valign(Align::Fill)
+            .build();
+
+        self.inner.set_child(Some(&layout));
+        self.inner.set_hscrollbar_policy(PolicyType::Never);
+        self.inner.set_vscrollbar_policy(PolicyType::Always);
     }
 }
 

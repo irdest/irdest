@@ -29,11 +29,25 @@ async fn main() -> Result<()> {
     println!("Running with address: {}", addr);
 
     let state = Arc::new(crate::state::AppState::new(ipc, db));
+
+    let receiver_state = Arc::clone(&state);
     glib::MainContext::default().spawn_local(async move {
+        let previous_topics = receiver_state.topics();
+
         loop {
-            match state.next().await {
+            match receiver_state.next().await {
                 Ok(None) => {}
-                Ok(Some(msg)) => println!("{:?}", msg),
+                Ok(Some(msg)) => {
+                    let new_topics = receiver_state.topics();
+
+                    // If a new topic was added, notify topics to re-draw
+                    if new_topics.len() > previous_topics.len() {
+                        receiver_state.notify_topics();
+                    }
+
+                    // Afterwards notify the topic that received a new message
+                    receiver_state.notify_dirty(&msg.as_post().topic);
+                }
                 Err(e) => eprintln!("input error: {}", e),
             }
         }
@@ -44,8 +58,8 @@ async fn main() -> Result<()> {
     action.connect_activate(glib::clone!(@weak app => move |_, _| app.quit()));
     app.add_action(&action);
 
-    app.connect_activate(|app| {
-        let window = window::MBlogWindow::new(app);
+    app.connect_activate(move |app| {
+        let window = window::MBlogWindow::new(app, Arc::clone(&state));
         window.show();
     });
 

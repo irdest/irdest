@@ -1,4 +1,8 @@
 use anyhow::Result;
+use async_std::{
+    channel::{bounded, Receiver, Sender},
+    sync::Arc,
+};
 use irdest_mblog::{Envelope, Message, Payload, NAMESPACE};
 use protobuf::Message as _;
 use ratman_client::{RatmanIpc, Recipient};
@@ -8,15 +12,49 @@ use std::convert::{TryFrom, TryInto};
 pub struct AppState {
     ipc: Option<RatmanIpc>,
     db: sled::Db,
+    topics_notify: (Sender<()>, Receiver<()>),
+    dirty_notify: (Sender<String>, Receiver<String>),
 }
 
 impl AppState {
     pub fn new_offline(db: sled::Db) -> Self {
-        Self { ipc: None, db }
+        let topics_notify = bounded(2);
+        let dirty_notify = bounded(2);
+        Self {
+            ipc: None,
+            db,
+            topics_notify,
+            dirty_notify,
+        }
     }
 
     pub fn new(ipc: ratman_client::RatmanIpc, db: sled::Db) -> Self {
-        Self { ipc: Some(ipc), db }
+        let topics_notify = bounded(2);
+        let dirty_notify = bounded(2);
+        Self {
+            ipc: Some(ipc),
+            db,
+            topics_notify,
+            dirty_notify,
+        }
+    }
+
+    /// Notify the topics poller that a new topic was discovered
+    pub async fn notify_topics(&self) {
+        self.topics_notify.0.send(()).await;
+    }
+
+    pub async fn wait_topics(self: &Arc<Self>) -> Option<()> {
+        self.topics_notify.1.recv().await.ok()
+    }
+
+    /// Notify the re-draw poller that `t` is a dirty dirty topic uwu
+    pub async fn notify_dirty(&self, t: &String) {
+        self.dirty_notify.0.send(t.clone()).await;
+    }
+
+    pub async fn wait_dirty(&self) -> Option<String> {
+        self.dirty_notify.1.recv().await.ok()
     }
 
     pub async fn next(&self) -> Result<Option<Message>> {

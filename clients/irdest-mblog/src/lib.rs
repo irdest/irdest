@@ -162,6 +162,12 @@ impl Message {
             ..Default::default()
         }
     }
+
+    pub fn as_post(&self) -> &Post {
+        match self.payload {
+            Payload::Post(ref p) => p,
+        }
+    }
 }
 
 impl TryFrom<&ratman_client::Message> for Message {

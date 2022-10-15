@@ -15,8 +15,7 @@ impl Lookup {
     /// Take a list of Strings in the format of
     /// `/category/namespace/topic` and parse them into dedicated
     /// lookup tables for each type.
-    // TODO: hook this up to Ratman/ the database
-    pub fn populate(input: Vec<&str>) -> Self {
+    pub fn populate(input: Vec<String>) -> Self {
         input
             .into_iter()
             .filter_map(|s| {
