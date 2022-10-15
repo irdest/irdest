@@ -3,28 +3,14 @@
 , rsync
 }:
 
-stdenv.mkDerivation rec {
-  pname = "irdest-website";
-  version = "0.0.0";
-
-  src = ../../docs/website;
-
-  buildInputs = [
-    hugo
-    rsync
-  ];
-
-  HUGO_DISABLELANGUAGES = "ar";
-
-  buildPhase = ''
-    runHook preBuild
-    hugo
-    runHook postBuild
-  '';
-
-  installPhase = ''
-    runHook preInstall
-    rsync -a ./public/ $out/
-    runHook postInstall
-  '';
+let
+  npm2nix = import (builtins.fetchGit {
+    url = "https://github.com/nix-community/npmlock2nix";
+    rev = "5c4f247688fc91d665df65f71c81e0726621aaa8";
+  }) {};
+in
+npm2nix.build {
+  src = ../../docs/website-new;
+  installPhase = "mkdir $out && cp -r dist $out";
+  buildCommands = [ "env XDG_CONFIG_HOME=.tmp npm run build" ];
 }
