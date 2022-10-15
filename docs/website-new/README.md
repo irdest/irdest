@@ -1,8 +1,5 @@
 # irdest-website
 
-This README outlines the details of collaborating on this Ember application.
-A short introduction of this app could easily go here.
-
 ## Prerequisites
 
 You will need the following things properly installed on your computer.
@@ -11,27 +8,27 @@ You will need the following things properly installed on your computer.
 * [Node.js](https://nodejs.org/) (with npm)
 * [Ember CLI](https://cli.emberjs.com/release/)
 * [Google Chrome](https://google.com/chrome/)
+* [NixOS](https://nixos.org/)
 
 ## Installation
 
-* `git clone <repository-url>` this repository
-* `cd irdest-website`
+* `nix-shell`
 * `npm install`
 
 ## Running / Development
 
-* `ember serve`
+* `npx ember serve`
 * Visit your app at [http://localhost:4200](http://localhost:4200).
 * Visit your tests at [http://localhost:4200/tests](http://localhost:4200/tests).
 
 ### Code Generators
 
-Make use of the many generators for code, try `ember help generate` for more details
+Make use of the many generators for code, try `npx ember help generate` for more details
 
 ### Running Tests
 
-* `ember test`
-* `ember test --server`
+* `npx ember test`
+* `npx ember test --server`
 
 ### Linting
 
@@ -40,12 +37,12 @@ Make use of the many generators for code, try `ember help generate` for more det
 
 ### Building
 
-* `ember build` (development)
-* `ember build --environment production` (production)
+* `npx ember build` (development)
+* `npx ember build --environment production` (production)
 
 ### Deploying
 
-Specify what it takes to deploy your app.
+We have a nix derivation. So just do `nix-build nix -A irdest-website` in the repo root.
 
 ## Further Reading / Useful Links
 
