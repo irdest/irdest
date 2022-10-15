@@ -1,0 +1,222 @@
+html, body {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  background: #e0e2e2;
+  min-height: 100vh;
+  font-family: "TypoPRO Source Sans Pro", sans-serif;
+  font-size: 1.2rem;
+  font-weight: 300;
+}
+
+/* strong {
+  font-weight: 400;
+}
+
+em {
+  font-weight: 300;
+} */
+
+dt {
+  margin-top: 1em;
+  font-weight: bold;
+}
+
+p,li {
+  line-height: 1.25em;
+}
+
+.wrap {
+  width: 78ch;
+  max-width: 100%;
+}
+
+.block {
+  display: flex;
+  flex-grow: 1;
+  justify-content: center;
+  /* align-items: center; */
+  padding: min(2rem, 5vw);
+}
+
+header.block, footer.block {
+  flex-grow: 0;
+  background: black;
+  color: #EFEFEF;
+}
+
+.logo {
+  font-family: serif;
+  font-size: 4.5em;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.navbar a {
+  text-decoration: none;
+  color: #EFEFEF;
+}
+
+.navbar-links {
+  display: flex;
+  align-items: baseline;
+  column-gap: 1rem;
+  flex-wrap: wrap;
+  text-align: right;
+  line-height: 1.5em;
+  margin-left: auto;
+}
+
+.navbar-link {
+  text-decoration: none;
+  border-bottom: 1px solid #EFEFEF;
+  color: #EFEFEF;
+  /* margin-left: 1em; */
+}
+
+.navbar-link:visited {
+  color: #EFEFEF;
+}
+
+.title h1 {
+  font-size: 1.75em;
+  margin-top: 1rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: solid 1px white;
+}
+
+.title p {
+  margin: 0;
+}
+
+.block-intro {
+  background: #2f556b;
+  color: #EFEFEF;
+}
+
+.intro-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  line-height: 1.5rem;
+}
+
+@media (max-width: 450px) {
+  .intro-item {
+      flex-direction: column;
+  }
+}
+
+.intro-item img {
+  padding-right: 2em;
+  padding-top: .5rem;
+  padding-bottom: .5em;
+  color: #EFEFEF;
+  height: 4em;
+}
+
+.intro-item a {
+  color: white;
+}
+
+.intro-col h2 {
+  margin: 0.1em 0;
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.intro-col p { margin: 0.5em 0; }
+
+.block-content {
+  flex-grow: 1;
+}
+
+.block-content h1 {
+  font-size: 1.75em;
+}
+
+.block-content p {
+  line-height: 1.4em;
+  margin-bottom: 1.25em;
+}
+
+.block-contribute {
+  background: #582f6b;
+  color: #EFEFEF;
+}
+
+a {
+  color: inherit;
+}
+
+.twocol {
+  display: flex;
+}
+
+.col-padding {
+  margin: 1em;
+}
+
+.sponsors {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+}
+
+.sponsor {
+  padding: 1rem;
+  height: 8rem;
+}
+
+/* we currently have only one table, so we just style that one */
+table {
+  border-collapse: collapse;
+}
+
+td:first-child, tg:first-child {
+  white-space: nowrap;
+  padding: .25rem;
+  padding-right: 1rem;
+  vertical-align: top;
+}
+
+tbody tr:nth-child(odd) {
+  background-color: #ccc;
+}
+
+th {
+  border-bottom: 1.5px solid black;
+  text-align: start;
+  padding-right: 45px;
+}
+
+h1:has(+ .title-header) {
+  display: none;
+}
+
+.title-header {
+  padding-bottom: 1rem;
+  padding-right: 1ch;
+  background: rgba(224, 226, 226, 0.7);
+  margin: 0;
+  display: inline-block;
+}
+
+.title-image {
+  height: 300px;
+  margin-bottom: -1.75em;
+  text-align: right;
+}
+
+.not-web3 {
+  display: flex;
+  flex-direction: column;
+  background: #FFFF00;
+  font-weight: 800;
+  height: 1.5rem;
+}
