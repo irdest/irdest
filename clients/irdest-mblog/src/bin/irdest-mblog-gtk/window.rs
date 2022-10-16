@@ -78,7 +78,15 @@ impl MBlogWindow {
             let topics = topics.clone();
             let state = Arc::clone(&state);
 
-            glib::MainContext::default().spawn_local(async move {});
+            glib::MainContext::default().spawn_local(async move {
+                while let Some(redraw_topic) = state.wait_dirty().await {
+                    let t = topics.get_topic(redraw_topic.as_str()).unwrap();
+                    t.clear();
+                    for msg in state.iter_topic(redraw_topic) {
+                        t.add_message(msg);
+                    }
+                }
+            });
         }
 
         let header = Header::new(inner.clone(), Arc::clone(&lookup));

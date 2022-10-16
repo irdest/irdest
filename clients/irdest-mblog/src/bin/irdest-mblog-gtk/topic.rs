@@ -6,7 +6,8 @@ use gtk::{
     StackSidebar, Viewport, Widget,
 };
 use irdest_mblog::Post;
-use std::collections::BTreeSet;
+use std::sync::MutexGuard;
+use std::{collections::BTreeSet, sync::Mutex};
 
 use crate::state::AppState;
 
@@ -15,16 +16,22 @@ use crate::state::AppState;
 pub struct Topics {
     pub sidebar: StackSidebar,
     pub stack: Stack,
+    data: Mutex<BTreeMap<String, Topic>>,
 }
 
 impl Topics {
     pub fn new() -> Topics {
         let stack = Stack::new();
         let sidebar = StackSidebar::new();
+        let data = Default::default();
         sidebar.set_stack(&stack);
         stack.set_vhomogeneous(true);
 
-        Self { stack, sidebar }
+        Self {
+            stack,
+            sidebar,
+            data,
+        }
     }
 
     pub async fn setup_notifier(&self, state: Arc<AppState>) {
@@ -46,9 +53,15 @@ impl Topics {
 
     pub fn add_topic(&self, name: &str, child: Topic) {
         self.stack.add_titled(&child.inner, Some(name), name);
+        self.data.lock().unwrap().insert(name.into(), child);
+    }
+
+    pub fn get_topic(&self, name: &str) -> Option<Topic> {
+        self.data.lock().ok()?.get(name).cloned()
     }
 }
 
+#[derive(Clone)]
 pub struct Topic {
     inner: ScrolledWindow,
 }
