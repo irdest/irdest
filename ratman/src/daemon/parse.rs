@@ -21,6 +21,7 @@ use types::{
 
 async fn handle_send(r: &Router, online: &OnlineMap, _self: Address, send: Send) -> Result<()> {
     debug!("Queuing message to send");
+    let mirror = send.mirror;
     for msg in transform::send_to_message(send) {
         let Message {
             ref id,
@@ -43,8 +44,8 @@ async fn handle_send(r: &Router, online: &OnlineMap, _self: Address, send: Send)
                 ));
 
                 for (id, ref mut io) in online.lock().await.iter_mut() {
-                    if io.is_none() && continue {}
-                    if id == &_self && continue {}
+                    if io.is_none() && continue {} // skip if the endpoint is unavailable
+                    if id == &_self && !mirror && continue {} // skip if recipient is self and mirror = false
                     if let Err(e) = forward_recv(io.as_mut().unwrap().as_io(), recv.clone()).await {
                         error!("Failed to forward received message: {}", e);
                     }

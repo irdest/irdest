@@ -13,10 +13,11 @@ use crate::Address;
 
 //////////// SEND type
 
-fn send(msg: Message, t: Send_Type, scope: Option<Address>) -> Send {
+fn send(msg: Message, t: Send_Type, scope: Option<Address>, mirror: bool) -> Send {
     let mut send = Send::new();
     send.set_field_type(t);
     send.set_msg(msg);
+    send.set_mirror(mirror);
     if let Some(scope) = scope {
         send.set_scope(scope.as_bytes().to_vec());
     }
@@ -26,12 +27,12 @@ fn send(msg: Message, t: Send_Type, scope: Option<Address>) -> Send {
 
 /// Create a new default send message
 pub fn send_default(msg: Message) -> Send {
-    send(msg, Send_Type::DEFAULT, None)
+    send(msg, Send_Type::DEFAULT, None, false)
 }
 
 /// Create a new flood send message
-pub fn send_flood(msg: Message, scope: Address) -> Send {
-    send(msg, Send_Type::FLOOD, Some(scope))
+pub fn send_flood(msg: Message, scope: Address, mirror: bool) -> Send {
+    send(msg, Send_Type::FLOOD, Some(scope), mirror)
 }
 
 //////////// RECEIVE type

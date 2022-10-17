@@ -158,7 +158,7 @@ impl RatmanIpc {
     }
 
     /// Send some data to a remote peer
-    pub async fn flood(&self, namespace: Address, payload: Vec<u8>) -> Result<()> {
+    pub async fn flood(&self, namespace: Address, payload: Vec<u8>, mirror: bool) -> Result<()> {
         let msg = api::api_send(api::send_flood(
             Message::new(
                 self.addr,
@@ -168,6 +168,7 @@ impl RatmanIpc {
             )
             .into(),
             namespace,
+            mirror
         ));
 
         write_with_length(&mut self.socket.clone(), &encode_message(msg)?).await?;
