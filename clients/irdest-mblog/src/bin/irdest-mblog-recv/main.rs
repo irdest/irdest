@@ -21,7 +21,7 @@ async fn main() -> Result<()> {
     let addr = if let Some(addr_str) = args.addr {
         Address::from_string(&addr_str)
     } else {
-        irdest_mblog::load_or_create_addr().await?
+        irdest_mblog::load_or_create_addr().await?.1
     };
 
     let ipc = RatmanIpc::default_with_addr(addr).await?;

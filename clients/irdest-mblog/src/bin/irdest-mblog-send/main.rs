@@ -33,7 +33,7 @@ async fn main() -> Result<()> {
     let addr = if let Some(addr_str) = args.addr {
         Address::from_string(&addr_str)
     } else {
-        irdest_mblog::load_or_create_addr().await?
+        irdest_mblog::load_or_create_addr().await?.1
     };
 
     // Create a message.
@@ -46,7 +46,7 @@ async fn main() -> Result<()> {
     // Connect and send!
     RatmanIpc::default_with_addr(addr)
         .await?
-        .flood(NAMESPACE.into(), msg.into_proto().write_to_bytes()?)
+        .flood(NAMESPACE.into(), msg.into_proto().write_to_bytes()?, true)
         .await?;
 
     Ok(())
