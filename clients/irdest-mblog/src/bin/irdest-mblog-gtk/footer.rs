@@ -43,9 +43,14 @@ impl Footer {
                         topic,
                     });
 
-                    ipc.flood(NAMESPACE.into(), msg.into_proto().write_to_bytes().unwrap())
-                        .await
-                        .unwrap();
+                    println!("Sending message: {:?}", msg);
+                    ipc.flood(
+                        NAMESPACE.into(),
+                        msg.into_proto().write_to_bytes().unwrap(),
+                        true, // we want Ratman to send the message back to us
+                    )
+                    .await
+                    .unwrap();
                 });
             });
         }

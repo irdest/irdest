@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::{
     footer::Footer,
     header::Header,
@@ -47,27 +49,11 @@ impl MBlogWindow {
         let topics = Topics::new();
 
         async_std::task::block_on(async {
-            topics
-                .add_topic(
-                    "/net/irdest/welcome",
-                    state
-                        .iter_topic("/net/irdest/welcome")
-                        .expect("failed to load post database!")
-                        .fold(Topic::empty(), |mut t, msg| {
-                            match msg {
-                                Ok(Message {
-                                    payload: Payload::Post(ref p),
-                                    ..
-                                }) => t.add_message(p),
-                                _ => {}
-                            }
-                            t
-                        }),
-                )
-                .await;
-            topics
-                .redraw(&"/net/irdest/welcome".to_owned(), &state)
-                .await;
+            let known_topics = state.topics();
+            for topic in known_topics {
+                topics.add_topic(&topic, Topic::empty()).await;
+                topics.redraw(&topic, &state).await;
+            }
         });
 
         {
@@ -89,10 +75,15 @@ impl MBlogWindow {
                 // Get notified when a topic is dirty so we can redraw
                 // it (if it's currently in view)
                 while let Some(dirty) = state.wait_dirty().await {
-                    if topics.current_topic() != dirty {
-                        continue;
-                    }
+                    // TODO: only redraw current topic but for this we
+                    // need to also redraw on topic change which we
+                    // currently can't because the Gtk signal system
+                    // is strange
+                    // if topics.current_topic() != dirty {
+                    //     continue;
+                    // }
 
+                    // async_std::task::sleep(Duration::from_millis(250)).await; // kill me
                     topics.redraw(&dirty, &state).await;
                 }
             });

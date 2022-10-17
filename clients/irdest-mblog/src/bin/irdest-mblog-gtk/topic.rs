@@ -63,6 +63,7 @@ impl Topics {
             let diff_topics = new_topics.difference(&previous_topics);
 
             for topic in diff_topics {
+                println!("Adding new topic: '{}'", topic);
                 self.add_topic(topic.as_str(), Topic::empty()).await;
             }
         }

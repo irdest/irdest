@@ -32,7 +32,7 @@ async fn main() -> Result<()> {
 
     let receiver_state = Arc::clone(&state);
     glib::MainContext::default().spawn_local(async move {
-        let previous_topics = receiver_state.topics();
+        let mut previous_topics = vec![];
 
         loop {
             match receiver_state.next().await {
@@ -40,10 +40,15 @@ async fn main() -> Result<()> {
                 Ok(Some(msg)) => {
                     let new_topics = receiver_state.topics();
 
+                    println!("New message: {:?}", msg);
+                    println!("Previous topics: {}", previous_topics.len());
+                    println!("New topics: {}", new_topics.len());
+
                     // If a new topic was added, notify topics to re-draw
                     if new_topics.len() > previous_topics.len() {
                         receiver_state.notify_topics().await;
                     }
+                    previous_topics = new_topics;
 
                     // Afterwards notify the topic that received a new message
                     receiver_state.notify_dirty(&msg.as_post().topic).await;

@@ -168,7 +168,7 @@ impl RatmanIpc {
             )
             .into(),
             namespace,
-            mirror
+            mirror,
         ));
 
         write_with_length(&mut self.socket.clone(), &encode_message(msg)?).await?;
