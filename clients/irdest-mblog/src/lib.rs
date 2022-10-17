@@ -156,6 +156,40 @@ impl Message {
         }
     }
 
+    // This is a terrible terrible terrible terrible hack around the
+    // way that the mblog database works.  This doesn't make much
+    // sense but until we can refactor the UI to be easier to handle
+    // first-run tasks, this will have to do.
+    pub fn generate_intro(addr: Address) -> ratman_client::Message {
+        let mblog_msg = Message::new(Post {
+            nick: addr.to_string(),
+            topic: "/net/irdest/welcome".into(),
+            text: format!(
+                "Welcome to Irdest mblog, a decentralised usenet-style blogging platform!
+
+You can create messages for different topics and subscribe to them.  \
+That user identifier you see at the top of this message is your address (it should be '{}').
+
+Why don't you say hello? :)",
+                addr
+            ),
+        });
+
+        let payload = mblog_msg.into_proto().write_to_bytes().unwrap();
+        let mut time = TimePair::sending();
+        time.receive();
+
+        ratman_client::Message::received(
+            Id::random(),
+            addr,
+            Recipient::Flood(NAMESPACE.into()),
+            payload,
+            time.local().to_string(),
+            vec![],
+        )
+        .into()
+    }
+
     pub fn into_proto(self) -> proto::feed::Message {
         proto::feed::Message {
             payload: Some(self.payload.into()),
@@ -241,7 +275,7 @@ impl Into<proto::feed::Post> for Post {
 /// Loads an address from a file ('addr' in the system-appropriate config dir), or
 /// if that doesn't exist, call the local ratmand to generate one, stashing it in
 /// said file to be found on our next run.
-pub async fn load_or_create_addr() -> Result<Address> {
+pub async fn load_or_create_addr() -> Result<(bool, Address)> {
     // Find our configuration directory. Make sure to respect $XDG_CONFIG_HOME!
     let dirs = directories::ProjectDirs::from("org", "irdest", "irdest-mblog")
         .ok_or(anyhow!("couldn't find config dir"))?;
@@ -254,7 +288,7 @@ pub async fn load_or_create_addr() -> Result<Address> {
     let addr_path = cfg_dir.join("addr");
     match async_std::fs::read_to_string(&addr_path).await {
         // We've done this before - use the existing address.
-        Ok(s) => Ok(Address::from_string(&s)),
+        Ok(s) => Ok((false, Address::from_string(&s))),
 
         // There's no "addr" file - let's create one.
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
@@ -272,7 +306,7 @@ pub async fn load_or_create_addr() -> Result<Address> {
             // Write it to the "addr" file.
             async_std::fs::write(&addr_path, addr.to_string().as_bytes()).await?;
 
-            Ok(addr)
+            Ok((true, addr))
         }
 
         // Something else went wrong, eg. the file has the wrong permissions set.

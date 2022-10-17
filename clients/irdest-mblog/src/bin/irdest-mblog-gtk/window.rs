@@ -83,7 +83,6 @@ impl MBlogWindow {
                     //     continue;
                     // }
 
-                    // async_std::task::sleep(Duration::from_millis(250)).await; // kill me
                     topics.redraw(&dirty, &state).await;
                 }
             });

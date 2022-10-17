@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 use async_std::sync::Arc;
 use gtk::{gio::SimpleAction, glib, prelude::*, Application};
+use irdest_mblog::{Message, Post};
 
 mod footer;
 mod header;
@@ -24,11 +25,17 @@ async fn main() -> Result<()> {
         .ok_or(anyhow!("couldn't find config dir"))?;
     let db = sled::open(dirs.data_local_dir().join("db"))?;
 
-    let addr = irdest_mblog::load_or_create_addr().await?;
+    let (new_user, addr) = irdest_mblog::load_or_create_addr().await?;
     let ipc = ratman_client::RatmanIpc::default_with_addr(addr).await?;
     println!("Running with address: {}", addr);
 
     let state = Arc::new(crate::state::AppState::new(ipc, db));
+
+    // If the user opened the app for the first time (probably) we
+    // create a small welcome message for them
+    if new_user {
+        state.parse_and_store(&Message::generate_intro(addr));
+    }
 
     let receiver_state = Arc::clone(&state);
     glib::MainContext::default().spawn_local(async move {

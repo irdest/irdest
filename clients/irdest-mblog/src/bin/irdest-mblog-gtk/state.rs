@@ -88,7 +88,7 @@ impl AppState {
         }
     }
 
-    fn parse_and_store(&self, ratmsg: &ratman_client::Message) -> Result<Option<Message>> {
+    pub fn parse_and_store(&self, ratmsg: &ratman_client::Message) -> Result<Option<Message>> {
         // Track seen IDs, drop duplicate messages.
         let seen_ids = self.db.open_tree("seen_ids")?;
         if let Err(_) = seen_ids.compare_and_swap(
@@ -101,12 +101,15 @@ impl AppState {
 
         // Store new messages in the database.
         let msg = Message::try_from(ratmsg)?;
-        // This is an irrefutable pattern because the Payload enum exists specifically for
-        // future-proofing the wire format, although it currently only has a single option.
+
+        // This is an irrefutable pattern because the Payload enum
+        // exists specifically for future-proofing the wire format,
+        // although it currently only has a single option.
         #[allow(irrefutable_let_patterns)]
         if let Payload::Post(ref post) = msg.payload {
-            // Store the raw protobuf message in the database, so that if we receive a
-            // message from the ~future~, we don't drop any newfangled fields on the floor.
+            // Store the raw protobuf message in the database, so that
+            // if we receive a message from the ~future~, we don't
+            // drop any newfangled fields on the floor.  - ???
             let data = Envelope::from_ratmsg(&ratmsg)
                 .into_proto()
                 .write_to_bytes()?;
