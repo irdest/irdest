@@ -46,22 +46,29 @@ impl MBlogWindow {
         // Create a topics container and populate a starting topic from the database
         let topics = Topics::new();
 
-        topics.add_topic(
-            "/net/irdest/welcome",
-            state
-                .iter_topic("/net/irdest/welcome")
-                .expect("failed to load post database!")
-                .fold(Topic::empty(), |mut t, msg| {
-                    match msg {
-                        Ok(Message {
-                            payload: Payload::Post(ref p),
-                            ..
-                        }) => t.add_message(p),
-                        _ => {}
-                    }
-                    t
-                }),
-        );
+        async_std::task::block_on(async {
+            topics
+                .add_topic(
+                    "/net/irdest/welcome",
+                    state
+                        .iter_topic("/net/irdest/welcome")
+                        .expect("failed to load post database!")
+                        .fold(Topic::empty(), |mut t, msg| {
+                            match msg {
+                                Ok(Message {
+                                    payload: Payload::Post(ref p),
+                                    ..
+                                }) => t.add_message(p),
+                                _ => {}
+                            }
+                            t
+                        }),
+                )
+                .await;
+            topics
+                .redraw(&"/net/irdest/welcome".to_owned(), &state)
+                .await;
+        });
 
         {
             // Setup a task that adds topics as they are discovered
@@ -79,12 +86,14 @@ impl MBlogWindow {
             let state = Arc::clone(&state);
 
             glib::MainContext::default().spawn_local(async move {
-                while let Some(redraw_topic) = state.wait_dirty().await {
-                    let t = topics.get_topic(redraw_topic.as_str()).unwrap();
-                    t.clear();
-                    for msg in state.iter_topic(redraw_topic) {
-                        t.add_message(msg);
+                // Get notified when a topic is dirty so we can redraw
+                // it (if it's currently in view)
+                while let Some(dirty) = state.wait_dirty().await {
+                    if topics.current_topic() != dirty {
+                        continue;
                     }
+
+                    topics.redraw(&dirty, &state).await;
                 }
             });
         }
@@ -101,7 +110,7 @@ impl MBlogWindow {
         let layout = GtkBox::new(Orientation::Horizontal, 0);
         layout.append(&topics.sidebar);
 
-        let footer = Footer::new();
+        let footer = Footer::new(Arc::clone(&state), topics.clone());
 
         // This layout appends a footer under the topic stack so we
         // can re-use the same message footer for all topics.

@@ -42,11 +42,11 @@ async fn main() -> Result<()> {
 
                     // If a new topic was added, notify topics to re-draw
                     if new_topics.len() > previous_topics.len() {
-                        receiver_state.notify_topics();
+                        receiver_state.notify_topics().await;
                     }
 
                     // Afterwards notify the topic that received a new message
-                    receiver_state.notify_dirty(&msg.as_post().topic);
+                    receiver_state.notify_dirty(&msg.as_post().topic).await;
                 }
                 Err(e) => eprintln!("input error: {}", e),
             }

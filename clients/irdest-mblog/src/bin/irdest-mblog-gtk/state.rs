@@ -1,7 +1,7 @@
 use anyhow::Result;
 use async_std::{
     channel::{bounded, Receiver, Sender},
-    sync::Arc,
+    sync::{Arc, RwLock},
 };
 use irdest_mblog::{Envelope, Message, Payload, NAMESPACE};
 use protobuf::Message as _;
@@ -10,10 +10,11 @@ use std::convert::{TryFrom, TryInto};
 
 /// Central app state type which handles connection to Ratman
 pub struct AppState {
-    ipc: Option<RatmanIpc>,
+    pub ipc: Option<RatmanIpc>,
     db: sled::Db,
     topics_notify: (Sender<()>, Receiver<()>),
     dirty_notify: (Sender<String>, Receiver<String>),
+    current_topic: RwLock<Option<String>>,
 }
 
 impl AppState {
@@ -25,6 +26,7 @@ impl AppState {
             db,
             topics_notify,
             dirty_notify,
+            current_topic: RwLock::new(None),
         }
     }
 
@@ -36,6 +38,7 @@ impl AppState {
             db,
             topics_notify,
             dirty_notify,
+            current_topic: RwLock::new(None),
         }
     }
 
@@ -55,6 +58,15 @@ impl AppState {
 
     pub async fn wait_dirty(&self) -> Option<String> {
         self.dirty_notify.1.recv().await.ok()
+    }
+
+    pub async fn set_topic(&self, top: &str) {
+        let mut x = self.current_topic.write().await;
+        *x = Some(top.into());
+    }
+
+    pub async fn current_topic(&self) -> String {
+        self.current_topic.read().await.as_ref().unwrap().clone()
     }
 
     pub async fn next(&self) -> Result<Option<Message>> {

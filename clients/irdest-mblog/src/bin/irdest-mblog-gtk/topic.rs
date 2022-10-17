@@ -1,13 +1,12 @@
-use async_std::sync::Arc;
+use async_std::sync::{Arc, Mutex};
 use gtk::prelude::*;
 use gtk::{
     builders::BoxBuilder, pango::WrapMode, Align, Box as GtkBox, Button, Entry, Frame,
     Label as GtkLabel, Label, NaturalWrapMode, Orientation, PolicyType, ScrolledWindow, Stack,
     StackSidebar, Viewport, Widget,
 };
-use irdest_mblog::Post;
-use std::sync::MutexGuard;
-use std::{collections::BTreeSet, sync::Mutex};
+use irdest_mblog::{Message, Post};
+use std::collections::{BTreeMap, BTreeSet};
 
 use crate::state::AppState;
 
@@ -16,14 +15,14 @@ use crate::state::AppState;
 pub struct Topics {
     pub sidebar: StackSidebar,
     pub stack: Stack,
-    data: Mutex<BTreeMap<String, Topic>>,
+    data: Arc<Mutex<BTreeMap<String, Topic>>>,
 }
 
 impl Topics {
     pub fn new() -> Topics {
         let stack = Stack::new();
         let sidebar = StackSidebar::new();
-        let data = Default::default();
+        let data = Arc::new(Mutex::new(BTreeMap::new()));
         sidebar.set_stack(&stack);
         stack.set_vhomogeneous(true);
 
@@ -31,6 +30,24 @@ impl Topics {
             stack,
             sidebar,
             data,
+        }
+    }
+
+    pub fn current_topic(&self) -> String {
+        self.stack.visible_child_name().unwrap().to_string()
+    }
+
+    pub async fn redraw(&self, topic: &String, state: &Arc<AppState>) {
+        let data = self.data.lock().await;
+        let t = data.get(topic).unwrap();
+        t.clear();
+
+        for msg in state.iter_topic(topic).unwrap() {
+            if msg.is_err() {
+                continue;
+            }
+
+            t.add_message(msg.unwrap().as_post());
         }
     }
 
@@ -46,22 +63,17 @@ impl Topics {
             let diff_topics = new_topics.difference(&previous_topics);
 
             for topic in diff_topics {
-                self.add_topic(topic.as_str(), Topic::empty());
+                self.add_topic(topic.as_str(), Topic::empty()).await;
             }
         }
     }
 
-    pub fn add_topic(&self, name: &str, child: Topic) {
+    pub async fn add_topic(&self, name: &str, child: Topic) {
         self.stack.add_titled(&child.inner, Some(name), name);
-        self.data.lock().unwrap().insert(name.into(), child);
-    }
-
-    pub fn get_topic(&self, name: &str) -> Option<Topic> {
-        self.data.lock().ok()?.get(name).cloned()
+        self.data.lock().await.insert(name.into(), child);
     }
 }
 
-#[derive(Clone)]
 pub struct Topic {
     inner: ScrolledWindow,
 }
