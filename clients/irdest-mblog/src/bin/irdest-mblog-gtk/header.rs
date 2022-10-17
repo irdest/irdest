@@ -1,4 +1,4 @@
-use crate::topic_creator::TopicCreator;
+use crate::{topic::Topics, topic_creator::TopicCreator};
 use async_std::sync::Arc;
 use gtk::{
     gio::{Menu, MenuItem},
@@ -16,14 +16,14 @@ pub struct Header {
 }
 
 impl Header {
-    pub fn new(parent: ApplicationWindow, lookup: Arc<Lookup>) -> Header {
+    pub fn new(parent: ApplicationWindow, lookup: Arc<Lookup>, topics: Topics) -> Header {
         let inner = HeaderBar::new();
         inner.set_show_title_buttons(true);
         inner.set_title_widget(Some(&Label::new(Some("Irdest mblog"))));
 
         let add_topic = Button::from_icon_name("folder-new-symbolic");
         add_topic.connect_clicked(
-            glib::clone!(@weak parent => move |_| TopicCreator::new(parent, Arc::clone(&lookup))),
+            glib::clone!(@weak parent => move |_| TopicCreator::new(parent, Arc::clone(&lookup), topics.clone())),
         );
 
         let menu_button = MenuButton::new();

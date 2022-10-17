@@ -88,7 +88,7 @@ impl MBlogWindow {
             });
         }
 
-        let header = Header::new(inner.clone(), Arc::clone(&lookup));
+        let header = Header::new(inner.clone(), Arc::clone(&lookup), topics.clone());
         inner.set_titlebar(Some(&header.inner));
 
         let container = GtkBox::new(Orientation::Vertical, 0);
@@ -115,30 +115,6 @@ impl MBlogWindow {
 
         // Add the layout to the window
         inner.set_child(Some(&container));
-
-        // Add all known topics to the list
-        // for topic in lookup.all() {
-        //     let t = Topic::empty();
-        //     t.add_message(&Post {
-        //         nick: "Alice".into(),
-        //         text: "Is this thing on??".into(),
-        //         topic: "".into(),
-        //     });
-
-        //     t.add_message(&Post {
-        //         nick: "Bob".into(),
-        //         text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Arcu vitae elementum curabitur vitae nunc sed velit. Vel fringilla est ullamcorper eget nulla facilisi etiam. Hac habitasse platea dictumst quisque sagittis purus sit amet volutpat. Suscipit adipiscing bibendum est ultricies integer quis. Quam lacus suspendisse faucibus interdum posuere. Amet nulla facilisi morbi tempus iaculis. Laoreet non curabitur gravida arcu ac. Massa id neque aliquam vestibulum morbi blandit cursus risus. Eu volutpat odio facilisis mauris sit amet massa vitae tortor. Senectus et netus et malesuada fames. Amet nisl suscipit adipiscing bibendum. Amet volutpat consequat mauris nunc congue nisi vitae. Mauris nunc congue nisi vitae suscipit tellus mauris a. Sem et tortor consequat id porta nibh venenatis cras sed. Nisi vitae suscipit tellus mauris a diam maecenas sed. Dui ut ornare lectus sit amet est placerat in.".into(),
-        //         topic: "".into(),
-        //     });
-
-        //     t.add_message(&Post {
-        //         nick: "Alice".into(),
-        //         text: "Dude okay we get it, you studied Latin...".into(),
-        //         topic: "".into(),
-        //     });
-
-        //     topics.add_topic(topic.as_str(), t);
-        // }
 
         Self {
             inner,

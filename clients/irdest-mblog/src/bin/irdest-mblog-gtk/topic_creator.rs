@@ -1,3 +1,4 @@
+use crate::topic::{Topic, Topics};
 use async_std::sync::Arc;
 use gtk::{
     glib::{self, Type},
@@ -12,6 +13,22 @@ use irdest_mblog::Lookup;
 #[derive(Clone)]
 pub struct TopicCreator {
     inner: Dialog,
+}
+
+struct SaveButtonClosure {
+    category_entry: Entry,
+    namespace_entry: Entry,
+    topic_entry: Entry,
+    topics: Topics,
+    _self: Dialog,
+}
+
+fn parse_entries(ce: &Entry, ne: &Entry, te: &Entry) -> String {
+    let category = ce.buffer().text();
+    let namespace = ne.buffer().text();
+    let topic = te.buffer().text();
+
+    format!("/{}/{}/{}", category, namespace, topic)
 }
 
 fn create_entry(placeholder: &str, lookup: Vec<String>) -> Entry {
@@ -34,7 +51,7 @@ fn create_entry(placeholder: &str, lookup: Vec<String>) -> Entry {
 
     // Configure the Entry to automatically replace ` ` with `-`
     e.connect_changed(|_self| {
-        println!("User entered some stuff...");
+        println!("TODO: prevent users from entering spaces");
     });
 
     e
@@ -48,7 +65,7 @@ fn create_label(label: &str) -> Label {
 }
 
 impl TopicCreator {
-    pub fn new(parent: ApplicationWindow, lookup: Arc<Lookup>) {
+    pub fn new(parent: ApplicationWindow, lookup: Arc<Lookup>, topics: Topics) {
         let inner = Dialog::with_buttons(
             Some("Create a new topic"),
             Some(&parent),
@@ -77,13 +94,21 @@ impl TopicCreator {
 
         let down_row = GtkBox::new(Orientation::Horizontal, 0);
         down_row.append(&Label::new(Some("/")));
-        down_row.append(&create_entry("<Category>", lookup.categories()));
+
+        let category_entry = create_entry("<Category>", lookup.categories());
+        down_row.append(&category_entry);
+
         down_row.append(&Label::new(Some("/")));
-        down_row.append(&create_entry("<Namespace>", lookup.namespaces()));
+
+        let namespace_entry = create_entry("<Namespace>", lookup.namespaces());
+        down_row.append(&namespace_entry);
+
         down_row.append(&Label::new(Some("/")));
+
         // TODO: can we dynamically adjust the input completion based
         // on the namespace a user has already typed?
-        down_row.append(&create_entry("<Topic>", vec![]));
+        let topic_entry = create_entry("<Topic>", vec![]);
+        down_row.append(&topic_entry);
         down_row.set_margin_bottom(16);
 
         let button_row = GtkBox::new(Orientation::Horizontal, 0);
@@ -95,8 +120,28 @@ impl TopicCreator {
         btn_cancel.connect_clicked(glib::clone!(@weak inner => move |_| inner.close()));
         button_row.append(&btn_cancel);
 
+        let button_closure = Arc::new(SaveButtonClosure {
+            category_entry,
+            namespace_entry,
+            topic_entry,
+            topics,
+            _self: inner.clone(),
+        });
+
         let btn_save = Button::with_label("Save");
         button_row.append(&btn_save);
+        btn_save.connect_clicked(move |_| {
+            let SaveButtonClosure {
+                category_entry,
+                namespace_entry,
+                topic_entry,
+                topics,
+                _self,
+            } = &*Arc::clone(&button_closure);
+            let new_topic = parse_entries(&category_entry, &namespace_entry, &topic_entry);
+            async_std::task::block_on(topics.add_topic(new_topic.as_str(), Topic::empty()));
+            _self.close();
+        });
 
         area.append(&up_row);
         area.append(&down_row);
