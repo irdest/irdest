@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.core.app.NotificationCompat
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.concurrent.atomic.AtomicReference
@@ -25,9 +26,6 @@ const val VPN_ROUTE_V6 = "::" // Intercept all
 class IrdestVpnService : VpnService() {
     private val TAG = IrdestVpnService::class.java.simpleName
 
-    private val NOTIFICATION_CHANNEL_ID = "IrdestVpn"
-    private lateinit var notificationClientIntent: Intent
-
     private val ratmandThread = AtomicReference<Thread>()
 
     private lateinit var vpnInterface: ParcelFileDescriptor
@@ -39,15 +37,13 @@ class IrdestVpnService : VpnService() {
         }
     }
 
-    @SuppressLint("NewApi")
-    override fun onCreate() {
-        super.onCreate()
-        // When user click the foreground notification, this activity will be opened.
-        notificationClientIntent = Intent(this, MainActivity::class.java)
+    companion object {
+        const val ACTION_CONNECT = "IRDEST_VPN_CONNECT"
+        const val ACTION_DISCONNECT = "IRDEST_VPN_DISCONNECT"
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.getStringExtra("ACTION") == "disconnect") {
+        if (intent?.action == ACTION_DISCONNECT) {
             disconnect()
             return Service.START_NOT_STICKY
         } else {
@@ -58,7 +54,6 @@ class IrdestVpnService : VpnService() {
 
     private fun connect() {
         // Become a foreground service.
-        startForegroundService()
         updateForegroundNotification(R.string.connecting)
 
         // Run `ratmand` router
@@ -121,35 +116,25 @@ class IrdestVpnService : VpnService() {
         Log.d(TAG, "openTun: New tun interface is created")
     }
 
-    private fun startForegroundService() {
-        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
-            .createNotificationChannel(
-                NotificationChannel(
-                    NOTIFICATION_CHANNEL_ID,
-                    NOTIFICATION_CHANNEL_ID,
-                    NotificationManager.IMPORTANCE_DEFAULT
-                )
-            )
-
-        applicationContext.startForegroundService(notificationClientIntent)
-    }
-
     private fun updateForegroundNotification(msg: Int) {
-        val configureIntent =
-            PendingIntent.getActivity(
-                this,
-                0,
-                notificationClientIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT)
+        val NOTIFICATION_CHANNEL_ID = "IrdestVpn"
+        val notificationManager = (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
+        val pendintIntent = PendingIntent.getActivity(this, 0,
+            Intent(this,MainActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT)
 
-        startForeground(
-            1,
-            Notification.Builder(this, NOTIFICATION_CHANNEL_ID)
-                .setContentTitle("Irdest Vpn")
-                .setContentText(getString(msg))
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setContentIntent(configureIntent)
-                .build()
-        )
+        // From Android 8.0 notification channel must be created.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            notificationManager.createNotificationChannel(
+                NotificationChannel(NOTIFICATION_CHANNEL_ID, NOTIFICATION_CHANNEL_ID,
+                    NotificationManager.IMPORTANCE_DEFAULT)
+            )
+        }
+
+        startForeground(133, NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+            .setContentTitle("\uD83D\uDC80")
+            .setContentText(getString(msg))
+            .setSmallIcon(androidx.loader.R.drawable.notification_bg)
+            .setContentIntent(pendintIntent)
+            .build())
     }
 }

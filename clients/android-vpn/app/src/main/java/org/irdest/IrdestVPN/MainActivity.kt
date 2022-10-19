@@ -27,7 +27,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         // Check if data file is exist if not create one.
-        // kinda first thing to do: move this config handling to new class
+        // kinda first thing to do: move this config handling to Utils
         val data_file = File(applicationContext.filesDir, DATA_FILE)
         if (!data_file.exists()) {
             Log.i(TAG, "onCreate: Data file is not existed create new file")
@@ -36,31 +36,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val permissionActivityLauncher = registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
-            startService(getService())
-        }
-    }
-
     fun startVpn(view: View) {
         // Prepare the app to become the user's current VPN service.
-        // If user hasn't already given permission `VpnService.prepare()`
-        // returns an activity intent. `permissionActivityLauncher` uses this intent
-        // to start a system activity that asks for permission.
-        var intent = VpnService.prepare(this)
+        val intent = VpnService.prepare(this)
 
         if (intent != null) {
             permissionActivityLauncher.launch(intent)
         } else {
-            startService(getService())
+            startService(getService().setAction(IrdestVpnService.ACTION_CONNECT))
         }
     }
 
     fun stopVpn(view: View) {
-        Log.d(TAG, "stopVpn: Disconnect button is clicked")
-        startService(getService()
-            .putExtra("ACTION", "disconnect"))
+        startService(getService().setAction(IrdestVpnService.ACTION_DISCONNECT))
+    }
+
+    private val permissionActivityLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            startService(getService().setAction(IrdestVpnService.ACTION_CONNECT))
+        }
     }
 
     private fun getService() : Intent {
