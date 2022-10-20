@@ -14,11 +14,10 @@ class Ratmand : Runnable {
     override fun run() {
         while (true) {
             try {
-                // Dev mode receive log from rust
                  receiveLog()
                  ratrun()
             } catch(e: InterruptedException) {
-                Log.e(TAG, "run: ratmand thread interrupted ", e)
+                Log.d(TAG, "run: Stop ratmand thread ", e)
             }
             throw RuntimeException();
         }
