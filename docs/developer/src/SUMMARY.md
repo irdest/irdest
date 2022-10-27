@@ -11,6 +11,7 @@
   - [Network drivers](./technical/drivers/index.md)
     - [inet](./technical/drivers/inet.md)
     - [lora](./technical/drivers/lora.md)
+  - [Specification](./technical/specification.md)
   - [Bibliography](./technical/bib.md)
 - [Design guides](./design/index.md)
   - [Style guide](./design/style.md)
