@@ -4,17 +4,13 @@ import android.app.Activity
 import android.content.Intent
 import android.net.VpnService
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import java.io.File
-import java.util.concurrent.atomic.AtomicReference
+import org.irdest.IrdestVPN.utils.createFileIfNotExist
 
 class MainActivity : AppCompatActivity() {
     private val TAG = MainActivity::class.java.simpleName
-
-    private val DATA_FILE = "users.json"
 
     companion object {
         init {
@@ -26,14 +22,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Check if data file is exist if not create one.
-        // kinda first thing to do: move this config handling to Utils
-        val data_file = File(applicationContext.filesDir, DATA_FILE)
-        if (!data_file.exists()) {
-            Log.i(TAG, "onCreate: Data file is not existed create new file")
-            val isCreated = data_file.createNewFile()
-            Log.i(TAG, "onCreate: File is created = " + isCreated)
-        }
+        // Check if data file for ratmand is exist if not create one.
+        createFileIfNotExist(this, "ratmand_data")
     }
 
     fun startVpn(view: View) {
