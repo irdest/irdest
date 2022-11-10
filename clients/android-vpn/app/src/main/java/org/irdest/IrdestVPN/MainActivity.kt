@@ -29,19 +29,20 @@ class MainActivity : AppCompatActivity() {
     fun startVpn(view: View) {
         // Prepare the app to become the user's current VPN service.
         // If user hasn't given permission `VpnService.prepare()` returns an activity intent.
-        VpnService.prepare(this)?.let { permissionActivityLauncher.launch(it) }
+        VpnService.prepare(this)
+            ?.let { permissionActivityLauncher.launch(it) }
             ?: run { startService(getService().setAction(IrdestVpnService.ACTION_CONNECT))}
     }
 
     fun stopVpn(view: View) {
-        startService(getService().setAction(IrdestVpnService.ACTION_DISCONNECT))
+        startService(getService().setAction(IrdestVpnService.ACTION_DISCONNECT)
+        )
     }
 
     private val permissionActivityLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            startService(getService().setAction(IrdestVpnService.ACTION_CONNECT))
-        }
+            startService(getService().setAction(IrdestVpnService.ACTION_CONNECT)) }
     }
 
     private fun getService() : Intent {

@@ -5,4 +5,5 @@
     <string name="connecting">IrdestVPN is connecting...</string>
     <string name="connected">IrdestVPN is connected.</string>
     <string name="disconnected">IrdestVPN is disconnected.</string>
+    <string name="starting_ratmand">Starting ratmand router...</string>
 </resources>

@@ -22,7 +22,7 @@ pub extern "C" fn Java_org_irdest_IrdestVPN_Ratmand_receiveLog(env: JNIEnv, _: J
 
 #[allow(non_snake_case)]
 #[no_mangle]
-pub extern "C" fn Java_org_irdest_IrdestVPN_Ratmand_ratrun(env: JNIEnv, _: JClass) {
+pub extern "C" fn Java_org_irdest_IrdestVPN_Ratmand_runRouter(env: JNIEnv, _: JClass) {
     let mut cfg = daemon::config::Config::new();
     cfg.accept_unknown_peers = true;
     info!("@android-dev#: config => {:?}", cfg);

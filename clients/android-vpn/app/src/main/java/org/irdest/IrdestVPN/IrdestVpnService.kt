@@ -1,16 +1,14 @@
 package org.irdest.IrdestVPN
 
-import android.annotation.SuppressLint
-import android.app.*
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.PendingIntent.FLAG_UPDATE_CURRENT
+import android.app.Service
 import android.content.Intent
 import android.net.VpnService
 import android.os.Build
-import android.os.ParcelFileDescriptor
-import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
-import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.util.concurrent.atomic.AtomicReference
 
 class IrdestVpnService : VpnService() {
@@ -38,32 +36,26 @@ class IrdestVpnService : VpnService() {
         updateForegroundNotification(R.string.connecting)
 
         // Run `ratmand` router
-        runRatmand()
+        runRatmandRouter()
     }
 
     private fun disconnect() {
-        ratmandThread.get().interrupt()
+        setRouterThread(null)
         stopForeground(true)
     }
 
-    private fun runRatmand() {
-        Thread(Ratmand(), "RatmandThread").run {
-            isDaemon = true
-            stackTrace
-            uncaughtExceptionHandler = exceptionHandler
-            setRatmandThread(this)
-            start()
-        }
+    private fun runRatmandRouter() {
+        Thread(RatmandRouter(), "RatmandThread[]")
+            .run {
+                setRouterThread(this)
+                isDaemon = true
+                start()
+            }
     }
 
-    private fun setRatmandThread(thr: Thread) {
+    private fun setRouterThread(thr: Thread?) {
+        // Replace any existing ratmand thread with the new one.
         ratmandThread.getAndSet(thr)?.interrupt()
-    }
-
-    val exceptionHandler = object : Thread.UncaughtExceptionHandler {
-        override fun uncaughtException(t: Thread, e: Throwable) {
-            Log.e(TAG, "uncaughtExceptionHandler: ", e)
-        }
     }
 
     private fun updateForegroundNotification(msg: Int) {
@@ -82,12 +74,13 @@ class IrdestVpnService : VpnService() {
         startForeground(2, NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setContentTitle(NOTIFICATION_CHANNEL_ID)
             .setContentText(getString(msg))
-            .setSmallIcon(androidx.loader.R.drawable.notification_bg)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentIntent(PendingIntent.getActivity(
                 this,
                 0,
                 Intent(this,MainActivity::class.java),
-                PendingIntent.FLAG_UPDATE_CURRENT))
+                FLAG_UPDATE_CURRENT
+            ))
             .build())
     }
 }
