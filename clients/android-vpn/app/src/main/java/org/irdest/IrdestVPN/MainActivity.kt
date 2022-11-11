@@ -7,7 +7,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import org.irdest.IrdestVPN.utils.createFileIfNotExist
+import org.irdest.IrdestVPN.utils.createRatmandDataFileIfNotExist
 
 class MainActivity : AppCompatActivity() {
     private val TAG = MainActivity::class.java.simpleName
@@ -22,8 +22,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Check if data file for ratmand is exist if not create one.
-        createFileIfNotExist(this, "ratmand_data")
+        createRatmandDataFileIfNotExist(this)
     }
 
     fun startVpn(view: View) {
@@ -34,15 +33,14 @@ class MainActivity : AppCompatActivity() {
             ?: run { startService(getService().setAction(IrdestVpnService.ACTION_CONNECT))}
     }
 
-    fun stopVpn(view: View) {
-        startService(getService().setAction(IrdestVpnService.ACTION_DISCONNECT)
-        )
-    }
-
     private val permissionActivityLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             startService(getService().setAction(IrdestVpnService.ACTION_CONNECT)) }
+    }
+
+    fun stopVpn(view: View) {
+        startService(getService().setAction(IrdestVpnService.ACTION_DISCONNECT))
     }
 
     private fun getService() : Intent {

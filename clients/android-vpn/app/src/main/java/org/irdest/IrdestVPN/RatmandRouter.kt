@@ -6,8 +6,6 @@ import org.irdest.IrdestVPN.utils.ConnectionState
 class RatmandRouter : Runnable {
     private val TAG = RatmandRouter::class.java.simpleName
 
-    var routerState = ConnectionState.DISCONNECTED
-
     // Jni(ffi)
     private external fun receiveLog()
     private external fun runRouter()
@@ -24,8 +22,6 @@ class RatmandRouter : Runnable {
                     Log.e(TAG, "run: Error", e)
                 }
             }
-        } finally {
-            routerState = ConnectionState.DISCONNECTED
         }
     }
 }
