@@ -1,12 +1,10 @@
 package org.irdest.IrdestVPN
 
 import android.util.Log
-import org.irdest.IrdestVPN.utils.ConnectionState
 
-class RatmandRouter : Runnable {
-    private val TAG = RatmandRouter::class.java.simpleName
+class RatmandRunnable : Runnable {
+    private val TAG = RatmandRunnable::class.java.simpleName
 
-    // Jni(ffi)
     private external fun receiveLog()
     private external fun runRouter()
     private external fun registerUser()

@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.VpnService
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import org.irdest.IrdestVPN.utils.createRatmandDataFileIfNotExist
@@ -30,20 +31,25 @@ class MainActivity : AppCompatActivity() {
         // If user hasn't given permission `VpnService.prepare()` returns an activity intent.
         VpnService.prepare(this)
             ?.let { permissionActivityLauncher.launch(it) }
-            ?: run { startService(getService().setAction(IrdestVpnService.ACTION_CONNECT))}
+            ?:run { startService(getActionSettedServiceIntent()) }
     }
 
     private val permissionActivityLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            startService(getService().setAction(IrdestVpnService.ACTION_CONNECT)) }
+            startService(getActionSettedServiceIntent())
+        } else {
+           Toast.makeText(this, R.string.permission_denied, Toast.LENGTH_LONG).show()
+        }
     }
 
     fun stopVpn(view: View) {
-        startService(getService().setAction(IrdestVpnService.ACTION_DISCONNECT))
+        startService(getActionSettedServiceIntent(IrdestVpnService.ACTION_DISCONNECT))
     }
 
-    private fun getService() : Intent {
+    private fun getActionSettedServiceIntent(
+        action: String = IrdestVpnService.ACTION_CONNECT) : Intent {
         return Intent(this, IrdestVpnService::class.java)
+            .setAction(action)
     }
 }
