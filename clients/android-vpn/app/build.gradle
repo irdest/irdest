@@ -34,7 +34,7 @@ android {
 
 cargo {
     module = "../jni"
-    libname = "ratman"
+    libname = "ratman_android"
     targets = ["arm64", "x86_64"]
 }
 
