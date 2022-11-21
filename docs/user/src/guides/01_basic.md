@@ -3,7 +3,7 @@
 
 We trust that you have successfully installed Ratman (`ratmand`,
 `ratcat`, `ratctl`) on your system.  Please refer to the
-[Installation](../installation/index.md) section for details.
+[Installation](../install/index.md) section for details.
 
 The Ratman daemon is primarily set-up from a configuration file.  You
 can find it at the following path, depending on your operating system:
@@ -63,6 +63,6 @@ If you are running a public test service, feel free to submit it for
 inclusion in this manual.  The service must be open source!
 
 | Service name | Description                                        | Address(es) |
-|--------------|----------------------------------------------------|-------------|
+| ------------ | -------------------------------------------------- | ----------- |
 | irdest-echo  | Accepts messages and echos them back to the sender |             |
 

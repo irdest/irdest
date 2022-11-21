@@ -6,9 +6,9 @@ installer][website-installer].
 
 However if no pre-built binaries exist for your platform you can use
 these instructions to build Irdest from source!  However **please also
-come by our [Matrix room]()** and tell us what platform you are using
-Irdest on!  We may be able to build binaries for you as part of our CI
-pipeline.
+come by our [Matrix room](https://irde.st/community/)** and tell us what
+platform you are using Irdest on!  We may be able to build binaries for
+you as part of our CI pipeline.
 
 ## Download latest source
 

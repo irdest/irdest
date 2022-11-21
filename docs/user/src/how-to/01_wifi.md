@@ -1,12 +1,13 @@
 # Wi-Fi setup
 
-[If you have not already done so, please read the Basic setup section of the manual. It will be referenced frequently.](./01_basic.md)
+⚠️ **If you have not already done so, [please read the Basic setup section of the manual](../guides/01_basic.md). It will be referenced frequently.**
 
-**Please note that the interface described in this file will be
+⚠️ **Please note that the interface described in this file will be
 subject to change as the project matures. It is not recommended to use
 this module without a dedicated wireless interface yet as it will
-disrupt other network stacks.  Additionally, only Linux is currently
-supported.**
+disrupt other network stacks.**
+
+⚠️ **Only Linux is currently supported.**
 
 If you wish to use the network autoconfiguration features,
 NetworkManager must be installed and running on your machine. The
