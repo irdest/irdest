@@ -1,14 +1,14 @@
 # LoRa radio setup
 
-[LoRa]() is a low-power long-range wireless communication standard.
+[LoRa](https://en.wikipedia.org/wiki/LoRa) is a low-power long-range wireless communication standard.
 This guide will walk you through setting up two LoRa modems and
 running a Ratman connection over it.  Following is the hardware list
 you will need:
 
-| Item                                                                                                                                     | Description                              | Notes                                                                                                                                                                                               |
-|------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [ST Microelectronics NUCLEO-F401RE](https://eu.mouser.com/ProductDetail/STMicroelectronics/NUCLEO-F401RE?qs=fK8dlpkaUMvGeToFJ6rzdA%3D%3D) | STM32 micro controller development board | Currently only this board and CPU is supported, there is no reason for this selection other than it being available during the parts shortage at the time we ordered the parts. The firmware should be easily adaptable to any device that is supported by the [Rust Embedded project](https://github.com/rust-embedded). The only hard requirements are 1 Serial port and one SPI interface. |
-| [Seeed Studio Dragino Lora Shield 868m](https://eu.mouser.com/ProductDetail/Seeed-Studio/114990615?qs=GZwCxkjl%252BU02ODDBHQ6wrw%3D%3D)  | LoRa wireless shield - Arduino Uno Formatted. | This module was selected as it fits directly on our dev board making development much easier. The module listed here is tuned for the European frequency band. Care must be taken to purchase the appropriate module for your region, more info below. The firmware supports any sx127 series modem, which is available on a wide range of hats, shields etc.                    |
+| Item                                                                                                                                      | Description                                   | Notes                                                                                                                                                                                                                                                                                                                                                                                         |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [ST Microelectronics NUCLEO-F401RE](https://eu.mouser.com/ProductDetail/STMicroelectronics/NUCLEO-F401RE?qs=fK8dlpkaUMvGeToFJ6rzdA%3D%3D) | STM32 micro controller development board      | Currently only this board and CPU is supported, there is no reason for this selection other than it being available during the parts shortage at the time we ordered the parts. The firmware should be easily adaptable to any device that is supported by the [Rust Embedded project](https://github.com/rust-embedded). The only hard requirements are 1 Serial port and one SPI interface. |
+| [Seeed Studio Dragino Lora Shield 868m](https://eu.mouser.com/ProductDetail/Seeed-Studio/114990615?qs=GZwCxkjl%252BU02ODDBHQ6wrw%3D%3D)   | LoRa wireless shield - Arduino Uno Formatted. | This module was selected as it fits directly on our dev board making development much easier. The module listed here is tuned for the European frequency band. Care must be taken to purchase the appropriate module for your region, more info below. The firmware supports any sx127 series modem, which is available on a wide range of hats, shields etc.                                 |
 
 
 ## TLDR
@@ -145,14 +145,14 @@ antennae, and operate it for as short as needed to run your test.
 ### Configure `lora-modem` firmware
 
 In case you live in Europe or North America you can download the
-[`irdest-firmware` bundle]() from the Irdest website!  Then follow the
+`irdest-firmware` bundle from the [Irdest website](https://irde.st/download/)!  Then follow the
 instructions in the `README`.
 
-If you live outside these two regions you can refer to the [Build from
-source]() section on how to get a copy of the source repository.
+If you live outside these two regions you can refer to the [Build from source](../install/build.md)
+section on how to get a copy of the source repository.
 
-The `FREQUENCY` field in [`/firmware/lora-modem/src/main.rs`]() needs
-to be set for your region (see above).
+The `FREQUENCY` field in [`/firmware/lora-modem/src/main.rs` {develop branch}](https://git.irde.st/we/irdest/-/blob/develop/firmware/lora-modem/src/main.rs)
+needs to be set for your region (see above).
 
 If you have trouble determining the used frequency in your region,
 contact us and we'll help you figure it out.

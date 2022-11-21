@@ -38,7 +38,7 @@ Connecting different Ratman instances together is done via
 connection-specific "drivers".  Each driver allows Ratman to connect
 (or "peer") with other instances of Ratman.  For example `netmod-inet`
 allows Ratman to connect via the internet, `netmod-lora` via a [LoRa
-wireless](../how-to/02-lora.md) modem, etc.
+wireless](../how-to/02_lora.md) modem, etc.
 
 Because Ratman is not part of your operating system specific
 applications are needed to interact with the Irdest network.  For this
