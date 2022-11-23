@@ -10,3 +10,6 @@ result
 
 # ratman's local config files
 ratcat_config/
+
+# generated book
+docs/user/book
