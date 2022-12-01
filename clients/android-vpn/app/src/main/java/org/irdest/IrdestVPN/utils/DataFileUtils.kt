@@ -19,5 +19,7 @@ fun createRatmandDataFileIfNotExist (context: Context) {
 
 fun createFileIfNotExist(parent: File, child: String) {
     val file = File(parent, child)
-    if (!file.exists()) { file.createNewFile() }
+    if (!file.exists()) {
+        file.createNewFile()
+    }
 }
