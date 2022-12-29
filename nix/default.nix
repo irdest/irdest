@@ -9,6 +9,10 @@ let
     irdest-mblog = self.callPackage ./irdest-mblog {};
     irdest-website = self.callPackage ./irdest-website {};
 
+    irdest-bundle = self.callPackage ./irdest-bundle {
+      inherit (self) irdest-installer irdest-manual-user ratman;
+    };
+    
     ratman = self.callPackage ./ratman {};
     ratman-dashboard = self.callPackage ./ratman-dashboard {};
   };
