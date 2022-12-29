@@ -1,40 +1,27 @@
 # Script that triggers the pipelines for rust-components of `irdest`
 
-bundle-ratman:
+bundle-ratman-x86_64:
   tags: [ irdest-nix ]
-  stage: bundle
-  dependencies:
-    - build-installer-static
-    - build-ratman-static
-    - build-manual
+  stage: build
+  needs: [ build-ratman-dashboard ]
   script:
-    - mkdir ratman-bundle-x86_64 && cd ratman-bundle-x86_64
-    - cp -rv ../dist .
-    - cp -rv ../docs/man .
-    - cp -rv ../result-ratman/bin .
-    - cp -rv ../result-installer/bin/* .
-    - cp -rv ../result-manual-user manual
-    - cd ..
+    - nix-env -iA cachix -f https://cachix.org/api/v1/install
+    - cachix use irdest -O ~/.config/nix
+    - nix-build nix -A irdest-bundle -o ratman-bundle-x86_64
     - tar cvf ratman-bundle-x86_64.tar.gz ratman-bundle-x86_64/
   artifacts:
     paths:
       - ratman-bundle-x86_64.tar.gz
 
+
 bundle-ratman-aarch64:
   tags: [ irdest-nix ]
-  stage: bundle
-  dependencies:
-    - build-installer-static-aarch64
-    - build-ratman-static-aarch64
-    - build-manual
+  stage: build
+  needs: [ build-ratman-dashboard ]
   script:
-    - mkdir ratman-bundle-aarch64  && cd ratman-bundle-aarch64
-    - cp -rv ../dist .
-    - cp -rv ../docs/man .
-    - cp -rv ../result-ratman/bin .
-    - cp -rv ../result-installer/bin/* .
-    - cp -rv ../result-manual-user manual
-    - cd ..
+    - nix-env -iA cachix -f https://cachix.org/api/v1/install
+    - cachix use irdest -O ~/.config/nix
+    - nix-build nix -A pkgsCross.aarch64-multiplatform.irdest-bundle -o ratman-bundle-aarch64
     - tar cvf ratman-bundle-aarch64.tar.gz ratman-bundle-aarch64/
   artifacts:
     paths:
