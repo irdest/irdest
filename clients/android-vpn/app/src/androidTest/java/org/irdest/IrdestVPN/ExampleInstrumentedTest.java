@@ -1,4 +1,4 @@
-package org.irdest.IrdestVPN;
+package org.irdest.irdestVPN;
 
 import android.content.Context;
 

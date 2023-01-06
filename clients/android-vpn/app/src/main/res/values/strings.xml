@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">IrdestVPN</string>
+    <string name="app_name">irdestVPN</string>
     <string name="disconnect">Disconnect</string>
     <string name="connect">Connect</string>
     <string name="connecting">Connecting...</string>
@@ -7,4 +7,8 @@
     <string name="disconnected">Disconnected</string>
     <string name="starting_ratmand">Starting ratmand router...</string>
     <string name="permission_denied">"Permission denied."</string>
+    <string name="server_address">Server address</string>
+    <string name="port_number">Port</string>
+    <string name="secret">Shared secret</string>
+    <string name="Error">Error</string>
 </resources>
