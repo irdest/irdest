@@ -1,20 +1,23 @@
-// SPDX-FileCopyrightText: 2022 Katharina Fey <kookie@spacekookie.de>
+// SPDX-FileCopyrightText: 2022-2023 Katharina Fey <kookie@spacekookie.de>
 //
-// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+// SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-AppStore
 
-//! A utility wrapper type for notifying async tasks about mutation of data they're interested in.
-
-#![doc(html_favicon_url = "https://qaul.org/favicon.ico")]
-#![doc(html_logo_url = "https://qaul.org/img/qaul_icon-128.png")]
+//! A utility wrapper type for notifying async tasks about mutation of
+//! data they might be interested in.
 
 use std::ops::{Deref, DerefMut};
 use std::task::Waker;
 
-/// A wrapper which wakes tasks on mutable accesses to the wrapped value.
+/// A wrapper which wakes tasks on mutable accesses to the wrapped
+/// value.
 ///
-/// This can be used to transparently notify an asyncronous task that it
-/// should, for example, check for more work in a queue or try again to
-/// acquire a lock.
+/// This can be used to transparently notify an asyncronous task that
+/// it should, for example, check for more work in a queue or try
+/// again to acquire a lock.
+///
+/// Importantly: only DerefMut is used to wake the target task.
+/// Read-only access is possible without causing wake events.  If no
+/// Waker has been registered yet, no task will be woken.
 #[derive(Default, Debug, Clone)]
 pub struct Notify<T> {
     inner: T,
