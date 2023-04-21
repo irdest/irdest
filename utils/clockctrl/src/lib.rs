@@ -1,10 +1,14 @@
+// SPDX-FileCopyrightText: 2020,2023 Katharina Fey <kookie@spacekookie.de>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
+
 //! **A clock control mechanism for internally scheduled task
 //! runners**
 //!
-//! This library was primarily written as a utility for [Ratman], and
-//! libqaul, but can be used in any reactor setting where direct
-//! scheduling control should be possible without having to expose all
-//! tasks from it.
+//! This library was primarily written as a utility for [Ratman], but
+//! can be used in any reactor setting where direct scheduling control
+//! should be possible without having to expose all tasks from it.
 //!
 //! [Ratman]: https://crates.io/crate/ratman
 //!
@@ -36,8 +40,8 @@
 //!     });
 //! ```
 
-#![doc(html_favicon_url = "https://qaul.org/favicon.ico")]
-#![doc(html_logo_url = "https://qaul.org/img/qaul_icon-128.png")]
+#![doc(html_favicon_url = "https://irde.st/favicon.ico")]
+#![doc(html_logo_url = "https://irde.st/img/logo.png")]
 
 mod ctrl;
 pub use ctrl::{ClockCtrl, Scheduler};
