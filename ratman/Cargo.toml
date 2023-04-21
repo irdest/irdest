@@ -60,8 +60,8 @@ rand = "0.7"
 
 # Sub-components
 clockctrl = { version = "0.1", path = "../utils/clockctrl" }
-netmod = { version ="0.5.0", path = "lib-netmod", package = "ratman-netmod"}
-task-notify = { version = "0.1", path = "../utils/task-notify" }
+netmod = { version = "0.5", path = "lib-netmod", package = "ratman-netmod"}
+task-notify = { version = "1.0", path = "../utils/task-notify" }
 
 # Dependencies required for various binary targets
 types = { version = "0.4.0", path = "lib-types", package = "ratman-types", optional = true }
@@ -92,3 +92,9 @@ bincode = "1.2"
 netmod-inet = { path = "../netmods/netmod-inet", version = "*" }
 netmod-mem = { path = "../netmods/netmod-mem", version = "0.4" }
 tracing-subscriber = { version = "0.2", features = ["fmt"] }
+
+criterion = { version = "0.4", features = ["html_reports"] }
+
+[[bench]]
+name = "architecture"
+harness = false

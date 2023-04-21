@@ -20,8 +20,8 @@ stdenv.mkDerivation {
     # for various tests
     cargo-watch binutils reuse jq
 
-    # for the ratman dashboard
-    nodejs yarn
+    # ratman dashboard + benchmark graphs
+    nodejs yarn gnuplot
 
     # for irdest-mblog
     gtk4
