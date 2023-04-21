@@ -10,7 +10,8 @@
 //!
 //! [`clockctrl`]: https://docs.rs/clockctrl
 
-pub use clockctrl::{ClockCtrl, Error, Interval, Scheduler, Target};
+// Re-export the entire clockctrl crate here for convenience
+pub use clockctrl::*;
 
 /// A collection of tasks running inside the Ratman router
 #[derive(Hash, Ord, PartialOrd, Eq, PartialEq)]
