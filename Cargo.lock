@@ -388,6 +388,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "065374052e7df7ee4047b1160cca5e1467a12351a40b3da123c870ba0b8eda2a"
 
 [[package]]
+name = "atomptr"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "46ff5b6bd542e00088c1ed9a7b46f5b464811f790ba39b7b419be6bb86ae97f0"
+
+[[package]]
 name = "attohttpc"
 version = "0.16.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -713,6 +719,7 @@ name = "clockctrl"
 version = "0.1.0"
 dependencies = [
  "async-std",
+ "atomptr",
 ]
 
 [[package]]

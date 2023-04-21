@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use crate::{Error, Interval, Target};
+use crate::{Behavior, ClockPoint, Error, Interval, PolicyMap};
 use async_std::{
     sync::{Arc, Barrier},
     task,
@@ -21,7 +21,7 @@ use std::{collections::BTreeMap, hash::Hash};
 /// defined by the user (either an enum or struct, as long as it is
 /// `Hash` and `Ord`).
 ///
-/// Each clockable point is then assigned a `Target`, which determines
+/// Each clockable point is then assigned a `Behavior`, which determines
 /// the behaviour of the clock point.
 #[derive(Hash, PartialOrd, Ord, PartialEq, Eq)]
 pub enum ClockType<K>
@@ -38,18 +38,18 @@ where
 
 /// A control object for different clocking scopes
 ///
-/// Each clock target can be configured individually via the [`Target`]
+/// Each clock target can be configured individually via the [`Behavior`]
 /// type, returned by [`setup()`].  Additionally you need to provide
 /// some type that implements `Hash`.  It's recomended to just use an
 /// enum that can be mapped onto each of your reactors internal tasks.
 ///
-/// [`Target`]: struct.Target.html
+/// [`Behavior`]: struct.Behavior.html
 /// [`setup()`]: struct.ClockCtrl.html#method.setup
 pub struct ClockCtrl<K>
 where
     K: Hash + Ord,
 {
-    clocks: BTreeMap<ClockType<K>, Target>,
+    clocks: BTreeMap<ClockType<K>, PolicyMap>,
 }
 
 /// A wrapper type around different clocking strategies
@@ -104,60 +104,64 @@ where
     /// Canonically, the default constraints could be used to enable a
     /// low battery mode, whereas more low power embedded platforms
     /// can be further optimised.
-    pub fn setup(&mut self, target: K) -> &mut Target {
+    pub fn setup(&mut self, target: K) -> &mut PolicyMap {
         self.clocks
             .entry(ClockType::User(target))
-            .or_insert(Target::default())
+            .or_insert(PolicyMap::default())
     }
 
     /// Start clock scheduler for a given task
     ///
     /// This function returns a Barrier which can be used in the
     /// corresponding task.
-    pub fn start(&mut self, target: K) -> Result<Scheduler, Error> {
+    pub fn start(&mut self, target: &ClockType<K>) -> Result<ClockPoint, Error> {
         let b = Arc::new(Barrier::new(2));
-        match self.clocks.remove(&ClockType::User(target)) {
-            Some(Target { interval, fence }) => match (interval, fence) {
-                // A raw external scheduler
-                (None, None) => Ok(Scheduler::External {
-                    delay: 1.0,
-                    a: Arc::clone(&b),
-                    b,
-                }),
-
-                // An external scheduler, with a delay modifier
-                (Some(Interval::Delay(d)), None) => Ok(Scheduler::External {
-                    delay: d,
-                    a: Arc::clone(&b),
-                    b,
-                }),
-
-                // A linearly timed internal scheduler
-                (Some(Interval::Timed(dur)), None) => {
-                    let a = Arc::clone(&b);
-                    task::spawn(async move {
-                        loop {
-                            task::sleep(dur).await;
-                            a.wait().await;
-                        }
-                    });
-
-                    Ok(Scheduler::Internal(b))
-                }
-
-                // A manually clock stepped fence scheduler
-                (Some(Interval::Stepped), Some(fence)) => {
-                    let a = Arc::clone(&b);
-                    task::spawn(async move {
-                        fence(a);
-                    });
-
-                    Ok(Scheduler::Internal(b))
-                }
-
-                (_, _) => panic!("Invalid scheduler setup"),
-            },
-            None => Err(Error::NoTarget),
+        match self.clocks.remove(target) {
+            Some(behavior_map) => Ok(ClockPoint::new(behavior_map)),
+            None => Err(Error::NoBehavior),
         }
+
+        //     Some(Behavior { interval, fence }) => match (interval, fence) {
+        //         // A raw external scheduler
+        //         (None, None) => Ok(Scheduler::External {
+        //             delay: 1.0,
+        //             a: Arc::clone(&b),
+        //             b,
+        //         }),
+
+        //         // An external scheduler, with a delay modifier
+        //         (Some(Interval::Delay(d)), None) => Ok(Scheduler::External {
+        //             delay: d,
+        //             a: Arc::clone(&b),
+        //             b,
+        //         }),
+
+        //         // A linearly timed internal scheduler
+        //         (Some(Interval::Timed(dur)), None) => {
+        //             let a = Arc::clone(&b);
+        //             task::spawn(async move {
+        //                 loop {
+        //                     task::sleep(dur).await;
+        //                     a.wait().await;
+        //                 }
+        //             });
+
+        //             Ok(Scheduler::Internal(b))
+        //         }
+
+        //         // A manually clock stepped fence scheduler
+        //         (Some(Interval::Stepped), Some(fence)) => {
+        //             let a = Arc::clone(&b);
+        //             task::spawn(async move {
+        //                 fence(a);
+        //             });
+
+        //             Ok(Scheduler::Internal(b))
+        //         }
+
+        //         (_, _) => panic!("Invalid scheduler setup"),
+        //     },
+        //     None => Err(Error::NoBehavior),
+        // }
     }
 }

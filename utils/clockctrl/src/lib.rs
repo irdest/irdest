@@ -23,30 +23,24 @@
 //!
 //! [`ClockCtrl`]: struct.ClockCtrl.html
 //!
-//! ```
-//! use clockctrl::{ClockCtrl, Error, Interval, Scheduler};
-//! use std::time::Duration;
+//! ## Example
 //!
-//! # #[derive(Hash, Eq, PartialEq, Ord, PartialOrd)] enum MyTasks { Journal, Switch }
-//! let mut clc = ClockCtrl::new();
-//! clc.setup(MyTasks::Journal)
-//!     .set(Interval::Timed(Duration::from_secs(10)));
+//! Let's take an example with two tasks, that each should wake each
+//! other after some amount of time has elapsed.
 //!
-//! clc.setup(MyTasks::Switch)
-//!     .set(Interval::Stepped)
-//!     .fence(move |_| {
-//!         // ...
-//!     });
-//! ```
+//! ... todo ...
 
 #![doc(html_favicon_url = "https://irde.st/favicon.ico")]
 #![doc(html_logo_url = "https://irde.st/img/logo.png")]
 
-mod ctrl;
-pub use ctrl::{ClockCtrl, ClockType, Scheduler};
+mod controller;
+pub use controller::{ClockCtrl, ClockType, Scheduler};
+
+mod policy;
+pub use policy::{Policy, PolicyMap};
 
 mod error;
 pub use error::Error;
 
-mod target;
-pub use target::{Interval, Target};
+mod point;
+pub use point::{Behavior, ClockPoint, Interval};

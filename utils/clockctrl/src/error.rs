@@ -19,8 +19,8 @@ pub enum Error {
     NoFence,
     /// No interval was provided
     NoInterval,
-    /// The requested target has no settings attached to it
-    NoTarget,
+    /// The requested behaviour has no settings attached to it
+    NoBehavior,
 }
 
 impl Display for Error {
@@ -32,7 +32,7 @@ impl Display for Error {
                 Error::InvalidTime => "Provided time was invalid (probably 0)",
                 Error::NoFence => "Stepped is impossible without providing a fence",
                 Error::NoInterval => "No interval known for a clock value",
-                Error::NoTarget => "The requested target has no settings attached",
+                Error::NoBehavior => "The requested target has no settings attached",
             }
         )
     }
