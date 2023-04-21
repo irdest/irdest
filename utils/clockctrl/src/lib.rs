@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-
 //! **A clock control mechanism for internally scheduled task
 //! runners**
 //!
@@ -44,7 +43,7 @@
 #![doc(html_logo_url = "https://irde.st/img/logo.png")]
 
 mod ctrl;
-pub use ctrl::{ClockCtrl, Scheduler};
+pub use ctrl::{ClockCtrl, ClockType, Scheduler};
 
 mod error;
 pub use error::Error;

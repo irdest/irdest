@@ -9,8 +9,31 @@ use async_std::{
 };
 use std::{collections::BTreeMap, hash::Hash};
 
-pub struct ClockHyperType<K> where K: Hash + Ord {
-    
+/// A clock identifier type
+///
+/// This type identifies a clockable point in a runtime.  A clockable
+/// point is any point in the code that is frequently returned to by a
+/// loop, or scheduling mechanism and that should be controlled either
+/// by time, or external signals.
+///
+/// A clock point can either be: a simple name (`"foo"`), a namespaced
+/// name (`"test" "foo"` stored as two strings), or a concrete type
+/// defined by the user (either an enum or struct, as long as it is
+/// `Hash` and `Ord`).
+///
+/// Each clockable point is then assigned a `Target`, which determines
+/// the behaviour of the clock point.
+#[derive(Hash, PartialOrd, Ord, PartialEq, Eq)]
+pub enum ClockType<K>
+where
+    K: Hash + Ord,
+{
+    /// A simple named clock activity
+    Named(String),
+    /// A named clock activity with a namespace
+    Namespaced(String, String),
+    /// A fully typed clock activity
+    User(K),
 }
 
 /// A control object for different clocking scopes
@@ -26,7 +49,7 @@ pub struct ClockCtrl<K>
 where
     K: Hash + Ord,
 {
-    clocks: BTreeMap<K, Target>,
+    clocks: BTreeMap<ClockType<K>, Target>,
 }
 
 /// A wrapper type around different clocking strategies
@@ -81,8 +104,10 @@ where
     /// Canonically, the default constraints could be used to enable a
     /// low battery mode, whereas more low power embedded platforms
     /// can be further optimised.
-    pub fn setup(&mut self, trgt: K) -> &mut Target {
-        self.clocks.entry(trgt).or_insert(Target::default())
+    pub fn setup(&mut self, target: K) -> &mut Target {
+        self.clocks
+            .entry(ClockType::User(target))
+            .or_insert(Target::default())
     }
 
     /// Start clock scheduler for a given task
@@ -91,7 +116,7 @@ where
     /// corresponding task.
     pub fn start(&mut self, target: K) -> Result<Scheduler, Error> {
         let b = Arc::new(Barrier::new(2));
-        match self.clocks.remove(&target) {
+        match self.clocks.remove(&ClockType::User(target)) {
             Some(Target { interval, fence }) => match (interval, fence) {
                 // A raw external scheduler
                 (None, None) => Ok(Scheduler::External {

@@ -10,7 +10,4 @@ edition = "2021"
 license = "GPL-3.0-or-later"
 
 [dependencies]
-async-barrier = "1.1"
-
-[test-dependencies]
-async-std= { version = "1.0", features = ["unstable"] }
+async-std = { version = "1.0", features = ["unstable"] }
