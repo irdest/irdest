@@ -18,6 +18,6 @@ let
   };
 
 in
-  import sources.nixpkgs {
-    overlays = [ overlay ];
-  }
+import sources.nixpkgs {
+  overlays = [ overlay ];
+}

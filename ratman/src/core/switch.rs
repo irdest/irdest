@@ -70,15 +70,16 @@ impl Switch {
         task::spawn(async move {
             while let Ok(i) = self.ctrl.1.recv().await {
                 let switch = Arc::clone(&self);
-                task::spawn(switch.run_inner(i));
+                task::spawn(switch.run_batch(i, 1024));
             }
         });
     }
 
-    async fn run_inner(self: Arc<Self>, id: usize) {
+    /// Get one batch of messages from the driver interface points
+    async fn run_batch(self: Arc<Self>, id: usize, batch_size: usize) {
         let ep = self.drivers.get(id).await;
 
-        loop {
+        for _ in 0..batch_size {
             let (f, t) = match ep.next().await {
                 Ok(f) => f,
                 _ => continue,

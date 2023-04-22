@@ -20,6 +20,8 @@
 #[macro_use]
 extern crate tracing;
 
+pub mod scaffold;
+
 pub mod clock;
 mod core;
 mod crypto;

@@ -6,7 +6,7 @@ edition = "2021"
 license = "AGPL-3.0-or-later"
 
 [dependencies]
-task-notify = { version = "0.1", path = "../../utils/task-notify" }
+task-notify = { version = "1.0", path = "../../utils/task-notify" }
 netmod = { version ="0.5.0", path = "../../ratman/lib-netmod", package = "ratman-netmod" }
 irdest-firmware-util = {version = "0.1.0", path = "../../utils/irdest-firmware-util"}
 
