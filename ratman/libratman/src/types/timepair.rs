@@ -1,13 +1,17 @@
+// SPDX-FileCopyrightText: 2019-2023 Katharina Fey <kookie@spacekookie.de>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 use chrono::{DateTime, Utc};
 use regex::Regex;
+use serde::{Deserialize, Serialize};
+
 /// Represents the time of sending and receiving this frame
 ///
 /// Because there is no guarantee that the host clock is accurate or
 /// being maliciously manipulated, the sending time should not be
 /// trusted.  A timestamp that should be used by applications is
 /// available via the `local()` function.
-use serde::{Deserialize, Serialize};
-
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct TimePair {
     sent: DateTime<Utc>,

@@ -27,25 +27,24 @@
 //! `ratmand` that does not match the libraries version number.  This
 //! behaviour can be disabled via the `RatmanIpc` API.
 
-#[macro_use]
-extern crate tracing;
-
 #[cfg(feature = "ffi")]
 pub mod ffi;
 
-use async_std::{
-    channel::{unbounded, Receiver, Sender},
-    net::TcpStream,
-    task,
+pub use crate::types::{
+    api::Receive_Type, Address, Error, Id, Message, Recipient, Result, TimePair,
 };
-pub use types::{api::Receive_Type, Address, Error, Id, Message, Recipient, Result, TimePair};
-use types::{
+use crate::types::{
     api::{
         self, ApiMessageEnum,
         Peers_Type::{DISCOVER, RESP},
         Setup_Type::ACK,
     },
     encode_message, parse_message, read_with_length, write_with_length,
+};
+use async_std::{
+    channel::{unbounded, Receiver, Sender},
+    net::TcpStream,
+    task,
 };
 
 /// An IPC handle for a particular address
@@ -221,7 +220,7 @@ async fn run_receive(
         };
 
         trace!("Parsing message from stream...");
-        match types::decode_message(&msg).map(|m| m.inner) {
+        match crate::types::decode_message(&msg).map(|m| m.inner) {
             Ok(Some(one_of)) => match one_of {
                 ApiMessageEnum::recv(mut msg) => {
                     let tt = msg.field_type;

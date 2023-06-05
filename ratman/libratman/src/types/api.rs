@@ -1,15 +1,15 @@
-// SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
+// SPDX-FileCopyrightText: 2019-2023 Katharina Fey <kookie@spacekookie.de>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 //! Ratman API abstractions
 
-pub use crate::proto::api::{
+pub use crate::types::proto::api::{
     ApiMessage, ApiMessage_oneof_inner as ApiMessageEnum, Peers, Peers_Type, Receive, Receive_Type,
     Send, Send_Type, Setup, Setup_Type,
 };
-use crate::proto::message::Message;
-use crate::Address;
+use crate::types::proto::message::Message;
+use crate::types::Address;
 
 //////////// SEND type
 

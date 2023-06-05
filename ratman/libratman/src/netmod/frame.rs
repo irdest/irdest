@@ -1,7 +1,6 @@
 //! Networking frames
 
-use ratman_types::{Address, ID_LEN};
-use serde::{Deserialize, Serialize};
+use crate::types::Address;
 
 /// Describes an endpoint's send target
 ///

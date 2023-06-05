@@ -6,34 +6,35 @@
 members = [
     # The decentralised router
     "ratman",
-    "ratman/lib-client",
-    "ratman/lib-netmod",
-    "ratman/lib-types",
+    "ratman/libratman",
+    # "ratman/lib-client",
+    # "ratman/lib-netmod",
+    # "ratman/lib-types",
 
     # Various utility crates
     "utils/clockctrl",
     "utils/eris-rs",
-    "utils/installer",
-    "utils/irdest-firmware-util",
+    # "utils/installer",
+    # "utils/irdest-firmware-util",
     "utils/task-notify",
     "utils/tracing-syslog",
-    "utils/useful-netmod-bits",
+    # "utils/useful-netmod-bits",
     "utils/zbus-nm",
 
-    # Available netmod drivers
-    "netmods/netmod-fuzz",
-    "netmods/netmod-inet",
-    "netmods/netmod-lan",
-    "netmods/netmod-lora",
-    "netmods/netmod-mem",
-    "netmods/netmod-wd",
-    "netmods/netmod-datalink",
+    # # Available netmod drivers
+    # "netmods/netmod-fuzz",
+    # "netmods/netmod-inet",
+    # "netmods/netmod-lan",
+    # "netmods/netmod-lora",
+    # "netmods/netmod-mem",
+    # "netmods/netmod-wd",
+    # "netmods/netmod-datalink",
 
-    # End-user applications
-    "clients/android-vpn/jni",
-    "clients/irdest-echo",
-    "clients/irdest-mblog",
-    "clients/irdest-proxy",
+    # # End-user applications
+    # "clients/android-vpn/jni",
+    # "clients/irdest-echo",
+    # "clients/irdest-mblog",
+    # "clients/irdest-proxy",
 ]
 
 exclude = [

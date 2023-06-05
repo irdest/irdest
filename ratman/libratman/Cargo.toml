@@ -1,12 +1,12 @@
-# SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
+# SPDX-FileCopyrightText: 2023 Katharina Fey <kookie@spacekookie.de>
 #
-# SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+# SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-AppStore
 
 [package]
-name = "ratman-types"
-description = "Encoding types for the Ratman API"
-version = "0.4.0"
-edition = "2018"
+name = "libratman"
+description = "Ratman types, client, and interface library"
+version = "0.1.0"
+edition = "2021"
 license = "GPL-3.0-or-later"
 
 [features]
@@ -17,12 +17,16 @@ proto = ["protobuf", "protoc-rust"]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", optional = true }
 
-async-std = "1.0"
+async-trait = "0.1"
+async-std = { version = "1.0", features = ["attributes"] }
 byteorder = "1.0"
 cfg-if = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 protobuf = { version = "2.19", optional = true }
 thiserror = "1.0"
+
+tracing = "0.1"
+tracing-subscriber = "0.2"
 
 blake2 = "0.9.0"
 hex = "0.4"
@@ -35,6 +39,7 @@ prometheus-client = "0.16"
 [dev-dependencies]
 serde_json = "1.0"
 bincode = "1.2"
+
 
 [build-dependencies]
 protoc-rust = { version = "2.19", optional = true }

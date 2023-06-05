@@ -1,6 +1,8 @@
-use crate::{Id, Recipient, SeqBuilder, SeqData};
+// SPDX-FileCopyrightText: 2019-2023 Katharina Fey <kookie@spacekookie.de>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use crate::{Address, ID_LEN};
+use crate::types::{Address, Id, Recipient, SeqBuilder, SeqData, ID_LEN};
 use serde::{Deserialize, Serialize};
 
 /// A sequence of data, represented by a single network packet

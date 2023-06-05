@@ -32,10 +32,6 @@
 //! integrity (resends are up to a user of this interface to
 //! implement, as well as associating sequential frames into a data
 //! set.
-#![allow(warnings)]
-
-#[macro_use]
-extern crate serde;
 
 mod endpoint;
 mod frame;
@@ -43,5 +39,4 @@ mod result;
 
 pub use endpoint::Endpoint;
 pub use frame::Target;
-pub use ratman_types::{Frame, Recipient};
 pub use result::{Error, Result};

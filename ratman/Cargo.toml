@@ -11,35 +11,35 @@ version = "0.4.0"
 edition = "2018"
 
 # Stand-alone ratman daemon binary
-[[bin]]
-name = "ratmand"
-required-features = ["daemon"]
+# [[bin]]
+# name = "ratmand"
+# required-features = ["daemon"]
 
-# A client tool to connect to the ratman daemon
-[[bin]]
-name = "ratcat"
-required-features = ["util"]
+# # A client tool to connect to the ratman daemon
+# [[bin]]
+# name = "ratcat"
+# required-features = ["util"]
 
-[[bin]]
-name = "ratctl"
-required-features = ["util"]
+# [[bin]]
+# name = "ratctl"
+# required-features = ["util"]
 
-[features]
-default = ["daemon", "util", "prometheus-client"]
+# [features]
+# default = ["daemon", "util", "prometheus-client"]
 
-# Additional driver features
-datalink = ["netmod-datalink"]
-inet = ["netmod-inet"]
-lan = ["netmod-lan"]
-lora = ["netmod-lora"]
+# # Additional driver features
+# datalink = ["netmod-datalink"]
+# inet = ["netmod-inet"]
+# lan = ["netmod-lan"]
+# lora = ["netmod-lora"]
 
-upnp = ["igd", "ipnetwork", "pnet"]
-daemon = ["cli", "datalink", "inet", "lan", "upnp", "syslog"]
-util = ["cli", "ratman-client"]
-cli = ["types", "clap", "directories", "nix", "serde_json", "tracing-subscriber"]
-dashboard = ["daemon", "tide", "rust-embed", "openapi_type", "prometheus-client"]
-syslog = ["tracing-syslog"]
-android = []
+# upnp = ["igd", "ipnetwork", "pnet"]
+# daemon = ["cli", "datalink", "inet", "lan", "upnp", "syslog"]
+# util = ["cli", "ratman-client"]
+# cli = ["types", "clap", "directories", "nix", "serde_json", "tracing-subscriber"]
+# dashboard = ["daemon", "tide", "rust-embed", "openapi_type", "prometheus-client"]
+# syslog = ["tracing-syslog"]
+# android = []
 
 [dependencies]
 async-std = { version = "1.0", features = ["std", "unstable"] }
@@ -59,43 +59,43 @@ curve25519-dalek = "3.0.0"
 rand = "0.7"
 
 # Sub-components
+libratman = { version = "0.1", path = "libratman" }
 clockctrl = { version = "0.1", path = "../utils/clockctrl" }
-netmod = { version = "0.5", path = "lib-netmod", package = "ratman-netmod"}
 task-notify = { version = "1.0", path = "../utils/task-notify" }
 
-# Dependencies required for various binary targets
-types = { version = "0.4.0", path = "lib-types", package = "ratman-types", optional = true }
-ratman-client = { version = "0.4.0", path = "lib-client", optional = true }
-clap = { version = "2.0", optional = true, features = ["wrap_help", "color", "suggestions"] }
-tracing-subscriber = { version = "0.2", optional = true, features = ["fmt"] }
-tracing-syslog = { version = "0.1", path = "../utils/tracing-syslog", optional = true }
-directories = { version = "4.0.1", optional = true }
-serde_json = { version = "1.0", optional = true }
-nix = { version = "0.23", optional = true }
-igd = { version = "=0.12", optional = true }       # These three crates are bound to an
-ipnetwork = { version = "=0.18", optional = true } # older version becuase we don't want
-pnet = { version = "=0.28", optional = true }      # to update to the 2021-edition yet
-tide = { version = "0.16", optional = true }
-rust-embed = { version = "6.3", optional = true }
-openapi_type = { version = "0.4", optional = true }
-prometheus-client = { version = "0.16", optional = true }
-async-eris = { version = "0.1", path = "../utils/eris-rs" }
+# # Dependencies required for various binary targets
+# types = { version = "0.4.0", path = "lib-types", package = "ratman-types", optional = true }
+# ratman-client = { version = "0.4.0", path = "lib-client", optional = true }
+# clap = { version = "2.0", optional = true, features = ["wrap_help", "color", "suggestions"] }
+# tracing-subscriber = { version = "0.2", optional = true, features = ["fmt"] }
+# tracing-syslog = { version = "0.1", path = "../utils/tracing-syslog", optional = true }
+# directories = { version = "4.0.1", optional = true }
+# serde_json = { version = "1.0", optional = true }
+# nix = { version = "0.23", optional = true }
+# igd = { version = "=0.12", optional = true }       # These three crates are bound to an
+# ipnetwork = { version = "=0.18", optional = true } # older version becuase we don't want
+# pnet = { version = "=0.28", optional = true }      # to update to the 2021-edition yet
+# tide = { version = "0.16", optional = true }
+# rust-embed = { version = "6.3", optional = true }
+# openapi_type = { version = "0.4", optional = true }
+# prometheus-client = { version = "0.16", optional = true }
+# async-eris = { version = "0.1", path = "../utils/eris-rs" }
 
-# Bundled network modules are all optional dependencies
-netmod-datalink = { path = "../netmods/netmod-datalink", version = "0.2", optional = true }
-netmod-inet = { path = "../netmods/netmod-inet", version = "0.4", optional = true }
-netmod-lan = { path = "../netmods/netmod-lan", version = "0.2", optional = true }
-netmod-lora = { path = "../netmods/netmod-lora", version = "0.1", optional = true }
+# # Bundled network modules are all optional dependencies
+# netmod-datalink = { path = "../netmods/netmod-datalink", version = "0.2", optional = true }
+# netmod-inet = { path = "../netmods/netmod-inet", version = "0.4", optional = true }
+# netmod-lan = { path = "../netmods/netmod-lan", version = "0.2", optional = true }
+# netmod-lora = { path = "../netmods/netmod-lora", version = "0.1", optional = true }
 
-[dev-dependencies]
-bincode = "1.2"
-netmod-inet = { path = "../netmods/netmod-inet", version = "*" }
-netmod-mem = { path = "../netmods/netmod-mem", version = "0.4" }
-tracing-subscriber = { version = "0.2", features = ["fmt"] }
+# [dev-dependencies]
+# bincode = "1.2"
+# netmod-inet = { path = "../netmods/netmod-inet", version = "*" }
+# netmod-mem = { path = "../netmods/netmod-mem", version = "0.4" }
+# tracing-subscriber = { version = "0.2", features = ["fmt"] }
 
-criterion = { version = "0.4", features = ["html_reports"] }
-rand = "0.7"
+# criterion = { version = "0.4", features = ["html_reports"] }
+# rand = "0.7"
 
-[[bench]]
-name = "architecture"
-harness = false
+# [[bench]]
+# name = "architecture"
+# harness = false

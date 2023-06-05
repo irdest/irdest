@@ -1,14 +1,13 @@
-// SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
+// SPDX-FileCopyrightText: 2019-2023 Katharina Fey <kookie@spacekookie.de>
 // SPDX-FileCopyrightText: 2022 Yureka Lilian <yuka@yuka.dev>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use serde::{Deserialize, Serialize};
-
 #[cfg(feature = "proto")]
-pub use crate::proto::message::Message as ProtoMessage;
+pub use crate::types::proto::message::Message as ProtoMessage;
 
-use crate::{timepair::TimePair, Address, Id};
+use crate::types::{timepair::TimePair, Address, Id};
+use serde::{Deserialize, Serialize};
 
 /// Specify the message recipient
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -113,7 +112,7 @@ impl Message {
         inner.set_id(id.as_bytes().to_vec());
         inner.set_sender(sender.as_bytes().to_vec());
 
-        use crate::proto::message::{Recipient as ProtoRecipient, StandardRecipient};
+        use crate::types::proto::message::{Recipient as ProtoRecipient, StandardRecipient};
 
         let mut r = ProtoRecipient::new();
         match recipient {
@@ -146,7 +145,7 @@ impl Message {
 #[cfg(feature = "proto")]
 impl From<ProtoMessage> for Message {
     fn from(mut msg: ProtoMessage) -> Self {
-        use crate::proto::message::Recipient_oneof_inner;
+        use crate::types::proto::message::Recipient_oneof_inner;
 
         let mut r = msg.take_recipient();
         let recipient = match r.inner {
@@ -180,7 +179,7 @@ impl From<Message> for ProtoMessage {
         let mut inner = ProtoMessage::new();
         inner.set_sender(msg.sender.as_bytes().to_vec());
 
-        use crate::proto::message::{Recipient as ProtoRecipient, StandardRecipient};
+        use crate::types::proto::message::{Recipient as ProtoRecipient, StandardRecipient};
 
         let mut r = ProtoRecipient::new();
         match msg.recipient {

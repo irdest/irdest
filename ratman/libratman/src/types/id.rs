@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019-2023 Katharina Fey <kookie@spacekookie.de>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 use prometheus_client::encoding::text::Encode;
 use serde::{
     de::{Deserializer, SeqAccess, Visitor},

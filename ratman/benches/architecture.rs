@@ -267,7 +267,8 @@ impl TcpEdgeReader {
 
             let mut ctr = 0;
             while ctr < chunk_size {
-                let num_bytes = stream.read(chunk.as_mut())
+                let num_bytes = stream
+                    .read(chunk.as_mut())
                     .expect("failed to read chunk from TcpStream");
                 ctr += num_bytes;
             }

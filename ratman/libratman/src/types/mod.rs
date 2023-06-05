@@ -4,8 +4,6 @@
 
 //! API encoding types for Ratman
 
-mod error;
-
 #[cfg(feature = "proto")]
 mod proto {
     include!(concat!(env!("OUT_DIR"), "/proto_gen/mod.rs"));
@@ -14,6 +12,7 @@ mod proto {
 #[cfg(feature = "proto")]
 pub mod api;
 
+mod error;
 mod frame;
 mod id;
 mod message;
@@ -34,7 +33,7 @@ use async_std::{
 use byteorder::{BigEndian, ByteOrder};
 
 #[cfg(feature = "proto")]
-use {api::ApiMessage, protobuf::Message as ProtoMessage};
+use {crate::types::api::ApiMessage, protobuf::Message as ProtoMessage};
 
 /// First write the length as big-endian u64, then write the provided buffer
 pub async fn write_with_length<T: Write + Unpin>(t: &mut T, buf: &Vec<u8>) -> Result<usize> {

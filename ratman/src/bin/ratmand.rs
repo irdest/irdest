@@ -5,32 +5,34 @@
 
 //! Ratman daemon entrypoint
 
-#[macro_use]
-extern crate tracing;
+// #[macro_use]
+// extern crate tracing;
 
-pub(crate) use ratman::{daemon::startup::*, *};
+// pub(crate) use ratman::{daemon::startup::*, *};
 
-fn main() {
-    let mut config = match daemon::config::Config::load() {
-        Ok(cfg) => cfg,
-        Err(e) => {
-            error!(
-                "Failed to load/write configuration: {}. Resuming with default values.",
-                e
-            );
-            daemon::config::Config::new()
-        }
-    };
+// fn main() {
+//     let mut config = match daemon::config::Config::load() {
+//         Ok(cfg) => cfg,
+//         Err(e) => {
+//             error!(
+//                 "Failed to load/write configuration: {}. Resuming with default values.",
+//                 e
+//             );
+//             daemon::config::Config::new()
+//         }
+//     };
 
-    let m = build_cli();
-    config.apply_arg_matches(m);
+//     let m = build_cli();
+//     config.apply_arg_matches(m);
 
-    if config.daemonize {
-        if let Err(err) = sysv_daemonize_app(config) {
-            eprintln!("Ratmand suffered fatal error: {}", err);
-            std::process::exit(-1);
-        }
-    } else if let Err(()) = async_std::task::block_on(run_app(config)) {
-        std::process::exit(-1);
-    }
-}
+//     if config.daemonize {
+//         if let Err(err) = sysv_daemonize_app(config) {
+//             eprintln!("Ratmand suffered fatal error: {}", err);
+//             std::process::exit(-1);
+//         }
+//     } else if let Err(()) = async_std::task::block_on(run_app(config)) {
+//         std::process::exit(-1);
+//     }
+// }
+
+fn main() {}

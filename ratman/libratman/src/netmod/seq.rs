@@ -1,7 +1,7 @@
 //! Sequence handling module
 
+use crate::types::Id;
 use crate::{Error, Frame, Identity, Recipient};
-use ratman_types::Id;
 use {
     std::hash::{BuildHasher, Hasher},
     twox_hash::{RandomXxHashBuilder64 as RXHash64, XxHash64},
