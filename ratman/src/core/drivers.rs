@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use async_std::sync::{Arc, RwLock};
-use netmod::Endpoint;
+use libratman::netmod::Endpoint;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 type Ep = dyn Endpoint + 'static + Send + Sync;

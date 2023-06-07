@@ -13,7 +13,9 @@
 //! - `Announce` is sent when a node comes online
 //! - `Sync` is a reply to an `Announce`, only omitted when `no_sync` is set
 
-use crate::Core;
+use crate::core::Core;
+use libratman::types::{Address, Error, Frame, Result};
+
 use async_std::{
     sync::{Arc, Mutex},
     task,
@@ -24,7 +26,6 @@ use std::{
     sync::atomic::{AtomicBool, Ordering},
     time::Duration,
 };
-use types::{Address, Error, Frame, Result};
 
 /// A payload that represents a RATMAN-protocol message
 #[derive(Debug, Serialize, Deserialize)]

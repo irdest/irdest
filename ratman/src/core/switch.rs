@@ -4,11 +4,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use async_std::{channel::bounded, sync::Arc, task};
-use types::Recipient;
+use libratman::types::Recipient;
 
 use crate::{
     core::{Collector, Dispatch, DriverMap, Journal, RouteTable, RouteType},
-    IoPair, Protocol,
+    protocol::Protocol,
+    IoPair,
 };
 
 /// A frame switch inside Ratman to route packets and signals

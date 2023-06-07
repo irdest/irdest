@@ -3,14 +3,16 @@
 # SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-AppStore
 
 [package]
-name = "libratman"
+name = "ratman"
 description = "Ratman types, client, and interface library"
-version = "0.1.0"
+version = "0.5.0"
 edition = "2021"
 license = "GPL-3.0-or-later"
 
 [features]
-default = ["proto"]
+default = []
+netmod = []
+client = ["proto"]
 proto = ["protobuf", "protoc-rust"]
 
 [dependencies]

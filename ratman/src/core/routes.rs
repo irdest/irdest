@@ -5,15 +5,18 @@
 
 //! Routing table module
 
-use crate::{Error, IoPair, Result};
+use crate::IoPair;
+use libratman::{
+    netmod::Target,
+    types::{Address, Error, Result},
+};
+
 use async_std::{
     channel::bounded,
     sync::{Arc, Mutex},
     task,
 };
-use netmod::Target;
 use std::collections::BTreeMap;
-use types::Address;
 
 /// A netmod endpoint ID and an endpoint target ID
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

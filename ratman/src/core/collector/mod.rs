@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2020, 2022 Katharina Fey <kookie@spacekookie.de>
+// SPDX-FileCopyrightText: 2020, 2022-2023 Katharina Fey <kookie@spacekookie.de>
 // SPDX-FileCopyrightText: 2020 Jess 3Jane <me@jess.coffee>
 // SPDX-FileCopyrightText: 2020 Alyssa Ross <hi@alyssa.is>
 //
@@ -23,16 +23,24 @@
 //! getting access to the state manager to ask for more work, and then
 //! making themselves redundant by handing in their finished messages.
 
-use crate::Message;
 use async_std::{
     sync::{Arc, Mutex},
     task,
 };
+use libratman::types::{Frame, Id, Message, TimePair};
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use tracing_futures::Instrument;
-use types::{Frame, Id};
 
 pub(self) type Locked<T> = Arc<Mutex<T>>;
+
+/// A wrapper around payload and signature
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+pub(self) struct Payload {
+    pub(self) payload: Vec<u8>,
+    pub(self) time: TimePair,
+    pub(self) signature: Vec<u8>,
+}
 
 mod state;
 pub(self) use state::State;
@@ -133,12 +141,12 @@ impl Collector {
 }
 
 #[cfg(test)]
-use crate::Address;
+use libratman::types::Address;
 
 #[test]
 fn queue_one() {
-    use crate::{TimePair, TransportSlicer};
-    use types::Recipient;
+    use crate::slicer::TransportSlicer;
+    use libratman::types::{Recipient, TimePair};
 
     let (sender, recipient, id) = (Address::random(), Address::random(), Address::random());
     let mut seq = TransportSlicer::slice(
@@ -147,9 +155,9 @@ fn queue_one() {
             id,
             sender,
             recipient: Recipient::Standard(vec![recipient]),
+            time: TimePair::sending(),
             payload: vec![0, 1, 2, 3, 1, 3, 1, 2, 1, 3, 3, 7],
-            timesig: TimePair::sending(),
-            sign: vec![0, 1],
+            signature: vec![0, 1],
         },
     );
 
@@ -180,8 +188,8 @@ fn queue_one() {
 #[ignore]
 #[test]
 fn queue_many() {
-    use crate::{TimePair, TransportSlicer};
-    use types::Recipient;
+    use crate::slicer::TransportSlicer;
+    use libratman::types::{Recipient, TimePair};
 
     let (sender, recipient, id) = (Address::random(), Address::random(), Address::random());
     let seq = TransportSlicer::slice(
@@ -190,9 +198,9 @@ fn queue_many() {
             id,
             sender,
             recipient: Recipient::Standard(vec![recipient]),
+            time: TimePair::sending(),
             payload: vec![0, 1, 2, 3, 1, 3, 1, 2, 1, 3, 3, 7],
-            timesig: TimePair::sending(),
-            sign: vec![],
+            signature: vec![],
         },
     );
 

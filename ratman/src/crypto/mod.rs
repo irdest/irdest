@@ -7,10 +7,11 @@
 //! An address corresponds to the public key of a key pair, where the
 //! private key is not shared outside the router.
 
-use crate::{storage::addrs::LocalAddress, Address};
+use crate::storage::addrs::LocalAddress;
 use async_std::sync::RwLock;
 use curve25519_dalek::edwards::CompressedEdwardsY;
 use ed25519_dalek::{ExpandedSecretKey, PublicKey, SecretKey, Signature, Signer, Verifier};
+use libratman::types::Address;
 use rand::rngs::OsRng;
 use std::collections::BTreeMap;
 use std::convert::TryInto;
@@ -86,7 +87,7 @@ impl Keystore {
         let map = self.inner.read().await;
         let self_keypair = map.get(&_self)?;
 
-        // Here we're taking an private key on the edwards curve and
+        // Here we're taking a private key on the edwards curve and
         // transform it to a private key on the montgomery curve.
         // This is done via the `ExpandedSecretKey` type, which does
         // this transformation internally, while also adding another

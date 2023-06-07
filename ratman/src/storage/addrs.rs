@@ -1,4 +1,4 @@
-use crate::Address;
+use libratman::types::Address;
 use serde::{Deserialize, Serialize};
 
 /// A local address on the network.

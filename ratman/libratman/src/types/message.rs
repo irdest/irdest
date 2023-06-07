@@ -49,12 +49,12 @@ impl From<Vec<Address>> for Recipient {
 /// namespace on the network.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Message {
-    id: Id,
-    sender: Address,
-    recipient: Recipient,
-    time: TimePair,
-    payload: Vec<u8>,
-    signature: Vec<u8>,
+    pub id: Id,
+    pub sender: Address,
+    pub recipient: Recipient,
+    pub time: TimePair,
+    pub payload: Vec<u8>,
+    pub signature: Vec<u8>,
 }
 
 impl Message {

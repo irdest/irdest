@@ -4,10 +4,10 @@
 # SPDX-License-Identifier: CC0-1.0
 
 [package]
-name = "ratman"
+name = "ratmand"
 description = "A decentralised and peer-to-peer packet router"
 license = "AGPL-3.0-or-later"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2018"
 
 # Stand-alone ratman daemon binary
@@ -42,33 +42,37 @@ edition = "2018"
 # android = []
 
 [dependencies]
-async-std = { version = "1.0", features = ["std", "unstable"] }
+
+## Core dependencies.  If you're not sure where to add something, put
+## it here first.  Large clusters can then always be expanded later.
+async-std = { version = "1.0", features = ["std", "unstable", "attributes"] }
 bincode = "1.0"
 byteorder = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 protobuf = "2.19"
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "1.0"
-tracing = "0.1"
-tracing-futures = "0.2"
 twox-hash = "1.5"
 
-x25519-dalek = "2.0.0-pre.1"
+## Cryptography stuff
+x25519-dalek = { version = "2.0.0-rc.2", features = ["static_secrets"] }
 ed25519-dalek = "1.0.0"
 curve25519-dalek = "3.0.0"
 rand = "0.7"
 
-# Sub-components
-libratman = { version = "0.1", path = "libratman" }
+## Logging and logging accessories
+tracing = "0.1"
+tracing-futures = "0.2"
+tracing-subscriber = { version = "0.2", optional = true, features = ["fmt"] }
+tracing-syslog = { version = "0.1", path = "../utils/tracing-syslog", optional = true }
+
+## Irdest and Ratman sub-components
+libratman = { version = "0.5", path = "libratman", features = ["netmod"], package = "ratman" }
 clockctrl = { version = "0.1", path = "../utils/clockctrl" }
 task-notify = { version = "1.0", path = "../utils/task-notify" }
 
 # # Dependencies required for various binary targets
-# types = { version = "0.4.0", path = "lib-types", package = "ratman-types", optional = true }
-# ratman-client = { version = "0.4.0", path = "lib-client", optional = true }
 # clap = { version = "2.0", optional = true, features = ["wrap_help", "color", "suggestions"] }
-# tracing-subscriber = { version = "0.2", optional = true, features = ["fmt"] }
-# tracing-syslog = { version = "0.1", path = "../utils/tracing-syslog", optional = true }
 # directories = { version = "4.0.1", optional = true }
 # serde_json = { version = "1.0", optional = true }
 # nix = { version = "0.23", optional = true }

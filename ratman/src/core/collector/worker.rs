@@ -6,9 +6,8 @@
 //! The collector worker
 
 use super::{Locked, State};
-use crate::{Message, Payload};
 use async_std::sync::Arc;
-use types::{Frame, Id, SeqBuilder};
+use libratman::types::{Frame, Id, Message, SeqBuilder};
 
 /// A self contained sub-task that collects frames into messages
 pub(super) struct Worker {
@@ -70,22 +69,22 @@ fn join_frames(buf: &mut Vec<Frame>, new: Frame) -> Option<Message> {
             Ok(v) => v,
             Err(_) => return None,
         };
-        let Payload {
+        let super::Payload {
             payload,
-            mut timesig,
-            sign,
+            mut time,
+            signature,
         } = bincode::deserialize(&layered).unwrap();
 
         // Update the received timestamp in the message
-        timesig.receive();
+        time.receive();
 
         Some(Message {
             id,
             sender,
             recipient,
-            timesig,
+            time,
             payload,
-            sign,
+            signature,
         })
     } else {
         None
@@ -93,7 +92,7 @@ fn join_frames(buf: &mut Vec<Frame>, new: Frame) -> Option<Message> {
 }
 
 #[cfg(test)]
-use types::{Address, Recipient};
+use libratman::types::{Address, Recipient};
 
 // This test is broken because currently it just creates a sequence of
 // bytes that can then not be deserialised by bincode into a Payload

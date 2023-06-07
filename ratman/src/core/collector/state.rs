@@ -3,17 +3,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use super::Locked;
-use crate::Message;
-
 use async_std::{
     future::{self, Future},
     pin::Pin,
     sync::Arc,
     task::Poll,
 };
+use libratman::types::{Frame, Id, Message};
 use std::collections::{BTreeMap, VecDeque};
 use task_notify::Notify;
-use types::{Frame, Id};
 
 /// Local frame collector state holder
 #[derive(Default)]

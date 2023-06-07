@@ -8,11 +8,13 @@
 
 use crate::{
     core::{Collector, DriverMap, EpTargetPair, RouteTable},
-    Message, Result, TransportSlicer,
+    slicer::TransportSlicer,
 };
 use async_std::{sync::Arc, task};
-use netmod::Target;
-use types::{Frame, Recipient};
+use libratman::{
+    netmod::Target,
+    types::{Frame, Message, Recipient, Result},
+};
 
 pub(crate) struct Dispatch {
     routes: Arc<RouteTable>,

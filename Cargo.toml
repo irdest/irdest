@@ -7,9 +7,7 @@ members = [
     # The decentralised router
     "ratman",
     "ratman/libratman",
-    # "ratman/lib-client",
-    # "ratman/lib-netmod",
-    # "ratman/lib-types",
+    "ratman/ratman-tools",
 
     # Various utility crates
     "utils/clockctrl",
