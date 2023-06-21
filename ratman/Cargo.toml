@@ -63,8 +63,8 @@ rand = "0.7"
 ## Logging and logging accessories
 tracing = "0.1"
 tracing-futures = "0.2"
-tracing-subscriber = { version = "0.2", optional = true, features = ["fmt"] }
-tracing-syslog = { version = "0.1", path = "../utils/tracing-syslog", optional = true }
+tracing-subscriber = { version = "0.2", features = ["fmt"] }
+tracing-syslog = { version = "0.1", path = "../utils/tracing-syslog" }
 
 ## Irdest and Ratman sub-components
 libratman = { version = "0.5", path = "libratman", features = ["netmod"], package = "ratman" }

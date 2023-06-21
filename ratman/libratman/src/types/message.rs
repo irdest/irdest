@@ -162,8 +162,8 @@ impl From<ProtoMessage> for Message {
         };
 
         Message {
-            id: Address::from_bytes(msg.get_id()),
-            sender: Address::from_bytes(msg.get_id()),
+            id: Id::from_bytes(msg.get_id()),
+            sender: Address::from_bytes(msg.get_sender()),
             recipient,
             time: TimePair::from_string(msg.get_time()),
             payload: msg.get_payload().to_vec(),

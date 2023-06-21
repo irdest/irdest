@@ -9,7 +9,7 @@ use libratman::types::Recipient;
 use crate::{
     core::{Collector, Dispatch, DriverMap, Journal, RouteTable, RouteType},
     protocol::Protocol,
-    IoPair,
+    util::IoPair,
 };
 
 /// A frame switch inside Ratman to route packets and signals

@@ -10,7 +10,7 @@ edition = "2021"
 license = "GPL-3.0-or-later"
 
 [features]
-default = []
+default = ["client", "netmod"]
 netmod = []
 client = ["proto"]
 proto = ["protobuf", "protoc-rust"]

@@ -14,14 +14,14 @@ pub mod api;
 
 mod error;
 mod frame;
-mod id;
+mod identifiers;
 mod message;
 mod seq;
 mod timepair;
 
 pub use error::{Error, Result};
 pub use frame::Frame;
-pub use id::{Address, Id, ID_LEN};
+pub use identifiers::{address::Address, id::Id, ID_LEN};
 pub use message::{Message, Recipient};
 pub use seq::{SeqBuilder, SeqData, XxSignature};
 pub use timepair::TimePair;

@@ -21,6 +21,7 @@
 #[macro_use]
 extern crate tracing;
 
+mod api;
 mod clock;
 mod core;
 mod crypto;
@@ -28,10 +29,15 @@ mod protocol;
 mod scaffold;
 mod slicer;
 mod storage;
+pub mod util;
 
-use async_std::channel::{Receiver, Sender};
-
-/// A convevient Sender/Receiver pair for a type
-pub(crate) type IoPair<T> = (Sender<T>, Receiver<T>);
-
-pub async fn start_with_configuration() {}
+/// Start a new Ratman router instance with a launch configuration
+///
+/// When embedding Ratman into an existing application context (i.e. a
+/// mobile app), take care to provide a [Config](crate::util::Config)
+/// that will initialise drivers and OS operations correctly.
+///
+/// Special permissions may be required for certain features!
+pub async fn start_with_configuration(_cfg: util::Config) {
+    // ...
+}

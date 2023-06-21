@@ -18,10 +18,10 @@
 #[macro_use]
 extern crate tracing;
 
-#[cfg(feature = "client")]
+// #[cfg(feature = "client")]
 pub mod client;
 
-#[cfg(feature = "netmod")]
+// #[cfg(feature = "netmod")]
 pub mod netmod;
 
 pub mod types;

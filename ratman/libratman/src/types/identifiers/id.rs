@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
+use super::ID_LEN;
 use prometheus_client::encoding::text::Encode;
 use serde::{
     de::{Deserializer, SeqAccess, Visitor},
@@ -12,40 +13,32 @@ use std::{
     string::ToString,
 };
 
-/// Length of the identity buffer to align with an ed25519 pubkey
-pub const ID_LEN: usize = 32;
-
-/// A cryptographic address on an Irdest network
+/// A cryptographic identifier for the Irdest ecosystem
 ///
-/// An address is 32 bytes long and represents an ed25519 public key.
-/// Each address is thus backed by an ed25519 private key, which can
-/// be used for signatures, and to establish a shared secret with any
-/// other address via a x25519 diffie-hellman.  Since every address is
-/// its own public key, no additional information needs to be
-/// exchanged for encryption to a particular recipient.
+/// Internally an ID is 32 bytes long.  This data can either be:
 ///
-/// Ratman also supports namespaced flood messages.  A flood message
-/// can be encrypted for a particular namespace address, meaning that
-/// only applications that have been distributed with the private key
-/// can read the messages addressed to the namespace.
+/// 1. A random identifier for any given resource.
+/// 2. An ed25519 public key, backed by a corresponding private key.
 ///
-/// Note: this type used to be called `Identity`.  Random 32 byte
-/// object identifier are used in various places around the code base
-/// to make any object uniquely identifiable.  For these cases, please
-/// use the [`Id`](Id) type instead!
+/// API functions that _require_ an `Id` to be backed by a private key
+/// MUST wrap it via the [`Address`](super::address::Address) type.
+///
+/// For every consumer that simply wants to identify a unique object,
+/// with a reasonable amount of entropy to avoid collisions, this type
+/// is sufficient.  You can generate it via [`random()`](Id::random)
+/// function, or by hashing a piece of data
+/// ([`from_hash()])(Id::from_hash).  The hash function used is
+/// blake2.
 #[derive(Copy, Clone, Hash, PartialOrd, Ord, PartialEq, Eq)]
-pub struct Address([u8; ID_LEN]);
+pub struct Id([u8; ID_LEN]);
 
-/// A random object identifier
-pub type Id = Address;
-
-impl Debug for Address {
+impl Debug for Id {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "<ID: {}>", hex::encode_upper(self))
     }
 }
 
-impl Display for Address {
+impl Display for Id {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -61,13 +54,13 @@ impl Display for Address {
     }
 }
 
-impl Encode for Address {
+impl Encode for Id {
     fn encode(&self, w: &mut dyn std::io::Write) -> std::io::Result<()> {
         write!(w, "{:}", self)
     }
 }
 
-impl Address {
+impl Id {
     /// Create an identity from the first 16 bytes of a vector
     ///
     /// This function will panic, if the provided vector isn't long
@@ -134,6 +127,7 @@ impl Address {
     /// This function requires the `digest` feature.
     ///
     /// [blake2]: https://blake2.net/
+    #[deprecated]
     pub fn with_digest<'vec, V: Into<&'vec Vec<u8>>>(vec: V) -> Self {
         use blake2::{
             digest::{Update, VariableOutput},
@@ -161,35 +155,35 @@ impl Address {
 }
 
 /// Implement RAW `From` binary array
-impl From<[u8; ID_LEN]> for Address {
+impl From<[u8; ID_LEN]> for Id {
     fn from(i: [u8; ID_LEN]) -> Self {
         Self(i)
     }
 }
 
 /// Implement RAW `From` binary (reference) array
-impl From<&[u8; ID_LEN]> for Address {
+impl From<&[u8; ID_LEN]> for Id {
     fn from(i: &[u8; ID_LEN]) -> Self {
         Self(i.clone())
     }
 }
 
 /// Implement binary array `From` RAW
-impl From<Address> for [u8; ID_LEN] {
-    fn from(i: Address) -> Self {
+impl From<Id> for [u8; ID_LEN] {
+    fn from(i: Id) -> Self {
         i.0
     }
 }
 
 /// Implement binary array `From` RAW reference
-impl From<&Address> for [u8; ID_LEN] {
-    fn from(i: &Address) -> Self {
+impl From<&Id> for [u8; ID_LEN] {
+    fn from(i: &Id) -> Self {
         i.0.clone()
     }
 }
 
 /// Implement RAW identity to binary array reference
-impl AsRef<[u8]> for Address {
+impl AsRef<[u8]> for Id {
     fn as_ref(&self) -> &[u8] {
         &self.0
     }
@@ -198,7 +192,7 @@ impl AsRef<[u8]> for Address {
 /// Iterator for iterating over `Identity`
 pub struct Iter {
     index: usize,
-    ident: Address,
+    ident: Id,
 }
 
 impl Iterator for Iter {
@@ -210,7 +204,7 @@ impl Iterator for Iter {
     }
 }
 
-impl IntoIterator for Address {
+impl IntoIterator for Id {
     type Item = u8;
     type IntoIter = Iter;
     fn into_iter(self) -> Self::IntoIter {
@@ -221,7 +215,7 @@ impl IntoIterator for Address {
     }
 }
 
-impl Serialize for Address {
+impl Serialize for Id {
     fn serialize<S>(&self, ser: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -234,7 +228,7 @@ impl Serialize for Address {
     }
 }
 
-impl<'de> Deserialize<'de> for Address {
+impl<'de> Deserialize<'de> for Id {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -244,7 +238,7 @@ impl<'de> Deserialize<'de> for Address {
         struct IdentityVisitor;
 
         impl IdentityVisitor {
-            fn from_str<E: Error>(v: &str) -> Result<Address, E> {
+            fn from_str<E: Error>(v: &str) -> Result<Id, E> {
                 let v: Vec<u8> = v
                     .split("-")
                     .map(|s| hex::decode(s).map_err(|e| E::custom(e)))
@@ -258,7 +252,7 @@ impl<'de> Deserialize<'de> for Address {
                 Self::from_bytes(&v)
             }
 
-            fn from_bytes<E: Error, V: AsRef<[u8]>>(v: V) -> Result<Address, E> {
+            fn from_bytes<E: Error, V: AsRef<[u8]>>(v: V) -> Result<Id, E> {
                 let v = v.as_ref();
                 if v.len() != ID_LEN {
                     return Err(E::custom(format!(
@@ -268,7 +262,7 @@ impl<'de> Deserialize<'de> for Address {
                     )));
                 }
 
-                Ok(Address(v.iter().enumerate().take(ID_LEN).fold(
+                Ok(Id(v.iter().enumerate().take(ID_LEN).fold(
                     [0; ID_LEN],
                     |mut buf, (i, u)| {
                         buf[i] = *u;
@@ -279,7 +273,7 @@ impl<'de> Deserialize<'de> for Address {
         }
 
         impl<'de> Visitor<'de> for IdentityVisitor {
-            type Value = Address;
+            type Value = Id;
 
             fn expecting(&self, f: &mut Formatter) -> fmt::Result {
                 write!(
@@ -336,7 +330,7 @@ mod test {
     #[cfg(not(features = "aligned"))]
     fn json_serde() {
         let s = b"Yes, we will make total destroy.";
-        let i = Address::truncate(&s.to_vec());
+        let i = Id::truncate(&s.to_vec());
         let v = serde_json::to_string(&i).unwrap();
         assert_eq!(
             v,
@@ -350,7 +344,7 @@ mod test {
     #[cfg(not(features = "aligned"))]
     fn bincode_serde() {
         let s = b"Yes, we will make total destroy.";
-        let i = Address::truncate(&s.to_vec());
+        let i = Id::truncate(&s.to_vec());
         let v: Vec<u8> = bincode::serialize(&i).unwrap();
         assert_eq!(
             v,

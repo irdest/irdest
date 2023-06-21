@@ -5,12 +5,12 @@ use serde::{Deserialize, Serialize};
 ///
 /// This structure is only used for local storage.
 #[derive(Ord, PartialOrd, PartialEq, Eq, Serialize, Deserialize)]
-pub struct LocalAddress {
+pub struct StorageAddress {
     pub(crate) id: Address,
     pub(crate) key: EncryptedKey,
 }
 
-impl LocalAddress {
+impl StorageAddress {
     pub fn new(id: Address, bare_key: &[u8]) -> Self {
         Self {
             id,

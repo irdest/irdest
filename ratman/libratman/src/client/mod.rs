@@ -30,6 +30,8 @@
 #[cfg(feature = "ffi")]
 pub mod ffi;
 
+mod socket;
+
 pub use crate::types::{
     api::Receive_Type, Address, Error, Id, Message, Recipient, Result, TimePair,
 };
@@ -37,15 +39,16 @@ use crate::types::{
     api::{
         self, ApiMessageEnum,
         Peers_Type::{DISCOVER, RESP},
-        Setup_Type::ACK,
     },
     encode_message, parse_message, read_with_length, write_with_length,
 };
 use async_std::{
     channel::{unbounded, Receiver, Sender},
-    net::TcpStream,
+    //     net::TcpStream,
     task,
 };
+
+use self::socket::IpcSocket;
 
 /// An IPC handle for a particular address
 ///
@@ -54,7 +57,7 @@ use async_std::{
 /// maintain many of these connections at the same time.
 #[derive(Clone)]
 pub struct RatmanIpc {
-    socket: TcpStream,
+    socket: IpcSocket,
     addr: Address,
     recv: Receiver<(Receive_Type, Message)>,
     disc: Receiver<Address>,
@@ -76,35 +79,13 @@ impl RatmanIpc {
     /// listening on.  `addr` refers to the Ratman cryptographic
     /// routing address associated with your application
     pub async fn connect(socket_addr: &str, addr: Option<Address>) -> Result<RatmanIpc> {
-        let mut socket = TcpStream::connect(socket_addr).await?;
-
-        // Introduce ourselves to the daemon
-        let online_msg = api::api_setup(match addr {
-            Some(addr) => api::online(addr, vec![0, 1, 2, 3]),
-            None => api::online_init(),
-        });
-        info!("Sending introduction message!");
-        write_with_length(&mut socket, &encode_message(online_msg)?).await?;
-
-        trace!("Waiting for ACK message!");
-        // Then wait for a response and assign the used address
-        let addr = match parse_message(&mut socket).await.map(|m| m.inner) {
-            Ok(Some(one_of)) => match one_of {
-                ApiMessageEnum::setup(ref s) if s.field_type == ACK => {
-                    if s.id.len() > 0 {
-                        Address::from_bytes(s.get_id())
-                    } else {
-                        panic!("failed to initialise new address!");
-                    }
-                }
-                _ => unreachable!(),
-            },
-            _ => unreachable!(),
-        };
-
-        debug!("IPC client initialisation done!");
+        let socket = match addr {
+            Some(registered) => IpcSocket::start_with_address(socket_addr, registered).await,
+            None => IpcSocket::start_registration(socket_addr).await,
+        }?;
 
         // TODO: spawn receive daemon here
+        let addr = socket.addr;
         let (tx, recv) = unbounded();
         let (dtx, disc) = unbounded();
         task::spawn(run_receive(socket.clone(), tx, dtx));
@@ -118,13 +99,10 @@ impl RatmanIpc {
     }
 
     /// Connect to the daemon without providing or wanting an address
+    // TODO: why does this exist? This should really not exist I think
     pub async fn anonymous(socket_addr: &str) -> Result<Self> {
-        let mut socket = TcpStream::connect(socket_addr).await?;
-
-        let introduction = api::api_setup(api::anonymous());
-        write_with_length(&mut socket, &encode_message(introduction)?).await?;
-
-        let addr = Address::random(); // Never used
+        let socket = IpcSocket::anonymous(socket_addr).await?;
+        let addr = socket.addr;
         let (_, recv) = unbounded(); // Never used
         let (_, disc) = unbounded(); // Never used
         Ok(Self {
@@ -142,36 +120,12 @@ impl RatmanIpc {
 
     /// Send some data to a remote peer
     pub async fn send_to(&self, recipient: Address, payload: Vec<u8>) -> Result<()> {
-        let msg = api::api_send(api::send_default(
-            Message::new(
-                self.addr,
-                vec![recipient], // recipient
-                payload,
-                vec![], // signature
-            )
-            .into(),
-        ));
-
-        write_with_length(&mut self.socket.clone(), &encode_message(msg)?).await?;
-        Ok(())
+        self.socket.send_to(recipient, payload).await
     }
 
     /// Send some data to a remote peer
     pub async fn flood(&self, namespace: Address, payload: Vec<u8>, mirror: bool) -> Result<()> {
-        let msg = api::api_send(api::send_flood(
-            Message::new(
-                self.addr,
-                vec![], // recipient
-                payload,
-                vec![], // signature
-            )
-            .into(),
-            namespace,
-            mirror,
-        ));
-
-        write_with_length(&mut self.socket.clone(), &encode_message(msg)?).await?;
-        Ok(())
+        self.socket.flood(namespace, payload, mirror).await
     }
 
     /// Receive a message sent to this address
@@ -186,32 +140,18 @@ impl RatmanIpc {
 
     /// Get all currently known peers for this router
     pub async fn get_peers(&self) -> Result<Vec<Address>> {
-        let msg = api::api_peers(api::peers_req());
-        write_with_length(&mut self.socket.clone(), &encode_message(msg)?).await?;
-
-        match parse_message(&mut self.socket.clone())
-            .await
-            .map(|m| m.inner)
-        {
-            Ok(Some(one_of)) => match one_of {
-                ApiMessageEnum::peers(s) if s.field_type == RESP => {
-                    Ok(s.peers.iter().map(|p| Address::from_bytes(p)).collect())
-                }
-                _ => unreachable!(),
-            },
-            _ => unreachable!(),
-        }
+        self.socket.get_peers().await
     }
 }
 
 async fn run_receive(
-    mut socket: TcpStream,
+    mut socket: IpcSocket,
     tx: Sender<(Receive_Type, Message)>,
     dtx: Sender<Address>,
 ) {
     loop {
         trace!("Reading message from stream...");
-        let msg = match read_with_length(&mut socket).await {
+        let msg = match read_with_length(&mut socket.inner).await {
             Ok(msg) => msg,
             Err(e) => {
                 error!("Failed to read from socket: {:?}", e);

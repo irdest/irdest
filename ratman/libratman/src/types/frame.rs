@@ -26,9 +26,9 @@ impl Frame {
     /// Produce a new dummy frame that sends nonsense data from nowhere to everyone.
     pub fn dummy() -> Self {
         SeqBuilder::new(
-            Address::from([0; ID_LEN]),
+            Address::from_bytes(&[0; ID_LEN]),
             Recipient::Flood(Address::random()),
-            Address::random(),
+            Id::random(),
         )
         .add(vec![0x41, 0x43, 0x41, 0x42])
         .build()
@@ -37,7 +37,7 @@ impl Frame {
 
     /// Build a one-off frame with inline payload
     pub fn inline_flood(sender: Address, scope: Address, payload: Vec<u8>) -> Frame {
-        SeqBuilder::new(sender, Recipient::Flood(scope), Address::random())
+        SeqBuilder::new(sender, Recipient::Flood(scope), Id::random())
             .add(payload)
             .build()
             .remove(0)

@@ -5,7 +5,7 @@
 
 //! Routing table module
 
-use crate::IoPair;
+use crate::util::IoPair;
 use libratman::{
     netmod::Target,
     types::{Address, Error, Result},
