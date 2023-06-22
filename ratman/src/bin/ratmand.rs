@@ -35,7 +35,9 @@
 //     }
 // }
 
+use ratmand::util::Config;
+
 #[async_std::main]
 async fn main() {
-    ratmand::start_with_configuration().await
+    ratmand::start_with_configuration(Config::default()).await
 }

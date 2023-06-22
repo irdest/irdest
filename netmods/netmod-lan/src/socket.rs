@@ -12,7 +12,7 @@ use async_std::{
     sync::{Arc, RwLock},
     task::{self, Poll},
 };
-use netmod::Target;
+use libratman::netmod::Target;
 use std::collections::VecDeque;
 use std::ffi::CString;
 use task_notify::Notify;

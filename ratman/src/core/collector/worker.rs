@@ -103,7 +103,7 @@ use libratman::types::{Address, Recipient};
 fn join_frame_simple() {
     let sender = Address::random();
     let recp = Address::random();
-    let seqid = Address::random();
+    let seqid = Id::random();
 
     let mut seq = SeqBuilder::new(sender, Recipient::Standard(vec![recp]), seqid)
         .add((0..10).into_iter().collect())

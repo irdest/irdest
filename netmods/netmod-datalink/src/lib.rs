@@ -17,10 +17,10 @@ use useful_netmod_bits::framing::Envelope;
 
 use async_std::{future, sync::Arc, task};
 use async_trait::async_trait;
-use netmod::{Endpoint as EndpointExt, Frame, Result, Target};
+use libratman::netmod::{Endpoint as EndpointExt, Target};
+use libratman::types::{Error, Frame, Result};
 use pnet::util::MacAddr;
 use pnet_datalink::interfaces;
-use ratman_types::Error;
 
 use zbus::{
     export::futures_util::{pin_mut, stream, StreamExt},

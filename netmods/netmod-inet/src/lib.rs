@@ -21,7 +21,10 @@ use session::{setup_cleanuptask, start_connection, SessionData};
 use {resolve::Resolver, server::Server};
 
 use async_std::{channel::unbounded, io::WriteExt, net::TcpListener, sync::Arc, task};
-use netmod::{Error, Frame};
+use libratman::{
+    netmod,
+    types::{Error, Frame},
+};
 use serde::{Deserialize, Serialize};
 
 /// The type of session being created

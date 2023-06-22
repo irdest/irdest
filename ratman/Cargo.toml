@@ -71,10 +71,10 @@ libratman = { version = "0.5", path = "libratman", features = ["netmod"], packag
 clockctrl = { version = "0.1", path = "../utils/clockctrl" }
 task-notify = { version = "1.0", path = "../utils/task-notify" }
 
-# # Dependencies required for various binary targets
-# clap = { version = "2.0", optional = true, features = ["wrap_help", "color", "suggestions"] }
-# directories = { version = "4.0.1", optional = true }
-# serde_json = { version = "1.0", optional = true }
+## Dependencies required for various binary targets
+clap = { version = "2.0", features = ["wrap_help", "color", "suggestions"] }
+directories = "4.0"
+serde_json = "1.0"
 # nix = { version = "0.23", optional = true }
 # igd = { version = "=0.12", optional = true }       # These three crates are bound to an
 # ipnetwork = { version = "=0.18", optional = true } # older version becuase we don't want
@@ -85,16 +85,16 @@ task-notify = { version = "1.0", path = "../utils/task-notify" }
 # prometheus-client = { version = "0.16", optional = true }
 # async-eris = { version = "0.1", path = "../utils/eris-rs" }
 
-# # Bundled network modules are all optional dependencies
-# netmod-datalink = { path = "../netmods/netmod-datalink", version = "0.2", optional = true }
-# netmod-inet = { path = "../netmods/netmod-inet", version = "0.4", optional = true }
-# netmod-lan = { path = "../netmods/netmod-lan", version = "0.2", optional = true }
-# netmod-lora = { path = "../netmods/netmod-lora", version = "0.1", optional = true }
+## Bundled network modules are all optional dependencies
+netmod-datalink = { path = "../netmods/netmod-datalink", version = "0.2" }
+netmod-inet = { path = "../netmods/netmod-inet", version = "0.4" }
+netmod-lan = { path = "../netmods/netmod-lan", version = "0.2" }
+netmod-mem = { path = "../netmods/netmod-mem", version = "0.4" }
+# netmod-lora = { path = "../netmods/netmod-lora", version = "0.1" }
 
 # [dev-dependencies]
 # bincode = "1.2"
 # netmod-inet = { path = "../netmods/netmod-inet", version = "*" }
-# netmod-mem = { path = "../netmods/netmod-mem", version = "0.4" }
 # tracing-subscriber = { version = "0.2", features = ["fmt"] }
 
 # criterion = { version = "0.4", features = ["html_reports"] }

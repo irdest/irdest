@@ -16,17 +16,17 @@ members = [
     # "utils/irdest-firmware-util",
     "utils/task-notify",
     "utils/tracing-syslog",
-    # "utils/useful-netmod-bits",
+    "utils/useful-netmod-bits",
     "utils/zbus-nm",
 
     # # Available netmod drivers
+    "netmods/netmod-datalink",
+    "netmods/netmod-inet",
+    "netmods/netmod-lan",
+    "netmods/netmod-mem",
     # "netmods/netmod-fuzz",
-    # "netmods/netmod-inet",
-    # "netmods/netmod-lan",
     # "netmods/netmod-lora",
-    # "netmods/netmod-mem",
     # "netmods/netmod-wd",
-    # "netmods/netmod-datalink",
 
     # # End-user applications
     # "clients/android-vpn/jni",

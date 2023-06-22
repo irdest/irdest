@@ -7,7 +7,7 @@ use async_std::{
     channel::Sender,
     sync::{Arc, RwLock},
 };
-use netmod::Frame;
+use libratman::types::Frame;
 use std::{
     collections::BTreeMap,
     sync::atomic::{AtomicU16, Ordering},

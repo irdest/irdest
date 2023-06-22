@@ -148,7 +148,7 @@ fn queue_one() {
     use crate::slicer::TransportSlicer;
     use libratman::types::{Recipient, TimePair};
 
-    let (sender, recipient, id) = (Address::random(), Address::random(), Address::random());
+    let (sender, recipient, id) = (Address::random(), Address::random(), Id::random());
     let mut seq = TransportSlicer::slice(
         128,
         Message {
@@ -191,7 +191,7 @@ fn queue_many() {
     use crate::slicer::TransportSlicer;
     use libratman::types::{Recipient, TimePair};
 
-    let (sender, recipient, id) = (Address::random(), Address::random(), Address::random());
+    let (sender, recipient, id) = (Address::random(), Address::random(), Id::random());
     let seq = TransportSlicer::slice(
         8,
         Message {

@@ -13,7 +13,7 @@ use async_std::{
     sync::{Arc, Mutex},
     task,
 };
-use netmod::Frame;
+use libratman::types::Frame;
 
 pub(crate) type FrameReceiver = Receiver<(Target, Frame)>;
 pub(crate) type FrameSender = Sender<(Target, Frame)>;

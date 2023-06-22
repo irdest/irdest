@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-netmod = { version ="0.5.0", path = "../../ratman/lib-netmod", package = "ratman-netmod" }
+libratman = { version = "0.5", path = "../../ratman/libratman", features = ["netmod"], package = "ratman" }
 
 async-std = "1.0"
 serde = "1.0"

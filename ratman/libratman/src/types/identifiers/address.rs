@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
+use std::fmt::{self, Display};
+
 use super::id::Id;
 use serde::{Deserialize, Serialize};
 
@@ -9,11 +11,17 @@ use serde::{Deserialize, Serialize};
 #[derive(Copy, Clone, Debug, Hash, PartialOrd, Ord, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Address(Id);
 
+impl Display for Address {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 impl Address {
     /// Expand a piece of input into an address
     ///
     /// Currently this only discards the private key section
-    pub fn expand_input(input: &str) -> Self {
+    pub fn expand_input(_input: &str) -> Self {
         todo!()
     }
 

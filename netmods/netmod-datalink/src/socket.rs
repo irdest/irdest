@@ -21,7 +21,7 @@ use pnet::{
 };
 use pnet_datalink::{channel, Channel, DataLinkReceiver, DataLinkSender, NetworkInterface};
 
-use netmod::Target;
+use libratman::netmod::Target;
 use nix::errno::Errno;
 use std::collections::VecDeque;
 use std::error::Error;

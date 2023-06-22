@@ -15,7 +15,8 @@ use async_std::{
     task,
 };
 use async_trait::async_trait;
-use ratman_netmod::{Endpoint, Error as NetError, Frame, Result as NetResult, Target};
+use libratman::netmod::{Endpoint, Target};
+use libratman::types::{Error as NetError, Frame, Result as NetResult};
 
 /// An input/output pair of `mpsc::channel`s.
 ///

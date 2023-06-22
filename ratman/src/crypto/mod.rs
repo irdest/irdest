@@ -7,7 +7,7 @@
 //! An address corresponds to the public key of a key pair, where the
 //! private key is not shared outside the router.
 
-use crate::storage::addrs::LocalAddress;
+use crate::storage::addrs::StorageAddress;
 use async_std::sync::RwLock;
 use curve25519_dalek::edwards::CompressedEdwardsY;
 use ed25519_dalek::{ExpandedSecretKey, PublicKey, SecretKey, Signature, Signer, Verifier};
@@ -74,12 +74,12 @@ impl Keystore {
     }
 
     /// Get all currently registered local addresses and encrypted keys
-    pub async fn get_all(&self) -> Vec<LocalAddress> {
+    pub async fn get_all(&self) -> Vec<StorageAddress> {
         self.inner
             .read()
             .await
             .iter()
-            .map(|(id, Keypair { .. })| LocalAddress::new(*id, &vec![]))
+            .map(|(id, Keypair { .. })| StorageAddress::new(*id, &vec![]))
             .collect()
     }
 

@@ -17,7 +17,8 @@ pub(crate) use framing::{Envelope, FrameExt};
 
 use async_std::{sync::Arc, task};
 use async_trait::async_trait;
-use netmod::{Endpoint as EndpointExt, Frame, Result, Target};
+use libratman::netmod::{Endpoint as EndpointExt, Target};
+use libratman::types::{Frame, Result};
 use pnet_datalink::interfaces;
 
 #[derive(Clone)]
