@@ -4,12 +4,12 @@
 //!
 //! In order to interact with the Ratman daemon your application must
 //! send properly formatted API messages over a local TCP socket.
-//! These data formats are outlined in [ratman-types](ratman_types)!
+//! These data formats are outlined in the [types
+//! module](crate::types)!
 //!
 //! This crate provides a simple API over these API messages!
 //!
-//! **This API is very unstable!** You may expect _slightly_ more
-//! stability guarantees from `ratcat(1)` and `ratctl(1)`
+//! **This API is currently still very unstable!**
 //!
 //! ## Version numbers
 //!
@@ -32,19 +32,14 @@ pub mod ffi;
 
 mod socket;
 
+#[cfg(test)]
+mod tests;
+
 pub use crate::types::{
     api::Receive_Type, Address, Error, Id, Message, Recipient, Result, TimePair,
 };
-use crate::types::{
-    api::{
-        self, ApiMessageEnum,
-        Peers_Type::{DISCOVER, RESP},
-    },
-    encode_message, parse_message, read_with_length, write_with_length,
-};
 use async_std::{
-    channel::{unbounded, Receiver, Sender},
-    //     net::TcpStream,
+    channel::{unbounded, Receiver},
     task,
 };
 
@@ -88,7 +83,7 @@ impl RatmanIpc {
         let addr = socket.addr;
         let (tx, recv) = unbounded();
         let (dtx, disc) = unbounded();
-        task::spawn(run_receive(socket.clone(), tx, dtx));
+        task::spawn(socket::run_receive(socket.clone(), tx, dtx));
 
         Ok(Self {
             socket,
@@ -142,106 +137,4 @@ impl RatmanIpc {
     pub async fn get_peers(&self) -> Result<Vec<Address>> {
         self.socket.get_peers().await
     }
-}
-
-async fn run_receive(
-    mut socket: IpcSocket,
-    tx: Sender<(Receive_Type, Message)>,
-    dtx: Sender<Address>,
-) {
-    loop {
-        trace!("Reading message from stream...");
-        let msg = match read_with_length(&mut socket.inner).await {
-            Ok(msg) => msg,
-            Err(e) => {
-                error!("Failed to read from socket: {:?}", e);
-                break;
-            }
-        };
-
-        trace!("Parsing message from stream...");
-        match crate::types::decode_message(&msg).map(|m| m.inner) {
-            Ok(Some(one_of)) => match one_of {
-                ApiMessageEnum::recv(mut msg) => {
-                    let tt = msg.field_type;
-                    let msg = msg.take_msg();
-
-                    debug!("Forwarding message to IPC wrapper");
-                    if let Err(e) = tx.send((tt, msg.into())).await {
-                        error!("Failed to forward received message: {}", e);
-                    }
-                }
-                ApiMessageEnum::peers(peers) if peers.get_field_type() == DISCOVER => {
-                    match peers.peers.get(0) {
-                        Some(p) => match dtx.send(Address::from_bytes(p)).await {
-                            Ok(_) => {}
-                            _ => {
-                                error!("Failed to send discovery to client poller...");
-                                continue;
-                            }
-                        },
-                        None => continue,
-                    }
-                }
-                _ => {} // This might be a problem idk
-            },
-            _ => {
-                warn!("Invalid payload received; skipping...");
-                continue;
-            }
-        }
-    }
-}
-
-/// This test is horrible and a bad idea but whatever
-/// also you need to kill the daemon(kill process) after the test
-#[async_std::test]
-#[ignore]
-async fn send_message() {
-    pub fn setup_logging() {
-        use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
-        let filter = EnvFilter::default()
-            .add_directive(LevelFilter::TRACE.into())
-            .add_directive("async_std=error".parse().unwrap())
-            .add_directive("async_io=error".parse().unwrap())
-            .add_directive("polling=error".parse().unwrap())
-            .add_directive("mio=error".parse().unwrap());
-
-        // Initialise the logger
-        fmt().with_env_filter(filter).init();
-    }
-
-    setup_logging();
-
-    use async_std::task::sleep;
-    use std::{process::Command, time::Duration};
-
-    let mut daemon = Command::new("cargo")
-        .current_dir("../..")
-        .args(&[
-            "run",
-            "--bin",
-            "ratmand",
-            "--features",
-            "daemon",
-            "--",
-            "--no-inet",
-            "--accept-unknown-peers",
-        ])
-        .spawn()
-        .unwrap();
-
-    sleep(Duration::from_secs(1)).await;
-
-    let client = RatmanIpc::default().await.unwrap();
-    let msg = vec![1, 3, 1, 2];
-    info!("Sending message: {:?}", msg);
-    client.send_to(client.address(), msg).await.unwrap();
-
-    let (_, recv) = client.next().await.unwrap();
-    info!("Receiving message: {:?}", recv);
-    assert_eq!(recv.get_payload(), &[1, 3, 1, 2]);
-
-    // Exorcise the deamons!
-    daemon.kill().unwrap();
 }

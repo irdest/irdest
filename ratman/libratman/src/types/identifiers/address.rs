@@ -21,8 +21,9 @@ impl Address {
     /// Expand a piece of input into an address
     ///
     /// Currently this only discards the private key section
-    pub fn expand_input(_input: &str) -> Self {
-        todo!()
+    pub fn expand_input(input: &Vec<u8>) -> Self {
+        warn!("Address::expand_input will change semantically in a future version!");
+        Self(Id::with_digest(input))
     }
 
     #[deprecated]

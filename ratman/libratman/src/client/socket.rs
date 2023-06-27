@@ -9,7 +9,7 @@ use crate::types::{
     },
     encode_message, parse_message, read_with_length, write_with_length,
 };
-use async_std::net::TcpStream;
+use async_std::{net::TcpStream, channel::Sender};
 
 /// Abstraction for the Ratman API/ IPC socket connection
 #[derive(Clone)]
@@ -126,6 +126,55 @@ impl IpcSocket {
                 _ => unreachable!(),
             },
             _ => unreachable!(),
+        }
+    }
+}
+
+pub(super) async fn run_receive(
+    mut socket: IpcSocket,
+    tx: Sender<(Receive_Type, Message)>,
+    dtx: Sender<Address>,
+) {
+    loop {
+        trace!("Reading message from stream...");
+        let msg = match read_with_length(&mut socket.inner).await {
+            Ok(msg) => msg,
+            Err(e) => {
+                error!("Failed to read from socket: {:?}", e);
+                break;
+            }
+        };
+
+        trace!("Parsing message from stream...");
+        match crate::types::decode_message(&msg).map(|m| m.inner) {
+            Ok(Some(one_of)) => match one_of {
+                ApiMessageEnum::recv(mut msg) => {
+                    let tt = msg.field_type;
+                    let msg = msg.take_msg();
+
+                    debug!("Forwarding message to IPC wrapper");
+                    if let Err(e) = tx.send((tt, msg.into())).await {
+                        error!("Failed to forward received message: {}", e);
+                    }
+                }
+                ApiMessageEnum::peers(peers) if peers.get_field_type() == DISCOVER => {
+                    match peers.peers.get(0) {
+                        Some(p) => match dtx.send(Address::from_bytes(p)).await {
+                            Ok(_) => {}
+                            _ => {
+                                error!("Failed to send discovery to client poller...");
+                                continue;
+                            }
+                        },
+                        None => continue,
+                    }
+                }
+                _ => {} // This might be a problem idk
+            },
+            _ => {
+                warn!("Invalid payload received; skipping...");
+                continue;
+            }
         }
     }
 }

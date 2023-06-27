@@ -7,7 +7,6 @@ members = [
     # The decentralised router
     "ratman",
     "ratman/libratman",
-    "ratman/ratman-tools",
 
     # Various utility crates
     "utils/clockctrl",
@@ -19,7 +18,7 @@ members = [
     "utils/useful-netmod-bits",
     "utils/zbus-nm",
 
-    # # Available netmod drivers
+    # Available netmod drivers
     "netmods/netmod-datalink",
     "netmods/netmod-inet",
     "netmods/netmod-lan",
@@ -28,7 +27,8 @@ members = [
     # "netmods/netmod-lora",
     # "netmods/netmod-wd",
 
-    # # End-user applications
+    # End-user applications (of varying complexity)
+    "clients/ratman-tools",
     # "clients/android-vpn/jni",
     # "clients/irdest-echo",
     # "clients/irdest-mblog",

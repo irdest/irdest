@@ -361,13 +361,13 @@ mod test {
     #[test]
     #[cfg(features = "aligned")]
     fn sized() {
-        assert_eq!(crate::ID_LEN, size_of::<usize>());
+        assert_eq!(super::ID_LEN, size_of::<usize>());
     }
 
     /// This is the default length
     #[test]
     #[cfg(not(features = "aligned"))]
     fn sized() {
-        assert_eq!(crate::ID_LEN, 32);
+        assert_eq!(super::ID_LEN, 32);
     }
 }

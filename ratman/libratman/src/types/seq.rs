@@ -225,9 +225,9 @@ impl SeqBuilder {
 
 #[cfg(test)]
 fn setup() -> Vec<Frame> {
-    let sender = Address::with_digest(&vec![1]);
-    let recp = Address::with_digest(&vec![2]);
-    SeqBuilder::new(sender, Recipient::Standard(vec![recp]), Address::random())
+    let sender = Address::expand_input(&vec![1]);
+    let recp = Address::expand_input(&vec![2]);
+    SeqBuilder::new(sender, Recipient::Standard(vec![recp]), Id::random())
         .add(vec![42])
         .add(vec![13, 12])
         .add(vec![13, 37])
