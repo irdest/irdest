@@ -3,8 +3,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use async_std;
+use libratman::{
+    netmod::{Endpoint, Target},
+    types::Frame,
+};
 use netmod_mem::MemMod;
-use ratman_netmod::{Endpoint, Frame, Target};
 
 #[async_std::test]
 async fn ping_pong() {
