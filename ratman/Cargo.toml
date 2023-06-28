@@ -10,20 +10,6 @@ license = "AGPL-3.0-or-later"
 version = "0.5.0"
 edition = "2018"
 
-# Stand-alone ratman daemon binary
-# [[bin]]
-# name = "ratmand"
-# required-features = ["daemon"]
-
-# # A client tool to connect to the ratman daemon
-# [[bin]]
-# name = "ratcat"
-# required-features = ["util"]
-
-# [[bin]]
-# name = "ratctl"
-# required-features = ["util"]
-
 # [features]
 # default = ["daemon", "util", "prometheus-client"]
 
@@ -59,6 +45,11 @@ x25519-dalek = { version = "2.0.0-rc.2", features = ["static_secrets"] }
 ed25519-dalek = "1.0.0"
 curve25519-dalek = "3.0.0"
 rand = "0.7"
+
+## Storage & Configuration
+kdl = "4.6"
+sled = "0.34"
+sqlx = { version = "0.6", features = [ "runtime-async-std-rustls", "sqlite", "chrono" ] }
 
 ## Logging and logging accessories
 tracing = "0.1"

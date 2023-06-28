@@ -160,3 +160,11 @@ impl Default for Config {
         }
     }
 }
+
+
+
+#[derive(knuffel::Encode)]
+pub struct RatmanConfig {
+    
+}
+

@@ -26,66 +26,6 @@ use types::Address;
 
 pub(crate) type OnlineMap = Arc<Mutex<BTreeMap<Address, Option<Io>>>>;
 
-#[derive(Clone)]
-pub(crate) enum Io {
-    Tcp(TcpStream),
-}
-
-impl Io {
-    pub(crate) fn as_io(&mut self) -> &mut (impl async_std::io::Write + async_std::io::Read) {
-        match self {
-            Self::Tcp(ref mut stream) => stream,
-        }
-    }
-}
-
-/// OS specific support
-pub enum Os {
-    Android,
-    Unix,
-    Unknown,
-    Ios,
-    Windows,
-}
-
-impl Os {
-    pub fn match_os() -> Os {
-        match OS.as_ref() {
-            "linux" | "macos" | "freebsd" | "dragonfly" | "netbsd" | "openbsd" | "solaris" => {
-                Self::Unix
-            }
-            "android" => Self::Android,
-            "ios" => Self::Ios,
-            "windows" => Self::Windows,
-            _ => Self::Unknown, // Found ailian Os write log
-        }
-    }
-
-    pub fn data_path(&self) -> PathBuf {
-        match self {
-            Self::Android => Self::android_data_path(),
-            Self::Unix | Self::Windows => Self::xdg_data_path(),
-            _ => Self::xdg_data_path(), // Maybe try
-        }
-    }
-
-    pub fn xdg_data_path() -> PathBuf {
-        let dirs = ProjectDirs::from("org", "irdest", "ratmand")
-            .expect("Failed to initialise project directories");
-        let data_dir = env_xdg_data()
-            .map(|path| PathBuf::new().join(path))
-            .unwrap_or_else(|| dirs.data_dir().to_path_buf());
-        trace!("Ensure data directory exists: {:?}", data_dir);
-        let _ = std::fs::create_dir(&data_dir);
-
-        PathBuf::new().join(data_dir).join("users.json")
-    }
-
-    pub fn android_data_path() -> PathBuf {
-        PathBuf::new().join("/data/user/0/org.irdest.IrdestVPN/files/users.json")
-    }
-}
-
 async fn load_users(router: &Router, path: PathBuf) -> Vec<Address> {
     debug!("Loading registered users from file {:?}", path);
     let mut f = match File::open(path) {

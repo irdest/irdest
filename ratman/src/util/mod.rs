@@ -1,6 +1,9 @@
 mod config;
 pub use config::Config;
 
+mod platform;
+pub use platform::Os;
+
 use async_std::channel::{Receiver, Sender};
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
 
