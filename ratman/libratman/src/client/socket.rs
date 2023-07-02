@@ -9,7 +9,7 @@ use crate::types::{
     },
     encode_message, parse_message, read_with_length, write_with_length,
 };
-use async_std::{net::TcpStream, channel::Sender};
+use async_std::{channel::Sender, net::TcpStream};
 
 /// Abstraction for the Ratman API/ IPC socket connection
 #[derive(Clone)]

@@ -27,9 +27,6 @@
 //! `ratmand` that does not match the libraries version number.  This
 //! behaviour can be disabled via the `RatmanIpc` API.
 
-#[cfg(feature = "ffi")]
-pub mod ffi;
-
 mod socket;
 
 #[cfg(test)]
