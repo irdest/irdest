@@ -23,6 +23,7 @@ extern crate tracing;
 
 mod api;
 mod clock;
+pub mod config; // UNDO THIS
 mod core;
 mod crypto;
 mod protocol;
