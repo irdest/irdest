@@ -23,13 +23,13 @@ extern crate tracing;
 
 mod api;
 mod clock;
-pub mod config; // UNDO THIS
 mod core;
 mod crypto;
 mod protocol;
-mod scaffold;
 mod slicer;
 mod storage;
+
+pub mod config;
 pub mod util;
 
 /// Start a new Ratman router instance with a launch configuration
@@ -39,6 +39,6 @@ pub mod util;
 /// that will initialise drivers and OS operations correctly.
 ///
 /// Special permissions may be required for certain features!
-pub async fn start_with_configuration(_cfg: util::Config) {
+pub async fn start_with_configuration(_cfg: config::ConfigTree) {
     // ...
 }

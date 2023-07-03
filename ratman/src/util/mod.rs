@@ -1,8 +1,7 @@
-mod config;
-pub use config::Config;
-
 mod platform;
 pub use platform::Os;
+
+pub mod chunk;
 
 use async_std::channel::{Receiver, Sender};
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
@@ -20,6 +19,11 @@ pub fn elog<S: Into<String>>(msg: S, code: u16) -> ! {
 /// Get XDG_DATA_HOME from the environment
 pub(crate) fn env_xdg_data() -> Option<String> {
     std::env::var("XDG_DATA_HOME").ok()
+}
+
+/// Get XDG_CONFIG_HOME from the environment
+pub(crate) fn env_xdg_config() -> Option<String> {
+    std::env::var("XDG_CONFIG_HOME").ok()
 }
 
 pub fn setup_logging(lvl: &str, syslog: bool) {
@@ -58,3 +62,5 @@ pub fn setup_logging(lvl: &str, syslog: bool) {
 
     info!("Initialised logger: welcome to ratmand!");
 }
+
+pub fn initialise_config(os: Os) {}

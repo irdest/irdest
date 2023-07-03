@@ -39,6 +39,15 @@ impl DataChunk {
     }
 }
 
+// /// Turn data into chunks
+// pub struct Chunkotron<R: Read> {
+//     read: R
+// }
+
+// impl<R: Read> Chunkotron<R> {
+    
+// }
+
 // /// Reads from a TcpStream and turns this into a stream API
 // pub struct TcpReader {
 //     inner: TcpStream,

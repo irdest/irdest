@@ -2,10 +2,9 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-
 //! Various platform abstractions
 
-use crate::util::env_xdg_data;
+use crate::util::{env_xdg_config, env_xdg_data};
 use directories::ProjectDirs;
 use std::path::PathBuf;
 
@@ -41,6 +40,19 @@ impl Os {
         }
     }
 
+    /// Get the XDG_CONFIG path for the current system
+    pub fn xdg_config_path() -> PathBuf {
+        let dirs = ProjectDirs::from("org", "irdest", "ratmand")
+            .expect("Failed to initialise project directories");
+        let config_dir = env_xdg_config()
+            .map(|path| PathBuf::new().join(path))
+            .unwrap_or_else(|| dirs.config_dir().to_path_buf());
+
+        trace!("Ensure data directory exists: {:?}", config_dir);
+        let _ = std::fs::create_dir(&config_dir);
+        config_dir
+    }
+
     /// Get the XDG_DATA path for the current system
     pub fn xdg_data_path() -> PathBuf {
         let dirs = ProjectDirs::from("org", "irdest", "ratmand")
@@ -50,13 +62,12 @@ impl Os {
             .unwrap_or_else(|| dirs.data_dir().to_path_buf());
         trace!("Ensure data directory exists: {:?}", data_dir);
         let _ = std::fs::create_dir(&data_dir);
-
-        PathBuf::new().join(data_dir).join("users.json")
+        data_dir
     }
 
     /// Return the IrdestVPN data path on Android
     // TODO: make this somehow configurable?  Does that makes sense?
     pub fn android_data_path() -> PathBuf {
-        PathBuf::new().join("/data/user/0/org.irdest.IrdestVPN/files/users.json")
+        PathBuf::new().join("/data/user/0/org.irdest.IrdestVPN/files/")
     }
 }

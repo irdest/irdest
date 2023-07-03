@@ -49,7 +49,7 @@ rand = "0.7"
 ## Storage & Configuration
 kdl = "4.6"
 sled = "0.34"
-sqlx = { version = "0.6", features = [ "runtime-async-std-rustls", "sqlite", "chrono" ] }
+deadpool-sqlite = { version = "0.5", features = ["rt_async-std_1"], default-features = false }
 
 ## Logging and logging accessories
 tracing = "0.1"

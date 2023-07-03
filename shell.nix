@@ -17,6 +17,9 @@ stdenv.mkDerivation {
     # core native deps
     pkg-config protobuf udev
 
+    # SQL migration tool
+    sqlx-cli
+
     # for various tests
     cargo-watch binutils reuse jq
 

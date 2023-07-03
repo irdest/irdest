@@ -35,7 +35,6 @@
 //     }
 // }
 
-use ratmand::util::Config;
 use std::{fs::File, io::Write};
 
 #[async_std::main]
@@ -43,7 +42,6 @@ async fn main() {
     // ratmand::start_with_configuration(Config::default()).await
 
     let mut doc = ratmand::config::default::create_new_default();
-    
     let mut f = File::create("ratmand.kdl").unwrap();
     f.write_all(doc.to_string().as_bytes()).unwrap();
 }

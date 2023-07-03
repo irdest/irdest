@@ -1,4 +1,4 @@
-use kdl::KdlNode;
+use kdl::{KdlDocument, KdlNode, KdlValue};
 use std::collections::BTreeMap;
 
 pub mod default;
@@ -13,23 +13,26 @@ const INTRINSICS_CFG: &'static str = "irdest.intrinsics";
 /// optionally, depending on the desired runtime configuration of the
 /// router instance.
 pub struct ConfigTree {
-    inner: BTreeMap<String, SubConfig>,
+    inner: KdlDocument,
 }
 
 impl ConfigTree {
     pub fn ratmand_config(&self) -> &SubConfig {
-        self.inner
-            .get(RATMAND_CFG)
-            .expect(&format!("Configuration key `{}` missing", RATMAND_CFG))
+        todo!()
     }
 
-    pub fn irdest_intrinsics_config(&self) -> &SubConfig {
-        self.inner
-            .get(INTRINSICS_CFG)
-            .expect(&format!("Configuration key `{}` missing", INTRINSICS_CFG))
+    /// Get a particular configuration tree
+    pub fn get_config<'p>(&'p self, section: &str) -> SubConfig<'p> {
+        todo!()
     }
 }
 
-pub struct SubConfig {
-    inner: KdlNode,
+pub struct SubConfig<'p> {
+    inner: &'p KdlNode,
+}
+
+impl<'p> SubConfig<'p> {
+    pub fn get_value(&self, key: &str) -> &'p KdlValue {
+        todo!()
+    }
 }
