@@ -35,8 +35,8 @@
 //     }
 // }
 
-use std::{fs::File, io::Write};
 use ratmand::config::ConfigTree;
+use std::{fs::File, io::Write};
 
 #[async_std::main]
 async fn main() {

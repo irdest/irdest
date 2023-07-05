@@ -23,7 +23,6 @@ pub enum RuntimeState {
 }
 
 impl RuntimeState {
-
     /// Call this function when first creating a router (or
     /// re-creating it)
     pub fn start_initialising() -> Self {

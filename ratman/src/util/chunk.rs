@@ -45,7 +45,7 @@ impl DataChunk {
 // }
 
 // impl<R: Read> Chunkotron<R> {
-    
+
 // }
 
 // /// Reads from a TcpStream and turns this into a stream API
