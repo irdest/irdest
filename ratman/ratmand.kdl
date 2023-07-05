@@ -10,7 +10,7 @@ settings "ratmand" {
 
     // Enable (or disable) the web configuration dashboard
     enable_dashboard true
-    dashboard_bind "localhost:9000"
+    dashboard_bind "localhost:8090"
 
     // Configure whether ratmand should remain attached to the calling process, or turn itself into a daemon.
     // It's recommended not to change this value unless you know you need it
@@ -45,7 +45,11 @@ settings "inet" {
 
     // Configure what socket netmod_inet should use to accept incoming peering connections.
     // Note that changing the bind port will mean others need to manually specify it in their peering config
-    bind "0.0.0.0:9000"
+    bind "[::]:9000"
+
+    // Configure whereth to use UPNP, which can be used to establish full reverse connections between two peers.
+    // This circumvents many firewall issues and connection loss scenarios.  Most networks do not support this!
+    use_upnp false
 }
 
 // Configuration for the 'lan' local peer discovery driver.
@@ -74,7 +78,18 @@ settings "lora" {
     // Since lora is a very low-bandwidth radio channel, only 9600 baud connections are currently supported.
     serial_port "/dev/ttyUSB0"
     serial_baud 9600
+}
 
+// Configuration for the 'datalink' driver.  See the user manual on how to setup an external antenna
+settings "datalink" {
+    enable false
+
+    // Setup a particular interface as the 'datalink' backend to peer with a remote
+    // iface "eth0"
+
+    // When using netmod_datalink as a WiFi driver, this configures the SSID used for the connection.
+    // Like any discovery mechanism, it's recommended you do not change this unless you want to not be found.
+    datalink_ssid "irdest"
 }
 
 // Anything unclear?  Check out the user manual: https://docs.irde.st/user/

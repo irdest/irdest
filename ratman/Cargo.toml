@@ -66,10 +66,10 @@ task-notify = { version = "1.0", path = "../utils/task-notify" }
 clap = { version = "2.0", features = ["wrap_help", "color", "suggestions"] }
 directories = "4.0"
 serde_json = "1.0"
-# nix = { version = "0.23", optional = true }
-# igd = { version = "=0.12", optional = true }       # These three crates are bound to an
-# ipnetwork = { version = "=0.18", optional = true } # older version becuase we don't want
-# pnet = { version = "=0.28", optional = true }      # to update to the 2021-edition yet
+nix = "0.23"
+igd = "*"
+ipnetwork = "*"
+pnet = "*"
 # tide = { version = "0.16", optional = true }
 # rust-embed = { version = "6.3", optional = true }
 # openapi_type = { version = "0.4", optional = true }

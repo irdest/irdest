@@ -156,7 +156,7 @@ impl Core {
             .await
             .into_iter()
             // FIXME: this is horrible lol
-            .map(|(addr, tt)| (addr, if tt == RouteType::Local { true } else { false }))
+            .map(|(addr, tt)| (addr, tt == RouteType::Local))
             .collect()
     }
 }

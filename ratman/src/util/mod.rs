@@ -1,7 +1,17 @@
+// SPDX-FileCopyrightText: 2022-2023 Katharina Fey <kookie@spacekookie.de>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 mod platform;
 pub use platform::Os;
 
-pub mod chunk;
+pub(crate) mod chunk;
+pub(crate) mod cli;
+pub(crate) mod peers;
+pub(crate) mod pidfile;
+pub(crate) mod runtime_state;
+pub(crate) mod transform;
+// pub(crate) mod upnp; // FIXME: this currently doesn't work
 
 use async_std::channel::{Receiver, Sender};
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};

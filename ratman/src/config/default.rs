@@ -1,4 +1,4 @@
-use kdl::{KdlDocument, KdlEntry, KdlNode};
+use kdl::KdlDocument;
 
 const DEFAULT_CONFIG: &'static str = include_str!("./ratmand-0.5.kdl");
 

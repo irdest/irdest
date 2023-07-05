@@ -2,18 +2,20 @@ use super::{
     client::{BaseClient, OnlineClient},
     io::Io,
 };
+use async_std::sync::Arc;
 use libratman::types::{Address, Id};
 use std::collections::BTreeMap;
-use async_std::sync::Arc;
 
 /// Handle new and existing connection states
 pub(crate) struct ConnectionManager {
-    clients: Arc<BTreeMap<Id, BaseClient>>,
+    pub(crate) clients: Arc<BTreeMap<Id, BaseClient>>,
 }
 
 impl ConnectionManager {
-    pub fn new(clients: Arc<BTreeMap<Id, BaseClient>>) -> Self {
-        Self { clients }
+    pub fn new() -> Self {
+        Self {
+            clients: Arc::new(BTreeMap::new()),
+        }
     }
 
     pub fn register(&mut self, initial_addr: Address, io: Io) -> OnlineClient {

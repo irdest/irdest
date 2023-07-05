@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
+// SPDX-FileCopyrightText: 2019-2023 Katharina Fey <kookie@spacekookie.de>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
@@ -23,10 +23,12 @@ extern crate tracing;
 
 mod api;
 mod clock;
+mod context;
 mod core;
 mod crypto;
 mod protocol;
 mod slicer;
+// mod startup;
 mod storage;
 
 pub mod config;
@@ -39,6 +41,6 @@ pub mod util;
 /// that will initialise drivers and OS operations correctly.
 ///
 /// Special permissions may be required for certain features!
-pub async fn start_with_configuration(_cfg: config::ConfigTree) {
-    // ...
+pub async fn start_with_configuration(cfg: config::ConfigTree) {
+    let ctx = context::RatmanContext::start(cfg).await;
 }
