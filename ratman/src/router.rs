@@ -34,7 +34,7 @@ impl Router {
         let keys = Arc::new(Keystore::new());
         Self { inner, proto, keys }
     }
-
+            
     /// Register metrics with a Prometheus registry.
     #[cfg(feature = "dashboard")]
     pub fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
