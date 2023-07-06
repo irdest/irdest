@@ -6,9 +6,9 @@ layout: page
 Angaben gemäß § 5 TMG
 
 <address>
-Katharina Fey c/o Abteilung für Redundanz Abteilung<br>
-Margaretenstraße 30<br>
-10317 Berlin
+Katharina Fey c/o Chaos Computer Club<br>
+Marienstraße 11<br>
+10117 Berlin
 </address>
 
 E-Mail

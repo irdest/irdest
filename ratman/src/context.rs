@@ -3,10 +3,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use crate::{
-    api::ConnectionManager, config::ConfigTree, core::Core, crypto::Keystore, protocol::Protocol,
+    api::ConnectionManager,
+    config::{ConfigTree, CFG_RATMAND},
+    core::Core,
+    crypto::Keystore,
+    protocol::Protocol,
     util::runtime_state::RuntimeState,
 };
 use async_std::sync::Arc;
+use kdl::KdlValue;
 
 /// Top-level Ratman router state handle
 ///
@@ -30,12 +35,34 @@ pub struct RatmanContext {
 impl RatmanContext {
     /// Create and start a new Ratman router context with a config
     pub async fn start(cfg: ConfigTree) -> Arc<Self> {
-        let mut runtime_state = RuntimeState::start_initialising();
+        let runtime_state = RuntimeState::start_initialising();
 
         let protocol = Protocol::new();
         let core = Arc::new(Core::init());
         let keys = Arc::new(Keystore::new());
         let clients = ConnectionManager::new();
+
+        let this = Self {
+            core,
+            protocol,
+            keys,
+            clients,
+            runtime_state,
+        };
+
+        let ratmand_config = cfg.get_subtree(CFG_RATMAND).expect("no 'ratmand' tree");
+
+        // Get peers from configuration
+        let _peers = match ratmand_config
+            .get_value("peer_file")
+            // .or(ratmand_config.get_subtree("peers"))
+        {
+            Some(KdlValue::String(_path)) => {
+                // Load the given file and parse it
+                false
+            }
+            _ => false,
+        };
 
         todo!()
     }

@@ -44,6 +44,10 @@ async fn main() {
 
     let config = ConfigTree::create_new_default();
 
+    let subtree = config.get_subtree("ratmand").unwrap();
+
+    subtree.get_subtree("peers");
+
     // println!("{:#?}", doc);
     // let mut f = File::create("ratmand.kdl").unwrap();
     // f.write_all(doc.to_string().as_bytes()).unwrap();

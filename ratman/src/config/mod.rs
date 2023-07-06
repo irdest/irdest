@@ -81,4 +81,17 @@ impl<'p> SubConfig<'p> {
     pub fn get_value(&self, key: &str) -> Option<&'p KdlValue> {
         self.inner.get(key).map(|entry| entry.value())
     }
+
+    pub fn get_subtree(&self, id: &str) -> Option<SubConfig<'p>> {
+        // self.inner.children().iter().find_map(|node| {
+        //     node.get(0)
+        //         .and_then(|entry| match entry.value_repr().map(|name| name == scope) {
+        //             Some(_) => Some(node),
+        //             _ => None,
+        //         })
+        // })
+        println!("{:#?}", self.inner.children());
+        
+        todo!()
+    }
 }
