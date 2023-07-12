@@ -1,9 +1,34 @@
-use async_std::{fs::OpenOptions, io::WriteExt};
+//! KDL Configuration handling module
+//!
+//! This module handles the Ratman (and ecosystem) configuration
+//! system.  KDL itself is a very nice language for expressing complex
+//! nested structures, without having the complexity get in the way of
+//! editing larger configurations.  The KDL crate also supports
+//! in-line edits, preserving comments, and more.  Unfortunately this
+//! comes at a cost of API usability.  Some of the ways the KDL
+//! structures are exposed are very not-obvious, and so this module
+//! aims to build around the KDL crate to create an easy to use, *easy
+//! to log* (!) API surface for interacting with the various bits of
+//! Ratman configuration.
+//!
+//! Here are some common errors that must be expressed to the user:
+//!
+//! - Grabbing a KDL sub-configuration (for example `settings
+//! ratmand`), which doesn't contain a child block.
+//! -
+
+use async_std::{
+    fs::{File, OpenOptions},
+    io::{ReadExt, WriteExt},
+    path::PathBuf,
+};
 use kdl::{KdlDocument, KdlNode, KdlValue};
 use libratman::types::Result;
-use std::path::PathBuf;
 
 mod default;
+pub mod helpers;
+pub mod peers;
+pub mod netmods;
 
 /// Represent the well-known `ratmand` configuration tree
 pub(crate) const CFG_RATMAND: &'static str = "ratmand";
@@ -22,18 +47,6 @@ pub struct ConfigTree {
     pub inner: KdlDocument,
 }
 
-/// A utility function to select a Node by its first entry, instead of
-/// its name
-fn select_settings_tree<'d>(doc: &'d KdlDocument, scope: &str) -> Option<&'d KdlNode> {
-    doc.nodes().iter().find_map(|node| {
-        node.get(0)
-            .and_then(|entry| match entry.value_repr().map(|name| name == scope) {
-                Some(_) => Some(node),
-                _ => None,
-            })
-    })
-}
-
 impl ConfigTree {
     /// Create a new default configuration
     ///
@@ -48,6 +61,16 @@ impl ConfigTree {
         Self {
             inner: default::create_new_default(),
         }
+    }
+
+    pub async fn load_path(path: impl Into<PathBuf>) -> Result<Self> {
+        let mut f = File::open(path.into()).await?;
+        let mut buf = String::new();
+        f.read_to_string(&mut buf).await?;
+
+        Ok(Self {
+            inner: buf.parse().unwrap(),
+        })
     }
 
     /// Take the current in-memory configuration and write it to disk
@@ -69,29 +92,76 @@ impl ConfigTree {
 
     /// Get the subtree from the Ratman config with a particular name
     pub fn get_subtree(&self, id: &str) -> Option<SubConfig<'_>> {
-        select_settings_tree(&self.inner, id).map(|inner| SubConfig { inner })
+        helpers::select_settings_tree(&self.inner, id).map(|inner| SubConfig { inner })
     }
 }
 
 pub struct SubConfig<'p> {
-    inner: &'p KdlNode,
+    pub inner: &'p KdlNode,
 }
 
 impl<'p> SubConfig<'p> {
-    pub fn get_value(&self, key: &str) -> Option<&'p KdlValue> {
-        self.inner.get(key).map(|entry| entry.value())
+    /// A utility function that takes a SubConfig and dereferences the
+    /// inner KdlDocument.  This is needed because we might have a
+    /// subtree with a missing inner document
+    fn deref_inner(&self) -> Option<&'p KdlDocument> {
+        self.inner.children()
     }
 
+    pub fn get_value(&self, key: &str) -> Option<&'p KdlValue> {
+        self.deref_inner()?
+            .get(key)
+            .and_then(|node| node.entries().first())
+            .map(|entry| entry.value())
+    }
+
+    /// Utility for get_value which also handles String encoding
+    pub fn get_string_value(&self, key: &str) -> Option<String> {
+        self.get_value(key)
+            .and_then(|value| value.as_string())
+            .map(Into::into)
+    }
+
+    /// Utility for get_value which also handles bool conversion
+    pub fn get_bool_value(&self, key: &str) -> Option<bool> {
+        self.get_value(key).and_then(|value| value.as_bool())
+    }
+
+    /// Utility for get_value which also handles number conversion
+    pub fn get_number_value(&self, key: &str) -> Option<i64> {
+        self.get_value(key).and_then(|value| value.as_i64())
+    }
+
+    /// Got a subtree and interpret it as a list-block
+    pub fn get_list_block(&self, id: &str) -> Option<Vec<&'p KdlValue>> {
+        Some(self.deref_inner()?.get_dash_vals(id))
+    }
+
+    /// Utility for reading a list block of strings
+    pub fn get_string_list_block(&self, id: &str) -> Option<Vec<String>> {
+        self.get_list_block(id)
+            .and_then(|vec| {
+                vec.into_iter()
+                    .map(|value| value.as_string())
+                    .collect::<Option<Vec<&str>>>()
+            })
+            .map(|vec| vec.into_iter().map(Into::into).collect())
+    }
+
+    /// Get a subtree and interpret it as a full subtree
     pub fn get_subtree(&self, id: &str) -> Option<SubConfig<'p>> {
-        // self.inner.children().iter().find_map(|node| {
-        //     node.get(0)
-        //         .and_then(|entry| match entry.value_repr().map(|name| name == scope) {
-        //             Some(_) => Some(node),
-        //             _ => None,
-        //         })
-        // })
-        println!("{:#?}", self.inner.children());
-        
-        todo!()
+        self.deref_inner()?
+            .nodes()
+            .into_iter()
+            // Find a node with the given name
+            .find_map(|node| {
+                if node.name().repr() == Some(id) {
+                    Some(node)
+                } else {
+                    None
+                }
+            })
+            // Create a new API wrapper type
+            .map(|inner| SubConfig { inner })
     }
 }

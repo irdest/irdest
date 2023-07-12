@@ -15,6 +15,7 @@ use async_std::{
     sync::Arc,
     task,
 };
+use libratman::{NetmodError, RatmanError};
 use std::{io, net::AddrParseError};
 
 #[derive(Debug, thiserror::Error)]
@@ -33,12 +34,6 @@ impl From<io::Error> for ServerError {
     }
 }
 
-impl From<AddrParseError> for ServerError {
-    fn from(err: AddrParseError) -> Self {
-        Self::InvalidBind(err)
-    }
-}
-
 /// Tcp connection listener taking on connections from peers,
 /// configuring links, and spawning async peer handlers
 pub struct Server {
@@ -48,11 +43,13 @@ pub struct Server {
 
 impl Server {
     /// Attempt to bind the server socket
-    pub(crate) async fn bind(bind: &str) -> Result<Server, ServerError> {
-        let addr: SocketAddr = bind.parse()?;
+    pub(crate) async fn bind(bind: &str) -> Result<Server, RatmanError> {
+        let addr: SocketAddr = bind
+            .parse()
+            .map_err(|e: AddrParseError| RatmanError::Netmod(e.into()))?;
         if addr.is_ipv4() {
             error!("IPv4 binds are not supported (yet)");
-            return Err(ServerError::Unknown);
+            return Err(RatmanError::Netmod(NetmodError::NotSupported));
         }
 
         let ipv6_listen = TcpListener::bind(addr).await?;

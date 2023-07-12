@@ -81,7 +81,7 @@ netmod-datalink = { path = "../netmods/netmod-datalink", version = "0.2" }
 netmod-inet = { path = "../netmods/netmod-inet", version = "0.4" }
 netmod-lan = { path = "../netmods/netmod-lan", version = "0.2" }
 netmod-mem = { path = "../netmods/netmod-mem", version = "0.4" }
-# netmod-lora = { path = "../netmods/netmod-lora", version = "0.1" }
+netmod-lora = { path = "../netmods/netmod-lora", version = "0.1" }
 
 # [dev-dependencies]
 # bincode = "1.2"

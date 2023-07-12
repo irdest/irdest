@@ -19,7 +19,7 @@ mod message;
 mod seq;
 mod timepair;
 
-pub use error::{Error, Result};
+pub use error::{RatmanError, Result};
 pub use frame::Frame;
 pub use identifiers::{address::Address, id::Id, ID_LEN};
 pub use message::{Message, Recipient};

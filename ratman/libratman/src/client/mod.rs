@@ -28,13 +28,18 @@
 //! behaviour can be disabled via the `RatmanIpc` API.
 
 mod socket;
+mod error;
 
 #[cfg(test)]
 mod tests;
 
+// FIXME: REMOVE THESE RE-EXPORTS
 pub use crate::types::{
-    api::Receive_Type, Address, Error, Id, Message, Recipient, Result, TimePair,
+    api::Receive_Type, Address, RatmanError as Error, Id, Message, Recipient, Result, TimePair,
 };
+
+pub use error::Error as ClientError;
+
 use async_std::{
     channel::{unbounded, Receiver},
     task,

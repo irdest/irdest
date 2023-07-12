@@ -10,6 +10,7 @@ extern crate tracing;
 mod socket;
 use std::{collections::HashMap, convert::TryInto, time::Duration};
 
+use libratman::NetmodError;
 pub(crate) use socket::Socket;
 
 use useful_netmod_bits::addrs::AddrTable;
@@ -18,7 +19,7 @@ use useful_netmod_bits::framing::Envelope;
 use async_std::{future, sync::Arc, task};
 use async_trait::async_trait;
 use libratman::netmod::{Endpoint as EndpointExt, Target};
-use libratman::types::{Error, Frame, Result};
+use libratman::types::{Frame, RatmanError, Result};
 use pnet::util::MacAddr;
 use pnet_datalink::interfaces;
 
@@ -287,7 +288,7 @@ impl EndpointExt for Endpoint {
         let inner = bincode::serialize(&frame).unwrap();
 
         if inner.len() > 1500 {
-            return Err(Error::FrameTooLarge);
+            return Err(RatmanError::Netmod(NetmodError::FrameTooLarge));
         }
 
         let env = Envelope::Data(inner);

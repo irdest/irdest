@@ -12,7 +12,7 @@ members = [
     "utils/clockctrl",
     "utils/eris-rs",
     # "utils/installer",
-    # "utils/irdest-firmware-util",
+    "utils/irdest-firmware-util",
     "utils/task-notify",
     "utils/tracing-syslog",
     "utils/useful-netmod-bits",

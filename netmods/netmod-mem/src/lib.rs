@@ -15,8 +15,11 @@ use async_std::{
     task,
 };
 use async_trait::async_trait;
-use libratman::netmod::{Endpoint, Target};
-use libratman::types::{Error as NetError, Frame, Result as NetResult};
+use libratman::types::{Frame, RatmanError, Result as NetResult};
+use libratman::{
+    netmod::{Endpoint, Target},
+    NetmodError,
+};
 
 /// An input/output pair of `mpsc::channel`s.
 ///
@@ -98,7 +101,7 @@ impl Endpoint for MemMod {
     async fn send(&self, frame: Frame, _: Target, exclude: Option<u16>) -> NetResult<()> {
         let io = self.io.read().await;
         match *io {
-            None => Err(NetError::NotSupported),
+            None => Err(RatmanError::Netmod(NetmodError::NotSupported)),
             Some(ref io) if exclude.is_none() => Ok(io.out.send(frame).await.unwrap()),
             _ => Ok(()), // when exclude is some we just drop the frame
         }
@@ -107,10 +110,10 @@ impl Endpoint for MemMod {
     async fn next(&self) -> NetResult<(Frame, Target)> {
         let io = self.io.read().await;
         match *io {
-            None => Err(NetError::NotSupported),
+            None => Err(RatmanError::Netmod(NetmodError::NotSupported)),
             Some(ref io) => match io.inc.recv().await {
                 Ok(f) => Ok((f, Target::default())),
-                Err(_) => Err(NetError::ConnectionLost),
+                Err(_) => Err(RatmanError::Netmod(NetmodError::ConnectionLost)),
             },
         }
     }

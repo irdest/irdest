@@ -2,7 +2,7 @@
 // #[cfg(not(feature = "std"))] // <-- this doesn't seem to work?
 // #![no_std]
 
-use ratman_types::{Address, Frame, Recipient, SeqData, XxSignature};
+use libratman::types::{Address, Frame, Id, Recipient, SeqData, XxSignature};
 use std::io::{Read, Write};
 
 struct SeqDataEncoded {
@@ -66,7 +66,7 @@ impl From<SeqDataEncoded> for SeqData {
             XxSignature { sig, seed }
         };
 
-        let seqid = Address::from_bytes(&enc.seqid);
+        let seqid = Id::from_bytes(&enc.seqid);
 
         let next = {
             if enc.next[0] == true as u8 {

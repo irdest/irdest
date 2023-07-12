@@ -14,7 +14,7 @@
 //! - `Sync` is a reply to an `Announce`, only omitted when `no_sync` is set
 
 use crate::core::Core;
-use libratman::types::{Address, Error, Frame, Result};
+use libratman::types::{Address, Frame, RatmanError, Result};
 
 use async_std::{
     sync::{Arc, Mutex},
@@ -93,7 +93,7 @@ impl Protocol {
             .await
             .get(&id)
             .map(|b| b.swap(false, Ordering::Relaxed))
-            .map_or(Err(Error::NoAddress), |_| Ok(()))
+            .map_or(Err(RatmanError::NoSuchAddress(id)), |_| Ok(()))
     }
 
     /// Try to parse a frame as an announcement

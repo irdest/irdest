@@ -23,7 +23,8 @@ use {resolve::Resolver, server::Server};
 use async_std::{channel::unbounded, io::WriteExt, net::TcpListener, sync::Arc, task};
 use libratman::{
     netmod,
-    types::{Error, Frame},
+    types::{Frame, RatmanError},
+    NetmodError,
 };
 use serde::{Deserialize, Serialize};
 
@@ -44,26 +45,6 @@ pub(crate) enum Direction {
     Receiving,
 }
 
-#[derive(Debug, thiserror::Error)]
-pub enum InetError {
-    #[error("failed configuring the TCP server: {}", 0)]
-    Server(server::ServerError),
-    #[error("provided invalid settings to inet")]
-    Settings,
-}
-
-impl From<InetError> for Error {
-    fn from(_: InetError) -> Error {
-        Error::ConnectionLost
-    }
-}
-
-impl From<server::ServerError> for InetError {
-    fn from(err: server::ServerError) -> Self {
-        Self::Server(err)
-    }
-}
-
 /// Internet overlay endpoint for Ratman
 pub struct InetEndpoint {
     port: u16,
@@ -73,7 +54,7 @@ pub struct InetEndpoint {
 
 impl InetEndpoint {
     /// Start a basic inet endpoint on a particular bind address
-    pub async fn start(bind: &str) -> Result<Arc<Self>, InetError> {
+    pub async fn start(bind: &str) -> Result<Arc<Self>, RatmanError> {
         let server = Server::bind(bind).await?;
         let routes = Routes::new();
         let channel = unbounded(); // TODO: constraint the channel?
@@ -102,40 +83,39 @@ impl InetEndpoint {
     /// Each peer will spawn a worker that periodically attempts to
     /// connect to it.  At the moment all connections are "Standard"
     /// connections as outlined in the user manual.
-    pub async fn add_peers(&self, peers: Vec<String>) -> Result<(), InetError> {
-        for p in peers.into_iter() {
-            if &p == "" && continue {}
-
-            let peer = match Resolver::resolve(&p).await {
-                Some(p) => p,
-                None => {
-                    warn!("Failed to parse peer: '{}'... skipping", p);
-                    continue;
-                }
-            };
-
-            trace!("Adding peer: {}", peer);
-            let session_data = SessionData {
-                id: self.routes.next_target(),
-                tt: PeerType::Standard,
-                addr: peer,
-                self_port: 0, // not used
-            };
-
-            {
-                let routes = Arc::clone(&self.routes);
-                let sender = self.channel.0.clone();
-                match start_connection(session_data, Arc::clone(&routes), sender.clone()).await {
-                    Ok(rx) => setup_cleanuptask(rx, sender, &routes).await,
-                    Err(e) => {
-                        error!("failed to establish session with {}: {}", peer, e);
-                        continue;
-                    }
-                };
-            }
+    async fn add_peer(&self, p: &str) -> Result<u16, RatmanError> {
+        if p == "" {
+            return Err(RatmanError::Netmod(NetmodError::InvalidPeer(p.into())));
         }
 
-        Ok(())
+        let peer = match Resolver::resolve(&p).await {
+            Some(p) => p,
+            None => {
+                warn!("Failed to parse peer: '{}'... skipping", p);
+                return Err(RatmanError::Netmod(NetmodError::InvalidPeer(p.into())));
+            }
+        };
+
+        trace!("Adding peer: {}", peer);
+        let id = self.routes.next_target();
+        let session_data = SessionData {
+            id,
+            tt: PeerType::Standard,
+            addr: peer,
+            self_port: 0, // not used
+        };
+
+        let routes = Arc::clone(&self.routes);
+        let sender = self.channel.0.clone();
+        match start_connection(session_data, Arc::clone(&routes), sender.clone()).await {
+            Ok(rx) => setup_cleanuptask(rx, sender, &routes).await,
+            Err(e) => {
+                error!("failed to establish session with {}: {}", peer, e);
+                return Err(RatmanError::Netmod(NetmodError::InvalidPeer(p.into())));
+            }
+        };
+
+        Ok(id)
     }
 
     /// Send a single frame to a single friend
@@ -144,7 +124,7 @@ impl InetEndpoint {
     /// to it, or it is currently being restarted, and we queue
     /// something for it.
     ///
-    pub async fn send(&self, target: Target, frame: Frame) -> Result<(), InetError> {
+    pub async fn send(&self, target: Target, frame: Frame) -> Result<(), RatmanError> {
         let valid = self.routes.exists(target).await;
         if valid {
             trace!("Target {} exists {}", target, valid);
@@ -161,7 +141,7 @@ impl InetEndpoint {
         Ok(())
     }
 
-    pub async fn send_all(&self, frame: Frame, exclude: Option<Target>) -> Result<(), InetError> {
+    pub async fn send_all(&self, frame: Frame, exclude: Option<Target>) -> Result<(), RatmanError> {
         let all = self.routes.get_all_valid().await;
         for (peer, id) in all {
             match exclude {
@@ -187,6 +167,10 @@ impl InetEndpoint {
 
 #[async_trait::async_trait]
 impl netmod::Endpoint for InetEndpoint {
+    async fn start_peering(&self, addr: &str) -> Result<u16, RatmanError> {
+        self.add_peer(addr).await
+    }
+
     /// Return a desired frame size in bytes
     ///
     /// A user of this library should use this metric to slice larger
@@ -215,7 +199,7 @@ impl netmod::Endpoint for InetEndpoint {
         frame: Frame,
         target: netmod::Target,
         exclude: Option<u16>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), RatmanError> {
         trace!("Sending message to {:?}", target);
         match target {
             netmod::Target::Single(target) => self.send(target, frame).await?,
@@ -230,10 +214,10 @@ impl netmod::Endpoint for InetEndpoint {
     /// It's recommended to return transmission errors, even if there
     /// are no ways to correct the situation from the router's POV,
     /// simply to feed packet drop metrics.
-    async fn next(&self) -> Result<(Frame, netmod::Target), Error> {
+    async fn next(&self) -> Result<(Frame, netmod::Target), RatmanError> {
         self.next()
             .await
-            .ok_or(Error::ConnectionLost)
+            .ok_or(RatmanError::Netmod(NetmodError::ConnectionLost))
             .map(|(target, frame)| (frame, netmod::Target::Single(target)))
     }
 }
@@ -265,10 +249,7 @@ async fn simple_transmission() {
     let server = InetEndpoint::start("[::]:12000").await.unwrap();
 
     let client = InetEndpoint::start("[::]:13000").await.unwrap();
-    client
-        .add_peers(vec!["[::1]:12000".to_string()])
-        .await
-        .unwrap();
+    client.add_peer("[::1]:12000").await.unwrap();
 
     async_std::task::sleep(std::time::Duration::from_millis(500)).await;
 

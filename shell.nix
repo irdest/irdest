@@ -18,7 +18,7 @@ stdenv.mkDerivation {
     pkg-config protobuf udev
 
     # SQL migration tool
-    sqlx-cli
+    sqlx-cli sqlite
 
     # for various tests
     cargo-watch binutils reuse jq

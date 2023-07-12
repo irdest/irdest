@@ -39,68 +39,68 @@ pub async fn run_app(cfg: Config) -> std::result::Result<(), ()> {
     #[cfg(feature = "dashboard")]
     r.register_metrics(&mut registry);
 
-    if !cfg.no_inet {
-        // Load peers or throw an error about missing cli data!
-        let peers: Vec<_> = match cfg
-            .peers
-            .as_ref()
-            .map(|s| s.replace(" ", "\n").to_owned())
-            .or(cfg.peer_file.as_ref().and_then(|path| {
-                let mut f = File::open(path).ok()?;
-                let mut buf = String::new();
-                f.read_to_string(&mut buf).ok()?;
-                Some(buf)
-            }))
-            .or(if cfg.no_peering {
-                Some("".into())
-            } else {
-                None
-            }) {
-            Some(peer_str) => peer_str.split("\n").map(|s| s.trim().to_owned()).collect(),
-            None if !cfg.accept_unknown_peers => {
-                daemon::elog("Failed to initialise ratmand: missing peers data!", 2)
-            }
-            None => vec![],
-        };
+    // if !cfg.no_inet {
+    //     // Load peers or throw an error about missing cli data!
+    //     let peers: Vec<_> = match cfg
+    //         .peers
+    //         .as_ref()
+    //         .map(|s| s.replace(" ", "\n").to_owned())
+    //         .or(cfg.peer_file.as_ref().and_then(|path| {
+    //             let mut f = File::open(path).ok()?;
+    //             let mut buf = String::new();
+    //             f.read_to_string(&mut buf).ok()?;
+    //             Some(buf)
+    //         }))
+    //         .or(if cfg.no_peering {
+    //             Some("".into())
+    //         } else {
+    //             None
+    //         }) {
+    //         Some(peer_str) => peer_str.split("\n").map(|s| s.trim().to_owned()).collect(),
+    //         None if !cfg.accept_unknown_peers => {
+    //             daemon::elog("Failed to initialise ratmand: missing peers data!", 2)
+    //         }
+    //         None => vec![],
+    //     };
 
-        let tcp = match Inet::start(&cfg.inet_bind).await {
-            Ok(tcp) => {
-                // Open the UPNP port if the user enabled this feature
-                if cfg.use_upnp {
-                    if let Err(e) = daemon::upnp::open_port(tcp.port()) {
-                        error!("UPNP setup failed: {}", e);
-                    }
-                }
+    //     let tcp = match Inet::start(&cfg.inet_bind).await {
+    //         Ok(tcp) => {
+    //             // Open the UPNP port if the user enabled this feature
+    //             if cfg.use_upnp {
+    //                 if let Err(e) = daemon::upnp::open_port(tcp.port()) {
+    //                     error!("UPNP setup failed: {}", e);
+    //                 }
+    //             }
 
-                let peers: Vec<_> = peers.iter().map(|s| s.as_str()).collect();
-                match daemon::attach_peers(&tcp, peers).await {
-                    Ok(()) => tcp,
-                    Err(e) => daemon::elog(format!("failed to parse peer data: {}", e), 1),
-                }
-            }
-            Err(e) => daemon::elog(format!("failed to initialise TCP endpoint: {}", e), 1),
-        };
+    //             let peers: Vec<_> = peers.iter().map(|s| s.as_str()).collect();
+    //             match daemon::attach_peers(&tcp, peers).await {
+    //                 Ok(()) => tcp,
+    //                 Err(e) => daemon::elog(format!("failed to parse peer data: {}", e), 1),
+    //             }
+    //         }
+    //         Err(e) => daemon::elog(format!("failed to initialise TCP endpoint: {}", e), 1),
+    //     };
 
-        r.add_endpoint(tcp).await;
-    }
+    //     r.add_endpoint(tcp).await;
+    // }
 
-    // If local-discovery is enabled
-    if !cfg.no_discovery {
-        if let Ok(ep) = LanDiscovery::spawn(cfg.discovery_iface, cfg.discovery_port) {
-            r.add_endpoint(ep).await;
-        }
-    }
+    // // If local-discovery is enabled
+    // if !cfg.no_discovery {
+    //     if let Ok(ep) = LanDiscovery::spawn(cfg.discovery_iface, cfg.discovery_port) {
+    //         r.add_endpoint(ep).await;
+    //     }
+    // }
 
-    #[cfg(feature = "lora")]
-    if !cfg.no_lora {
-        let lora = LoraEndpoint::spawn(
-            cfg.lora_port
-                .expect("You must provide a lora serial port path!")
-                .as_str(),
-            cfg.lora_baud,
-        );
-        r.add_endpoint(lora).await;
-    }
+    // #[cfg(feature = "lora")]
+    // if !cfg.no_lora {
+    //     let lora = LoraEndpoint::spawn(
+    //         cfg.lora_port
+    //             .expect("You must provide a lora serial port path!")
+    //             .as_str(),
+    //         cfg.lora_baud,
+    //     );
+    //     r.add_endpoint(lora).await;
+    // }
 
     // If dashboard is enabled
     #[cfg(feature = "dashboard")]

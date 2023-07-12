@@ -33,10 +33,10 @@
 //! implement, as well as associating sequential frames into a data
 //! set.
 
+mod error;
 mod endpoint;
 mod frame;
-mod result;
 
+pub use error::NetmodError;
 pub use endpoint::Endpoint;
 pub use frame::Target;
-pub use result::{Error, Result};

@@ -30,8 +30,8 @@ settings "ratmand" {
     // if the default (9000) is used.  As an example, we have included two public test servers,
     // that are run by Irdest developers.
     peers {
-        // inet:hyperion.kookie.space:9000
-        // inet:hub.irde.st:9000
+        - "inet:hyperion.kookie.space:9000"
+        - "inet:hub.irde.st:9000"
     }
 
     // Alternatively you can include a list of peers in an external file
@@ -62,11 +62,11 @@ settings "lan" {
     // You may change the port used for automatic discovery, but it is not recommended that you do,
     // since it will mean that most other ratmand instances won't be able to see you.
     // If however that is exactly what you want, then you may change the value here
-    discovery_port 9001
+    port 9001
 
     // If your computer has multple interfaces that can be used for local discovery, you can explicitly select one of them here.
     // Currently discovery is only supported via a single interface (this will change in the future!).
-    // discovery_iface "eth0"
+    // interface "eth0"
 }
 
 // Configuration for the 'lora' wireless radio driver.  See the user manual on how to setup the wireless radio
@@ -80,7 +80,7 @@ settings "lora" {
     serial_baud 9600
 }
 
-// Configuration for the 'datalink' driver.  See the user manual on how to setup an external antenna
+// Configuration for the 'datalink' driver.  See the user manual on how to set it up
 settings "datalink" {
     enable false
 
@@ -89,7 +89,7 @@ settings "datalink" {
 
     // When using netmod_datalink as a WiFi driver, this configures the SSID used for the connection.
     // Like any discovery mechanism, it's recommended you do not change this unless you want to not be found.
-    datalink_ssid "irdest"
+    ssid "irdest"
 }
 
 // Anything unclear?  Check out the user manual: https://docs.irde.st/user/

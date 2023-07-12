@@ -4,7 +4,7 @@
 
 use crate::{
     api::ConnectionManager,
-    config::{ConfigTree, CFG_RATMAND},
+    config::{helpers, ConfigTree, CFG_RATMAND},
     core::Core,
     crypto::Keystore,
     protocol::Protocol,
@@ -52,12 +52,22 @@ impl RatmanContext {
 
         let ratmand_config = cfg.get_subtree(CFG_RATMAND).expect("no 'ratmand' tree");
 
-        // Get peers from configuration
+        // let verbose = ratmand_config.get_value("verbosity");
+        // println!("{:#?}", verbose);
+
+        // Get the initial set of peers from the configuration.
+        // Either this is done via the `peer_file` field, which is
+        // then read and parsed, or via the `peers` list block.  In
+        // either way we have to check for encoding problems.
+        //
+        // FIXME: At this point the peer syntax also hasn't been
+        // validated yet!
         let _peers = match ratmand_config
-            .get_value("peer_file")
-            // .or(ratmand_config.get_subtree("peers"))
+            .get_string_value("peer_file")
+            .and_then(|path| helpers::load_peers_file(path).ok())
+            .or(ratmand_config.get_string_list_block("peers"))
         {
-            Some(KdlValue::String(_path)) => {
+            Some(peers) => {
                 // Load the given file and parse it
                 false
             }

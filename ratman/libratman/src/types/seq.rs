@@ -4,7 +4,7 @@
 
 //! Sequence handling module
 
-use crate::types::{Address, Error, Frame, Id, Recipient};
+use crate::types::{Address, Frame, Id, RatmanError, Recipient};
 use serde::{Deserialize, Serialize};
 use std::hash::{BuildHasher, Hasher};
 use twox_hash::{RandomXxHashBuilder64 as RXHash64, XxHash64};
@@ -143,7 +143,7 @@ impl SeqBuilder {
     ///
     /// This function assumes a complete set of frame that has
     /// previously been sorted along the `seq.num` metric.
-    pub fn restore(buf: &mut Vec<Frame>) -> Result<Vec<u8>, Error> {
+    pub fn restore(buf: &mut Vec<Frame>) -> Result<Vec<u8>, RatmanError> {
         // FIXME: `windows` are weird when there's less than n Items.
         // This hack just pretends that there are two.  We also
         // communicate to the fold that we should drop the last frame
@@ -172,11 +172,11 @@ impl SeqBuilder {
                 let seqb = &b.seq;
 
                 if !seqa.sig.verify(&a.payload) {
-                    res = Err(Error::DesequenceFault);
+                    res = Err(RatmanError::DesequenceFault);
                 }
 
                 if last && !seqb.sig.verify(&b.payload) {
-                    res = Err(Error::DesequenceFault);
+                    res = Err(RatmanError::DesequenceFault);
                 }
 
                 fn append(vec: &mut Vec<u8>, other: &Vec<u8>) {
@@ -197,7 +197,7 @@ impl SeqBuilder {
                         }
                         Ok(vec)
                     }
-                    _ => Err(Error::DesequenceFault),
+                    _ => Err(RatmanError::DesequenceFault),
                 }
             })
     }

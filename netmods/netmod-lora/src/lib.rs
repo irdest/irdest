@@ -4,8 +4,11 @@
 extern crate tracing;
 
 use irdest_firmware_util::{decode_frame, encode_frame};
-use netmod::Result as NMResult;
-use netmod::{Endpoint, Frame, Target};
+use libratman::{
+    netmod::{Endpoint, Target},
+    types::Frame,
+    Result as RatmanResult,
+};
 
 use async_std::{channel, sync::Arc, sync::Mutex, task};
 use async_trait::async_trait;
@@ -28,7 +31,7 @@ enum CtrlTypeCode {
 }
 
 #[repr(packed)]
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 struct CtrlHeader {
     magic: u8,
     packet_type: CtrlTypeCode,
@@ -154,7 +157,7 @@ impl Endpoint for LoraEndpoint {
         PAYLOAD_SIZE
     }
 
-    async fn send(&self, frame: Frame, _target: Target, exclude: Option<u16>) -> NMResult<()> {
+    async fn send(&self, frame: Frame, _target: Target, exclude: Option<u16>) -> RatmanResult<()> {
         if exclude.is_some() {
             warn!("Cannot send messages containing exlude fields");
             return Ok(());
@@ -194,7 +197,7 @@ impl Endpoint for LoraEndpoint {
         Ok(())
     }
 
-    async fn next(&self) -> NMResult<(Frame, Target)> {
+    async fn next(&self) -> RatmanResult<(Frame, Target)> {
         let frame = self.rx.recv().await.unwrap();
         trace!("delivering frame to deamon");
         Ok((frame, Target::Single(0)))

@@ -36,17 +36,13 @@
 // }
 
 use ratmand::config::ConfigTree;
-use std::{fs::File, io::Write};
 
 #[async_std::main]
 async fn main() {
-    // ratmand::start_with_configuration(Config::default()).await
+    let config = ConfigTree::load_path("./ratmand.kdl").await.unwrap();
+    ratmand::start_with_configuration(config).await;
 
-    let config = ConfigTree::create_new_default();
-
-    let subtree = config.get_subtree("ratmand").unwrap();
-
-    subtree.get_subtree("peers");
+    // subtree.get_subtree("peers");
 
     // println!("{:#?}", doc);
     // let mut f = File::create("ratmand.kdl").unwrap();

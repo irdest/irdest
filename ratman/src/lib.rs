@@ -28,7 +28,6 @@ mod core;
 mod crypto;
 mod protocol;
 mod slicer;
-// mod startup;
 mod storage;
 
 pub mod config;

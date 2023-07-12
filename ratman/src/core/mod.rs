@@ -26,7 +26,7 @@ pub(self) use switch::Switch;
 use async_std::sync::Arc;
 use libratman::{
     netmod::Endpoint,
-    types::{Address, Error, Frame, Message, Result},
+    types::{Address, RatmanError, Frame, Message, Result},
 };
 
 /// The Ratman routing core interface
@@ -113,7 +113,7 @@ impl Core {
             self.routes
                 .resolve(id)
                 .await
-                .map_or(Err(Error::NoAddress), |_| Ok(()))
+                .map_or(Err(RatmanError::NoSuchAddress(id)), |_| Ok(()))
         }
     }
 

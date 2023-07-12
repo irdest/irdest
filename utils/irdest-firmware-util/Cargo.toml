@@ -8,4 +8,4 @@ license = "GPL-3.0-or-later"
 std = []
 
 [dependencies]
-ratman-types = { path = "../../ratman/lib-types", version = "0.4" }
+libratman = { path = "../../ratman/libratman", version = "0.5", package = "ratman" }

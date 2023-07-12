@@ -8,7 +8,7 @@
 use crate::util::IoPair;
 use libratman::{
     netmod::Target,
-    types::{Address, Error, Result},
+    types::{Address, RatmanError, Result},
 };
 
 use async_std::{
@@ -86,7 +86,7 @@ impl RouteTable {
     /// Track a local ID in the routes table
     pub(crate) async fn add_local(&self, id: Address) -> Result<()> {
         match self.routes.lock().await.insert(id, RouteType::Local) {
-            Some(_) => Err(Error::DuplicateAddress),
+            Some(_) => Err(RatmanError::DuplicateAddress(id)),
             None => {
                 #[cfg(feature = "dashboard")]
                 self.metrics
@@ -104,7 +104,7 @@ impl RouteTable {
     pub(crate) async fn local(&self, id: Address) -> Result<()> {
         match self.reachable(id).await {
             Some(RouteType::Local) => Ok(()),
-            _ => Err(Error::NoAddress),
+            _ => Err(RatmanError::NoSuchAddress(id)),
         }
     }
 
@@ -119,7 +119,7 @@ impl RouteTable {
                     .dec();
                 Ok(())
             }
-            None => Err(Error::NoAddress),
+            None => Err(RatmanError::NoSuchAddress(id)),
         }
     }
 

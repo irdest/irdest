@@ -29,14 +29,15 @@ pub struct Endpoint {
 
 impl Endpoint {
     /// Create a new endpoint and spawn a dispatch task
-    pub fn spawn(iface: Option<String>, port: u16) -> std::result::Result<Arc<Self>, ()> {
+    pub fn spawn(iface: Option<String>, port: u16) -> std::result::Result<Arc<Self>, &'static str> {
         let iface_string = iface
             .or_else(|| default_iface().map(|iface| {
-                info!("Auto-selected interface '{}' for local peer discovery.  Is this wrong?  Pass --discovery-iface to ratmand instead!", iface);
+                info!("Auto-selected interface '{}' for local peer discovery.  \
+                       You can override the interface via the ratmand configuration (or commandline arguments)", iface);
                 iface
             }))
             .ok_or_else(|| {
-                error!("Could not find an interface to bind on.");
+                "Could not find an interface to bind on."
             })?;
 
         Ok(task::block_on(async move {

@@ -3,21 +3,27 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 mod platform;
+use libratman::netmod::Endpoint;
 pub use platform::Os;
 
 pub(crate) mod chunk;
 pub(crate) mod cli;
-pub(crate) mod peers;
 pub(crate) mod pidfile;
 pub(crate) mod runtime_state;
 pub(crate) mod transform;
 // pub(crate) mod upnp; // FIXME: this currently doesn't work
 
 use async_std::channel::{Receiver, Sender};
+use std::{collections::BTreeMap, sync::Arc};
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
 
 /// A convevient Sender/Receiver pair for a type
 pub(crate) type IoPair<T> = (Sender<T>, Receiver<T>);
+
+/// A string-mapped list of drivers
+// TODO: this is easily confused with core::drivers::DriverMap so
+// maybe rename this or get rid of the inner structure.
+pub(crate) type DriverMap = BTreeMap<String, Arc<dyn Endpoint + Sync + 'static>>;
 
 /// Print a log message and exit
 // TODO: turn into macro

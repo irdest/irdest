@@ -1,9 +1,6 @@
 //! Endpoint abstraction module
 
-use crate::{
-    netmod::{Result, Target},
-    types::Frame,
-};
+use crate::{netmod::Target, types::Frame, Result};
 use async_trait::async_trait;
 use std::sync::Arc;
 
@@ -23,6 +20,27 @@ use std::sync::Arc;
 /// this interface is immutable by default.
 #[async_trait]
 pub trait Endpoint {
+    /// Start a peering session with a remote address
+    ///
+    /// The formatting of this address is specific to the netmod
+    /// implementation, meaning that different netmods can rely on
+    /// fundamentally different address schemas to establish their
+    /// connections.  For example, the `inet` netmod simply uses IPv6
+    /// socket addresses, while the `lora` netmod relies on
+    /// cryptographic IDs of nearby gateways.
+    ///
+    /// The identifier returned must be a unique peer identifier,
+    /// similar to the `Target` abstraction that is used by `send` and
+    /// `next`.  Currently this API doesn't consider stopping a
+    /// peering intent (i.e. even if a connection drops, the netmod
+    /// should always attempt to re-establish the connection).  The
+    /// returned peer identifier can be used in the future to
+    /// disconnect two routers from each other without having to
+    /// restart all other connections.
+    async fn start_peering(&self, _addr: &str) -> Result<u16> {
+        unimplemented!()
+    }
+
     /// Return a maximum frame size in bytes
     ///
     /// Despite the function name, **this is not a hint** and your
