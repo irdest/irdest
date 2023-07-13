@@ -51,4 +51,9 @@ impl PeeringBuilder {
             }
         }
     }
+
+    /// Dissolve this type and take the inner driver map
+    pub fn consume(self) -> DriverMap {
+        self.drivers
+    }
 }

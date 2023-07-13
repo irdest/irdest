@@ -4,7 +4,9 @@
 
 use crate::{
     api::ConnectionManager,
-    config::{helpers, netmods::initialise_netmods, ConfigTree, CFG_RATMAND},
+    config::{
+        helpers, netmods::initialise_netmods, peers::PeeringBuilder, ConfigTree, CFG_RATMAND,
+    },
     core::Core,
     crypto::Keystore,
     protocol::Protocol,
@@ -67,16 +69,46 @@ impl RatmanContext {
         //
         // FIXME: At this point the peer syntax also hasn't been
         // validated yet!
-        let _peers = match ratmand_config
+        match ratmand_config
             .get_string_value("peer_file")
             .and_then(|path| helpers::load_peers_file(path).ok())
             .or(ratmand_config.get_string_list_block("peers"))
         {
+            // If peers exist, add them to the drivers
             Some(peers) => {
-                // Load the given file and parse it
-                false
+                let mut peer_builder = PeeringBuilder::new(driver_map);
+                for peer in peers {
+                    if let Err(e) = peer_builder.attach(peer.as_str()).await {
+                        error!("failed to add peer: {}", e);
+                    }
+                }
+
+                // If we made it to this point we don't need the
+                // peering builder or driver map anymore, so we
+                // dissolve both and add everything to the routing
+                // core.
+                for (_, ep) in peer_builder.consume() {
+                    let _ep_id = this.core.add_ep(ep).await;
+                }
             }
-            _ => false,
+
+            // If no peers exist, check if there are alternative
+            // peering mechanisms (currently either
+            // 'accept_uknown_peers' or having 'lan' discovery
+            // enabled).  We print a warning in this case
+            None if !ratmand_config
+                .get_bool_value("accept_unknown_peers")
+                .unwrap_or(false)
+                && cfg
+                    .get_subtree("lan")
+                    .and_then(|tree| tree.get_bool_value("enable"))
+                    .unwrap_or(false) =>
+            {
+                warn!("No peers were provided, but no alternative peering mechanism was detected!")
+            }
+
+            // If no peers exist, but other peering mechanisms exist
+            _ => {}
         };
 
         todo!()

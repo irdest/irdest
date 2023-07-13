@@ -23,6 +23,8 @@ pub(self) use journal::Journal;
 pub(self) use routes::{EpTargetPair, RouteTable, RouteType};
 pub(self) use switch::Switch;
 
+pub(crate) use drivers::GenericEndpoint;
+
 use async_std::sync::Arc;
 use libratman::{
     netmod::Endpoint,
@@ -123,14 +125,14 @@ impl Core {
     }
 
     /// Insert a new endpoint
-    pub(crate) async fn add_ep(&self, ep: Arc<impl Endpoint + 'static + Send + Sync>) -> usize {
+    pub(crate) async fn add_ep(&self, ep: Arc<GenericEndpoint>) -> usize {
         let id = self.drivers.add(ep).await;
         self.switch.add(id).await;
         id
     }
 
     /// Get an endpoint back from the driver set via it's ID
-    pub(crate) async fn get_ep(&self, id: usize) -> Arc<dyn Endpoint + 'static + Send + Sync> {
+    pub(crate) async fn get_ep(&self, id: usize) -> Arc<GenericEndpoint> {
         self.drivers.get(id).await
     }
 

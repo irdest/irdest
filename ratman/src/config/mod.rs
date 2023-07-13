@@ -63,6 +63,26 @@ impl ConfigTree {
         }
     }
 
+    /// Auickly override any parts of the default config for tests
+    ///
+    /// This function MUST NOT be use in normal code, instead handle
+    /// insertion problems explicitly via the `SubConfig` type.
+    ///
+    /// A key path is segments of the configuration, split by `/`, so
+    /// for example `ratmand/verbosity`, or `inet/enable`.
+    #[cfg(test)]
+    pub fn patch(mut self, key_path: &str, value: impl Into<KdlValue>) -> Self {
+        let (tree, setting) = key_path.split_once('/').expect("invalid key_path syntax");
+
+        let subtree = helpers::select_mut_settings_tree(&mut self.inner, tree)
+            .expect(&format!("invalid subtree {}", tree));
+        subtree
+            .get_mut(setting)
+            .expect(&format!("setting {} doesn't exist!", setting))
+            .set_value(value);
+        self
+    }
+
     pub async fn load_path(path: impl Into<PathBuf>) -> Result<Self> {
         let mut f = File::open(path.into()).await?;
         let mut buf = String::new();

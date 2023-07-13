@@ -321,7 +321,7 @@ pub async fn load_or_create_addr() -> Result<(bool, Address)> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ratman_client::Recipient;
+    use libratman::types::Recipient;
 
     #[test]
     // The single most common recipient is Flood(NAMESPACE), so we special-case that:

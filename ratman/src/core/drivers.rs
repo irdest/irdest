@@ -6,7 +6,9 @@ use async_std::sync::{Arc, RwLock};
 use libratman::netmod::Endpoint;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-type Ep = dyn Endpoint + 'static + Send + Sync;
+/// A dynamicly allocated, generic driver in memory
+pub(crate) type GenericEndpoint = dyn Endpoint + 'static + Send + Sync;
+
 type EpVec = Vec<EpWrap>;
 
 /// Wrap around endpoints that can be removed
@@ -14,7 +16,7 @@ type EpVec = Vec<EpWrap>;
 /// This way, when remove an interface, the ID's of other interfaces
 /// don't have have to be updated or mapped, because their place in the list doesn't change.
 enum EpWrap {
-    Used(Arc<Ep>),
+    Used(Arc<GenericEndpoint>),
     Void,
 }
 
@@ -35,10 +37,7 @@ impl DriverMap {
     }
 
     /// Insert a new endpoint to the set of known endpoints
-    pub(crate) async fn add<E>(&self, ep: Arc<E>) -> usize
-    where
-        E: Endpoint + 'static + Send + Sync,
-    {
+    pub(crate) async fn add(&self, ep: Arc<GenericEndpoint>) -> usize {
         let mut map = self.map.write().await;
         let curr = self.curr.fetch_add(1, Ordering::Relaxed);
         map.push(EpWrap::Used(ep));
@@ -52,7 +51,7 @@ impl DriverMap {
     }
 
     /// Get access to an endpoint via an Arc wrapper
-    pub(crate) async fn get(&self, id: usize) -> Arc<Ep> {
+    pub(crate) async fn get(&self, id: usize) -> Arc<GenericEndpoint> {
         let map = self.map.read().await;
         Arc::clone(match map[id] {
             EpWrap::Used(ref ep) => ep,
@@ -61,7 +60,7 @@ impl DriverMap {
     }
 
     /// Get access to all endpoints wrapped in Arc
-    pub(crate) async fn get_all(&self) -> Vec<Arc<Ep>> {
+    pub(crate) async fn get_all(&self) -> Vec<Arc<GenericEndpoint>> {
         let map = self.map.read().await;
         map.iter()
             .filter_map(|ep| match ep {
@@ -72,7 +71,7 @@ impl DriverMap {
     }
 
     /// Get all endpoints, except for the one provided via the ID
-    pub(crate) async fn get_with_ids(&self) -> Vec<(Arc<Ep>, usize)> {
+    pub(crate) async fn get_with_ids(&self) -> Vec<(Arc<GenericEndpoint>, usize)> {
         let map = self.map.read().await;
         map.iter()
             .enumerate()

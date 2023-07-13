@@ -38,3 +38,16 @@ pub(super) fn select_settings_tree<'d>(
             _ => None,
         })
 }
+
+/// The same as select_settings_tree but giving mutable access
+pub(super) fn select_mut_settings_tree<'d>(
+    doc: &'d mut KdlDocument,
+    search_name: &str,
+) -> Option<&'d mut KdlNode> {
+    doc.nodes_mut()
+        .iter_mut()
+        .find_map(|node| match get_node_name_attribute(node) {
+            Some(name) if name == search_name => Some(node),
+            _ => None,
+        })
+}
