@@ -18,7 +18,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Statistics")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Statistics")]
         trait Statistics {
             /// RefreshRateMs property
             #[dbus_proxy(property)]
@@ -49,7 +49,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.AccessPoint")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.AccessPoint")]
         trait AccessPoint {
             /// Flags property
             #[dbus_proxy(property)]
@@ -106,7 +106,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.WiMax.Nsp")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.WiMax.Nsp")]
         trait Nsp {
             /// Name property
             #[dbus_proxy(property)]
@@ -135,7 +135,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Ppp")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Ppp")]
         trait Ppp {}
     }
     pub mod DeviceTun {
@@ -152,7 +152,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Tun")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Tun")]
         trait Tun {
             /// Group property
             #[dbus_proxy(property)]
@@ -197,7 +197,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Infiniband")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Infiniband")]
         trait Infiniband {
             /// Carrier property
             #[dbus_proxy(property)]
@@ -222,7 +222,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.WiMax")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.WiMax")]
         trait WiMax {
             /// GetNspList method
             fn get_nsp_list(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
@@ -282,7 +282,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.WireGuard")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.WireGuard")]
         trait WireGuard {
             /// FwMark property
             #[dbus_proxy(property)]
@@ -311,7 +311,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.DHCP4Config")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.DHCP4Config")]
         trait DHCP4Config {
             /// Options property
             #[dbus_proxy(property)]
@@ -334,7 +334,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.WifiP2PPeer")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.WifiP2PPeer")]
         trait WifiP2PPeer {
             /// Flags property
             #[dbus_proxy(property)]
@@ -391,7 +391,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Settings")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Settings")]
         trait Settings {
             /// AddConnection method
             fn add_connection(
@@ -484,7 +484,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.IP6Config")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.IP6Config")]
         trait IP6Config {
             /// AddressData property
             #[dbus_proxy(property)]
@@ -545,7 +545,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Vxlan")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Vxlan")]
         trait Vxlan {
             /// Ageing property
             #[dbus_proxy(property)]
@@ -630,7 +630,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Team")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Team")]
         trait Team {
             /// Carrier property
             #[dbus_proxy(property)]
@@ -663,7 +663,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Connection.Active")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Connection.Active")]
         trait Active {
             ///// StateChanged signal
             //#[dbus_proxy(signal)]
@@ -748,7 +748,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Wired")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Wired")]
         trait Wired {
             /// Carrier property
             #[dbus_proxy(property)]
@@ -784,7 +784,7 @@ pub mod NetworkManager {
     ///
     use zbus::dbus_proxy;
 
-    #[dbus_proxy(interface = "org.freedesktop.NetworkManager")]
+    #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager")]
     trait NetworkManager {
         /// ActivateConnection method
         fn activate_connection(
@@ -1038,7 +1038,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Generic")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Generic")]
         trait Generic {
             /// HwAddress property
             #[dbus_proxy(property)]
@@ -1063,7 +1063,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.IP4Config")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.IP4Config")]
         trait IP4Config {
             /// AddressData property
             #[dbus_proxy(property)]
@@ -1138,7 +1138,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Macvlan")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Macvlan")]
         trait Macvlan {
             /// Mode property
             #[dbus_proxy(property)]
@@ -1171,7 +1171,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.VPN.Connection")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.VPN.Connection")]
         trait Connection {
             ///// VpnStateChanged signal
             //#[dbus_proxy(signal)]
@@ -1200,7 +1200,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Dummy")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Dummy")]
         trait Dummy {
             /// HwAddress property
             #[dbus_proxy(property)]
@@ -1221,7 +1221,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Veth")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Veth")]
         trait Veth {
             /// Peer property
             #[dbus_proxy(property)]
@@ -1242,7 +1242,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.OvsInterface")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.OvsInterface")]
         trait OvsInterface {}
     }
     pub mod DeviceWpan {
@@ -1259,7 +1259,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Wpan")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Wpan")]
         trait Wpan {
             /// HwAddress property
             #[dbus_proxy(property)]
@@ -1280,7 +1280,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Bond")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Bond")]
         trait Bond {
             /// Carrier property
             #[dbus_proxy(property)]
@@ -1309,7 +1309,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Vrf")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Vrf")]
         trait Vrf {
             /// Table property
             #[dbus_proxy(property)]
@@ -1330,7 +1330,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Modem")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Modem")]
         trait Modem {
             /// Apn property
             #[dbus_proxy(property)]
@@ -1367,7 +1367,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.PPP")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.PPP")]
         trait PPP {
             /// NeedSecrets method
             fn need_secrets(&self) -> zbus::Result<(String, String)>;
@@ -1405,7 +1405,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Settings.Connection")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Settings.Connection")]
         trait Connection {
             /// ClearSecrets method
             fn clear_secrets(&self) -> zbus::Result<()>;
@@ -1501,7 +1501,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.IPTunnel")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.IPTunnel")]
         trait IPTunnel {
             /// EncapsulationLimit property
             #[dbus_proxy(property)]
@@ -1566,7 +1566,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Checkpoint")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Checkpoint")]
         trait Checkpoint {
             /// Created property
             #[dbus_proxy(property)]
@@ -1595,7 +1595,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Lowpan")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Lowpan")]
         trait Lowpan {
             /// HwAddress property
             #[dbus_proxy(property)]
@@ -1620,7 +1620,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Adsl")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Adsl")]
         trait Adsl {
             /// Carrier property
             #[dbus_proxy(property)]
@@ -1641,7 +1641,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.WifiP2P")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.WifiP2P")]
         trait WifiP2P {
             /// StartFind method
             fn start_find(
@@ -1683,7 +1683,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Vlan")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Vlan")]
         trait Vlan {
             /// Carrier property
             #[dbus_proxy(property)]
@@ -1716,7 +1716,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.OvsPort")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.OvsPort")]
         trait OvsPort {
             /// Slaves property
             #[dbus_proxy(property)]
@@ -1737,7 +1737,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.OvsBridge")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.OvsBridge")]
         trait OvsBridge {
             /// Slaves property
             #[dbus_proxy(property)]
@@ -1758,7 +1758,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.AgentManager")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.AgentManager")]
         trait AgentManager {
             /// Register method
             fn register(&self, identifier: &str) -> zbus::Result<()>;
@@ -1788,7 +1788,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Wireless")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Wireless")]
         trait Wireless {
             /// GetAccessPoints method
             fn get_access_points(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
@@ -1863,7 +1863,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.DHCP6Config")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.DHCP6Config")]
         trait DHCP6Config {
             /// Options property
             #[dbus_proxy(property)]
@@ -1886,7 +1886,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Macsec")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Macsec")]
         trait Macsec {
             /// CipherSuite property
             #[dbus_proxy(property)]
@@ -1955,7 +1955,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.OlpcMesh")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.OlpcMesh")]
         trait OlpcMesh {
             /// ActiveChannel property
             #[dbus_proxy(property)]
@@ -1984,7 +1984,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Bridge")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Bridge")]
         trait Bridge {
             /// Carrier property
             #[dbus_proxy(property)]
@@ -2013,7 +2013,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device.Bluetooth")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device.Bluetooth")]
         trait Bluetooth {
             /// BtCapabilities property
             #[dbus_proxy(property)]
@@ -2042,7 +2042,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.Device")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.Device")]
         trait Device {
             /// Delete method
             fn delete(&self) -> zbus::Result<()>;
@@ -2226,7 +2226,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.SecretAgent")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.SecretAgent")]
         trait SecretAgent {
             /// CancelGetSecrets method
             fn cancel_get_secrets(
@@ -2288,7 +2288,7 @@ pub mod NetworkManager {
         ///
         use zbus::dbus_proxy;
 
-        #[dbus_proxy(interface = "org.freedesktop.NetworkManager.DnsManager")]
+        #[dbus_proxy(assume_defaults = true, interface = "org.freedesktop.NetworkManager.DnsManager")]
         trait DnsManager {
             /// Configuration property
             #[dbus_proxy(property)]
