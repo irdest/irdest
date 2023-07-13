@@ -101,7 +101,7 @@ impl Message {
     // return protobuf type Message.
     #[cfg(feature = "proto")]
     pub fn received(
-        id: Address,
+        id: Id,
         sender: Address,
         recipient: Recipient,
         payload: Vec<u8>,

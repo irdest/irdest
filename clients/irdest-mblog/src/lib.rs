@@ -2,8 +2,11 @@ mod lookup;
 
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, TimeZone, Utc};
+use libratman::{
+    client::RatmanIpc,
+    types::{Address, Id, Message as RatmanMessage, Recipient, TimePair},
+};
 use protobuf::Message as _;
-use ratman_client::{Address, Id, RatmanIpc, Recipient, TimePair};
 use std::convert::TryFrom;
 
 pub use lookup::Lookup;
@@ -25,7 +28,7 @@ pub struct Envelope {
 }
 
 impl Envelope {
-    pub fn from_ratmsg(ratmsg: &ratman_client::Message) -> Self {
+    pub fn from_ratmsg(ratmsg: &RatmanMessage) -> Self {
         Self {
             header: Header::message(&ratmsg),
             payload: ratmsg.get_payload(),
@@ -121,7 +124,7 @@ pub struct Header {
 }
 
 impl Header {
-    pub fn message(msg: &ratman_client::Message) -> Self {
+    pub fn message(msg: &RatmanMessage) -> Self {
         Self {
             id: msg.get_id(),
             time: msg.get_time().local(),
@@ -160,7 +163,7 @@ impl Message {
     // way that the mblog database works.  This doesn't make much
     // sense but until we can refactor the UI to be easier to handle
     // first-run tasks, this will have to do.
-    pub fn generate_intro(addr: Address) -> ratman_client::Message {
+    pub fn generate_intro(addr: Address) -> RatmanMessage {
         let mblog_msg = Message::new(Post {
             nick: addr.to_string(),
             topic: "/net/irdest/welcome".into(),
@@ -179,7 +182,7 @@ Why don't you say hello? :)",
         let mut time = TimePair::sending();
         time.receive();
 
-        ratman_client::Message::received(
+        RatmanMessage::received(
             Id::random(),
             addr,
             Recipient::Flood(NAMESPACE.into()),
@@ -204,10 +207,10 @@ Why don't you say hello? :)",
     }
 }
 
-impl TryFrom<&ratman_client::Message> for Message {
+impl TryFrom<&RatmanMessage> for Message {
     type Error = anyhow::Error;
 
-    fn try_from(msg: &ratman_client::Message) -> Result<Self, Self::Error> {
+    fn try_from(msg: &RatmanMessage) -> Result<Self, Self::Error> {
         let p = proto::feed::Message::parse_from_bytes(&msg.get_payload()[..])?;
         Ok(Self {
             header: Header::message(msg),

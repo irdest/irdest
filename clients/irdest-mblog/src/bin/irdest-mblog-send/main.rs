@@ -1,8 +1,13 @@
+// SPDX-FileCopyrightText: 2022 embr <hi@liclac.eu>
+// SPDX-FileCopyrightText: 2022-2023 Katharina Fey <kookie@spacekookie.de>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 use anyhow::Result;
 use clap::Parser;
 use irdest_mblog::{Message, Post, NAMESPACE};
+use libratman::{client::RatmanIpc, types::Address};
 use protobuf::Message as _;
-use ratman_client::{Address, RatmanIpc};
 
 /// sample microblog client - cli sender.
 #[derive(Parser, Debug)]

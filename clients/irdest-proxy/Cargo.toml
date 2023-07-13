@@ -8,7 +8,7 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
-ratman-client = { path = "../../ratman/lib-client", version = "0.4.0" }
+libratman = { version = "0.5.0", path = "../../ratman/libratman", package = "ratman" }
 
 async-std = { version = "1.0", features = ["attributes"] }
 bincode = "1.0"
@@ -21,4 +21,4 @@ tracing = "0.1"
 tracing-subscriber = "0.2"
 
 [dev-dependencies]
-ratman = { path = "../../ratman" }
+ratmand = { path = "../../ratman" }

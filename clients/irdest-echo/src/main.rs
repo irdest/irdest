@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use ratman_client::{RatmanIpc, Receive_Type};
+use libratman::client::{RatmanIpc, Receive_Type};
 
 #[async_std::main]
 async fn main() {

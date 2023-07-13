@@ -11,7 +11,7 @@ use async_std::{
     net::TcpStream,
     sync::{Arc, RwLock},
 };
-use ratman_client::Address;
+use libratman::client::Address;
 use std::collections::BTreeMap;
 
 pub type SessionMap = Arc<RwLock<BTreeMap<Address, TcpStream>>>;

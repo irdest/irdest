@@ -3,7 +3,7 @@ use async_std::{
     io::{self, ReadExt, WriteExt},
     net::TcpStream,
 };
-use ratman_client::{Address, RatmanIpc, Receive_Type};
+use libratman::client::{Address, RatmanIpc, Receive_Type};
 
 /// Connect to the router with a fixed address
 pub async fn connect_with_address(bind: Option<&str>, addr: Address) -> io::Result<RatmanIpc> {

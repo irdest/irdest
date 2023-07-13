@@ -1,11 +1,11 @@
 [package]
 name = "netmod-wd"
-description = "A native network driver that binds wifi direct"
+description = "A native network driver that binds wifi direct on Android"
 version = "0.2.0"
-edition = "2018"
+edition = "2021"
 license = "AGPL-3.0-or-later"
 
 [dependencies]
-netmod = { version ="0.5.0", path = "../../ratman/lib-netmod", package = "ratman-netmod" }
+libratman = { version = "0.5.0", path = "../../ratman/libratman", package = "ratman" }
 async-std = { version = "1.0", features = ["unstable"] }
 async-trait = "0.1"

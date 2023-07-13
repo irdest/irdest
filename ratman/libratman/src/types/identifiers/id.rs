@@ -127,7 +127,6 @@ impl Id {
     /// This function requires the `digest` feature.
     ///
     /// [blake2]: https://blake2.net/
-    #[deprecated]
     pub fn with_digest<'vec, V: Into<&'vec Vec<u8>>>(vec: V) -> Self {
         use blake2::{
             digest::{Update, VariableOutput},

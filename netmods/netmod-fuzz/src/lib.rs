@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use async_std::channel::{unbounded, Receiver, Sender};
-use netmod::Frame;
+use libratman::{netmod, types::Frame, RatmanError};
 
 pub struct FuzzEndpoint {
     tx: Sender<(Frame, netmod::Target)>,
@@ -29,11 +29,11 @@ impl netmod::Endpoint for FuzzEndpoint {
         0
     }
 
-    async fn send(&self, _: Frame, _: netmod::Target, _: Option<u16>) -> Result<(), netmod::Error> {
+    async fn send(&self, _: Frame, _: netmod::Target, _: Option<u16>) -> Result<(), RatmanError> {
         Ok(())
     }
 
-    async fn next(&self) -> Result<(Frame, netmod::Target), netmod::Error> {
+    async fn next(&self) -> Result<(Frame, netmod::Target), RatmanError> {
         Ok(self.rx.recv().await.unwrap())
     }
 }

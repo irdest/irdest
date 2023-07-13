@@ -4,7 +4,7 @@ use crate::{
     server::SessionMap,
 };
 use async_std::{io, net::TcpStream, task};
-use ratman_client::Address;
+use libratman::client::Address;
 
 pub struct Outlet {
     map: SessionMap,

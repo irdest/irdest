@@ -6,7 +6,11 @@ use async_std::{
     task,
 };
 use async_trait::async_trait;
-use netmod::{Endpoint, Frame, Result, Target};
+use libratman::{
+    netmod::{Endpoint, Target},
+    types::Frame,
+    Result,
+};
 
 pub struct WdMod {
     recv_queue: (Sender<(Frame, Target)>, Receiver<(Frame, Target)>),

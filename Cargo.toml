@@ -11,7 +11,7 @@ members = [
     # Various utility crates
     "utils/clockctrl",
     "utils/eris-rs",
-    # "utils/installer",
+    "utils/installer",
     "utils/irdest-firmware-util",
     "utils/task-notify",
     "utils/tracing-syslog",
@@ -23,16 +23,16 @@ members = [
     "netmods/netmod-inet",
     "netmods/netmod-lan",
     "netmods/netmod-mem",
-    # "netmods/netmod-fuzz",
-    # "netmods/netmod-lora",
-    # "netmods/netmod-wd",
+    "netmods/netmod-fuzz",
+    "netmods/netmod-lora",
+    "netmods/netmod-wd",
 
     # End-user applications (of varying complexity)
     "clients/ratman-tools",
-    # "clients/android-vpn/jni",
-    # "clients/irdest-echo",
-    # "clients/irdest-mblog",
-    # "clients/irdest-proxy",
+    "clients/android-vpn/jni",
+    "clients/irdest-echo",
+    "clients/irdest-mblog",
+    "clients/irdest-proxy",
 ]
 
 exclude = [

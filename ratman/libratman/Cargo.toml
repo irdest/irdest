@@ -10,6 +10,7 @@ edition = "2021"
 license = "GPL-3.0-or-later"
 
 [features]
+## TODO: figure out if it makes sense to disable one or both of these features by default
 default = ["client", "netmod"]
 netmod = []
 client = ["proto"]

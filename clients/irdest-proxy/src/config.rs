@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use async_std::net::SocketAddr;
-use ratman_client::Address;
+use libratman::types::Address;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,

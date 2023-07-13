@@ -1,13 +1,13 @@
 [package]
 name = "netmod-lora"
-description = "A LoRa driver"
+description = "A LoRa radio driver"
 version = "0.1.0"
 edition = "2021"
 license = "AGPL-3.0-or-later"
 
 [dependencies]
 task-notify = { version = "1.0", path = "../../utils/task-notify" }
-libratman = { version ="0.5.0", path = "../../ratman/libratman", package = "ratman" }
+libratman = { version = "0.5.0", path = "../../ratman/libratman", package = "ratman" }
 irdest-firmware-util = {version = "0.1.0", path = "../../utils/irdest-firmware-util"}
 
 async-std = { version = "1.0", features = ["unstable"] }

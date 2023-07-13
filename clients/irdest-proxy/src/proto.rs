@@ -1,4 +1,4 @@
-use ratman_client::Address;
+use libratman::client::Address;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]

@@ -3,7 +3,7 @@ use crate::{
     io::{connect_with_address, from_tcp_to_ratman, terminate_session},
 };
 use async_std::{io, net::TcpListener, stream::StreamExt, task};
-use ratman_client::Address;
+use libratman::client::Address;
 
 /// An inlet takes data from a socket and maps it into a Ratman
 /// message to a particular peer (provided to the `new` function).
