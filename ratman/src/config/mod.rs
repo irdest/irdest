@@ -50,27 +50,28 @@ pub struct ConfigTree {
 impl ConfigTree {
     /// Create a new default configuration
     ///
-    /// This function should only be called when running for the
-    /// "first time" (aka when no existing configuration could be
-    /// detected).
+    /// In ratmand, this function should only be called once, when
+    /// running for the first time.  During tests, it can be useful to
+    /// start with the default configuration, and then use `patch` to
+    /// augment it in various ways.
     ///
     /// Alternatively this function may run when the user invokes
     /// `ratmand config generate`, initially populating a
     /// configuration that they can then customise.
-    pub fn create_new_default() -> Self {
+    pub fn default_in_memory() -> Self {
         Self {
             inner: default::create_new_default(),
         }
     }
 
-    /// Auickly override any parts of the default config for tests
+    /// Quickly override any parts of the default config for tests
     ///
-    /// This function MUST NOT be use in normal code, instead handle
+    /// This function SHOULD NOT be use in normal code, instead handle
     /// insertion problems explicitly via the `SubConfig` type.
     ///
     /// A key path is segments of the configuration, split by `/`, so
     /// for example `ratmand/verbosity`, or `inet/enable`.
-    #[cfg(test)]
+    #[doc(hidden)]
     pub fn patch(mut self, key_path: &str, value: impl Into<KdlValue>) -> Self {
         let (tree, setting) = key_path.split_once('/').expect("invalid key_path syntax");
 
@@ -80,6 +81,23 @@ impl ConfigTree {
             .get_mut(setting)
             .expect(&format!("setting {} doesn't exist!", setting))
             .set_value(value);
+
+        self
+    }
+
+    /// Use this function to patch a list block (for example `ratmand/peers`)
+    #[doc(hidden)]
+    pub fn patch_list(mut self, key_path: &str, value: impl Into<KdlValue>) -> Self {
+        let (tree, setting) = key_path.split_once('/').expect("invalid key_path syntax");
+        let subtree = helpers::select_mut_settings_tree(&mut self.inner, tree)
+            .expect(&format!("invalid subtree {}", tree));
+
+        println!("First tree: {}", subtree.entries().first().unwrap());
+        helpers::append_to_list_block(
+            subtree.children_mut().as_mut().expect("invalid subtree"),
+            setting,
+            value,
+        );
         self
     }
 
@@ -185,4 +203,17 @@ impl<'p> SubConfig<'p> {
             // Create a new API wrapper type
             .map(|inner| SubConfig { inner })
     }
+}
+
+#[test]
+fn config_patch() {
+    let cfg = ConfigTree::default_in_memory().patch_list("ratmand/peers", "inet:localhost:99999");
+
+    assert_eq!(
+        cfg.get_subtree("ratmand")
+            .unwrap()
+            .get_string_list_block("peers")
+            .unwrap(),
+        vec!["inet:localhost:99999".to_owned()]
+    )
 }

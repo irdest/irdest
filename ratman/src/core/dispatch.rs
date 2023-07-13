@@ -162,6 +162,7 @@ impl Dispatch {
 
 #[cfg(feature = "dashboard")]
 mod metrics {
+    use libratman::types::{Address, Recipient};
     use prometheus_client::{
         encoding::text::Encode,
         metrics::{counter::Counter, family::Family},
@@ -171,7 +172,7 @@ mod metrics {
     #[derive(Clone, Hash, PartialEq, Eq, Encode)]
     pub(super) struct Labels {
         pub recp_type: RecipientType,
-        pub recp_id: types::Address,
+        pub recp_id: Address,
     }
 
     #[derive(Clone, Hash, PartialEq, Eq)]
@@ -180,11 +181,11 @@ mod metrics {
         Flood,
     }
 
-    impl From<&types::Recipient> for RecipientType {
-        fn from(v: &types::Recipient) -> Self {
+    impl From<&Recipient> for RecipientType {
+        fn from(v: &Recipient) -> Self {
             match v {
-                &types::Recipient::Standard(_) => Self::Standard,
-                &types::Recipient::Flood(_) => Self::Flood,
+                &Recipient::Standard(_) => Self::Standard,
+                &Recipient::Flood(_) => Self::Flood,
             }
         }
     }

@@ -11,10 +11,11 @@ license = "GPL-3.0-or-later"
 
 [features]
 ## TODO: figure out if it makes sense to disable one or both of these features by default
-default = ["client", "netmod"]
-netmod = []
-client = ["proto"]
-proto = ["protobuf", "protoc-rust"]
+default = [ "client", "netmod" ]
+netmod = [ ]
+client = [ "proto" ]
+proto = [ "protobuf", "protoc-rust" ]
+metrics = [ "prometheus-client" ]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -37,7 +38,7 @@ rand = "0.7"
 regex = "1.0"
 twox-hash = "1.5"
 
-prometheus-client = "0.16"
+prometheus-client = { version = "0.16", optional = true }
 
 [dev-dependencies]
 serde_json = "1.0"

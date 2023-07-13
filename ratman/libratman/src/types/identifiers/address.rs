@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use super::{id::Id, ID_LEN};
+use prometheus_client::encoding::text::Encode;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Display};
 
@@ -59,5 +60,12 @@ impl From<[u8; ID_LEN]> for Address {
 impl From<&[u8; ID_LEN]> for Address {
     fn from(i: &[u8; ID_LEN]) -> Self {
         Self(i.clone().into())
+    }
+}
+
+#[cfg(feature = "metrics")]
+impl Encode for Address {
+    fn encode(&self, w: &mut dyn std::io::Write) -> std::io::Result<()> {
+        self.0.encode(w)
     }
 }

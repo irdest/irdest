@@ -5,7 +5,8 @@
 
 //! Slices `Message` into a series of Frames
 
-use libratman::types::{Frame, Message};
+use crate::core::Payload;
+use libratman::types::{Frame, Message, SeqBuilder};
 
 /// Slices messages into managable chunks
 pub(crate) struct TransportSlicer;
@@ -13,22 +14,21 @@ pub(crate) struct TransportSlicer;
 impl TransportSlicer {
     /// Take a `Message` and split it into a list of `Frames`
     pub(crate) fn slice(max: usize, msg: Message) -> Vec<Frame> {
-        // let payload = bincode::serialize(&Payload {
-        //     payload: msg.payload,
-        //     timesig: msg.timesig,
-        //     sign: msg.sign,
-        // })
-        // .unwrap();
+        let payload = bincode::serialize(&Payload {
+            payload: msg.payload,
+            time: msg.time,
+            signature: msg.signature,
+        })
+        .unwrap();
 
-        // payload
-        //     .as_slice()
-        //     .chunks(max)
-        //     .fold(
-        //         SeqBuilder::new(msg.sender, msg.recipient, msg.id),
-        //         |seq, chunk| seq.add(chunk.into_iter().cloned().collect()),
-        //     )
-        //     .build()
-        todo!()
+        payload
+            .as_slice()
+            .chunks(max)
+            .fold(
+                SeqBuilder::new(msg.sender, msg.recipient, msg.id),
+                |seq, chunk| seq.add(chunk.into_iter().cloned().collect()),
+            )
+            .build()
     }
 }
 

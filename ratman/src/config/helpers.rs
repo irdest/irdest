@@ -1,6 +1,6 @@
 //! A set of helper functions for dealing with configuration data
 
-use kdl::{KdlDocument, KdlNode};
+use kdl::{KdlDocument, KdlEntry, KdlNode, KdlValue};
 use libratman::types::Result;
 use std::{fs::File, io::Read, path::PathBuf};
 
@@ -50,4 +50,28 @@ pub(super) fn select_mut_settings_tree<'d>(
             Some(name) if name == search_name => Some(node),
             _ => None,
         })
+}
+
+pub(super) fn append_to_list_block(
+    doc: &mut KdlDocument,
+    tree_id: &str,
+    item: impl Into<KdlValue>,
+) {
+    match doc.nodes_mut().iter_mut().find_map(|node| {
+        let node_name = node.name().repr().unwrap();
+
+        if node_name == tree_id {
+            Some(node)
+        } else {
+            None
+        }
+    }) {
+        Some(subtree) => {
+            let block = subtree.children_mut().as_mut().expect("Invalid sub-block");
+            let mut new_node = KdlNode::new("-");
+            new_node.push(KdlEntry::new(item));
+            block.nodes_mut().push(new_node);
+        }
+        None => panic!("invalid subtree ?!"),
+    }
 }

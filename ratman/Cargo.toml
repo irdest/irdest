@@ -54,7 +54,7 @@ tracing-syslog = { version = "0.1", path = "../utils/tracing-syslog" }
 
 ## Irdest and Ratman sub-components
 clockctrl = { version = "0.1", path = "../utils/clockctrl" }
-libratman = { version = "0.5", path = "libratman", features = ["netmod"], package = "ratman" }
+libratman = { version = "0.5", path = "libratman", features = [ "metrics" ], package = "ratman" }
 task-notify = { version = "1.0", path = "../utils/task-notify" }
 
 ## Dependencies required for various binary targets

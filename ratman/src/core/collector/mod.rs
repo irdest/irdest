@@ -36,10 +36,10 @@ pub(self) type Locked<T> = Arc<Mutex<T>>;
 
 /// A wrapper around payload and signature
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
-pub(self) struct Payload {
-    pub(self) payload: Vec<u8>,
-    pub(self) time: TimePair,
-    pub(self) signature: Vec<u8>,
+pub(crate) struct Payload {
+    pub(crate) payload: Vec<u8>,
+    pub(crate) time: TimePair,
+    pub(crate) signature: Vec<u8>,
 }
 
 mod state;

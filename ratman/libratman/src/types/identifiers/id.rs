@@ -54,6 +54,7 @@ impl Display for Id {
     }
 }
 
+#[cfg(feature = "metrics")]
 impl Encode for Id {
     fn encode(&self, w: &mut dyn std::io::Write) -> std::io::Result<()> {
         write!(w, "{:}", self)

@@ -112,9 +112,9 @@ impl RatmanContext {
             _ => {}
         };
 
-        // If the dashboard configuration is enabled
+        // If the dashboard feature and configuration is enabled
         #[cfg(feature = "dashboard")]
-        if let Some(true) = ratmand_config.get_bool_value("web_dashboard") {
+        if let Some(true) = ratmand_config.get_bool_value("enable_dashboard") {
             let dashboard_bind = ratmand_config
                 .get_string_value("dashboard_bind")
                 .unwrap_or_else(|| "localhost:8090".to_owned());

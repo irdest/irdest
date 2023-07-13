@@ -23,13 +23,10 @@ pub(self) use journal::Journal;
 pub(self) use routes::{EpTargetPair, RouteTable, RouteType};
 pub(self) use switch::Switch;
 
-pub(crate) use drivers::GenericEndpoint;
+pub(crate) use {collector::Payload, drivers::GenericEndpoint};
 
 use async_std::sync::Arc;
-use libratman::{
-    netmod::Endpoint,
-    types::{Address, Frame, Message, RatmanError, Result},
-};
+use libratman::types::{Address, Frame, Message, RatmanError, Result};
 
 /// The Ratman routing core interface
 ///
