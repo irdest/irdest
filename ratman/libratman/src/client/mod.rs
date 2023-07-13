@@ -27,15 +27,15 @@
 //! `ratmand` that does not match the libraries version number.  This
 //! behaviour can be disabled via the `RatmanIpc` API.
 
-mod socket;
 mod error;
+mod socket;
 
 #[cfg(test)]
 mod tests;
 
 // FIXME: REMOVE THESE RE-EXPORTS
 pub use crate::types::{
-    api::Receive_Type, Address, RatmanError as Error, Id, Message, Recipient, Result, TimePair,
+    api::Receive_Type, Address, Id, Message, RatmanError as Error, Recipient, Result, TimePair,
 };
 
 pub use error::Error as ClientError;

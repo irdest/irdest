@@ -26,7 +26,7 @@ pub(self) use switch::Switch;
 use async_std::sync::Arc;
 use libratman::{
     netmod::Endpoint,
-    types::{Address, RatmanError, Frame, Message, Result},
+    types::{Address, Frame, Message, RatmanError, Result},
 };
 
 /// The Ratman routing core interface

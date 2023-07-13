@@ -7,13 +7,17 @@
 //!
 
 use crate::{config::ConfigTree, util::DriverMap};
-use libratman::RatmanError;
 use netmod_datalink::Endpoint as DatalinkEndpoint;
 use netmod_inet::InetEndpoint;
 use netmod_lan::Endpoint as LanEndpoint;
 use netmod_lora::LoraEndpoint;
 
-pub(crate) async fn initialise_netmods(cfg: &ConfigTree) -> Result<DriverMap, RatmanError> {
+/// This function does not fail or abort router initialisation.  In
+/// the future maybe we want to log errors, but then also pass them
+/// upwards ?  For now, errors and warnings are logged to the user, so
+/// even if every netmod fails to initialise, the router will come up,
+/// which allows the web dashboard to also display the same errors.
+pub(crate) async fn initialise_netmods(cfg: &ConfigTree) -> DriverMap {
     let mut map = DriverMap::new();
 
     //// If the 'inet' config tree exists...
@@ -31,6 +35,7 @@ pub(crate) async fn initialise_netmods(cfg: &ConfigTree) -> Result<DriverMap, Ra
             (Some(true), Some(bind)) => match InetEndpoint::start(bind.as_str()).await {
                 Ok(inet) => {
                     map.insert("inet".into(), inet);
+                    info!("Initialised inet driver");
                 }
                 Err(e) => {
                     error!("Netmod 'inet' failed to initialise: {}. skipping...", e);
@@ -110,5 +115,5 @@ pub(crate) async fn initialise_netmods(cfg: &ConfigTree) -> Result<DriverMap, Ra
         }
     }
 
-    Ok(map)
+    map
 }

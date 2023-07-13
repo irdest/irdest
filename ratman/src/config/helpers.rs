@@ -17,14 +17,24 @@ pub fn load_peers_file(path: impl Into<PathBuf>) -> Result<Vec<String>> {
     }))
 }
 
+pub(super) fn get_node_name_attribute<'p>(node: &'p KdlNode) -> Option<&str> {
+    node.get(0)
+        .and_then(|entry| match entry.value().as_string() {
+            Some(name) => Some(name),
+            _ => None,
+        })
+}
+
 /// A utility function to select a Node by its first entry, instead of
 /// its name
-pub(super) fn select_settings_tree<'d>(doc: &'d KdlDocument, scope: &str) -> Option<&'d KdlNode> {
-    doc.nodes().iter().find_map(|node| {
-        node.get(0)
-            .and_then(|entry| match entry.value_repr().map(|name| name == scope) {
-                Some(_) => Some(node),
-                _ => None,
-            })
-    })
+pub(super) fn select_settings_tree<'d>(
+    doc: &'d KdlDocument,
+    search_name: &str,
+) -> Option<&'d KdlNode> {
+    doc.nodes()
+        .iter()
+        .find_map(|node| match get_node_name_attribute(node) {
+            Some(name) if name == search_name => Some(node),
+            _ => None,
+        })
 }

@@ -4,14 +4,13 @@
 
 use crate::{
     api::ConnectionManager,
-    config::{helpers, ConfigTree, CFG_RATMAND},
+    config::{helpers, netmods::initialise_netmods, ConfigTree, CFG_RATMAND},
     core::Core,
     crypto::Keystore,
     protocol::Protocol,
-    util::runtime_state::RuntimeState,
+    util::{runtime_state::RuntimeState, setup_logging},
 };
 use async_std::sync::Arc;
-use kdl::KdlValue;
 
 /// Top-level Ratman router state handle
 ///
@@ -51,6 +50,12 @@ impl RatmanContext {
         };
 
         let ratmand_config = cfg.get_subtree(CFG_RATMAND).expect("no 'ratmand' tree");
+
+        // Before we do anything else, make sure we see logs
+        setup_logging(&ratmand_config);
+
+        // This never fails, we will have a map of netmods here, even if it is empty
+        let driver_map = initialise_netmods(&cfg).await;
 
         // let verbose = ratmand_config.get_value("verbosity");
         // println!("{:#?}", verbose);

@@ -27,8 +27,8 @@ use libratman::types::Result;
 
 mod default;
 pub mod helpers;
-pub mod peers;
 pub mod netmods;
+pub mod peers;
 
 /// Represent the well-known `ratmand` configuration tree
 pub(crate) const CFG_RATMAND: &'static str = "ratmand";
@@ -96,6 +96,7 @@ impl ConfigTree {
     }
 }
 
+#[derive(Debug)]
 pub struct SubConfig<'p> {
     pub inner: &'p KdlNode,
 }

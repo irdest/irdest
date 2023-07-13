@@ -17,6 +17,8 @@ use async_std::channel::{Receiver, Sender};
 use std::{collections::BTreeMap, sync::Arc};
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
 
+use crate::config::{ConfigTree, SubConfig};
+
 /// A convevient Sender/Receiver pair for a type
 pub(crate) type IoPair<T> = (Sender<T>, Receiver<T>);
 
@@ -42,9 +44,14 @@ pub(crate) fn env_xdg_config() -> Option<String> {
     std::env::var("XDG_CONFIG_HOME").ok()
 }
 
-pub fn setup_logging(lvl: &str, syslog: bool) {
+pub fn setup_logging(ratmand_config: &SubConfig) {
+    let lvl = ratmand_config
+        .get_string_value("verbosity")
+        .unwrap_or_else(|| "debug".into());
+    let syslog = ratmand_config.get_bool_value("use_syslog").unwrap_or(false);
+
     let filter = EnvFilter::default()
-        .add_directive(match lvl {
+        .add_directive(match lvl.as_str() {
             "trace" => LevelFilter::TRACE.into(),
             "debug" => LevelFilter::DEBUG.into(),
             "info" => LevelFilter::INFO.into(),
