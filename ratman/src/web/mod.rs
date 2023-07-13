@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use crate::Router;
+use crate::context::RatmanContext;
 use async_std::sync::Arc;
 use prometheus_client::registry::Registry;
 use std::path::Path;
@@ -15,7 +15,7 @@ pub mod v1;
 pub type State = Arc<StateData>;
 
 pub struct StateData {
-    pub router: Router,
+    pub router: Arc<RatmanContext>,
     pub registry: Registry,
 }
 
@@ -63,10 +63,9 @@ async fn serve_metrics(req: Request<State>) -> tide::Result {
 }
 
 pub async fn start(
-    router: Router,
+    router: Arc<RatmanContext>,
     mut registry: Registry,
-    bind: &str,
-    port: u16,
+    bind_addr: String,
 ) -> tide::Result<()> {
     // Metrics and logging for HTTP requests.
     let instrument = middleware::Instrument::default();
@@ -100,7 +99,7 @@ pub async fn start(
     app.at("/*").get(serve_dashboard);
 
     // Then asynchronously run the web server
-    let fut = app.listen(format!("{}:{}", bind, port));
+    let fut = app.listen(bind_addr);
     async_std::task::spawn(async move {
         match fut.await {
             Ok(_) => {}

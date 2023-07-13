@@ -102,25 +102,25 @@ pub async fn run_app(cfg: Config) -> std::result::Result<(), ()> {
     //     r.add_endpoint(lora).await;
     // }
 
-    // If dashboard is enabled
-    #[cfg(feature = "dashboard")]
-    if !cfg.no_dashboard {
-        match daemon::web::start(r.clone(), registry, "127.0.0.1", 8090).await {
-            Ok(_) => {}
-            Err(e) => warn!("Failed to setup dashboard bind {:?}", e),
-        }
-    }
+    // // If dashboard is enabled
+    // #[cfg(feature = "dashboard")]
+    // if !cfg.no_dashboard {
+    //     match daemon::web::start(r.clone(), registry, "127.0.0.1", 8090).await {
+    //         Ok(_) => {}
+    //         Err(e) => warn!("Failed to setup dashboard bind {:?}", e),
+    //     }
+    // }
 
-    #[cfg(feature = "datalink")]
-    if !cfg.no_datalink {
-        use netmod_datalink::Endpoint as Datalink;
+    // #[cfg(feature = "datalink")]
+    // if !cfg.no_datalink {
+    //     use netmod_datalink::Endpoint as Datalink;
 
-        r.add_endpoint(Datalink::spawn(
-            cfg.datalink_iface.as_ref().map(|s| s.as_str()),
-            cfg.ssid.as_ref().map(|s| s.as_str()),
-        ))
-        .await;
-    }
+    //     r.add_endpoint(Datalink::spawn(
+    //         cfg.datalink_iface.as_ref().map(|s| s.as_str()),
+    //         cfg.ssid.as_ref().map(|s| s.as_str()),
+    //     ))
+    //     .await;
+    // }
 
     let api_bind = match cfg.api_bind.parse() {
         Ok(addr) => addr,

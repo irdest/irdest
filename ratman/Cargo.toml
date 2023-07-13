@@ -10,28 +10,23 @@ license = "AGPL-3.0-or-later"
 version = "0.5.0"
 edition = "2018"
 
-# [features]
-# default = ["daemon", "util", "prometheus-client"]
 
-# # Additional driver features
-# datalink = ["netmod-datalink"]
-# inet = ["netmod-inet"]
-# lan = ["netmod-lan"]
-# lora = ["netmod-lora"]
+[features]
 
-# upnp = ["igd", "ipnetwork", "pnet"]
-# daemon = ["cli", "datalink", "inet", "lan", "upnp", "syslog"]
-# util = ["cli", "ratman-client"]
-# cli = ["types", "clap", "directories", "nix", "serde_json", "tracing-subscriber"]
-# dashboard = ["daemon", "tide", "rust-embed", "openapi_type", "prometheus-client"]
-# syslog = ["tracing-syslog"]
-# android = []
+## The dashboard should really always be included, since it will be
+## the main way users interact with the router.  For very low-power
+## targets it can be disabled with --no-default-features
+default = [ "dashboard" ]
+dashboard = [ "tide", "rust-embed", "openapi_type", "prometheus-client" ]
+
 
 [dependencies]
 
 ## Core dependencies.  If you're not sure where to add something, put
 ## it here first.  Large clusters can then always be expanded later.
+async-eris = { version = "0.1", path = "../utils/eris-rs" }
 async-std = { version = "1.0", features = ["std", "unstable", "attributes"] }
+atomptr = "1.0"
 bincode = "1.0"
 byteorder = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
@@ -41,15 +36,15 @@ thiserror = "1.0"
 twox-hash = "1.5"
 
 ## Cryptography stuff
-x25519-dalek = { version = "2.0.0-rc.2", features = ["static_secrets"] }
-ed25519-dalek = "1.0.0"
 curve25519-dalek = "3.0.0"
+ed25519-dalek = "1.0.0"
 rand = "0.7"
+x25519-dalek = { version = "2.0.0-rc.2", features = ["static_secrets"] }
 
 ## Storage & Configuration
+deadpool-sqlite = { version = "0.5", features = ["rt_async-std_1"], default-features = false }
 kdl = "4.6"
 sled = "0.34"
-deadpool-sqlite = { version = "0.5", features = ["rt_async-std_1"], default-features = false }
 
 ## Logging and logging accessories
 tracing = "0.1"
@@ -58,30 +53,29 @@ tracing-subscriber = { version = "0.2", features = ["fmt"] }
 tracing-syslog = { version = "0.1", path = "../utils/tracing-syslog" }
 
 ## Irdest and Ratman sub-components
-libratman = { version = "0.5", path = "libratman", features = ["netmod"], package = "ratman" }
 clockctrl = { version = "0.1", path = "../utils/clockctrl" }
+libratman = { version = "0.5", path = "libratman", features = ["netmod"], package = "ratman" }
 task-notify = { version = "1.0", path = "../utils/task-notify" }
 
 ## Dependencies required for various binary targets
 clap = { version = "2.0", features = ["wrap_help", "color", "suggestions"] }
 directories = "4.0"
-serde_json = "1.0"
-nix = "0.23"
 igd = "*"
 ipnetwork = "*"
+nix = "0.23"
+openapi_type = { version = "0.4", optional = true }
 pnet = "*"
-# tide = { version = "0.16", optional = true }
-# rust-embed = { version = "6.3", optional = true }
-# openapi_type = { version = "0.4", optional = true }
-# prometheus-client = { version = "0.16", optional = true }
-# async-eris = { version = "0.1", path = "../utils/eris-rs" }
+prometheus-client = { version = "0.16", optional = true }
+rust-embed = { version = "6.3", optional = true }
+serde_json = "1.0"
+tide = { version = "0.16", optional = true }
 
 ## Bundled network modules are all optional dependencies
 netmod-datalink = { path = "../netmods/netmod-datalink", version = "0.2" }
 netmod-inet = { path = "../netmods/netmod-inet", version = "0.4" }
 netmod-lan = { path = "../netmods/netmod-lan", version = "0.2" }
-netmod-mem = { path = "../netmods/netmod-mem", version = "0.4" }
 netmod-lora = { path = "../netmods/netmod-lora", version = "0.1" }
+netmod-mem = { path = "../netmods/netmod-mem", version = "0.4" }
 
 # [dev-dependencies]
 # bincode = "1.2"
@@ -90,7 +84,3 @@ netmod-lora = { path = "../netmods/netmod-lora", version = "0.1" }
 
 # criterion = { version = "0.4", features = ["html_reports"] }
 # rand = "0.7"
-
-# [[bench]]
-# name = "architecture"
-# harness = false

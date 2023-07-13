@@ -19,6 +19,7 @@ use async_std::sync::Arc;
 /// This type is responsible for starting and owning various types
 /// that control client and driver connections, and internal coherency
 /// tasks.
+#[derive(Clone)]
 pub struct RatmanContext {
     /// Abstraction over the internal routing logic
     pub(crate) core: Arc<Core>,
@@ -27,7 +28,7 @@ pub struct RatmanContext {
     /// Cryptographic store for local address keys
     pub(crate) keys: Arc<Keystore>,
     /// Local client connection handler
-    pub(crate) clients: ConnectionManager,
+    pub(crate) clients: Arc<ConnectionManager>,
     /// Indicate the current run state of the router context
     // TODO: change this to be an AtomPtr
     runtime_state: RuntimeState,
@@ -41,15 +42,15 @@ impl RatmanContext {
         let protocol = Protocol::new();
         let core = Arc::new(Core::init());
         let keys = Arc::new(Keystore::new());
-        let clients = ConnectionManager::new();
+        let clients = Arc::new(ConnectionManager::new());
 
-        let this = Self {
+        let this = Arc::new(Self {
             core,
             protocol,
             keys,
             clients,
             runtime_state,
-        };
+        });
 
         let ratmand_config = cfg.get_subtree(CFG_RATMAND).expect("no 'ratmand' tree");
 
@@ -111,13 +112,22 @@ impl RatmanContext {
             _ => {}
         };
 
-        todo!()
-    }
+        // If the dashboard configuration is enabled
+        #[cfg(feature = "dashboard")]
+        if let Some(true) = ratmand_config.get_bool_value("web_dashboard") {
+            let dashboard_bind = ratmand_config
+                .get_string_value("dashboard_bind")
+                .unwrap_or_else(|| "localhost:8090".to_owned());
 
-    /// Register metrics with a Prometheus registry.
-    #[cfg(feature = "dashboard")]
-    pub fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
-        self.inner.register_metrics(registry);
-        self.proto.register_metrics(registry);
+            let mut registry = prometheus_client::registry::Registry::default();
+            this.core.register_metrics(&mut registry);
+            this.protocol.register_metrics(&mut registry);
+
+            if let Err(e) = crate::web::start(this.clone(), registry, dashboard_bind).await {
+                error!("failed to start web dashboard server: {}", e);
+            }
+        }
+
+        this
     }
 }

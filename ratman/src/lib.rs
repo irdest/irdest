@@ -30,6 +30,9 @@ mod protocol;
 mod slicer;
 mod storage;
 
+#[cfg(feature = "dashboard")]
+mod web;
+
 pub mod config;
 pub mod util;
 
