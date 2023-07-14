@@ -3000,7 +3000,14 @@ dependencies = [
 
 [[package]]
 name = "ratman-tools"
-version = "0.1.0"
+version = "0.5.0"
+dependencies = [
+ "async-std",
+ "clap 2.34.0",
+ "directories",
+ "ratman",
+ "serde",
+]
 
 [[package]]
 name = "ratmand"
@@ -3012,7 +3019,6 @@ dependencies = [
  "bincode",
  "byteorder",
  "chrono",
- "clap 2.34.0",
  "clockctrl",
  "curve25519-dalek 3.2.1",
  "deadpool-sqlite",

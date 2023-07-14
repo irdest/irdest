@@ -15,6 +15,7 @@ let
     
     ratmand = self.callPackage ./ratmand {};
     ratman-dashboard = self.callPackage ./ratman-dashboard {};
+    ratman-tools = self.callPackage ./ratman-tools {};
   };
 
 in

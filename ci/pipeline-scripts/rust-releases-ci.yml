@@ -5,13 +5,15 @@ bundle-ratman:
   stage: bundle
   dependencies:
     - build-installer-static
-    - build-ratman-static
+    - build-ratmand-static
+    - build-ratman-tools-static
     - build-manual
   script:
     - mkdir ratman-bundle-x86_64 && cd ratman-bundle-x86_64
     - cp -rv ../dist .
     - cp -rv ../docs/man .
-    - cp -rv ../result-ratman/bin .
+    - cp -rv ../result-ratmand/bin .
+    - cp -rv ../result-ratman-tools/bin/* bin/
     - cp -rv ../result-installer/bin/* .
     - cp -rv ../result-manual-user manual
     - cd ..
@@ -25,13 +27,15 @@ bundle-ratman-aarch64:
   stage: bundle
   dependencies:
     - build-installer-static-aarch64
-    - build-ratman-static-aarch64
+    - build-ratmand-static-aarch64
+    - build-ratman-tools-static-aarch64
     - build-manual
   script:
     - mkdir ratman-bundle-aarch64  && cd ratman-bundle-aarch64
     - cp -rv ../dist .
     - cp -rv ../docs/man .
-    - cp -rv ../result-ratman/bin .
+    - cp -rv ../result-ratmand/bin .
+    - cp -rv ../result-ratman-tools/bin/* bin/
     - cp -rv ../result-installer/bin/* .
     - cp -rv ../result-manual-user manual
     - cd ..

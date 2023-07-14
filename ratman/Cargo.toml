@@ -57,20 +57,21 @@ clockctrl = { version = "0.1", path = "../utils/clockctrl" }
 libratman = { version = "0.5", path = "libratman", features = [ "metrics" ], package = "ratman" }
 task-notify = { version = "1.0", path = "../utils/task-notify" }
 
-## Dependencies required for various binary targets
-clap = { version = "2.0", features = ["wrap_help", "color", "suggestions"] }
-directories = "4.0"
-igd = "*"
-ipnetwork = "*"
-nix = "0.23"
+## Web dependencies
 openapi_type = { version = "0.4", optional = true }
-pnet = "*"
 prometheus-client = { version = "0.16", optional = true }
 rust-embed = { version = "6.3", optional = true }
 serde_json = "1.0"
 tide = { version = "0.16", optional = true }
 
-## Bundled network modules are all optional dependencies
+## System integration and tooling
+directories = "4.0"
+igd = "*"
+ipnetwork = "*"
+nix = "0.23"
+pnet = "*"
+
+## Bundled network modules
 netmod-datalink = { path = "../netmods/netmod-datalink", version = "0.2" }
 netmod-inet = { path = "../netmods/netmod-inet", version = "0.4" }
 netmod-lan = { path = "../netmods/netmod-lan", version = "0.2" }
