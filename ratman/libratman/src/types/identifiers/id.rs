@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use super::ID_LEN;
-use prometheus_client::encoding::text::Encode;
 use serde::{
     de::{Deserializer, SeqAccess, Visitor},
     Deserialize, Serialize, Serializer,
@@ -12,6 +11,9 @@ use std::{
     fmt::{self, Debug, Display, Formatter},
     string::ToString,
 };
+
+#[cfg(feature = "metrics")]
+use prometheus_client::encoding::text::Encode;
 
 /// A cryptographic identifier for the Irdest ecosystem
 ///

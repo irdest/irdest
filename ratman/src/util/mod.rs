@@ -7,6 +7,7 @@ pub use platform::Os;
 
 pub(crate) mod chunk;
 pub(crate) mod cli;
+pub(crate) mod fork;
 pub(crate) mod pidfile;
 pub(crate) mod runtime_state;
 pub(crate) mod transform;

@@ -1,8 +1,10 @@
 { lib
 , rustPlatform
-, protobuf
 , libsodium
+, libudev-zero
 , pkg-config
+, protobuf
+, sqlite
 }:
 
 rustPlatform.buildRustPackage rec {
@@ -28,6 +30,11 @@ rustPlatform.buildRustPackage rec {
 
   buildInputs = [
     libsodium
+    sqlite
+
+    # This is needed because irdest-proxy relies on ratmand for its
+    # tests (I think ?? TODO: can we solve this in better?)
+    libudev-zero
   ];
 
   SODIUM_USE_PKG_CONFIG = 1;

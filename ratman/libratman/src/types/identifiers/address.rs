@@ -3,9 +3,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use super::{id::Id, ID_LEN};
-use prometheus_client::encoding::text::Encode;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Display};
+
+#[cfg(feature = "metrics")]
+use prometheus_client::encoding::text::Encode;
 
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, Hash, PartialOrd, Ord, PartialEq, Eq, Serialize, Deserialize)]

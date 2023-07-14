@@ -1,16 +1,4 @@
-// SPDX-FileCopyrightText: 2022 Katharina Fey <kookie@spacekookie.de>
-// SPDX-FileCopyrightText: 2022 Lux <lux@lux.name>
-// SPDX-FileCopyrightText: 2022 Christopher A. Grant <grantchristophera@gmail.com>
-//
-// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
-
-use crate::{daemon::config::Config, *};
-use netmod_inet::InetEndpoint as Inet;
-use netmod_lan::{default_iface, Endpoint as LanDiscovery};
-
-#[cfg(feature = "lora")]
-use netmod_lora::LoraEndpoint;
-
+use crate::{config::ConfigTree, start_with_configuration};
 use nix::sys::{
     resource::{getrlimit, Resource},
     signal::{signal, sigprocmask, SigHandler, SigSet, SigmaskHow, Signal},
@@ -24,117 +12,12 @@ use nix::{
     libc,
 };
 use std::{convert::TryInto, os::unix::io::RawFd};
-use std::{error::Error, fs::File, io::Read, path::Path, result::Result as StdResult};
+use std::{error::Error, path::Path, result::Result as StdResult};
 
-pub async fn run_app(cfg: Config) -> std::result::Result<(), ()> {
-    // Setup logging
-    daemon::setup_logging(&cfg.verbosity, cfg.daemonize);
-
-    // Setup metrics collection
-    #[cfg(feature = "dashboard")]
-    let mut registry = prometheus_client::registry::Registry::default();
-
-    let r = Router::new();
-
-    #[cfg(feature = "dashboard")]
-    r.register_metrics(&mut registry);
-
-    // if !cfg.no_inet {
-    //     // Load peers or throw an error about missing cli data!
-    //     let peers: Vec<_> = match cfg
-    //         .peers
-    //         .as_ref()
-    //         .map(|s| s.replace(" ", "\n").to_owned())
-    //         .or(cfg.peer_file.as_ref().and_then(|path| {
-    //             let mut f = File::open(path).ok()?;
-    //             let mut buf = String::new();
-    //             f.read_to_string(&mut buf).ok()?;
-    //             Some(buf)
-    //         }))
-    //         .or(if cfg.no_peering {
-    //             Some("".into())
-    //         } else {
-    //             None
-    //         }) {
-    //         Some(peer_str) => peer_str.split("\n").map(|s| s.trim().to_owned()).collect(),
-    //         None if !cfg.accept_unknown_peers => {
-    //             daemon::elog("Failed to initialise ratmand: missing peers data!", 2)
-    //         }
-    //         None => vec![],
-    //     };
-
-    //     let tcp = match Inet::start(&cfg.inet_bind).await {
-    //         Ok(tcp) => {
-    //             // Open the UPNP port if the user enabled this feature
-    //             if cfg.use_upnp {
-    //                 if let Err(e) = daemon::upnp::open_port(tcp.port()) {
-    //                     error!("UPNP setup failed: {}", e);
-    //                 }
-    //             }
-
-    //             let peers: Vec<_> = peers.iter().map(|s| s.as_str()).collect();
-    //             match daemon::attach_peers(&tcp, peers).await {
-    //                 Ok(()) => tcp,
-    //                 Err(e) => daemon::elog(format!("failed to parse peer data: {}", e), 1),
-    //             }
-    //         }
-    //         Err(e) => daemon::elog(format!("failed to initialise TCP endpoint: {}", e), 1),
-    //     };
-
-    //     r.add_endpoint(tcp).await;
-    // }
-
-    // // If local-discovery is enabled
-    // if !cfg.no_discovery {
-    //     if let Ok(ep) = LanDiscovery::spawn(cfg.discovery_iface, cfg.discovery_port) {
-    //         r.add_endpoint(ep).await;
-    //     }
-    // }
-
-    // #[cfg(feature = "lora")]
-    // if !cfg.no_lora {
-    //     let lora = LoraEndpoint::spawn(
-    //         cfg.lora_port
-    //             .expect("You must provide a lora serial port path!")
-    //             .as_str(),
-    //         cfg.lora_baud,
-    //     );
-    //     r.add_endpoint(lora).await;
-    // }
-
-    // // If dashboard is enabled
-    // #[cfg(feature = "dashboard")]
-    // if !cfg.no_dashboard {
-    //     match daemon::web::start(r.clone(), registry, "127.0.0.1", 8090).await {
-    //         Ok(_) => {}
-    //         Err(e) => warn!("Failed to setup dashboard bind {:?}", e),
-    //     }
-    // }
-
-    // #[cfg(feature = "datalink")]
-    // if !cfg.no_datalink {
-    //     use netmod_datalink::Endpoint as Datalink;
-
-    //     r.add_endpoint(Datalink::spawn(
-    //         cfg.datalink_iface.as_ref().map(|s| s.as_str()),
-    //         cfg.ssid.as_ref().map(|s| s.as_str()),
-    //     ))
-    //     .await;
-    // }
-
-    let api_bind = match cfg.api_bind.parse() {
-        Ok(addr) => addr,
-        Err(e) => daemon::elog(format!("Failed to parse API_BIND address: {}", e), 2),
-    };
-
-    if let Err(e) = daemon::run(r, api_bind).await {
-        error!("Ratmand suffered fatal error: {}", e);
-    }
-    Ok(())
-}
+use super::pidfile::PidFile;
 
 /// Start Ratman as a daemonised process
-pub fn sysv_daemonize_app(cfg: Config) -> StdResult<(), Box<dyn Error>> {
+pub fn sysv_daemonize_app(cfg: ConfigTree) -> StdResult<(), Box<dyn Error>> {
     //  1. Close all open file descriptors except standard input,
     //     output, and error (i.e. the first three file descriptors 0,
     //     1, 2). This ensures that no accidentally passed file
@@ -226,7 +109,15 @@ pub fn sysv_daemonize_app(cfg: Config) -> StdResult<(), Box<dyn Error>> {
     //     it is verified at the same time that the PID previously
     //     stored in the PID file no longer exists or belongs to a
     //     foreign process.
-    let pid_file = match daemon::pidfile::PidFile::new(&cfg.pid_file).and_then(|f| f.write_pid()) {
+    let pid_file = match PidFile::new(
+        // We can rely on these settings existing because otherwise we
+        // would not call this function.  "Trust me bro", basically.
+        &cfg.get_subtree("ratmand")
+            .and_then(|tree| tree.get_string_value("pidfile"))
+            .unwrap(),
+    )
+    .and_then(|f| f.write_pid())
+    {
         Ok(v) => v,
         Err(err) => {
             let err = err as i32;
@@ -241,7 +132,7 @@ pub fn sysv_daemonize_app(cfg: Config) -> StdResult<(), Box<dyn Error>> {
     write(write_pipe_fd, &pid_bytes)?;
     close(write_pipe_fd)?;
 
-    let _ = async_std::task::block_on(run_app(cfg));
+    let _ = async_std::task::block_on(start_with_configuration(cfg));
 
     // Unlock and close/delete pid file
     drop(pid_file);
