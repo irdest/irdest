@@ -1,7 +1,8 @@
 use anyhow::{anyhow, Result};
 use async_std::sync::Arc;
 use gtk::{gio::SimpleAction, glib, prelude::*, Application};
-use irdest_mblog::{Message, Post};
+use irdest_mblog::Message;
+use libratman::client::RatmanIpc;
 
 mod footer;
 mod header;
@@ -26,7 +27,7 @@ async fn main() -> Result<()> {
     let db = sled::open(dirs.data_local_dir().join("db"))?;
 
     let (new_user, addr) = irdest_mblog::load_or_create_addr().await?;
-    let ipc = ratman_client::RatmanIpc::default_with_addr(addr).await?;
+    let ipc = RatmanIpc::default_with_addr(addr).await?;
     println!("Running with address: {}", addr);
 
     let state = Arc::new(crate::state::AppState::new(ipc, db));
@@ -34,7 +35,9 @@ async fn main() -> Result<()> {
     // If the user opened the app for the first time (probably) we
     // create a small welcome message for them
     if new_user {
-        state.parse_and_store(&Message::generate_intro(addr));
+        if let Err(e) = state.parse_and_store(&Message::generate_intro(addr)) {
+            eprintln!("Error occured while creating a new user: {}", e);
+        }
     }
 
     let receiver_state = Arc::clone(&state);

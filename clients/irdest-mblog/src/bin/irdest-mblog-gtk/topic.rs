@@ -1,11 +1,10 @@
 use async_std::sync::{Arc, Mutex};
 use gtk::prelude::*;
 use gtk::{
-    builders::BoxBuilder, pango::WrapMode, Align, Box as GtkBox, Button, Entry, Frame,
-    Label as GtkLabel, Label, NaturalWrapMode, Orientation, PolicyType, ScrolledWindow, Stack,
-    StackSidebar, Viewport, Widget,
+    builders::BoxBuilder, pango::WrapMode, Align, Box as GtkBox, Entry, Frame, Label,
+    NaturalWrapMode, Orientation, PolicyType, ScrolledWindow, Stack, StackSidebar, Viewport,
 };
-use irdest_mblog::{Message, Post};
+use irdest_mblog::Post;
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::state::AppState;
@@ -81,7 +80,7 @@ pub struct Topic {
 
 impl Topic {
     pub fn empty() -> Self {
-        let footer = TopicFooter::new();
+        let _footer = TopicFooter::new();
         let inner = ScrolledWindow::new();
         let this = Self { inner };
         this.clear();
@@ -137,6 +136,7 @@ impl Topic {
 /// Display a footer at the bottom of the topic screen
 ///
 /// Renders
+#[allow(unused)]
 pub struct TopicFooter {
     inner: GtkBox,
     entry: Entry,

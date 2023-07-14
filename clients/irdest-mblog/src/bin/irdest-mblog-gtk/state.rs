@@ -4,11 +4,15 @@ use async_std::{
     sync::{Arc, RwLock},
 };
 use irdest_mblog::{Envelope, Message, Payload, NAMESPACE};
+use libratman::{
+    client::RatmanIpc,
+    types::{Message as RatmanMessage, Recipient},
+};
 use protobuf::Message as _;
-use ratman_client::{RatmanIpc, Recipient};
 use std::convert::{TryFrom, TryInto};
 
 /// Central app state type which handles connection to Ratman
+#[allow(unused)]
 pub struct AppState {
     pub ipc: Option<RatmanIpc>,
     db: sled::Db,
@@ -18,6 +22,9 @@ pub struct AppState {
 }
 
 impl AppState {
+    // This function should be used to allow irdest-mblog to start,
+    // load existing messages, but not rely on a daemon connection.
+    #[allow(unused)]
     pub fn new_offline(db: sled::Db) -> Self {
         let topics_notify = bounded(2);
         let dirty_notify = bounded(2);
@@ -30,7 +37,7 @@ impl AppState {
         }
     }
 
-    pub fn new(ipc: ratman_client::RatmanIpc, db: sled::Db) -> Self {
+    pub fn new(ipc: RatmanIpc, db: sled::Db) -> Self {
         let topics_notify = bounded(2);
         let dirty_notify = bounded(2);
         Self {
@@ -44,7 +51,9 @@ impl AppState {
 
     /// Notify the topics poller that a new topic was discovered
     pub async fn notify_topics(&self) {
-        self.topics_notify.0.send(()).await;
+        if let Err(e) = self.topics_notify.0.send(()).await {
+            eprintln!("error occured while notifying topics: {}", e);
+        }
     }
 
     pub async fn wait_topics(self: &Arc<Self>) -> Option<()> {
@@ -53,18 +62,22 @@ impl AppState {
 
     /// Notify the re-draw poller that `t` is a dirty dirty topic uwu
     pub async fn notify_dirty(&self, t: &String) {
-        self.dirty_notify.0.send(t.clone()).await;
+        if let Err(e) = self.dirty_notify.0.send(t.clone()).await {
+            eprintln!("error occured while notifying dirty state: {}", e);
+        }
     }
 
     pub async fn wait_dirty(&self) -> Option<String> {
         self.dirty_notify.1.recv().await.ok()
     }
 
+    // FIXME: not sure why this function is unused!
     pub async fn set_topic(&self, top: &str) {
         let mut x = self.current_topic.write().await;
         *x = Some(top.into());
     }
 
+    // FIXME: not sure why this function is unused!
     pub async fn current_topic(&self) -> String {
         self.current_topic.read().await.as_ref().unwrap().clone()
     }
@@ -88,7 +101,7 @@ impl AppState {
         }
     }
 
-    pub fn parse_and_store(&self, ratmsg: &ratman_client::Message) -> Result<Option<Message>> {
+    pub fn parse_and_store(&self, ratmsg: &RatmanMessage) -> Result<Option<Message>> {
         // Track seen IDs, drop duplicate messages.
         let seen_ids = self.db.open_tree("seen_ids")?;
         if let Err(_) = seen_ids.compare_and_swap(
@@ -177,8 +190,8 @@ impl Iterator for MessageIterator {
 mod tests {
     use super::AppState;
     use irdest_mblog::{Header, Message, Payload, Post, NAMESPACE};
+    use libratman::types::{Address, Recipient};
     use protobuf::Message as _;
-    use ratman_client::{Address, Recipient};
 
     #[test]
     fn test_store_post() {
@@ -190,7 +203,7 @@ mod tests {
                 topic: "comp/lang/erlang".into(),
             }),
         };
-        let ratmsg = ratman_client::Message::new(
+        let ratmsg = RatmanMessage::new(
             Address::random(),
             Recipient::Flood(NAMESPACE.into()),
             msg.clone().into_proto().write_to_bytes().unwrap(),

@@ -3,14 +3,15 @@ use async_std::sync::Arc;
 use gtk::{
     glib::{self, Type},
     prelude::*,
-    Align, ApplicationWindow, Box as GtkBox, Button, Dialog, DialogFlags, EditableLabel, Entry,
-    EntryCompletion, InputHints, Justification, Label, ListStore, Orientation, ResponseType,
+    Align, ApplicationWindow, Box as GtkBox, Button, Dialog, DialogFlags, Entry, EntryCompletion,
+    InputHints, Justification, Label, ListStore, Orientation,
 };
 use irdest_mblog::Lookup;
 
 /// A UI that enables users to create topics that are namespaced along
 /// existing categories.
 #[derive(Clone)]
+#[allow(unused)]
 pub struct TopicCreator {
     inner: Dialog,
 }

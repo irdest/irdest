@@ -8,6 +8,7 @@ use gtk::{
 };
 use irdest_mblog::Lookup;
 
+#[allow(unused)]
 pub struct Header {
     pub inner: HeaderBar,
     add_topic: Button,
@@ -45,6 +46,7 @@ impl Header {
         }
     }
 
+    // FIXME: not sure why this function is unused!
     pub fn add_action(&self, action: impl Fn() + 'static) {
         self.add_topic.connect_clicked(move |_| {
             action();

@@ -1,9 +1,6 @@
 use crate::{state::AppState, topic::Topics};
 use async_std::sync::Arc;
-use gtk::{
-    builders::BoxBuilder, glib, prelude::*, Box as GtkBox, Button, Entry, Orientation, TextBuffer,
-    TextView,
-};
+use gtk::{builders::BoxBuilder, prelude::*, Box as GtkBox, Button, Orientation, TextView};
 use irdest_mblog::{Message, Post, NAMESPACE};
 use protobuf::Message as _;
 

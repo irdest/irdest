@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use crate::{
     footer::Footer,
     header::Header,
@@ -8,12 +6,10 @@ use crate::{
 };
 use async_std::sync::Arc;
 use gtk::prelude::*;
-use gtk::{
-    builders::BoxBuilder, glib, Application, ApplicationWindow, Box as GtkBox, Button, HeaderBar,
-    Label as GtkLabel, Orientation, Stack, StackSidebar, Statusbar, Window,
-};
-use irdest_mblog::{Lookup, Message, Payload, Post};
+use gtk::{glib, Application, ApplicationWindow, Box as GtkBox, Orientation, Statusbar};
+use irdest_mblog::Lookup;
 
+#[allow(unused)]
 pub struct MBlogWindow {
     inner: ApplicationWindow,
     topics: Topics,
