@@ -7,11 +7,11 @@ multiple-versions = "allow"
 
 [licenses]
 # ====================================================================
-#                        License checks in qaul
+#                      License checks in irdest
 # ====================================================================
 #
 # The purpose of the license checks is to ensure that all dependencies
-# are available under licenses that are compatible with qaul's.
+# are available under licenses that are compatible with irdest's.
 #
 # Here's what to do if you want to add a dependency and cargo deny is
 # telling you the license is not permitted.
@@ -20,7 +20,7 @@ multiple-versions = "allow"
 # not allow the licensee the option of using a later GPL or AGPL
 # version (in SPDX this is encoded as "GPL-3.0-only" or
 # "AGPL-3.0-only"), we'll have to think very carefully before adding
-# it, because it might mean we're not allowed to give qaul licensees
+# it, because it might mean we're not allowed to give irdest licensees
 # the option of using a later GPL or AGPL version.  Such a dependency
 # should be carefully discussed before being added.
 #
@@ -47,14 +47,14 @@ multiple-versions = "allow"
 #       App Store.
 #
 # If none of the criteria above apply, we probably can't use that
-# dependency in qaul.  Notably, we can't use GPL or AGPL dependencies
+# dependency in irdest.  Notably, we can't use GPL or AGPL dependencies
 # on iOS if they don't have an App Store exception, and we also can't
 # use dependencies that are only available under a specific GPL or
 # AGPL version (with no option to use a later version), because we
-# want to give people the choice to use qaul under later version of
+# want to give people the choice to use irdest under later version of
 # the AGPL.
 #
-# If you're unsure about whether it's okay to use a dependency in qaul
+# If you're unsure about whether it's okay to use a dependency in irdest
 # because of licensing reasons, please get in touch using one of the
 # project communication channels.
 unlicensed = "deny"

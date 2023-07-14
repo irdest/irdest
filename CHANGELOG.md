@@ -9,15 +9,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+This release brings many small changes together that have accumulated
+over the last year or so.  Importantly, Irdest is once again grant
+funded (via NLnet ♥), so development speed should pick up from this
+point onwards.
+
+The changelog has also been changed in structure, since this monorepo
+consists of lots of components, each with their own release versions.
+
 ### Releases
 
-- Ratman `0.5.0`
+- Ratman (ratmand) `0.5.0`
+- libratman `0.5.0`
 - Irdest mblog `0.1.0`
 
 ### Added
 
-- LoRa connection support via `netmod-lora` (not compiled by default,
-  use `lora` feature)
+- LoRa connection support via `netmod-lora`.  See the user manual on
+  how to set up a LoRa modem.
 - Managed WiFi connection support via `netmod-raw` (supports Linux/
   NetworkManager)
 
@@ -25,9 +34,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Router dashboard now updates automatically and shows connection
   statistics for peers
-- Messages are segmented into encrypted blocks before sending.  This
-  will allow store & forwarding in the future
 - User and developer manuals were completely overhauled
+- The Ratman configuration now uses the KDL language, which supports
+  comments and nested blocks, without getting unwielding to edit.
+- Many internal and external structural changes that aren't directly
+  reflected in the user experience, but will make development and
+  maintenance easier and faster in the future
+  - Importantly the developer facing crates `ratman-client`,
+    `ratman-netmod`, `ratman-types`, etc have been consolidated into
+    `libratman` -- `ratman` on crates.io, which was previously the
+    daemon.
+  - The daemon crate is now called `ratmand` and no longer available
+    on crates.io.
 
 ### Fixed
 

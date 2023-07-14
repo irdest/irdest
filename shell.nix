@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2020-2021 Katharina Fey <kookie@spacekookie.de>
+# SPDX-FileCopyrightText: 2020-2023 Katharina Fey <kookie@spacekookie.de>
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
