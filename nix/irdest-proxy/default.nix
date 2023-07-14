@@ -29,7 +29,6 @@ rustPlatform.buildRustPackage rec {
   cargoTestFlags = cargoBuildFlags;
 
   buildInputs = [
-    libsodium
     sqlite
 
     # This is needed because irdest-proxy relies on ratmand for its

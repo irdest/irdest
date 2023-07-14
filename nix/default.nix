@@ -13,7 +13,7 @@ let
       inherit (self) irdest-installer irdest-manual-user ratman;
     };
     
-    ratman = self.callPackage ./ratman {};
+    ratmand = self.callPackage ./ratmand {};
     ratman-dashboard = self.callPackage ./ratman-dashboard {};
   };
 

@@ -29,12 +29,7 @@ rustPlatform.buildRustPackage rec {
   cargoBuildFlags = [ "--all-features" "-p" "irdest-mblog" ];
   cargoTestFlags = cargoBuildFlags;
 
-  buildInputs = [
-    libsodium
-    gtk4
-  ];
-
-  SODIUM_USE_PKG_CONFIG = 1;
+  buildInputs = [ gtk4 ];
 
   cargoLock.lockFile = ../../Cargo.lock;
 }

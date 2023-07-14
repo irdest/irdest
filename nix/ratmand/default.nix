@@ -4,10 +4,10 @@
 
 { lib
 , rustPlatform
-, protobuf
-, libsodium
 , libudev-zero
 , pkg-config
+, protobuf
+, sqlite
 }:
 
 let
@@ -19,7 +19,7 @@ let
 in
 
 rustPlatform.buildRustPackage rec {
-  pname = "ratman";
+  pname = "ratmand";
   version = "development";
 
   src = lib.cleanSourceWith {
@@ -37,11 +37,11 @@ rustPlatform.buildRustPackage rec {
     pkg-config
   ];
 
-  cargoBuildFlags = [ "--all-features" "-p" "ratman" ];
+  cargoBuildFlags = [ "--all-features" "-p" "ratmand" ];
   cargoTestFlags = cargoBuildFlags;
 
   buildInputs = [
-    libsodium
+    sqlite
     libudev-zero
   ];
 

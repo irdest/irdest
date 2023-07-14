@@ -11,7 +11,7 @@ build-ratman:
   stage: build
   needs: [ build-ratman-dashboard ]
   script:
-    - nix-build nix -A ratman
+    - nix-build nix -A ratmand
 
 build-ratman-static:
   tags: [ irdest-nix ]
