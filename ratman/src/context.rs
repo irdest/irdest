@@ -13,6 +13,7 @@ use crate::{
     util::{runtime_state::RuntimeState, setup_logging},
 };
 use async_std::sync::Arc;
+use libratman::{types::Address, Result};
 
 /// Top-level Ratman router state handle
 ///
@@ -129,5 +130,41 @@ impl RatmanContext {
         }
 
         this
+    }
+
+    /// Create a new address
+    ///
+    /// This function creates a new keypair, inserts the address part
+    /// into the local routing table, and starts announcing it to the
+    /// rest of the network.
+    pub async fn create_new_address(&self) -> Result<Address> {
+        let addr = self.keys.create_address().await;
+        self.core.add_local_address(addr).await?;
+        self.online(addr).await?;
+        Ok(addr)
+    }
+
+    // TODO: this function must handle address key decription
+    pub async fn load_existing_address(&self, addr: Address, key_data: &[u8]) -> Result<()> {
+        self.keys.add_address(addr, key_data).await;
+        self.core.add_local_address(addr).await?;
+        self.online(addr).await?;
+        Ok(())
+    }
+
+    async fn online(&self, addr: Address) -> Result<()> {
+        // This checks whether the address actually exists first
+        self.core.known(addr, true).await?;
+
+        // Then start a new protocol handler task for the address
+        Arc::clone(&self.protocol)
+            .online(addr, Arc::clone(&self.core))
+            .await
+    }
+
+    // TODO: should this require some kind of cryptographic challenge maybe ??
+    pub async fn set_address_offline(&self, addr: Address) -> Result<()> {
+        self.core.known(addr, true).await?;
+        self.protocol.offline(addr).await
     }
 }

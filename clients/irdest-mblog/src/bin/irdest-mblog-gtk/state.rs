@@ -190,7 +190,7 @@ impl Iterator for MessageIterator {
 mod tests {
     use super::AppState;
     use irdest_mblog::{Header, Message, Payload, Post, NAMESPACE};
-    use libratman::types::{Address, Recipient};
+    use libratman::types::{Address, Message as RatmanMessage, Recipient};
     use protobuf::Message as _;
 
     #[test]

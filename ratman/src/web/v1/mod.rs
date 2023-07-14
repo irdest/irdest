@@ -25,7 +25,7 @@ pub async fn get_addrs(req: Request<super::State>) -> tide::Result {
         .state()
         .router
         .core
-        .all_addrs()
+        .all_known_addresses()
         .await
         .into_iter()
         .map(|(addr, is_local)| Addr {

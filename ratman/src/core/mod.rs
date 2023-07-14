@@ -30,8 +30,15 @@ use libratman::types::{Address, Frame, Message, RatmanError, Result};
 
 /// The Ratman routing core interface
 ///
-/// The core handles sending, receiving and storing frames that can't
-/// be delivered at that time (delay-tolerance).
+/// The core handles maintaining routing table state, sending message
+/// streams, and re-assembling received frames into valid incoming
+/// message streams.
+///
+/// Importantly, the core must be "booted", i.e. contains no state at
+/// start.  All state handling must occur outside of the core.
+/// Components that wish to have their state persisted must provide
+/// efficient access to this in-memory state via the `Core` API
+/// facade.
 pub(crate) struct Core {
     collector: Arc<Collector>,
     dispatch: Arc<Dispatch>,
@@ -138,24 +145,49 @@ impl Core {
         self.drivers.remove(id).await;
     }
 
-    /// Add a local user endpoint
-    pub(crate) async fn add_local(&self, id: Address) -> Result<()> {
+    /// Add a local address to the routing table
+    pub(crate) async fn add_local_address(&self, id: Address) -> Result<()> {
         self.routes.add_local(id).await
     }
 
-    /// Remove a local user endpoint
-    pub(crate) async fn rm_local(&self, id: Address) -> Result<()> {
+    /// Remove a local address from the routing table
+    pub(crate) async fn remove_local_address(&self, id: Address) -> Result<()> {
         self.routes.delete(id).await
     }
 
-    /// Return all known addresses
-    pub(crate) async fn all_addrs(&self) -> Vec<(Address, bool)> {
+    /// Return all known addresses.  Most likely this function is less
+    /// useful than either [`local_addresses`](Self::local_addresses)
+    /// or [`remote_addresses`](Self::remote_addresses).
+    pub(crate) async fn all_known_addresses(&self) -> Vec<(Address, bool)> {
         self.routes
             .all()
             .await
             .into_iter()
-            // FIXME: this is horrible lol
             .map(|(addr, tt)| (addr, tt == RouteType::Local))
+            .collect()
+    }
+
+    pub(crate) async fn local_addresses(&self) -> Vec<Address> {
+        self.routes
+            .all()
+            .await
+            .into_iter()
+            .filter_map(|(addr, tt)| match tt {
+                RouteType::Local => Some(addr),
+                _ => None,
+            })
+            .collect()
+    }
+
+    pub(crate) async fn remote_addresses(&self) -> Vec<Address> {
+        self.routes
+            .all()
+            .await
+            .into_iter()
+            .filter_map(|(addr, tt)| match tt {
+                RouteType::Remote(_) => Some(addr),
+                _ => None,
+            })
             .collect()
     }
 }

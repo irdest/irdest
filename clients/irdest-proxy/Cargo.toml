@@ -21,4 +21,4 @@ tracing = "0.1"
 tracing-subscriber = "0.2"
 
 [dev-dependencies]
-ratmand = { path = "../../ratman" }
+ratmand = { path = "../../ratman", default-features = false }
