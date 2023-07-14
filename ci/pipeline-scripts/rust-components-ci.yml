@@ -43,12 +43,6 @@ build-ratman-static-aarch64:
 
 ####################### IRDEST PROXY
 
-build-irdest-proxy:
-  tags: [ irdest-nix ]
-  stage: build
-  script:
-    - nix-build nix -A irdest-proxy
-
 build-irdest-proxy-static:
   tags: [ irdest-nix ]
   stage: build
@@ -101,7 +95,6 @@ build-installer-static:
 build-installer-static-aarch64:
   tags: [ irdest-nix ]
   stage: build
-  needs: [ build-ratman-dashboard ]
   script:
     - nix-env -iA cachix -f https://cachix.org/api/v1/install
     - cachix use irdest -O ~/.config/nix
