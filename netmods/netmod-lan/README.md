@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2019-2021 Katharina Fey <kookie@spacekookie.de>
+SPDX-FileCopyrightText: 2019-2021, 2023 Katharina Fey <kookie@spacekookie.de>
 
 SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 -->
@@ -8,9 +8,4 @@ SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 The netmod-udp endpoint is the main endpoint for udp capable IP
 networks, such as LAN-networks, existing Wifi networks, etc. .
-Network discovery features are implemented via broadcast addresses,
-and a special UDP handshake packet.
-
-This crate also handles the NAT required to go from a ratman routing
-ID, to a local IP address.  It does however not implement IP range
-discovery.  See libqaul-proxy for that.
+Network discovery features are implemented via IPv6 multicasts.

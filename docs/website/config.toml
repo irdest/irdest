@@ -1,10 +1,10 @@
 baseURL = "/"
 title = "Irdest"
-theme = "qaul-theme"
+theme = "irdest-theme"
 DefaultContentLanguage = "en"
 
 [params]
-  description = "Internet independent wireless mesh communication app"
+  description = "Research project for decentralised communication"
 
 [languages]
   [languages.en]

@@ -1,7 +1,7 @@
 with import <nixpkgs> {};
 
 stdenv.mkDerivation {
-  name = "qaul-website";
+  name = "irdest-website";
   buildInputs = with pkgs; [
     hugo
   ];

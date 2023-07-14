@@ -7,8 +7,8 @@
 //! This aims to make testing any structure that binds against
 //! `netmod` easier and reproducible.
 
-#![doc(html_favicon_url = "https://qaul.org/favicon.ico")]
-#![doc(html_logo_url = "https://qaul.org/img/qaul_icon-128.png")]
+#![doc(html_favicon_url = "https://irde.st/favicon.ico")]
+#![doc(html_logo_url = "https://irde.st/img/logo.png")]
 
 use async_std::{
     sync::{Arc, RwLock},
@@ -26,12 +26,8 @@ use libratman::{
 /// This is the actual mechanism by which data is moved around between `MemMod`s in
 /// different places.
 pub(crate) mod io;
-// Simulated transmission media.
-// pub mod media;
 
-/// Represents a single netmod endpoint that can connect to exactly one other, either
-/// as a 1-to-1 link between libqaul instances or as a link into a transmission
-/// medium of some kind.
+/// Represents a one-to-one in-memory netmod for testing purposes
 pub struct MemMod {
     /// Internal memory access to send/receive
     io: Arc<RwLock<Option<io::Io>>>,

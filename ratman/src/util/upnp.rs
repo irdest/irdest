@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-//! Automatically forward a port to qaul-hubd to allow easy reverse
+//! Automatically forward a port to ratmand to allow easy reverse
 //! connections form a public router.
 
 use igd::{search_gateway, PortMappingProtocol as Protocol};
