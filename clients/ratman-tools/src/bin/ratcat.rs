@@ -175,11 +175,7 @@ async fn main() {
     let cfg_dir = env_xdg_config()
         .map(|path| PathBuf::new().join(path))
         .unwrap_or_else(|| dirs.config_dir().to_path_buf());
-
-    let cfg_dir = PathBuf::new().join("ratcat_config");
     let _ = create_dir(&cfg_dir).await;
-
-    // let _ = create_dir("ratcat_config".to_path_buf());
 
     let num: usize = match m.value_of("RECV_COUNT").map(|c| c.parse().ok()) {
         Some(Some(num)) => num,

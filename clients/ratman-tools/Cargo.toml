@@ -5,8 +5,11 @@ version = "0.5.0"
 edition = "2021"
 
 [dependencies]
+libratman = { version = "0.5.0", path = "../../ratman/libratman", package = "ratman" }
+
 async-std = { version = "1.0", features = ["attributes"] }
 clap = { version = "2.0", features = ["wrap_help", "color", "suggestions"] }
-libratman = { version = "0.5.0", path = "../../ratman/libratman", package = "ratman" }
-serde = { version = "1.0", features = ["derive"] }
 directories = "4.0"
+nix = "0.23"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"

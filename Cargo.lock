@@ -3005,8 +3005,10 @@ dependencies = [
  "async-std",
  "clap 2.34.0",
  "directories",
+ "nix 0.23.2",
  "ratman",
  "serde",
+ "serde_json",
 ]
 
 [[package]]
