@@ -43,9 +43,9 @@ impl Os {
         {
             let path: PathBuf = path.unwrap_or_else(|| Self::match_os().data_path());
             let f = File::open(&path).await?;
-            return nix::fcntl::flock(f.as_raw_fd(), nix::fcntl::FlockArg::LockExclusiveNonblock)
+            nix::fcntl::flock(f.as_raw_fd(), nix::fcntl::FlockArg::LockExclusiveNonblock)
                 .map(|_| Some(StateDirectoryLock(f)))
-                .map_err(|_| RatmanError::StateDirectoryAlreadyLocked);
+                .map_err(|_| RatmanError::StateDirectoryAlreadyLocked)
         }
 
         #[cfg(target_family = "windows")]
