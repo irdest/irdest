@@ -4,6 +4,7 @@
 
 mod platform;
 pub use platform::Os;
+pub(crate) use platform::StateDirectoryLock;
 
 pub mod cli;
 pub mod codes;

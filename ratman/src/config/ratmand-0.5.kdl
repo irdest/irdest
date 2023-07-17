@@ -10,7 +10,7 @@ settings "ratmand" {
 
     // Enable (or disable) the web configuration dashboard
     enable_dashboard true
-    dashboard_bind "localhost:8090"
+    dashboard_bind "localhost:5850"
 
     // Configure whether ratmand should remain attached to the calling process, or turn itself into a daemon.
     // It's recommended not to change this value unless you know you need it.
@@ -21,7 +21,7 @@ settings "ratmand" {
 
     // Configure what socket ratmand uses for local client connections.
     // If you change this setting, you will also have to tell every connecting client the new address.
-    api_bind "localhost:9020"
+    api_bind "localhost:5852"
 
     // By default ratmand will reject peering requests from other routers that haven't explicitly been configured (see below).
     // If you're running a publicly accessible ratmand instance, it's recommended you change this to 'true'
@@ -47,7 +47,7 @@ settings "inet" {
 
     // Configure what socket netmod_inet should use to accept incoming peering connections.
     // Note that changing the bind port will mean others need to manually specify it in their peering config
-    bind "[::]:9050"
+    bind "[::]:5860"
 
     // Configure whereth to use UPNP, which can be used to establish full reverse connections between two peers.
     // This circumvents many firewall issues and connection loss scenarios.  Most networks do not support this!
@@ -64,7 +64,7 @@ settings "lan" {
     // You may change the port used for automatic discovery, but it is not recommended that you do,
     // since it will mean that most other ratmand instances won't be able to see you.
     // If however that is exactly what you want, then you can change the value here
-    port 9051
+    port 5861
 
     // If your computer has multple interfaces that can be used for local discovery,
     // you can explicitly select one of them here. Currently discovery is only supported via a single interface

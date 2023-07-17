@@ -38,7 +38,10 @@ pub(crate) async fn initialise_netmods(cfg: &ConfigTree) -> DriverMap {
                     info!("Initialised inet driver");
                 }
                 Err(e) => {
-                    error!("Netmod 'inet' failed to initialise: {}. skipping...", e);
+                    error!(
+                        "Netmod 'inet' failed to initialise, because of {}. skipping...",
+                        e
+                    );
                 }
             },
             // If enable is true, but no (valid utf-8) bind address was provided

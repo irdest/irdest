@@ -16,6 +16,7 @@ netmod = [ ]
 client = [ "proto" ]
 proto = [ "protobuf", "protoc-rust" ]
 metrics = [ "prometheus-client" ]
+daemon = [ "nix" ]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -39,6 +40,7 @@ regex = "1.0"
 twox-hash = "1.5"
 
 prometheus-client = { version = "0.16", optional = true }
+nix = { version = "0.23", optional = true }
 
 [dev-dependencies]
 serde_json = "1.0"

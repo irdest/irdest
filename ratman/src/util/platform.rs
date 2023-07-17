@@ -5,8 +5,10 @@
 //! Various platform abstractions
 
 use crate::util::{env_xdg_config, env_xdg_data};
+use async_std::fs::File;
 use directories::ProjectDirs;
-use std::path::PathBuf;
+use libratman::{RatmanError, Result};
+use std::{os::fd::AsRawFd, path::PathBuf};
 
 /// OS specific support
 pub enum Os {
@@ -16,6 +18,10 @@ pub enum Os {
     Ios,
     Windows,
 }
+
+/// Represents a state-directory lock which must be kept alive for the
+/// runtime of the daemon
+pub struct StateDirectoryLock(File);
 
 impl Os {
     pub fn match_os() -> Os {
@@ -27,6 +33,28 @@ impl Os {
             "ios" => Self::Ios,
             "windows" => Self::Windows,
             _ => Self::Unknown, // Found ailian Os write log
+        }
+    }
+
+    /// Attempt to lock the state directory to ensure only one ratman
+    /// instance runs in it
+    pub async fn lock_state_directory(path: Option<PathBuf>) -> Result<Option<StateDirectoryLock>> {
+        #[cfg(target_family = "unix")]
+        {
+            let path: PathBuf = path.unwrap_or_else(|| Self::match_os().data_path());
+            let f = File::open(&path).await?;
+            return nix::fcntl::flock(f.as_raw_fd(), nix::fcntl::FlockArg::LockExclusiveNonblock)
+                .map(|_| Some(StateDirectoryLock(f)))
+                .map_err(|_| RatmanError::StateDirectoryAlreadyLocked);
+        }
+
+        #[cfg(target_family = "windows")]
+        {
+            warn!(
+                "Directory locks are not implemented on Windows! \
+                 please make sure only one ratmand instance runs at a time"
+            );
+            Ok(None)
         }
     }
 

@@ -2985,6 +2985,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "chrono",
  "hex",
+ "nix 0.23.2",
  "prometheus-client",
  "protobuf",
  "protoc-rust",

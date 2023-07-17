@@ -12,9 +12,10 @@ use crate::{
     core::Core,
     crypto::Keystore,
     protocol::Protocol,
-    util::{self, runtime_state::RuntimeState, setup_logging},
+    util::{self, codes, runtime_state::RuntimeState, setup_logging, Os, StateDirectoryLock},
 };
 use async_std::sync::Arc;
+use atomptr::AtomPtr;
 use libratman::{types::Address, Result};
 
 /// Top-level Ratman router state handle
@@ -35,6 +36,7 @@ pub struct RatmanContext {
     /// Indicate the current run state of the router context
     // TODO: change this to be an AtomPtr
     runtime_state: RuntimeState,
+    _statedir_lock: Arc<AtomPtr<Option<StateDirectoryLock>>>,
 }
 
 impl RatmanContext {
@@ -53,6 +55,7 @@ impl RatmanContext {
             keys,
             clients,
             runtime_state,
+            _statedir_lock: Arc::new(AtomPtr::new(None)),
         });
 
         // Parse the ratmand config tree
@@ -60,6 +63,19 @@ impl RatmanContext {
 
         // Before we do anything else, make sure we see logs
         setup_logging(&ratmand_config);
+
+        // Before touching any state, lock the directory we're working with
+        match Os::lock_state_directory(None).await {
+            Ok(lock) => {
+                this._statedir_lock.swap(lock);
+            }
+            Err(_) => {
+                util::elog(
+                    "failed to acquire state directory lock!  terminating...",
+                    codes::FATAL,
+                );
+            }
+        }
 
         // Load existing client/address relations
         this.clients.load_users(&this).await;
