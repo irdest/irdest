@@ -23,18 +23,22 @@ pub enum RatmanError {
     #[cfg(feature = "proto")]
     #[error("failed to parse base encoding: {}", 0)]
     Proto(#[from] protobuf::ProtobufError),
+    #[error("failed to parse json encoding: {}", 0)]
+    Json(#[from] serde_json::error::Error),
     #[cfg(feature = "client")]
     #[error("a client API error occurred: {}", 0)]
-    ClientApi(crate::ClientError),
+    ClientApi(#[from] crate::ClientError),
     #[cfg(feature = "netmod")]
     #[error("a netmod error occurred: {}", 0)]
-    Netmod(crate::NetmodError),
+    Netmod(#[from] crate::NetmodError),
     #[error("failed to de-sequence a series of frames")]
     DesequenceFault,
     #[error("the given address '{}' is unknown to this router!", 0)]
     NoSuchAddress(Address),
     #[error("the address '{}' already exists!", 0)]
     DuplicateAddress(Address),
+    #[error("the identifier data provided was not the correct length.  Expected {}, got {}", 0, 1)]
+    WrongIdentifierLength(usize, usize),
 }
 
 impl From<RatmanError> for io::Error {

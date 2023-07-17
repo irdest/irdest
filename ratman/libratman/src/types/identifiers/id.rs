@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use super::ID_LEN;
+use crate::{types::identifiers::ID_LEN, RatmanError};
 use serde::{
     de::{Deserializer, SeqAccess, Visitor},
     Deserialize, Serialize, Serializer,
@@ -84,6 +84,18 @@ impl Id {
         )
     }
 
+    /// Create an identity from a byte slice
+    ///
+    /// If the slice is not long enough (or too long), an appropriate
+    /// error will be returned, instead of panicking.
+    pub fn try_from_bytes(buf: &[u8]) -> crate::Result<Self> {
+        if buf.len() != ID_LEN {
+            return Err(RatmanError::WrongIdentifierLength(ID_LEN, buf.len()));
+        }
+
+        Ok(Self::from_bytes(buf))
+    }
+
     /// Create an identity from an exactly length-matched byte slice
     ///
     /// This function will panic, if the provided slice isn't exactly
@@ -153,6 +165,23 @@ impl Id {
     /// Returns an iterator over the bytes of the identity
     pub fn iter<'a>(&'a self) -> impl Iterator<Item = &'a u8> {
         self.0.iter()
+    }
+
+    /// A cmp function which always loops over the full byte array
+    ///
+    /// This is done to avoid timing attacks based on invalid tokens.
+    /// This mechanism isn't currently used as the default
+    /// PartialEq/Eq implementation because the `Address` type relies
+    /// on fast comparisons, which this does not provide.
+    // TODO: can we do this with simd ??  Feels like yes.
+    pub fn compare_constant_time(&self, other: &Self) -> bool {
+        let mut valid = true;
+        let mut ctr = 0;
+        while ctr < ID_LEN {
+            valid &= self.0[ctr] == other.0[ctr];
+            ctr += 1;
+        }
+        valid
     }
 }
 

@@ -116,11 +116,11 @@ impl ConfigTree {
     /// This will mostly occur when running ratmand for the first
     /// time, but may also be done after applying changes to the
     /// router configuration from the web management dashboard.
-    pub async fn write_changes(&self, path: PathBuf) -> Result<()> {
+    pub async fn write_changes(&self, path: impl Into<PathBuf>) -> Result<()> {
         let mut f = OpenOptions::new()
             .create(true)
             .write(true)
-            .open(path)
+            .open(path.into())
             .await?;
         f.write_all(self.inner.to_string().as_bytes()).await?;
         Ok(())

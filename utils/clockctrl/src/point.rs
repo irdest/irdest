@@ -54,6 +54,8 @@ impl Behavior {
     }
 }
 
+/// Represents a single point in a runtime that can be clocked
+#[allow(unused)]
 pub struct ClockPoint {
     current_policy: AtomPtr<Policy>,
     current_schedule: AtomPtr<Option<Scheduler>>,

@@ -44,5 +44,8 @@ pub mod util;
 ///
 /// Special permissions may be required for certain features!
 pub async fn start_with_configuration(cfg: config::ConfigTree) {
+    // TODO: this function currently doesn't return at all.  Instead,
+    // what we want to do is listen to various signals here and
+    // respond to them.
     let ctx = context::RatmanContext::start(cfg).await;
 }

@@ -33,7 +33,7 @@ impl Endpoint {
         let iface_string = iface
             .or_else(|| default_iface().map(|iface| {
                 info!("Auto-selected interface '{}' for local peer discovery.  \
-                       You can override the interface via the ratmand configuration (or commandline arguments)", iface);
+                       (You can override the interface via the ratmand configuration)", iface);
                 iface
             }))
             .ok_or_else(|| {

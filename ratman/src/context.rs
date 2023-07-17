@@ -2,15 +2,17 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
+use std::net::SocketAddr;
+
 use crate::{
-    api::ConnectionManager,
+    api::{self, ConnectionManager},
     config::{
         helpers, netmods::initialise_netmods, peers::PeeringBuilder, ConfigTree, CFG_RATMAND,
     },
     core::Core,
     crypto::Keystore,
     protocol::Protocol,
-    util::{runtime_state::RuntimeState, setup_logging},
+    util::{self, runtime_state::RuntimeState, setup_logging},
 };
 use async_std::sync::Arc;
 use libratman::{types::Address, Result};
@@ -53,16 +55,17 @@ impl RatmanContext {
             runtime_state,
         });
 
+        // Parse the ratmand config tree
         let ratmand_config = cfg.get_subtree(CFG_RATMAND).expect("no 'ratmand' tree");
 
         // Before we do anything else, make sure we see logs
         setup_logging(&ratmand_config);
 
+        // Load existing client/address relations
+        this.clients.load_users(&this).await;
+
         // This never fails, we will have a map of netmods here, even if it is empty
         let driver_map = initialise_netmods(&cfg).await;
-
-        // let verbose = ratmand_config.get_value("verbosity");
-        // println!("{:#?}", verbose);
 
         // Get the initial set of peers from the configuration.
         // Either this is done via the `peer_file` field, which is
@@ -129,6 +132,37 @@ impl RatmanContext {
             }
         }
 
+        // At this point we can mark the router as having finished initialising
+        this.runtime_state.finished_initialising();
+
+        // Finally, we start the machinery that accepts new client
+        // connections.  We hand it a complete (atomic reference) copy
+        // of the router state context.
+        let api_bind = ratmand_config
+            .get_string_value("api_bind")
+            .unwrap_or_else(|| format!("localhost:9020"))
+            // FIXME: there must be a better way to do this lol
+            .replace("localhost", "127.0.0.1");
+
+        let api_bind_addr: SocketAddr = match api_bind.parse() {
+            Ok(bind) => bind,
+            Err(e) => {
+                util::elog(
+                    format!("failed to parse API bind address '{}': {}", api_bind, e),
+                    util::codes::INVALID_PARAM,
+                );
+            }
+        };
+
+        if let Err(e) = api::run(Arc::clone(&this), api_bind_addr).await {
+            error!("API connector crashed with error: {}", e);
+            this.runtime_state.kill();
+        }
+
+        // If we reach this point the router is shutting down
+        // (allegedly?)
+        this.runtime_state.terminate();
+
         this
     }
 
@@ -144,7 +178,7 @@ impl RatmanContext {
         Ok(addr)
     }
 
-    // TODO: this function must handle address key decription
+    // TODO: this function must handle address key decryption
     pub async fn load_existing_address(&self, addr: Address, key_data: &[u8]) -> Result<()> {
         self.keys.add_address(addr, key_data).await;
         self.core.add_local_address(addr).await?;

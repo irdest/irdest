@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 /// A local address on the network.
 ///
 /// This structure is only used for local storage.
-#[derive(Ord, PartialOrd, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Ord, PartialOrd, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StorageAddress {
     pub(crate) id: Address,
     pub(crate) key: EncryptedKey,
@@ -20,13 +20,20 @@ impl StorageAddress {
 }
 
 /// Represents an encrypted address key
-#[derive(Ord, PartialOrd, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Ord, PartialOrd, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EncryptedKey {
     inner: Vec<u8>,
 }
 
 impl EncryptedKey {
-    fn new(_bare: &[u8]) -> Self {
-        Self { inner: vec![] }
+    fn new(encrypted_data: &[u8]) -> Self {
+        Self {
+            inner: encrypted_data.into(),
+        }
+    }
+
+    /// Decrypt the key with some user secret
+    pub fn decrypt(&self, _user_secret: &[u8]) -> Vec<u8> {
+        todo!()
     }
 }

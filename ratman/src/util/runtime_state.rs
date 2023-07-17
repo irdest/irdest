@@ -29,6 +29,7 @@ pub enum RuntimeStateInner {
     /// This may be done if a configuration or driver change is
     /// applied in-memory.  This allows routing and key tables to
     /// remain in cache.
+    #[allow(unused)]
     Idle(DateTime<Utc>),
 }
 
@@ -61,6 +62,7 @@ impl RuntimeState {
     }
 
     /// Call this function when the router reached the 'idle' state
+    #[allow(unused)]
     pub fn set_idle(&self) -> bool {
         self.0
             .compare_exchange(self.0.get_ref(), RuntimeStateInner::Idle(Utc::now()))

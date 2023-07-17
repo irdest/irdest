@@ -3021,6 +3021,7 @@ dependencies = [
  "bincode",
  "byteorder",
  "chrono",
+ "clap 2.34.0",
  "clockctrl",
  "curve25519-dalek 3.2.1",
  "deadpool-sqlite",

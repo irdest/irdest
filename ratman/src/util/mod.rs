@@ -5,9 +5,11 @@
 mod platform;
 pub use platform::Os;
 
+pub mod cli;
+pub mod codes;
+pub mod fork;
+
 pub(crate) mod chunk;
-pub(crate) mod cli;
-pub(crate) mod fork;
 pub(crate) mod pidfile;
 pub(crate) mod runtime_state;
 pub(crate) mod transform;

@@ -1,3 +1,9 @@
+// SPDX-FileCopyrightText: 2022 Manos Pitsidianakis <el13635@mail.ntua.gr>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
+//! Daemonise via fork and pidfiles for systems that are into it
+
 use crate::{config::ConfigTree, start_with_configuration};
 use nix::sys::{
     resource::{getrlimit, Resource},

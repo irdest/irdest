@@ -1,59 +1,180 @@
-use crate::{context::RatmanContext, storage::addrs::StorageAddress};
+use std::collections::{BTreeMap, BTreeSet};
 
-use super::{
-    client::{BaseClient, OnlineClient},
-    io::Io,
+use crate::{
+    api::{
+        client::{BaseClient, BaseClientMap, OnlineClientMap},
+        io::Io,
+    },
+    context::RatmanContext,
+    storage::{addrs::StorageAddress, client::StorageClient},
+    util::Os,
 };
-use async_std::{fs::File, io::ReadExt, path::PathBuf, sync::Arc};
-use libratman::types::{Address, Id};
-use std::collections::BTreeMap;
+use async_std::{
+    fs::{File, OpenOptions},
+    io::{ReadExt, WriteExt},
+    path::PathBuf,
+    sync::{Arc, Mutex, RwLock},
+};
+use libratman::{
+    types::{Address, Id, Result},
+    ClientError, RatmanError,
+};
 
-/// Handle new and existing connection states
+/// Handle known clients and active connections
+///
+/// An online client is derived from a `BaseClient`, which can be
+/// persisted to disk and re-loaded at startup.
 pub(crate) struct ConnectionManager {
-    pub(crate) clients: Arc<BTreeMap<Id, BaseClient>>,
+    pub(crate) clients: Arc<Mutex<BaseClientMap>>,
+    pub(crate) online: Arc<Mutex<OnlineClientMap>>,
+    /// Map an address to a given client ID
+    ///
+    /// This is needed because each client can represent many
+    /// different addresses, but these are opaque to the routing
+    /// layer, meaning that we need to keep track of the relation
+    ///
+    /// Importantly this is a RwLock because it will be read _a lot_,
+    /// but only written to occasionally.
+    pub(crate) addr_map: Arc<RwLock<BTreeMap<Address, Id>>>,
 }
 
 impl ConnectionManager {
     pub fn new() -> Self {
         Self {
-            clients: Arc::new(BTreeMap::new()),
+            clients: Default::default(),
+            online: Default::default(),
+            addr_map: Default::default(),
         }
     }
 
-    pub fn register(&mut self, initial_addr: Address, io: Io) -> OnlineClient {
-        let id = Id::random();
-        // self.clients.insert(id, BaseClient::register(initial_addr));
-        // self.clients.get_mut(&id).unwrap().connect(io)
-        todo!()
-    }
-}
+    /// Load an existing set of users from the storage path
+    pub async fn load_users(&self, context: &RatmanContext) {
+        let path = Os::match_os().data_path().join("users.json");
+        debug!("Loading registered users from file {:?}", path);
 
-async fn load_users(context: &RatmanContext, path: PathBuf) -> Vec<Address> {
-    debug!("Loading registered users from file {:?}", path);
-    let mut f = match File::open(path).await {
-        Ok(f) => f,
-        Err(_) => return vec![],
-    };
+        let json = {
+            let mut json = String::new();
+            match File::open(path).await {
+                Ok(mut f) => {
+                    let _ = f.read_to_string(&mut json).await;
+                }
+                // If the file doesn't exist, we use the default and
+                // simply update the file on the next write
+                Err(_) => json = format!("[ ]"),
+            };
 
-    let mut json = String::new();
-    match f.read_to_string(&mut json).await {
-        Ok(_) => {}
-        Err(_) => return vec![],
-    }
+            json
+        };
 
-    match serde_json::from_str::<Vec<StorageAddress>>(&json) {
-        Ok(vec) => {
-            for StorageAddress { ref id, .. } in &vec {
-                trace!("Loading addr {}", id);
+        let mut addr_map = self.addr_map.write().await;
 
-                // TODO: implement key loading
-                if let Err(e) = context.load_existing_address(*id, &[0]).await {
-                    warn!("Failed to load address: {}", id);
+        // Create a new BaseClientMap and populate it from the
+        // StorageClient data that we just pulled from the json file
+        let mut client_map = BaseClientMap::new();
+        match serde_json::from_str::<Vec<StorageClient>>(&json) {
+            Ok(vec) => {
+                for store_client @ StorageClient { id, ref addrs, .. } in &vec {
+                    // let address_set = addrs.iter().map(|sa| sa.id).collect::<BTreeSet<_>>();
+                    // trace!("Loading address set {:?}", address_set);
+
+                    // TODO: implement key loading
+                    for StorageAddress {
+                        id: address,
+                        key: _,
+                    } in addrs
+                    {
+                        if let Err(e) = context.load_existing_address(*address, &[0]).await {
+                            warn!("Failed to load address: {}", id);
+                        }
+
+                        // Also insert the address into the addr_map
+                        addr_map.insert(*address, *id);
+                    }
+
+                    client_map.insert(*id, BaseClient::existing(store_client));
                 }
             }
+            // If the json is in any way invalid, we just reset the
+            // list and start fresh.  Yes this is very bad, but the
+            // idea that we store client state in a json is bad to
+            // begin with so whatever
+            Err(_) => {}
+        };
 
-            vec.into_iter().map(|l| l.id).collect()
+        *self.clients.lock().await = client_map;
+    }
+
+    /// Call this function after new user registrations to ensure we
+    /// remember them next time
+    pub(crate) async fn sync_users(&self) -> Result<()> {
+        let clients = self.clients.lock().await;
+        let set = clients.iter().filter(|(_, client)| !client.anonymous).fold(
+            BTreeSet::default(),
+            |mut set, (id, client)| {
+                set.insert(StorageClient::new(*id, client));
+                set
+            },
+        );
+
+        let json = serde_json::to_string(&set)?;
+        drop(clients);
+
+        let path = Os::match_os().data_path().join("users.json");
+        let mut f = OpenOptions::new()
+            .create(true)
+            .truncate(true)
+            .write(true)
+            .read(true)
+            .open(path)
+            .await?;
+        f.write_all(json.as_bytes()).await?;
+        Ok(())
+    }
+
+    /// Register a new client and immediately mark it as "online",
+    /// return a registration token
+    pub async fn register(&self, initial_addr: Address, io: Io) -> Id {
+        let id = Id::random();
+        let mut clients = self.clients.lock().await;
+        let mut online = self.online.lock().await;
+
+        let base_client = BaseClient::register(initial_addr);
+        let token = base_client.token;
+        clients.insert(id, base_client);
+        online.insert(id, clients.get(&id).unwrap().connect(io));
+        token
+    }
+
+    /// Mark a given address and token combination as "online"
+    pub async fn set_online(&self, id: Id, token: Id, io: Io) -> Result<()> {
+        let clients = self.clients.lock().await;
+
+        match clients.get(&id) {
+            // If the token matches, we set the client to online
+            Some(base_client) if base_client.token.compare_constant_time(&token) => {
+                let mut online = self.online.lock().await;
+                online.insert(id, base_client.connect(io));
+                Ok(())
+            }
+            Some(_) => Err(RatmanError::ClientApi(ClientError::InvalidAuth)),
+            None => Err(RatmanError::ClientApi(ClientError::NoAddress)),
         }
-        Err(_) => vec![],
+    }
+
+    pub async fn get_client_for_address(&self, addr: &Address) -> Id {
+        // This _should_ never fail because the router wouldn't have
+        // picked this message up to be relayed locally if it didn't
+        // already know the address was registered on this node.
+        *self.addr_map.read().await.get(addr).unwrap()
+    }
+
+    /// Check a provided client token against its stored record
+    pub async fn check_token(&self, client_id: &Id, token: &Id) -> bool {
+        match self.clients.lock().await.get(client_id) {
+            // If the record exists and the token matches
+            Some(client) if client.token.compare_constant_time(token) => true,
+            // Otherwise, the connection fails the sniff test
+            _ => false,
+        }
     }
 }

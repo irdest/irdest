@@ -2,7 +2,10 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use super::{id::Id, ID_LEN};
+use crate::{
+    types::identifiers::{id::Id, ID_LEN},
+    Result,
+};
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Display};
 
@@ -37,6 +40,14 @@ impl Address {
     /// Parse a string representation of an address
     pub fn from_string(s: &String) -> Self {
         Self(Id::from_string(s))
+    }
+
+    /// Create an address from a byte slice
+    ///
+    /// If the slice is not long enough (or too long), an appropriate
+    /// error will be returned, instead of panicking.
+    pub fn try_from_bytes(buf: &[u8]) -> Result<Self> {
+        Id::try_from_bytes(buf).map(|id| Self(id))
     }
 
     /// Expand a slice of bytes into an address

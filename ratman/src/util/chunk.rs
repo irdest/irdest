@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use async_std::stream::Stream;
 use std::{
     io::Read,

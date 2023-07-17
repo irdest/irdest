@@ -2,11 +2,8 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use crate::{Behavior, ClockPoint, Error, Interval, PolicyMap};
-use async_std::{
-    sync::{Arc, Barrier},
-    task,
-};
+use crate::{ClockPoint, Error, PolicyMap};
+use async_std::sync::{Arc, Barrier};
 use std::{collections::BTreeMap, hash::Hash};
 
 /// A clock identifier type
@@ -115,11 +112,13 @@ where
     /// This function returns a Barrier which can be used in the
     /// corresponding task.
     pub fn start(&mut self, target: &ClockType<K>) -> Result<ClockPoint, Error> {
-        let b = Arc::new(Barrier::new(2));
+        let _b = Arc::new(Barrier::new(2));
         match self.clocks.remove(target) {
             Some(behavior_map) => Ok(ClockPoint::new(behavior_map)),
             None => Err(Error::NoBehavior),
         }
+
+        // FIXME: ???????????????????????
 
         //     Some(Behavior { interval, fence }) => match (interval, fence) {
         //         // A raw external scheduler
