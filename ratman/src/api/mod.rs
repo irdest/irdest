@@ -81,9 +81,10 @@ async fn listen_for_connections(
     context: &Arc<RatmanContext>,
 ) -> Result<Option<(Address, Io)>> {
     while let Some(stream) = listen.next().await {
-        let mut stream = stream?;
+        let stream = stream?;
+        let mut io = Io::Tcp(stream);
 
-        let (id, _) = match parse::handle_auth(&mut stream, &context).await {
+        let (id, _) = match parse::handle_auth(&mut io, &context).await {
             Ok(Some(pair)) => {
                 debug!("Successfully authenticated: {:?}", pair.0);
                 pair
@@ -92,19 +93,12 @@ async fn listen_for_connections(
             // An anonymous client doesn't need an entry in the
             // lookup table because no message will ever be
             // addressed to it
-            Ok(None) => return Ok(Some((Address::random(), Io::Tcp(stream)))),
+            Ok(None) => return Ok(Some((Address::random(), io))),
             Err(e) => {
                 error!("Encountered error during auth: {}", e);
                 break;
             }
         };
-
-        let io = Io::Tcp(stream);
-        // context.clients.online.lock().await.insert(id, Some(io.clone()));
-
-        // if let Err(e) = context.clients.sync_users().await {
-        //     error!("Failed to sync known addresses: {}", e);
-        // }
 
         return Ok(Some((id, io)));
     }
@@ -123,6 +117,7 @@ pub async fn run(context: Arc<RatmanContext>, addr: SocketAddr) -> Result<()> {
     while let Ok(io) = listen_for_connections(&mut incoming, &context).await {
         let (_self, io) = match io {
             Some(io) => io,
+            // FIXME: what are anonymous clients for again ?
             None => continue,
         };
 

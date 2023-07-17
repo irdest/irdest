@@ -106,7 +106,7 @@ async fn send_online_ack<Io: Write + Unpin>(io: &mut Io, id: Address) -> Result<
 /// the return value will be `Ok(None)`.
 ///
 /// If any error occurs during authentication, `Err(_)` is returned.
-pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
+pub(crate) async fn handle_auth(
     io: &mut Io,
     ctx: &Arc<RatmanContext>,
 ) -> Result<Option<(Address, Vec<u8>)>> {
@@ -121,7 +121,7 @@ pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
     //   - Assign an address
     //   - Return address and auth token
     // 3. Any other payload is invalid
-    let one_of = parse_message(io)
+    let one_of = parse_message(io.as_io())
         .await
         .map(|msg| msg.inner)?
         .ok_or(ClientError::InvalidAuth)?;
@@ -138,7 +138,7 @@ pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
                     if ctx.clients.check_token(&client_id, &token).await {
                         // TODO: is this really the best place for this call ?
                         if ctx.load_existing_address(address, &[0]).await.is_ok() {
-                            send_online_ack(io, address).await?;
+                            send_online_ack(io.as_io(), address).await?;
                         }
 
                         // FIXME: what is the second argument here
@@ -151,7 +151,15 @@ pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
 
                 // Neither an address nor token were sent -> new client
                 (None, None) => {
-                    todo!()
+                    let address = ctx.create_new_address().await?;
+                    let _client_id = ctx.clients.register(address, io.clone()).await;
+
+                    // Reply to the client
+                    send_online_ack(io.as_io(), address).await?;
+
+                    // TODO: do this in a way that it can't fail ?
+                    ctx.clients.sync_users().await?;
+                    Ok(Some((address, vec![])))
                 }
 
                 // address XOR token were sent -> invalid
@@ -169,40 +177,6 @@ pub(crate) async fn handle_auth<Io: Read + Write + Unpin>(
         _ => Err(ClientError::InvalidAuth.into()),
     }
 }
-
-//         match (address, token) {
-//             // We were sent both an address and a token
-//             (address, token) if address.len() != 0 && token.len() != 0 => {
-//                 // First we compare the token to the one on record
-//                 let client_id = ctx.clients.get_client_for_address(address).await;
-
-//                 // debug!("Authorisation for known client");
-//                 // let id = Address::from_bytes(id.as_slice());
-//                 // let _ = ctx.create_new_address().await;
-//                 // ctx.online(id).await?;
-
-//                 // send_online_ack(io, id).await?;
-//                 //
-
-//                 todo!()
-//             }
-//             (id, token) if id.len() == 0 && token.len() == 0 => {
-//                 debug!("Authorisation for new client");
-//                 // let id = Address::random();
-//                 // r.add_existing_user(id).await?;
-//                 // r.online(id).await?;
-
-//                 // send_online_ack(io, id).await?;
-//                 // Ok(Some((id, vec![])))
-
-//                 todo!()
-//             }
-//             _ => {
-//                 debug!("Failed to authenticate client");
-//                 Err(ClientError::InvalidAuth.into())
-//             }
-//         }
-//     }
 
 /// Parse messages from a stream until it terminates
 pub(crate) async fn parse_stream(ctx: Arc<RatmanContext>, _self: Address, mut io: Io) {
