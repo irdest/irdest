@@ -37,7 +37,11 @@ pub enum RatmanError {
     NoSuchAddress(Address),
     #[error("the address '{}' already exists!", 0)]
     DuplicateAddress(Address),
-    #[error("the identifier data provided was not the correct length.  Expected {}, got {}", 0, 1)]
+    #[error(
+        "the identifier data provided was not the correct length.  Expected {}, got {}",
+        0,
+        1
+    )]
     WrongIdentifierLength(usize, usize),
 }
 

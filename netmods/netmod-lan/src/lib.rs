@@ -31,14 +31,17 @@ impl Endpoint {
     /// Create a new endpoint and spawn a dispatch task
     pub fn spawn(iface: Option<String>, port: u16) -> std::result::Result<Arc<Self>, &'static str> {
         let iface_string = iface
-            .or_else(|| default_iface().map(|iface| {
-                info!("Auto-selected interface '{}' for local peer discovery.  \
-                       (You can override the interface via the ratmand configuration)", iface);
-                iface
-            }))
-            .ok_or_else(|| {
-                "Could not find an interface to bind on."
-            })?;
+            .or_else(|| {
+                default_iface().map(|iface| {
+                    info!(
+                        "Auto-selected interface '{}' for local peer discovery.  \
+                       (You can override the interface via the ratmand configuration)",
+                        iface
+                    );
+                    iface
+                })
+            })
+            .ok_or_else(|| "Could not find an interface to bind on.")?;
 
         Ok(task::block_on(async move {
             let addrs = Arc::new(AddrTable::new());
