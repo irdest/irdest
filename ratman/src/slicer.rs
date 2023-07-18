@@ -9,6 +9,8 @@ use crate::core::Payload;
 use libratman::types::{Frame, Message, SeqBuilder};
 
 /// Slices messages into managable chunks
+// TODO: refactor this type to be a rolling window slicer based on a
+// stream of eris blocks.
 pub(crate) struct TransportSlicer;
 
 impl TransportSlicer {
