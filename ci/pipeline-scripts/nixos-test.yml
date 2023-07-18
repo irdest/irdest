@@ -5,6 +5,6 @@
 nixos-tests:
   tags: [ irdest-nix ]
   stage: test
-  needs: [ build-ratman ]
+  needs: [ build-ratmand ]
   script:
     - nix-build nix/test/simple-two-nodes.nix
