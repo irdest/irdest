@@ -16,7 +16,7 @@ pkgs.nixosTest {
 
         environment.systemPackages = with pkgs; [ ratman jq ];
 
-        networking.firewall.allowedUDPPorts = [ 9001 ];
+        networking.firewall.allowedUDPPorts = [ 5861 ];
 
         services.ratman = {
           enable = true;
