@@ -11,16 +11,17 @@ pkgs.nixosTest {
     let
       commonArgs = {
         imports = [
-          ../nixos-modules/ratman.nix
+          ../nixos-modules/ratmand.nix
         ];
 
-        environment.systemPackages = with pkgs; [ ratman jq ];
+        environment.systemPackages = with pkgs; [ ratmand jq ];
 
         networking.firewall.allowedUDPPorts = [ 5861 ];
 
-        services.ratman = {
+        services.ratmand = {
           enable = true;
-          extraArgs = [ "-v debug" "--accept-unknown-peers" "--discovery-iface eth1" ];
+          extraArgs = [ "-v debug" # "--accept-unknown-peers" "--discovery-iface eth1"
+                      ];
         };
 
         systemd.services = {
@@ -28,7 +29,7 @@ pkgs.nixosTest {
             wantedBy = [ "multi-user.target" ];
             after = [ "ratmand.service" ];
             serviceConfig = {
-              ExecStart = "${pkgs.ratman}/bin/ratcat --register";
+              ExecStart = "${pkgs.ratman-tools}/bin/ratcat --register";
               Type = "oneshot";
               RemainAfterExit = true;
             };
@@ -37,7 +38,7 @@ pkgs.nixosTest {
             wantedBy = [ "multi-user.target" ];
             after = [ "ratcat-register.service" ];
             serviceConfig = {
-              ExecStart = "${pkgs.ratman}/bin/ratcat --recv";
+              ExecStart = "${pkgs.ratman-tools}/bin/ratcat --recv";
             };
           };
         };

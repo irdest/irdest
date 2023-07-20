@@ -8,45 +8,45 @@
 with lib;
 
 let
-  cfg = config.services.ratman;
+  cfg = config.services.ratmand;
 in {
-  options.services.ratman = {
+  options.services.ratmand = {
     enable = mkEnableOption ''
-      Enable ratman, a decentralised peer-to-peer packet router.
+      Enable ratmand, a decentralised peer-to-peer packet router.
     '';
 
     extraArgs = mkOption {
       type = with types; listOf str;
       default = [];
       description = ''
-        List of additional command line arguments to pass to the ratman daemon.
+        List of additional command line arguments to pass to the ratmand daemon.
       '';
     };
 
     package = mkOption {
       type = types.package;
-      default = pkgs.ratman;
-      defaultText = literalExpression "pkgs.ratman";
+      default = pkgs.ratmand;
+      defaultText = literalExpression "pkgs.ratmand";
       description = ''
-        Overridable attribute of the ratman package to use.
+        Overridable attribute of the ratmand package to use.
       '';
     };
   };
 
   config = mkIf cfg.enable {
-    #users.users.ratman = {
+    #users.users.ratmand = {
     #  isSystemUser = true;
-    #  group = "ratman";
+    #  group = "ratmand";
     #};
 
-    #users.groups.ratman = {};
+    #users.groups.ratmand = {};
 
     systemd.services.ratmand = {
       wantedBy = [ "multi-user.target" ];
       after = [ "network.target" ];
       serviceConfig = {
-        #User = "ratman";
-        #Group = "ratman";
+        #User = "ratmand";
+        #Group = "ratmand";
 
         ExecStart = "${cfg.package}/bin/ratmand --daemonize ${builtins.concatStringsSep " " cfg.extraArgs}";
         Type = "forking";
