@@ -9,7 +9,7 @@ pub fn build_cli() -> ArgMatches<'static> {
                 Part of the Irdest project: https://irde.st")
         .version(env!("CARGO_PKG_VERSION"))
         .after_help("This software is in ALPHA and will include bugs and cause crashes!
-                     If you encounter a reproducible issue, \
+If you encounter a reproducible issue, \
                      please report it in our issue tracker (https://git.irde.st/we/irdest) \
                      or our mailing list: https://lists.irde.st/archives/list/community@lists.irde.st")
         .max_term_width(120)

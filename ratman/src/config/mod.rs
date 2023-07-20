@@ -66,27 +66,27 @@ impl ConfigTree {
 
     /// Quickly override any parts of the default config for tests
     ///
-    /// This function SHOULD NOT be use in normal code, instead handle
-    /// insertion problems explicitly via the `SubConfig` type.
-    ///
     /// A key path is segments of the configuration, split by `/`, so
     /// for example `ratmand/verbosity`, or `inet/enable`.
-    #[doc(hidden)]
     pub fn patch(mut self, key_path: &str, value: impl Into<KdlValue>) -> Self {
         let (tree, setting) = key_path.split_once('/').expect("invalid key_path syntax");
 
         let subtree = helpers::select_mut_settings_tree(&mut self.inner, tree)
             .expect(&format!("invalid subtree {}", tree));
-        subtree
+
+        let node = subtree
+            .children_mut()
+            .as_mut()
+            .unwrap()
             .get_mut(setting)
-            .expect(&format!("setting {} doesn't exist!", setting))
-            .set_value(value);
+            .expect(&format!("setting {} doesn't exist", setting));
+        node.clear_entries();
+        node.push(value);
 
         self
     }
 
     /// Use this function to patch a list block (for example `ratmand/peers`)
-    #[doc(hidden)]
     pub fn patch_list(mut self, key_path: &str, value: impl Into<KdlValue>) -> Self {
         let (tree, setting) = key_path.split_once('/').expect("invalid key_path syntax");
         let subtree = helpers::select_mut_settings_tree(&mut self.inner, tree)
@@ -203,6 +203,46 @@ impl<'p> SubConfig<'p> {
             // Create a new API wrapper type
             .map(|inner| SubConfig { inner })
     }
+}
+
+/// Pretty-print this configuration without all of the span crap
+#[doc(hidden)]
+pub fn pretty_print(doc: &KdlDocument) {
+    doc.nodes().iter().for_each(|node| {
+        let node_header = format!(
+            "{} : {:?}",
+            node.name(),
+            node.entries()
+                .iter()
+                .map(|e| e.value().as_string().unwrap_or("<?>"))
+                .collect::<Vec<_>>()
+        );
+
+        let node_children = node
+            .children()
+            .iter()
+            .map(|child| {
+                child
+                    .nodes()
+                    .iter()
+                    .map(|node| {
+                        format!(
+                            "{} : {:?}",
+                            node.name(),
+                            node.entries()
+                                .iter()
+                                .map(|e| format!("{}", e.value()).replace("\"", ""))
+                                .collect::<Vec<_>>()
+                        )
+                        .replace("\"", "")
+                    })
+                    .collect::<Vec<String>>()
+            })
+            .collect::<Vec<_>>();
+
+        println!("{}", node_header);
+        println!("{:#?}", node_children);
+    })
 }
 
 #[test]

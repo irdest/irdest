@@ -12,6 +12,13 @@ use ratmand::{
 };
 use std::path::PathBuf;
 
+async fn generate_default_config(path: &PathBuf) {
+    let cfg = ConfigTree::default_in_memory();
+    if let Err(e) = cfg.write_changes(path).await {
+        eprintln!("failed to write default configuration: {}", e);
+    }
+}
+
 #[async_std::main]
 async fn main() {
     let arg_matches = cli::build_cli();
@@ -21,11 +28,18 @@ async fn main() {
         .map(|s| PathBuf::new().join(s))
         .unwrap_or_else(|| Os::xdg_config_path().join("ratmand.kdl"));
 
+    // A bit hacky: check if we were tasked to generate the default
+    // configuration, then execute this and exit afterwards.
+    if let Some(_) = arg_matches.subcommand_matches("generate") {
+        generate_default_config(&cfg_path).await;
+        std::process::exit(1);
+    }
+
     // Since this code runs before the logger initialisation we're
     // limited to eprintln and exiting the application manually if
     // something goes catastrophically wrong.
 
-    let config = match ConfigTree::load_path(&cfg_path).await {
+    let mut config = match ConfigTree::load_path(&cfg_path).await {
         Ok(cfg) => cfg,
         Err(_) => {
             // If the configuration couldn't be loaded we assume that
@@ -43,6 +57,13 @@ async fn main() {
             cfg
         }
     };
+
+    // config.pretty_print();
+
+    // Override the config verbosity value with the CLI value if desired
+    if let Some(verbosity) = arg_matches.value_of("VERBOSITY") {
+        config = config.patch("ratmand/verbosity", verbosity);
+    }
 
     let ratmand_tree = match config.get_subtree("ratmand") {
         Some(t) => t,
