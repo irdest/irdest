@@ -48,7 +48,9 @@ If no package is available to you, but you are running on an otherwise
 supported platform (x86_64 linux and arm64 linux), we do have static
 binaries available via out CI bundles.  They also include an installer
 and instructions on how to setup Ratman.  You can find them on the
-[download page](https://irde.st/downloads).
+[download page](https://irde.st/downloads).  If you are running macOS,
+you can compile Ratman from source (see below).  Testing and
+[reporting issues]() is highly appreciated!
 
 Alternatively you can build and install Ratman from source.  You need
 the following dependencies installed:

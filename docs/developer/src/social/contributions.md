@@ -9,7 +9,26 @@ submissions via GitLab merge requests, or via patches sent to our
 [mono repo]: https://git.irde.st/we/irdest
 [mailing list]: https://lists.irde.st/archives/list/community@lists.irde.st/
 
+## Reporting an issue
+
+Irdest has a lot of bugs and many things are still missing!  If you've
+encountered a problem, we would highly appreciate it if you could tell
+us about it.
+
+Since we use our own gitlab instance (and don't want to open
+registrations without verification) it's hard to submit issues via
+gitlab.
+
+To submit an issue, just write an e-mail to the [community
+mailinglist](), in a format like: `[BUG] ratman: sometimes crashes
+when ...` or `[QUESTION] irdest-proxy: how to set ...`, etc.  Do
+please try to search for an existing e-mail thread in the [mail
+archive]() first though.
+
 ## Submitting an MR
+
+If you want an account for development, please say hi in the
+Matrix channel so we know who you are.
 
 - If a relevant issue exists, please tag in your description
 - Include a short description of the accumulative changes
