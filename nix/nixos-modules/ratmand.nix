@@ -44,11 +44,16 @@ in {
     systemd.services.ratmand = {
       wantedBy = [ "multi-user.target" ];
       after = [ "network.target" ];
+      environment = {
+        RUST_BACKTRACE = "1";
+      };
+      
       serviceConfig = {
         #User = "ratmand";
         #Group = "ratmand";
 
-        ExecStart = "${cfg.package}/bin/ratmand --daemonize ${builtins.concatStringsSep " " cfg.extraArgs}";
+        ExecStart = "${cfg.package}/bin/ratmand --ephemeral --daemonize -v trace";
+        # ${builtins.concatStringsSep " " cfg.extraArgs}";
         Type = "forking";
 
         # Security Hardening

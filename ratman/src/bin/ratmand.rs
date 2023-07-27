@@ -60,6 +60,11 @@ async fn main() {
 
     // config.pretty_print();
 
+    // Override the ephemeral value
+    if arg_matches.is_present("EPHEMERAL") {
+        config = config.patch("ratmand/ephemeral", true);
+    }
+
     // Override the config verbosity value with the CLI value if desired
     if let Some(verbosity) = arg_matches.value_of("VERBOSITY") {
         config = config.patch("ratmand/verbosity", verbosity);

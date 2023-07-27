@@ -34,6 +34,11 @@ If you encounter a reproducible issue, \
                 .long("daemonize")
                 .help("Fork ratmand into the background and detach it from the current stdout/stderr/tty")
         )
+        .arg(
+            Arg::with_name("EPHEMERAL")
+                .long("ephemeral")
+                .help("Configure ratmand to not persist any information to disk.  Only use this for tests and special circumstances!")
+        )
         .get_matches()
 }
 

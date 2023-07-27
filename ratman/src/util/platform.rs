@@ -7,7 +7,7 @@
 use crate::util::{env_xdg_config, env_xdg_data};
 use async_std::fs::File;
 use directories::ProjectDirs;
-use libratman::{RatmanError, Result};
+use libratman::{types::NonfatalError, RatmanError, Result};
 use std::{os::fd::AsRawFd, path::PathBuf};
 
 /// OS specific support
@@ -43,9 +43,12 @@ impl Os {
         {
             let path: PathBuf = path.unwrap_or_else(|| Self::match_os().data_path());
             let f = File::open(&path).await?;
-            nix::fcntl::flock(f.as_raw_fd(), nix::fcntl::FlockArg::LockExclusiveNonblock)
+            match nix::fcntl::flock(f.as_raw_fd(), nix::fcntl::FlockArg::LockExclusiveNonblock)
                 .map(|_| Some(StateDirectoryLock(f)))
-                .map_err(|_| RatmanError::StateDirectoryAlreadyLocked)
+            {
+                Ok(lock) => Ok(lock),
+                Err(_) => Err(RatmanError::StateDirectoryAlreadyLocked),
+            }
         }
 
         #[cfg(target_family = "windows")]
@@ -88,6 +91,7 @@ impl Os {
         let data_dir = env_xdg_data()
             .map(|path| PathBuf::new().join(path))
             .unwrap_or_else(|| dirs.data_dir().to_path_buf());
+
         trace!("Ensure data directory exists: {:?}", data_dir);
         let _ = std::fs::create_dir(&data_dir);
         data_dir

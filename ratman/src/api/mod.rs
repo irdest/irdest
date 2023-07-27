@@ -94,6 +94,7 @@ async fn listen_for_connections(
             // lookup table because no message will ever be
             // addressed to it
             Ok(None) => return Ok(Some((Address::random(), io))),
+
             Err(e) => {
                 error!("Encountered error during auth: {}", e);
                 break;
