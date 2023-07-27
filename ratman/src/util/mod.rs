@@ -18,6 +18,7 @@ pub(crate) mod transform;
 
 use crate::{config::SubConfig, core::GenericEndpoint};
 use async_std::channel::{Receiver, Sender};
+use nix::unistd::Uid;
 use std::{collections::BTreeMap, sync::Arc};
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
 
@@ -86,6 +87,9 @@ pub fn setup_logging(ratmand_config: &SubConfig) {
     }
 
     info!("Initialised logger: welcome to ratmand!");
+    trace!(
+        "ratmand launched by user {} with parameters: {:?}",
+        Uid::current(),
+        std::env::args()
+    );
 }
-
-pub fn initialise_config(os: Os) {}

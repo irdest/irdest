@@ -20,7 +20,7 @@ mod seq;
 mod timepair;
 
 pub use crate::client::ClientError;
-pub use error::{RatmanError, Result};
+pub use error::{NonfatalError, RatmanError, Result};
 pub use frame::Frame;
 pub use identifiers::{address::Address, id::Id, ID_LEN};
 pub use message::{Message, Recipient};

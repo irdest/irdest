@@ -58,3 +58,9 @@ impl From<RatmanError> for io::Error {
         }
     }
 }
+
+#[derive(Debug, thiserror::Error)]
+pub enum NonfatalError {
+    #[error("ratman is running ephemaral mode: no data will be persisted to disk!")]
+    IsEphemeral,
+}

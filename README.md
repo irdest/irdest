@@ -29,9 +29,9 @@ additional information in their respective README files.
 | [licenses] | Set of license texts that are in use in this repository                                                                                    |
 | [netmods]  | Platform-specific networking interface drivers                                                                                             |
 | [nix]      | [Nix](https://nixos.org) related build utilities                                                                                           |
-| [ratman]   | A decentralised and modular userspace frame router                                                                                         |
-| [tests]    | Integration tests over multiple components
-| [utils]    | Various utilities in use all over the repository that don't fit in anywhere else                                                           |                                                                                                                                           |
+| [ratman]   | Router daemon and API client libraries                                                                                                     |
+| [tests]    | Integration tests over multiple components                                                                                                 |
+| [utils]    | Various utilities in use all over the repository that don't fit in anywhere else                                                           |
 
 
 ## Overview

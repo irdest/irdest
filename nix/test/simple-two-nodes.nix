@@ -18,12 +18,8 @@ pkgs.nixosTest {
 
         networking.firewall.allowedUDPPorts = [ 5861 ];
 
-        services.ratmand = {
-          enable = true;
-          extraArgs = [ "-v debug" # "--accept-unknown-peers" "--discovery-iface eth1"
-                      ];
-        };
-
+        services.ratmand.enable = true;
+        
         systemd.services = {
           ratcat-register = {
             wantedBy = [ "multi-user.target" ];

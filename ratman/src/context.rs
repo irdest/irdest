@@ -36,6 +36,11 @@ pub struct RatmanContext {
     /// Indicate the current run state of the router context
     // TODO: change this to be an AtomPtr
     runtime_state: RuntimeState,
+    /// Atomic state directory lock
+    ///
+    /// If None, ratman is running in ephemeral mode and no data will
+    /// be saved this session.  This is usually the case in test
+    /// scenarious, but may also be the case on low-power devices.
     _statedir_lock: Arc<AtomPtr<Option<StateDirectoryLock>>>,
 }
 
@@ -64,19 +69,26 @@ impl RatmanContext {
         // Before we do anything else, make sure we see logs
         setup_logging(&ratmand_config);
 
-        // Before touching any state, lock the directory we're working with
-        match Os::lock_state_directory(None).await {
-            Ok(lock) => {
-                this._statedir_lock.swap(lock);
-            }
-            Err(_) => {
-                util::elog(
-                    "failed to acquire state directory lock!  terminating...",
-                    codes::FATAL,
-                );
+        // If ratmand isn't set up to run ephemerally (for tests) try
+        // to lock the state directory here and crash if we can't.
+        if ratmand_config.get_bool_value("ephemeral").unwrap_or(false) {
+            warn!("ratmand is running in ephemeral mode: no data will be persisted to disk");
+            warn!("State directory locking is unimplemented");
+            warn!("Take care that peering hardware is not used from multiple drivers!");
+        } else {
+            match Os::lock_state_directory(None).await {
+                Ok(Some(lock)) => {
+                    this._statedir_lock.swap(Some(lock));
+                }
+                Ok(None) => {}
+                Err(_) => {
+                    util::elog(
+                        "failed to acquire state directory lock!  terminating...",
+                        codes::FATAL,
+                    );
+                }
             }
         }
-
         // Load existing client/address relations
         this.clients.load_users(&this).await;
 
@@ -210,6 +222,11 @@ impl RatmanContext {
         Arc::clone(&self.protocol)
             .online(addr, Arc::clone(&self.core))
             .await
+    }
+
+    /// Test whether Ratman is capable of writing anything to disk
+    pub fn ephemeral(&self) -> bool {
+        self._statedir_lock.get_ref().is_none()
     }
 
     // TODO: should this require some kind of cryptographic challenge maybe ??

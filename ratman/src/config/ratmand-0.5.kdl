@@ -38,6 +38,10 @@ settings "ratmand" {
 
     // Alternatively/ Additionally you can include a list of peers in an external file
     // peer_file "~/.config/ratmand/peers.txt"
+
+    // If this is enabled ratmand will not try to write any state to disk. Any state in-memory
+    // when ratmand restarts will be lost.  It's not recommended you enable this option outside of tests!
+    ephemeral false
 }
 
 // Configuration for the 'inet' internet overlay driver, used to peer between ratmand instances via an existing internet connection

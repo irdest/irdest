@@ -7,18 +7,15 @@ use crate::{
     context::RatmanContext,
     util::transform,
 };
-use async_std::{
-    io::{Read, Write},
-    sync::Arc,
-};
+use async_std::{io::Write, sync::Arc};
 use libratman::types::{
     self,
     api::{
         self, all_peers, api_peers, api_setup, online_ack, ApiMessageEnum, Peers, Peers_Type,
         Receive, Send, Setup_Type,
     },
-    encode_message, parse_message, write_with_length, Address, ClientError, Id, Message, Recipient,
-    Result,
+    encode_message, parse_message, write_with_length, Address, ClientError, Id, Message,
+    NonfatalError, Recipient, Result,
 };
 
 async fn handle_send(ctx: &Arc<RatmanContext>, _self: Address, send: Send) -> Result<()> {
@@ -157,9 +154,18 @@ pub(crate) async fn handle_auth(
                     // Reply to the client
                     send_online_ack(io.as_io(), address).await?;
 
-                    // TODO: do this in a way that it can't fail ?
-                    ctx.clients.sync_users().await?;
-                    Ok(Some((address, vec![])))
+                    // We try to write the new users out to disk, and
+                    // return a non-fatal error if it fails
+                    match ctx.clients.sync_users().await {
+                        Ok(_) => Ok(Some((address, vec![]))),
+                        Err(e) if ctx.ephemeral() => Err(e),
+                        Err(_) => {
+                            warn!(
+                                "failed to sync address store: registered clients won't be persistent!"
+                            );
+                            Ok(Some((address, vec![])))
+                        }
+                    }
                 }
 
                 // address XOR token were sent -> invalid
