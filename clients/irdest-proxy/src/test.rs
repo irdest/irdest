@@ -6,6 +6,7 @@ fn integration() {
     std::thread::spawn(|| {
         let cfg = ConfigTree::default_in_memory()
             .patch("ratmand/api_bind", "127.0.0.1:10999")
+            .patch("ratmand/ephemeral", true)
             .patch("inet/bind", "[::]:10900")
             .patch("ratmand/enable_dashboard", false)
             .patch("ratmand/accept_unknown_peers", true)
@@ -21,6 +22,7 @@ fn integration() {
         let cfg = ConfigTree::default_in_memory()
             .patch_list("ratmand/peers", "inet:localhost:10900")
             .patch("ratmand/api_bind", "127.0.0.1:11999")
+            .patch("ratmand/ephemeral", true)
             .patch("inet/bind", "[::]:11900")
             .patch("ratmand/enable_dashboard", false)
             .patch("ratmand/accept_unknown_peers", true)
