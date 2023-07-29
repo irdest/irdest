@@ -52,9 +52,9 @@ in {
         #User = "ratmand";
         #Group = "ratmand";
 
-        ExecStart = "${cfg.package}/bin/ratmand --ephemeral --daemonize -v trace";
+        ExecStart = "${cfg.package}/bin/ratmand --ephemeral -v trace";
         # ${builtins.concatStringsSep " " cfg.extraArgs}";
-        Type = "forking";
+        # Type = "forking";
 
         # Security Hardening
         # Refer to systemd.exec(5) for option descriptions.

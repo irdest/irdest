@@ -133,7 +133,10 @@ pub(crate) async fn handle_auth(
                 (Some(address), Some(token)) => {
                     let client_id = ctx.clients.get_client_for_address(&address).await;
                     if ctx.clients.check_token(&client_id, &token).await {
-                        // TODO: is this really the best place for this call ?
+
+                        // Set client online in both connection
+                        // manager and router core
+                        ctx.clients.set_online(client_id, token, io.clone()).await?;
                         if ctx.load_existing_address(address, &[0]).await.is_ok() {
                             send_online_ack(io.as_io(), address).await?;
                         }

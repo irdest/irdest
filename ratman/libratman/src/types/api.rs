@@ -9,7 +9,7 @@ pub use crate::types::proto::api::{
     Send, Send_Type, Setup, Setup_Type,
 };
 use crate::types::proto::message::Message;
-use crate::types::Address;
+use crate::types::{Address, Id};
 
 //////////// SEND type
 
@@ -64,11 +64,11 @@ pub fn online_init() -> Setup {
 }
 
 /// Create an online message with ID and token
-pub fn online(id: Address, token: Vec<u8>) -> Setup {
+pub fn online(id: Address, token: Id) -> Setup {
     let mut setup = Setup::new();
     setup.set_field_type(Setup_Type::ONLINE);
     setup.set_id(id.as_bytes().to_vec());
-    setup.set_token(token.into());
+    setup.set_token(token.as_bytes().to_vec());
     setup
 }
 

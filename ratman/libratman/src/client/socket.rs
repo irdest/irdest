@@ -46,7 +46,7 @@ impl IpcSocket {
 
         // Introduce ourselves to the daemon
         let online_msg = api::api_setup(match addr {
-            Some(addr) => api::online(addr, vec![0, 1, 2, 3]),
+            Some(addr) => api::online(addr, Id::random()),
             None => api::online_init(),
         });
         debug!("Sending introduction message!");
@@ -67,7 +67,7 @@ impl IpcSocket {
                     "make sure that your libratman version matches the ratmand version!"
                 ),
             },
-            _ => unreachable!("make sure that your libratman version matches the ratmand version!"),
+            err => panic!("failed to authenticate: {:?}", err),
         };
 
         debug!("IPC client initialisation done!");
