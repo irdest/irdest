@@ -83,8 +83,8 @@ async fn handle_peers(io: &mut Io, ctx: &Arc<RatmanContext>, peers: Peers) -> Re
     Ok(())
 }
 
-async fn send_online_ack<Io: Write + Unpin>(io: &mut Io, id: Address) -> Result<()> {
-    let ack = encode_message(api_setup(online_ack(id)))?;
+async fn send_online_ack<Io: Write + Unpin>(io: &mut Io, id: Address, token: Id) -> Result<()> {
+    let ack = encode_message(api_setup(online_ack(id, token)))?;
     write_with_length(io, &ack).await?;
     Ok(())
 }
@@ -128,18 +128,38 @@ pub(crate) async fn handle_auth(
             let address = Address::try_from_bytes(&setup.id).ok();
             let token = Id::try_from_bytes(&setup.token).ok();
 
+            info!("Received: ({:?}, {:?})", address, token);
+
             match (address, token) {
                 // Both address and token were sent -> existing client
                 (Some(address), Some(token)) => {
-                    let client_id = ctx.clients.get_client_for_address(&address).await;
-                    if ctx.clients.check_token(&client_id, &token).await {
+                    let client_id = match ctx.clients.get_client_for_address(&address).await {
+                        Some(id) => id,
+                        None => {
+                            warn!("Failed to look up client_id for provided address!");
+                            return Err(ClientError::InvalidAuth.into());
+                        }
+                    };
 
+                    trace!("Address belongs to client_id: {}", client_id);
+
+                    if ctx.clients.check_token(&client_id, &token).await {
                         // Set client online in both connection
                         // manager and router core
-                        ctx.clients.set_online(client_id, token, io.clone()).await?;
-                        if ctx.load_existing_address(address, &[0]).await.is_ok() {
-                            send_online_ack(io.as_io(), address).await?;
+                        if let Err(e) = ctx.clients.set_online(client_id, token, io.clone()).await {
+                            warn!("failed to set client as online: {:?}", e);
+                            return Err(e.into());
                         }
+
+                        if ctx.load_existing_address(address, &[0]).await.is_ok() {
+                            if let Err(e) = send_online_ack(io.as_io(), address, token).await {
+                                warn!("failed to send online_ack: {:?}", e);
+                                return Err(e.into());
+                            }
+                        }
+
+                        // Reply to the client
+                        send_online_ack(io.as_io(), address, token).await?;
 
                         // FIXME: what is the second argument here
                         // supposed to be doing anyway ?
@@ -152,10 +172,10 @@ pub(crate) async fn handle_auth(
                 // Neither an address nor token were sent -> new client
                 (None, None) => {
                     let address = ctx.create_new_address().await?;
-                    let _client_id = ctx.clients.register(address, io.clone()).await;
+                    let token = ctx.clients.register(address, io.clone()).await;
 
                     // Reply to the client
-                    send_online_ack(io.as_io(), address).await?;
+                    send_online_ack(io.as_io(), address, token).await?;
 
                     // We try to write the new users out to disk, and
                     // return a non-fatal error if it fails
@@ -172,7 +192,10 @@ pub(crate) async fn handle_auth(
                 }
 
                 // address XOR token were sent -> invalid
-                _ => Err(ClientError::InvalidAuth.into()),
+                (addr, token) => {
+                    warn!("Received (addr,token): ({:?}, {:?})", addr, token);
+                    Err(ClientError::InvalidAuth.into())
+                }
             }
         }
 
@@ -191,7 +214,10 @@ pub(crate) async fn handle_auth(
 pub(crate) async fn parse_stream(ctx: Arc<RatmanContext>, _self: Address, mut io: Io) {
     loop {
         // Match on the msg type and call the appropriate handler
-        match parse_message(io.as_io()).await.map(|msg| msg.inner) {
+        match parse_message(io.as_io()).await.map(|msg| {
+            trace!("Received message from stream {}", _self);
+            msg.inner
+        }) {
             Ok(Some(one_of)) => match one_of {
                 ApiMessageEnum::send(send) => handle_send(&ctx, _self, send).await,
                 ApiMessageEnum::peers(peers) => handle_peers(&mut io, &ctx, peers).await,

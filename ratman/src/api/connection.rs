@@ -136,11 +136,13 @@ impl ConnectionManager {
         let id = Id::random();
         let mut clients = self.clients.lock().await;
         let mut online = self.online.lock().await;
+        let mut addr_map = self.addr_map.write().await;
 
         let base_client = BaseClient::register(initial_addr);
         let token = base_client.token;
         clients.insert(id, base_client);
         online.insert(id, clients.get(&id).unwrap().connect(io));
+        addr_map.insert(initial_addr, id);
         token
     }
 
@@ -155,16 +157,16 @@ impl ConnectionManager {
                 online.insert(id, base_client.connect(io));
                 Ok(())
             }
-            Some(_) => Err(RatmanError::ClientApi(ClientError::InvalidAuth)),
-            None => Err(RatmanError::ClientApi(ClientError::NoAddress)),
+            Some(_) => Err(ClientError::InvalidAuth.into()),
+            None => Err(ClientError::NoAddress.into()),
         }
     }
 
-    pub async fn get_client_for_address(&self, addr: &Address) -> Id {
+    pub async fn get_client_for_address(&self, addr: &Address) -> Option<Id> {
         // This _should_ never fail because the router wouldn't have
         // picked this message up to be relayed locally if it didn't
         // already know the address was registered on this node.
-        *self.addr_map.read().await.get(addr).unwrap()
+        self.addr_map.read().await.get(addr).map(|id| *id)
     }
 
     /// Check a provided client token against its stored record

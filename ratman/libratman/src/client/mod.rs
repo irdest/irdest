@@ -63,11 +63,11 @@ pub struct RatmanIpc {
 impl RatmanIpc {
     /// Create a `DEFAULT` variant will always register a new address
     pub async fn default() -> Result<Self> {
-        Self::connect("127.0.0.1:9020", None).await
+        Self::connect("127.0.0.1:9020", None, None).await
     }
 
-    pub async fn default_with_addr(addr: Address) -> Result<Self> {
-        Self::connect("127.0.0.1:9020", Some(addr)).await
+    pub async fn default_with_addr(addr: Address, token: Id) -> Result<Self> {
+        Self::connect("127.0.0.1:9020", Some(addr), Some(token)).await
     }
 
     /// Connect to a Ratman IPC backend with an optional address
@@ -75,10 +75,16 @@ impl RatmanIpc {
     /// `socket_addr` refers to the local address the Ratman daemon is
     /// listening on.  `addr` refers to the Ratman cryptographic
     /// routing address associated with your application
-    pub async fn connect(socket_addr: &str, addr: Option<Address>) -> Result<RatmanIpc> {
-        let socket = match addr {
-            Some(registered) => IpcSocket::start_with_address(socket_addr, registered).await,
-            None => IpcSocket::start_registration(socket_addr).await,
+    pub async fn connect(
+        socket_addr: &str,
+        addr: Option<Address>,
+        token: Option<Id>,
+    ) -> Result<RatmanIpc> {
+        let socket = match (addr, token) {
+            (Some(registered), Some(token)) => {
+                IpcSocket::start_with_address(socket_addr, registered, token).await
+            }
+            _ => IpcSocket::start_registration(socket_addr).await,
         }?;
 
         // TODO: spawn receive daemon here
@@ -113,6 +119,10 @@ impl RatmanIpc {
     /// Return the currently assigned address
     pub fn address(&self) -> Address {
         self.addr
+    }
+
+    pub fn token(&self) -> Id {
+        self.socket.token
     }
 
     /// Send some data to a remote peer

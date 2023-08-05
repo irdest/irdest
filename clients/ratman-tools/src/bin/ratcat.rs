@@ -8,7 +8,7 @@ use async_std::{
 };
 use clap::{App, Arg};
 use directories::ProjectDirs;
-use libratman::client::{Address, RatmanIpc, Receive_Type};
+use libratman::client::{Address, Id, RatmanIpc, Receive_Type};
 use serde::{Deserialize, Serialize};
 use std::{os::unix::prelude::AsRawFd, path::PathBuf};
 
@@ -75,7 +75,7 @@ pub fn build_cli() -> App<'static, 'static> {
 #[derive(Serialize, Deserialize)]
 struct Config {
     addr: Address,
-    token: Vec<u8>,
+    token: Id,
 }
 
 async fn register(
@@ -83,7 +83,7 @@ async fn register(
     bind: &str,
     no_default: bool,
 ) -> Result<bool, Box<dyn std::error::Error>> {
-    let ipc = RatmanIpc::connect(bind, None).await?;
+    let ipc = RatmanIpc::connect(bind, None, None).await?;
     eprintln!("Registered address: {}", ipc.address());
 
     if !no_default {
@@ -91,7 +91,7 @@ async fn register(
 
         let cfg = Config {
             addr: ipc.address(),
-            token: vec![],
+            token: ipc.token(),
         };
         let cfg_str = serde_json::to_string_pretty(&cfg)?;
         f.write_all(cfg_str.as_bytes()).await?;
@@ -102,7 +102,21 @@ async fn register(
 }
 
 async fn connect_ipc(cfg: &Config, bind: &str) -> Result<RatmanIpc, Box<dyn std::error::Error>> {
-    Ok(RatmanIpc::connect(bind, Some(cfg.addr)).await?)
+    let mut res = Err(libratman::ClientError::ConnectionLost.into());
+
+    panic!("FUCK YOU YOU FUCKING FUCK I DON'T WANT TO RUN!!!");
+
+    for _ in 0..3 {
+        res = RatmanIpc::connect(bind, Some(cfg.addr), Some(cfg.token)).await;
+        if res.is_ok() {
+            break;
+        }
+
+        eprint!("ratmand connection failed: retrying in 500ms...");
+        async_std::task::sleep(std::time::Duration::from_millis(500)).await;
+    }
+
+    Ok(res?)
 }
 
 /// Returns the number of messages sent

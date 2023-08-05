@@ -16,49 +16,54 @@ pub struct IpcSocket {
     /// Primary address that is registered to this socket
     // TODO: switch this to the `AddressBook` abstraction
     pub(crate) addr: Address,
+    pub(crate) token: Id,
 }
 
 impl IpcSocket {
     /// Connect to the IPC backend with a given bind location and an
     /// already registered address
-    pub(crate) async fn start_with_address(bind: &str, addr: Address) -> Result<Self> {
-        Self::connect(bind, Some(addr)).await
+    pub(crate) async fn start_with_address(bind: &str, addr: Address, token: Id) -> Result<Self> {
+        Self::connect(bind, Some(addr), Some(token)).await
     }
 
     /// Connect to the IPC backend with a given bind location and
     /// start registering a new random address
     pub(crate) async fn start_registration(bind: &str) -> Result<Self> {
-        Self::connect(bind, None).await
+        Self::connect(bind, None, None).await
     }
 
     /// Connect to the daemon without providing or wanting an address
     // TODO: why does this exist? This should really not exist I think
     pub async fn anonymous(socket_addr: &str) -> Result<Self> {
-        let mut socket = IpcSocket::connect(socket_addr, None).await?;
+        let mut socket = IpcSocket::connect(socket_addr, None, None).await?;
 
         let introduction = api::api_setup(api::anonymous());
         write_with_length(&mut socket.inner, &encode_message(introduction)?).await?;
         Ok(socket)
     }
 
-    async fn connect(socket_addr: &str, addr: Option<Address>) -> Result<Self> {
+    async fn connect(socket_addr: &str, addr: Option<Address>, token: Option<Id>) -> Result<Self> {
         let mut inner = TcpStream::connect(socket_addr).await?;
 
         // Introduce ourselves to the daemon
-        let online_msg = api::api_setup(match addr {
-            Some(addr) => api::online(addr, Id::random()),
-            None => api::online_init(),
+        let online_msg = api::api_setup(match (addr, token) {
+            (Some(addr), Some(token)) => api::online(addr, token),
+            _ => api::online_init(),
         });
+
         debug!("Sending introduction message!");
         write_with_length(&mut inner, &encode_message(online_msg)?).await?;
-
         trace!("Waiting for ACK message!");
+
         // Then wait for a response and assign the used address
-        let addr = match parse_message(&mut inner).await.map(|m| m.inner) {
+        let (addr, token) = match parse_message(&mut inner).await.map(|m| m.inner) {
             Ok(Some(one_of)) => match one_of {
                 ApiMessageEnum::setup(ref s) if s.field_type == ACK => {
-                    if s.id.len() > 0 {
-                        Address::from_bytes(s.get_id())
+                    if s.id.len() > 0 && s.token.len() > 0 {
+                        (
+                            Address::from_bytes(s.get_id()),
+                            Id::from_bytes(s.get_token()),
+                        )
                     } else {
                         panic!("failed to initialise new address!");
                     }
@@ -71,7 +76,7 @@ impl IpcSocket {
         };
 
         debug!("IPC client initialisation done!");
-        Ok(Self { inner, addr })
+        Ok(Self { inner, addr, token })
     }
 
     /// Send some data to a remote peer

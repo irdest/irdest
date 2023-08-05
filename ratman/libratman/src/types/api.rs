@@ -81,10 +81,11 @@ pub fn offline(id: Address, token: Vec<u8>) -> Setup {
     setup
 }
 
-pub fn online_ack(id: Address) -> Setup {
+pub fn online_ack(id: Address, token: Id) -> Setup {
     let mut setup = Setup::new();
     setup.set_field_type(Setup_Type::ACK);
     setup.set_id(id.as_bytes().to_vec());
+    setup.set_token(token.as_bytes().to_vec());
     setup
 }
 

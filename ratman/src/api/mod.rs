@@ -49,6 +49,13 @@ async fn run_relay(context: Arc<RatmanContext>) {
                     .get_client_for_address(&recp.scope().expect("empty recipient!"))
                     .await;
 
+                if client_id.is_none() {
+                    warn!("Received message for unknown address: {:?}!", recp.scope());
+                    continue;
+                }
+
+                let client_id = client_id.unwrap();
+
                 // If the client wasn't online right now, the router
                 // wouldn't have marked the message to be relayed, and
                 // instead simply inserted it into the local journal.
