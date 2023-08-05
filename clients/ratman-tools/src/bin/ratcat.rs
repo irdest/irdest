@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use async_std::{
-    fs::{create_dir, File},
+    fs::{File, create_dir_all},
     io::{stdin, stdout, ReadExt, WriteExt},
 };
 use clap::{App, Arg};
@@ -83,7 +83,7 @@ async fn register(
     bind: &str,
     no_default: bool,
 ) -> Result<bool, Box<dyn std::error::Error>> {
-    let ipc = RatmanIpc::connect(bind, None, None).await?;
+    let ipc = connect_ipc(None, None, bind).await?;
     eprintln!("Registered address: {}", ipc.address());
 
     if !no_default {
@@ -101,13 +101,15 @@ async fn register(
     }
 }
 
-async fn connect_ipc(cfg: &Config, bind: &str) -> Result<RatmanIpc, Box<dyn std::error::Error>> {
+async fn connect_ipc(
+    addr: Option<Address>,
+    token: Option<Id>,
+    bind: &str,
+) -> Result<RatmanIpc, Box<dyn std::error::Error>> {
     let mut res = Err(libratman::ClientError::ConnectionLost.into());
 
-    panic!("FUCK YOU YOU FUCKING FUCK I DON'T WANT TO RUN!!!");
-
     for _ in 0..3 {
-        res = RatmanIpc::connect(bind, Some(cfg.addr), Some(cfg.token)).await;
+        res = RatmanIpc::connect(bind, addr, token).await;
         if res.is_ok() {
             break;
         }
@@ -189,7 +191,7 @@ async fn main() {
     let cfg_dir = env_xdg_config()
         .map(|path| PathBuf::new().join(path))
         .unwrap_or_else(|| dirs.config_dir().to_path_buf());
-    let _ = create_dir(&cfg_dir).await;
+    let _ = create_dir_all(&cfg_dir).await;
 
     let num: usize = match m.value_of("RECV_COUNT").map(|c| c.parse().ok()) {
         Some(Some(num)) => num,
@@ -239,7 +241,7 @@ async fn main() {
 
     //// We always need to connect to the IPC backend with our address
     eprintln!("Connecting to IPC backend...");
-    let ipc = match connect_ipc(&cfg, api_addr).await {
+    let ipc = match connect_ipc(Some(cfg.addr), Some(cfg.token), api_addr).await {
         Ok(ipc) => ipc,
         Err(e) => {
             eprintln!("Failed to connect to Ratman daemon: {}", e);

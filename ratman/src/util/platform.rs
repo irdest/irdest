@@ -80,7 +80,7 @@ impl Os {
             .unwrap_or_else(|| dirs.config_dir().to_path_buf());
 
         trace!("Ensure data directory exists: {:?}", config_dir);
-        let _ = std::fs::create_dir(&config_dir);
+        let _ = std::fs::create_dir_all(&config_dir);
         config_dir
     }
 
@@ -93,7 +93,7 @@ impl Os {
             .unwrap_or_else(|| dirs.data_dir().to_path_buf());
 
         trace!("Ensure data directory exists: {:?}", data_dir);
-        let _ = std::fs::create_dir(&data_dir);
+        let _ = std::fs::create_dir_all(&data_dir);
         data_dir
     }
 
