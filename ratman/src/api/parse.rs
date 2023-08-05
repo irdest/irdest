@@ -14,8 +14,8 @@ use libratman::types::{
         self, all_peers, api_peers, api_setup, online_ack, ApiMessageEnum, Peers, Peers_Type,
         Receive, Send, Setup_Type,
     },
-    encode_message, parse_message, write_with_length, Address, ClientError, Id, Message,
-    NonfatalError, Recipient, Result,
+    encode_message, parse_message, write_with_length, Address, ClientError, Id, Message, Recipient,
+    Result,
 };
 
 async fn handle_send(ctx: &Arc<RatmanContext>, _self: Address, send: Send) -> Result<()> {
@@ -118,17 +118,10 @@ pub(crate) async fn handle_auth(
     //   - Assign an address
     //   - Return address and auth token
     // 3. Any other payload is invalid
-    let msg = parse_message(io.as_io()).await;
-    warn!("BLA BLA BLA: {:#?}", msg);
-
-    let one_of = msg.map(|msg| msg.inner)?.ok_or(ClientError::InvalidAuth)?;
-
-    match one_of {
-        ApiMessageEnum::setup(ref s) => {
-            warn!("Setup_Type: {:#?}", s.field_type);
-        }
-        _ => unreachable!(),
-    }
+    let one_of = parse_message(io.as_io())
+        .await
+        .map(|msg| msg.inner)?
+        .ok_or(ClientError::InvalidAuth)?;
 
     match one_of {
         // Anonymous clients don't get authenticated or stored
