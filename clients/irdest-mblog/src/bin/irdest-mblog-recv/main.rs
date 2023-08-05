@@ -23,13 +23,13 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     // Take an address from --addr, load it from disk, or generate and save one.
-    let addr = if let Some(addr_str) = args.addr {
-        Address::from_string(&addr_str)
-    } else {
-        irdest_mblog::load_or_create_addr().await?.1
-    };
+    // if let Some(addr_str) = args.addr {
+    //     Address::from_string(&addr_str)
+    // } else {
+    let (_, addr, token) = irdest_mblog::load_or_create_addr().await?;
+    // };
 
-    let ipc = RatmanIpc::default_with_addr(addr).await?;
+    let ipc = RatmanIpc::default_with_addr(addr, token).await?;
     while let Some((tt, ratmsg)) = ipc.next().await {
         match Message::try_from(&ratmsg) {
             Ok(msg) => match msg.payload {

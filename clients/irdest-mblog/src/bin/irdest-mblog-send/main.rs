@@ -35,11 +35,12 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     // Take an address from --addr, load it from disk, or generate and save one.
-    let addr = if let Some(addr_str) = args.addr {
-        Address::from_string(&addr_str)
-    } else {
-        irdest_mblog::load_or_create_addr().await?.1
-    };
+    let (_, addr, token) =
+    //     if let Some(addr_str) = args.addr {
+    //     Address::from_string(&addr_str)
+    // } else {
+        irdest_mblog::load_or_create_addr().await?;
+    // };
 
     // Create a message.
     let msg = Message::new(Post {
@@ -49,7 +50,7 @@ async fn main() -> Result<()> {
     });
 
     // Connect and send!
-    RatmanIpc::default_with_addr(addr)
+    RatmanIpc::default_with_addr(addr, token)
         .await?
         .flood(NAMESPACE.into(), msg.into_proto().write_to_bytes()?, true)
         .await?;

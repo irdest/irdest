@@ -26,8 +26,8 @@ async fn main() -> Result<()> {
         .ok_or(anyhow!("couldn't find config dir"))?;
     let db = sled::open(dirs.data_local_dir().join("db"))?;
 
-    let (new_user, addr) = irdest_mblog::load_or_create_addr().await?;
-    let ipc = RatmanIpc::default_with_addr(addr).await?;
+    let (new_user, addr, token) = irdest_mblog::load_or_create_addr().await?;
+    let ipc = RatmanIpc::default_with_addr(addr, token).await?;
     println!("Running with address: {}", addr);
 
     let state = Arc::new(crate::state::AppState::new(ipc, db));

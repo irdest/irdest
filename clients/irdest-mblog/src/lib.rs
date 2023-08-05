@@ -1,6 +1,7 @@
 mod lookup;
 
 use anyhow::{anyhow, Result};
+use async_std::fs::read_to_string;
 use chrono::{DateTime, TimeZone, Utc};
 use libratman::{
     client::RatmanIpc,
@@ -278,7 +279,7 @@ impl Into<proto::feed::Post> for Post {
 /// Loads an address from a file ('addr' in the system-appropriate config dir), or
 /// if that doesn't exist, call the local ratmand to generate one, stashing it in
 /// said file to be found on our next run.
-pub async fn load_or_create_addr() -> Result<(bool, Address)> {
+pub async fn load_or_create_addr() -> Result<(bool, Address, Id)> {
     // Find our configuration directory. Make sure to respect $XDG_CONFIG_HOME!
     let dirs = directories::ProjectDirs::from("org", "irdest", "irdest-mblog")
         .ok_or(anyhow!("couldn't find config dir"))?;
@@ -289,12 +290,16 @@ pub async fn load_or_create_addr() -> Result<(bool, Address)> {
 
     // Try to read an existing "addr" file...
     let addr_path = cfg_dir.join("addr");
-    match async_std::fs::read_to_string(&addr_path).await {
+    let token_path = cfg_dir.join("token"); // TODO: this is kinda bad
+    match (
+        read_to_string(&addr_path).await,
+        read_to_string(&token_path).await,
+    ) {
         // We've done this before - use the existing address.
-        Ok(s) => Ok((false, Address::from_string(&s))),
+        (Ok(addr), Ok(token)) => Ok((false, Address::from_string(&addr), Id::from_string(&token))),
 
         // There's no "addr" file - let's create one.
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+        (Err(e), _) | (_, Err(e)) if e.kind() == std::io::ErrorKind::NotFound => {
             // Create the config directory.
             match async_std::fs::create_dir_all(&cfg_dir).await {
                 Ok(()) => Ok(()),
@@ -305,16 +310,18 @@ pub async fn load_or_create_addr() -> Result<(bool, Address)> {
             // Connect to ratmand and generate a new address.
             let ipc = RatmanIpc::default().await?;
             let addr = ipc.address();
+            let token = ipc.token();
 
             // Write it to the "addr" file.
             async_std::fs::write(&addr_path, addr.to_string().as_bytes()).await?;
+            async_std::fs::write(&token_path, token.to_string().as_bytes()).await?;
 
-            Ok((true, addr))
+            Ok((true, addr, token))
         }
 
         // Something else went wrong, eg. the file has the wrong permissions set.
         // Don't attempt to clobber it; tell the user and let them figure it out.
-        Err(e) => Err(e.into()),
+        (Err(e), _) | (_, Err(e)) => Err(e.into()),
     }
 }
 
