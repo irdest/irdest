@@ -27,7 +27,7 @@ fn setup_cli() -> App<'static, 'static> {
                 .long("bind")
                 .short("b")
                 .help("Specify the API socket bind address")
-                .default_value("127.0.0.1:9020"),
+                .default_value("127.0.0.1:5852"),
         )
         .arg(
             Arg::with_name("GET_PEERS")

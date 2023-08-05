@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use async_std::{
-    fs::{File, create_dir_all},
+    fs::{create_dir_all, File},
     io::{stdin, stdout, ReadExt, WriteExt},
 };
 use clap::{App, Arg};
@@ -114,8 +114,8 @@ async fn connect_ipc(
             break;
         }
 
-        eprint!("ratmand connection failed: retrying in 500ms...");
-        async_std::task::sleep(std::time::Duration::from_millis(500)).await;
+        eprintln!("ratmand connection failed: retrying in 750ms...");
+        async_std::task::sleep(std::time::Duration::from_millis(750)).await;
     }
 
     Ok(res?)
@@ -144,7 +144,7 @@ async fn send(
                     break;
                 }
 
-                ipc.send_to(recp, buf.clone().into_bytes()).await?;
+                ipc.send_to(recp, buf.trim().as_bytes().to_vec()).await?;
                 ctr += 1;
             }
             Ok(ctr)

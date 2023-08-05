@@ -14,7 +14,7 @@ pkgs.nixosTest {
           ../nixos-modules/ratmand.nix
         ];
 
-        environment.systemPackages = with pkgs; [ ratmand jq ];
+        environment.systemPackages = with pkgs; [ ratmand jq ratman-tools ];
 
         networking.firewall.allowedUDPPorts = [ 5861 ];
 
@@ -39,11 +39,11 @@ pkgs.nixosTest {
           };
         };
       };
-  in {
-    one = { ... }: commonArgs;
+    in {
+      one = { ... }: commonArgs;
 
-    two = { ... }: commonArgs;
-  };
+      two = { ... }: commonArgs;
+    };
   
   testScript = { nodes, ... }: ''
     start_all()
@@ -52,6 +52,8 @@ pkgs.nixosTest {
     two.wait_for_unit("ratcat-recv.service")
 
     one_addr = one.succeed("jq -r .addr ~/.config/ratcat/config")
+
+    print("THE ADDRESS WE WANT IS {}".format(one_addr))
 
     two.wait_until_succeeds("ratctl --get-peers | grep {}".format(one_addr))
 

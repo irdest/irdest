@@ -118,12 +118,23 @@ pub(crate) async fn handle_auth(
     //   - Assign an address
     //   - Return address and auth token
     // 3. Any other payload is invalid
-    let one_of = parse_message(io.as_io())
-        .await
-        .map(|msg| msg.inner)?
-        .ok_or(ClientError::InvalidAuth)?;
+    let msg = parse_message(io.as_io()).await;
+    warn!("BLA BLA BLA: {:#?}", msg);
+
+    let one_of = msg.map(|msg| msg.inner)?.ok_or(ClientError::InvalidAuth)?;
 
     match one_of {
+        ApiMessageEnum::setup(ref s) => {
+            warn!("Setup_Type: {:#?}", s.field_type);
+        }
+        _ => unreachable!(),
+    }
+
+    match one_of {
+        // Anonymous clients don't get authenticated or stored
+        ApiMessageEnum::setup(setup) if setup.field_type == Setup_Type::ANONYMOUS => Ok(None),
+
+        // A client requests to go online
         ApiMessageEnum::setup(setup) if setup.field_type == Setup_Type::ONLINE => {
             let address = Address::try_from_bytes(&setup.id).ok();
             let token = Id::try_from_bytes(&setup.token).ok();

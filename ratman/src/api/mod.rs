@@ -125,7 +125,7 @@ pub async fn run(context: Arc<RatmanContext>, addr: SocketAddr) -> Result<()> {
     while let Ok(io) = listen_for_connections(&mut incoming, &context).await {
         let (_self, io) = match io {
             Some(io) => io,
-            // FIXME: what are anonymous clients for again ?
+            // Broken connections get dropped
             None => continue,
         };
 

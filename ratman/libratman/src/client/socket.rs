@@ -35,11 +35,14 @@ impl IpcSocket {
     /// Connect to the daemon without providing or wanting an address
     // TODO: why does this exist? This should really not exist I think
     pub async fn anonymous(socket_addr: &str) -> Result<Self> {
-        let mut socket = IpcSocket::connect(socket_addr, None, None).await?;
-
+        let mut inner = TcpStream::connect(socket_addr).await?;
         let introduction = api::api_setup(api::anonymous());
-        write_with_length(&mut socket.inner, &encode_message(introduction)?).await?;
-        Ok(socket)
+        write_with_length(&mut inner, &encode_message(introduction)?).await?;
+        Ok(Self {
+            inner,
+            addr: Address::random(),
+            token: Id::random(),
+        })
     }
 
     async fn connect(socket_addr: &str, addr: Option<Address>, token: Option<Id>) -> Result<Self> {
