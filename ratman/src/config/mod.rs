@@ -92,12 +92,13 @@ impl ConfigTree {
         let subtree = helpers::select_mut_settings_tree(&mut self.inner, tree)
             .expect(&format!("invalid subtree {}", tree));
 
-        println!("First tree: {}", subtree.entries().first().unwrap());
+        // println!("First tree: {}", subtree.entries().first().unwrap());
         helpers::append_to_list_block(
             subtree.children_mut().as_mut().expect("invalid subtree"),
             setting,
             value,
         );
+
         self
     }
 

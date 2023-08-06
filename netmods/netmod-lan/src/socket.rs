@@ -51,7 +51,8 @@ fn if_nametoindex(name: &str) -> std::io::Result<u32> {
 impl Socket {
     /// Create a new socket handler and return a management reference
     pub(crate) async fn new(iface: &str, port: u16, table: Arc<AddrTable>) -> Arc<Self> {
-        let scope = if_nametoindex(iface).unwrap(); // FIXME: is this blocking?
+        // FIXME: is this blocking?
+        let scope = if_nametoindex(iface).expect("failed to turn interface name into index");
         let sock = UdpSocket::bind((SELF, port)).await.unwrap();
         sock.join_multicast_v6(&MULTI, scope)
             .expect("Failed to join multicast. Error");
@@ -67,7 +68,7 @@ impl Socket {
 
         Self::incoming_handle(Arc::clone(&arc), table);
         arc.multicast(&Envelope::Announce).await;
-        info!("Sent multicast announcement");
+
         arc
     }
 
@@ -78,7 +79,7 @@ impl Socket {
 
     /// Send a multicast with an Envelope
     pub(crate) async fn multicast(&self, env: &Envelope) {
-        if let Err(e) = self
+        match self
             .sock
             .send_to(
                 &env.as_bytes(),
@@ -86,7 +87,8 @@ impl Socket {
             )
             .await
         {
-            error!("failed to multicast frame: {}", e);
+            Ok(_) => info!("Sent multicast announcement"),
+            Err(e) => error!("failed to multicast frame: {}", e),
         }
     }
 
