@@ -11,7 +11,7 @@ use async_std::{
     net::TcpStream,
     sync::{Arc, RwLock},
 };
-use libratman::client::Address;
+use libratman::client::{Address, Id};
 use std::collections::BTreeMap;
 
 pub type SessionMap = Arc<RwLock<BTreeMap<Address, TcpStream>>>;
@@ -38,8 +38,9 @@ impl Server {
             debug!("Loading: {:?} // {:?} // {}", ip, io, addr);
 
             if let Err(e) = match io {
-                InOrOut::In => Inlet::new(bind, ip, *addr, self.cfg.get_address(&ip)),
-                InOrOut::Out => Outlet::new(&self.map, bind, ip, *addr),
+                // FIXME: these token will be rejected
+                InOrOut::In => Inlet::new(bind, ip, *addr, self.cfg.get_address(&ip), Id::random()),
+                InOrOut::Out => Outlet::new(&self.map, bind, ip, *addr, Id::random()),
             } {
                 error!(
                     "failed to initialise {}: {}",

@@ -4,7 +4,7 @@ use crate::{
     server::SessionMap,
 };
 use async_std::{io, net::TcpStream, task};
-use libratman::client::Address;
+use libratman::client::{Address, Id};
 
 pub struct Outlet {
     map: SessionMap,
@@ -16,13 +16,20 @@ impl Outlet {
         bind: Option<&str>,
         ip: &IpSpace,
         addr: Address,
+        token: Id,
     ) -> io::Result<()> {
-        task::block_on(Self { map: map.clone() }.spawn(bind, ip, addr))
+        task::block_on(Self { map: map.clone() }.spawn(bind, ip, addr, token))
     }
 
-    async fn spawn(self, bind: Option<&str>, ip: &IpSpace, addr: Address) -> io::Result<()> {
+    async fn spawn(
+        self,
+        bind: Option<&str>,
+        ip: &IpSpace,
+        addr: Address,
+        token: Id,
+    ) -> io::Result<()> {
         let socket_addr = ip.socket_addr().clone();
-        let ipc = connect_with_address(bind, addr).await?;
+        let ipc = connect_with_address(bind, addr, token).await?;
 
         debug!("Starting the outlet loop");
 

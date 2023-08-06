@@ -3,7 +3,7 @@ use crate::{
     io::{connect_with_address, from_tcp_to_ratman, terminate_session},
 };
 use async_std::{io, net::TcpListener, stream::StreamExt, task};
-use libratman::client::Address;
+use libratman::client::{Address, Id};
 
 /// An inlet takes data from a socket and maps it into a Ratman
 /// message to a particular peer (provided to the `new` function).
@@ -19,8 +19,9 @@ impl Inlet {
         ip: &IpSpace,
         peer_addr: Address,
         self_addr: Address,
+        token: Id,
     ) -> io::Result<()> {
-        task::block_on(Self.spawn(bind, ip, peer_addr, self_addr))
+        task::block_on(Self.spawn(bind, ip, peer_addr, self_addr, token))
     }
 
     async fn spawn(
@@ -29,10 +30,11 @@ impl Inlet {
         ip: &IpSpace,
         peer_addr: Address,
         self_addr: Address,
+        token: Id,
     ) -> io::Result<()> {
         let socket_addr = ip.socket_addr().clone();
         let tcp = TcpListener::bind(&socket_addr).await?;
-        let ipc = connect_with_address(bind, self_addr).await?;
+        let ipc = connect_with_address(bind, self_addr, token).await?;
 
         debug!("Starting inlet loop");
 
