@@ -14,9 +14,6 @@ use std::path::PathBuf;
 
 async fn generate_default_config(path: &PathBuf) {
     let cfg = ConfigTree::default_in_memory();
-    if let Err(e) = cfg.write_changes(path).await {
-        eprintln!("failed to write default configuration: {}", e);
-    }
 }
 
 #[async_std::main]
@@ -28,11 +25,32 @@ async fn main() {
         .map(|s| PathBuf::new().join(s))
         .unwrap_or_else(|| Os::xdg_config_path().join("ratmand.kdl"));
 
-    // A bit hacky: check if we were tasked to generate the default
+    // Check if we were tasked to generate the default
     // configuration, then execute this and exit afterwards.
-    if let Some(_) = arg_matches.subcommand_matches("generate") {
-        generate_default_config(&cfg_path).await;
-        std::process::exit(1);
+    if let Some(generate_matches) = arg_matches.subcommand_matches("generate") {
+        let mut cfg = ConfigTree::default_in_memory();
+        if let Some(patches) = generate_matches.values_of("CONFIG_PATCH") {
+            for patch in patches {
+                let (key, value) = patch.split_once('=').unwrap_or_else(|| ("", ""));
+
+                if key == "" || value == "" {
+                    eprintln!("Invalid patch syntax!  Usage: <key>=<value>");
+                }
+
+                cfg = cfg.patch(key, value);
+            }
+        }
+
+        if let Some(peers) = generate_matches.values_of("ADD_PEER") {
+            for peer in peers {
+                cfg = cfg.patch_list("ratmand/peers", peer);
+            }
+        }
+
+        if let Err(e) = cfg.write_changes(&cfg_path).await {
+            eprintln!("failed to write default configuration: {}", e);
+        }
+        std::process::exit(0);
     }
 
     // Since this code runs before the logger initialisation we're
@@ -70,23 +88,9 @@ async fn main() {
         config = config.patch("ratmand/verbosity", verbosity);
     }
 
-    let ratmand_tree = match config.get_subtree("ratmand") {
-        Some(t) => t,
-        None => {
-            eprintln!("settings tree 'ratmand' is missing from the provided configuration!");
-            std::process::exit(codes::INVALID_CONFIG as i32);
-        }
-    };
+    // Start the router and block here until it has completed running
+    start_with_configuration(config).await
+        
 
-    // If the config says that ratmand should daemonize itself...
-    if ratmand_tree.get_bool_value("daemonize").unwrap_or(false) {
-        if let Err(err) = sysv_daemonize_app(config) {
-            eprintln!("ratmand suffered fatal error: {}", err);
-            std::process::exit(codes::FATAL as i32);
-        }
-    }
-    // Otherwise just normally initialise the Context
-    else {
-        start_with_configuration(config).await
-    }
+        
 }

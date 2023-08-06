@@ -1,4 +1,4 @@
-use clap::{App, Arg, ArgMatches};
+use clap::{App, Arg, ArgMatches, SubCommand};
 
 // FIXME: This file is hated by rustfmt and I don't understand why
 
@@ -13,6 +13,25 @@ If you encounter a reproducible issue, \
                      please report it in our issue tracker (https://git.irde.st/we/irdest) \
                      or our mailing list: https://lists.irde.st/archives/list/community@lists.irde.st")
         .max_term_width(120)
+        .subcommand(
+            SubCommand::with_name("generate")
+                .about("Pre-generate a ratmand configuration and apply changes")
+                .arg(
+                    Arg::with_name("CONFIG_PATCH")
+                        .long("patch")
+                        .short("p")
+                        .takes_value(true)
+                        .multiple(true)
+                        .help("Apply a patch attribute to the configuration.  For example ratmand/accept-unknown-peers=true")
+                )
+                .arg(
+                    Arg::with_name("ADD_PEER")
+                        .long("add-peer")
+                        .takes_value(true)
+                        .multiple(true)
+                        .help("Add a single peer to the configuration")
+                )
+        )
         .arg(
             Arg::with_name("VERBOSITY")
                 .takes_value(true)

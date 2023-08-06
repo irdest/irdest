@@ -29,11 +29,11 @@ settings "ratmand" {
 
     // This section of the configuration is used to tell ratmand about some initial peers.
     // The format is as follows: <driver>:<hostname/ip address>:[<port>].  The port may be omitted,
-    // if the default (9000) is used.  As an example, we have included two public test servers,
+    // if the default (5860) is used.  As an example, we have included two public test servers,
     // that are run by Irdest developers.
     peers {
-        // - "inet:hyperion.kookie.space:9000"
-        // - "inet:hub.irde.st:9000"
+        // - "inet:hyperion.kookie.space:5860"
+        // - "inet:hub.irde.st:5860"
     }
 
     // Alternatively/ Additionally you can include a list of peers in an external file
