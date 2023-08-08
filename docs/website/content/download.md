@@ -37,5 +37,5 @@ available you can install Irdest/ Ratman via the stand-alone Irdest
 bundle.  The bundle includes all major Irdest applications, an
 installer, and a copy of the user manual.
 
-- Linux [x86_64 bundle](https://git.irde.st/we/irdest/-/jobs/artifacts/ratman-0.4.0/raw/ratman-bundle-x86_64.tar.gz?job=bundle-ratman)!
-- Linux [aarch64 bundle](https://git.irde.st/we/irdest/-/jobs/artifacts/ratman-0.4.0/raw/ratman-bundle-aarch64.tar.gz?job=bundle-ratman-aarch64)
+- Linux [x86_64 bundle](https://git.irde.st/we/irdest/-/jobs/artifacts/ratman-0.5.0/raw/ratman-bundle-x86_64.tar.gz?job=bundle-ratman)!
+- Linux [aarch64 bundle](https://git.irde.st/we/irdest/-/jobs/artifacts/ratman-0.5.0/raw/ratman-bundle-aarch64.tar.gz?job=bundle-ratman-aarch64)
