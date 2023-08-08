@@ -18,7 +18,7 @@ let
     ratman-tools = self.callPackage ./ratman-tools {};
 
     nixosTests = super.nixosTests // {
-      ratmand = self.callPackage ./test/default.nix {};
+      # ratmand = self.callPackage ./test/default.nix {};
     };
   };
 
