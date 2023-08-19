@@ -21,6 +21,8 @@ daemon = [ "nix" ]
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+bincode = "1.0"
+flate2 = "1.0"
 
 async-trait = "0.1"
 async-std = { version = "1.0", features = ["attributes"] }
@@ -33,6 +35,7 @@ thiserror = "1.0"
 tracing = "0.1"
 tracing-subscriber = "0.2"
 
+ed25519-dalek = "1.0.0"
 blake2 = "0.9.0"
 hex = "0.4"
 rand = "0.7"
@@ -44,8 +47,6 @@ nix = { version = "0.23", optional = true }
 
 [dev-dependencies]
 serde_json = "1.0"
-bincode = "1.2"
-
 
 [build-dependencies]
 protoc-rust = { version = "2.19", optional = true }

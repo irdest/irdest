@@ -132,6 +132,12 @@ impl Id {
         &self.0
     }
 
+    /// Copy the contents out as a slice
+    #[inline]
+    pub fn slice(&self) -> [u8; ID_LEN] {
+        self.0
+    }
+
     /// Create an identity using a digest function
     ///
     /// This allows you to pass arbitrary length data which will
@@ -158,7 +164,20 @@ impl Id {
         use rand::RngCore;
         let mut rng = rand::thread_rng();
         let mut buf = [0; ID_LEN];
-        rng.fill_bytes(&mut buf);
+
+        loop {
+            // IDs are not allowed to have ZERO bytes because
+            // otherwise a whole bunch of crap breaks elsewhere.
+            rng.fill_bytes(&mut buf);
+
+            // If we can't find a ZERO byte, we break from the loop
+            if buf.iter().find(|x| *x == &0).is_none() {
+                break;
+            }
+
+            eprintln!("ID generation failed, retrying...");
+        }
+
         Self(buf)
     }
 

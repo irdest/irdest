@@ -60,6 +60,12 @@ impl Address {
     pub fn as_bytes(&self) -> &[u8] {
         self.0.as_bytes()
     }
+
+    /// Copy the contents out as a slice
+    #[inline]
+    pub fn slice(&self) -> [u8; ID_LEN] {
+        self.0.slice()
+    }
 }
 
 /// Implement RAW `From` binary array

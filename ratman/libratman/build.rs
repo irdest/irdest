@@ -26,6 +26,7 @@ fn main() {
         .out_dir(out_path)
         .input("proto/message.proto")
         .input("proto/api.proto")
+        .input("proto/frame.proto")
         .run()
         .expect("Failed to compile protobuf schemas!");
 }

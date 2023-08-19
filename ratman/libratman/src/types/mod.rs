@@ -14,6 +14,7 @@ pub mod api;
 
 mod error;
 mod frame;
+mod frames;
 mod identifiers;
 mod message;
 mod seq;

@@ -310,24 +310,26 @@ For an incoming `LinkLeapRequest` a router MUST spawn a `LeapFrameCollector`
 
 ## Appendix A: MREP Message specification
 
-This section of the specification outlines the way that MREP container messages are encoded.
+This section of the specification outlines the way that MREP container messages are encoded.  Any optional fields that are not present in a particular structure MUST be replaced with a NULL byte.
 
 The basic container type of any message in an Irdest network is a delivery frame, which has the following structure:
 
 ```rust
-Frame {
-  modes: [u8; 2],
+CarrierFrame {
+  version: u8,
+  modes: u16,
   recipient: [u8; 32] (optional),
   sender: [u8; 32],
   seq_id: [u8; 16] (optional),
   signature: [u8; 32] (optional),
   pl_size: u16,
-  payload: &[u8]
+  payload: [u8, pl_size]
 }
 ```
 
 This message structure is **byte aligned**.
 
+- `version` :: indicate which version of the carrier frame format should be parsed.  Currently only the value `0x1` is supported
 - `modes` :: a bitfield that specifies what type of content is encoded into the payload
 - `recipient` :: (Optional) recipient address key.  May be replaced with a single zero byte if the frame is not addressed (see below).
 - `sender` :: mandatory sender address key

@@ -18,7 +18,6 @@ build-ratmand-static:
   stage: build
   needs: [ build-ratman-dashboard ]
   script:
-    - whoami
     - nix-env -iA cachix -f https://cachix.org/api/v1/install
     - cachix use irdest -O ~/.config/nix
     - echo "trusted-public-keys = $CACHE_PUBKEYS" >> ~/.config/nix/nix.conf
