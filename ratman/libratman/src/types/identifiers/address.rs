@@ -23,6 +23,11 @@ impl Display for Address {
 }
 
 impl Address {
+    /// Peel an address down to a simple Id
+    pub fn peel(self) -> Id {
+        self.0
+    }
+
     /// Expand a piece of input into an address
     ///
     /// Currently this only discards the private key section

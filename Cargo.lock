@@ -2145,6 +2145,7 @@ dependencies = [
  "flate2",
  "hex",
  "nix 0.23.2",
+ "nom",
  "prometheus-client",
  "protobuf",
  "protoc-rust",

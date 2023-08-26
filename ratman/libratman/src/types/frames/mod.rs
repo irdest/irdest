@@ -2,6 +2,7 @@
 
 mod bincode_frame;
 mod hand_frame;
+mod nom;
 
 use crate::Result;
 use byteorder::{BigEndian, ByteOrder};

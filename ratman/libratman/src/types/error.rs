@@ -24,9 +24,12 @@ pub type Result<T> = std::result::Result<T, RatmanError>;
 pub enum RatmanError {
     #[error("an i/o error: {0}")]
     Io(#[from] io::Error),
+    // TODO: rename to Protobuf
     #[cfg(feature = "proto")]
     #[error("a base encoding error: {0}")]
     Proto(#[from] protobuf::ProtobufError),
+    #[error("a frame parsing error: {0}")]
+    Encoding(#[from] self::EncodingError),
     #[error("a json encoding error: {0}")]
     Json(#[from] serde_json::error::Error),
     #[cfg(feature = "client")]
@@ -63,4 +66,18 @@ impl From<RatmanError> for io::Error {
 pub enum NonfatalError {
     #[error("ratman is running ephemaral mode: no data will be persisted to disk!")]
     IsEphemeral,
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum EncodingError {
+    #[error("structure had invalid version number {0}")]
+    InvalidVersion(u8),
+    #[error("incoming stream could not be parsed because {0}")]
+    Parsing(String),
+}
+
+impl<T: std::fmt::Debug> From<nom::Err<T>> for EncodingError {
+    fn from(nom: nom::Err<T>) -> Self {
+        Self::Parsing(format!("{}", nom))
+    }
 }
