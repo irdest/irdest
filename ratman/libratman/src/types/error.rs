@@ -22,6 +22,8 @@ pub type Result<T> = std::result::Result<T, RatmanError>;
 // and those that are not?
 #[derive(Debug, thiserror::Error)]
 pub enum RatmanError {
+    #[error("a non-fatal error {0}")]
+    Nonfatal(#[from] self::NonfatalError),
     #[error("an i/o error: {0}")]
     Io(#[from] io::Error),
     // TODO: rename to Protobuf
@@ -66,6 +68,8 @@ impl From<RatmanError> for io::Error {
 pub enum NonfatalError {
     #[error("ratman is running ephemaral mode: no data will be persisted to disk!")]
     IsEphemeral,
+    #[error("the current MTU of a netmod channel is too small to fit the desired frame")]
+    MtuTooSmallForFrame,
 }
 
 #[derive(Debug, thiserror::Error)]

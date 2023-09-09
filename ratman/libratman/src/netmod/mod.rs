@@ -20,7 +20,7 @@
 //! hashes are entered into the sequence ID `next` sequentially.  The
 //! following diagram explains the concept further.
 //!
-//! ```norun
+//! ```text
 //! |--------------|        |--------------|        |--------------|
 //! |  Frame #1    |        |  Frame #2    |        |  Frame #2    |
 //! | next: f4aa   | ------ | next: bb61   | ------ | next: NONE   |
