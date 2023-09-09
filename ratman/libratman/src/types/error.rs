@@ -78,6 +78,11 @@ pub enum EncodingError {
     InvalidVersion(u8),
     #[error("incoming stream could not be parsed because {0}")]
     Parsing(String),
+    #[error(
+        "provided frame is too large to fit into the {} size envelope: {0}",
+        core::u16::MAX
+    )]
+    FrameTooLarge(usize),
 }
 
 impl<T: std::fmt::Debug> From<nom::Err<T>> for EncodingError {

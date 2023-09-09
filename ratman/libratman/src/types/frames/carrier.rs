@@ -168,6 +168,12 @@ impl FrameParser for CarrierFrameV1 {
 
 impl FrameGenerator for CarrierFrameV1 {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        self.modes.generate(buf)?;
+        self.recipient.generate(buf)?;
+        self.sender.generate(buf)?;
+        self.seq_id.generate(buf)?;
+        self.signature.generate(buf)?;
+        self.payload.generate(buf)?;
         Ok(())
     }
 }
@@ -175,6 +181,17 @@ impl FrameGenerator for CarrierFrameV1 {
 impl From<CarrierFrameV1> for CarrierFrame {
     fn from(inner: CarrierFrameV1) -> Self {
         Self::V1(inner)
+    }
+}
+
+impl FrameGenerator for CarrierFrame {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        match self {
+            Self::V1(inner) => {
+                buf.push(1);
+                inner.generate(buf)
+            }
+        }
     }
 }
 
