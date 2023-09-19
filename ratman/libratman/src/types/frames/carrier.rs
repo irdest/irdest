@@ -54,6 +54,17 @@ impl FrameParser for CarrierFrame {
     }
 }
 
+impl FrameGenerator for CarrierFrame {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        match self {
+            Self::V1(inner) => {
+                buf.push(1);
+                inner.generate(buf)
+            }
+        }
+    }
+}
+
 /// Carrier frame format
 #[derive(Clone, Debug, PartialEq)]
 pub struct CarrierFrameV1 {
@@ -197,17 +208,6 @@ impl FrameGenerator for CarrierFrameV1 {
 impl From<CarrierFrameV1> for CarrierFrame {
     fn from(inner: CarrierFrameV1) -> Self {
         Self::V1(inner)
-    }
-}
-
-impl FrameGenerator for CarrierFrame {
-    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
-        match self {
-            Self::V1(inner) => {
-                buf.push(1);
-                inner.generate(buf)
-            }
-        }
     }
 }
 

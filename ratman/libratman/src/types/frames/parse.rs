@@ -42,6 +42,12 @@ pub fn maybe_address(input: &[u8]) -> IResult<&[u8], Option<Address>> {
     }
 }
 
+/// Take a single byte
+pub fn take_byte(input: &[u8]) -> IResult<&[u8], u8> {
+    let (input, byte) = take(1 as usize)(input)?;
+    Ok((input, byte[0]))
+}
+
 /// Peek one byte and then maybe take an Id
 pub fn maybe_id(input: &[u8]) -> IResult<&[u8], Option<Id>> {
     maybe_address(input).map(|(i, a)| (i, a.map(|a| a.peel())))

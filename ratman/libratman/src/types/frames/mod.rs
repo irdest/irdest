@@ -3,6 +3,7 @@
 mod announce;
 mod carrier;
 mod generate;
+mod manifest;
 mod parse;
 
 ////// Frame type exports
