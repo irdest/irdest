@@ -1,4 +1,4 @@
-use crate::{client::RatmanIpc, types::Address};
+use crate::client::RatmanIpc;
 
 /// This test is horrible and a bad idea but whatever
 /// also you need to kill the daemon(kill process) after the test

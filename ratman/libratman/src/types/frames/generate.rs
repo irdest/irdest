@@ -5,6 +5,7 @@ use crate::{
     RatmanError, Result,
 };
 use byteorder::{BigEndian, ByteOrder};
+use chrono::{DateTime, Utc};
 
 /// A utility trait that represents a serialisable frame entity
 ///
@@ -21,6 +22,13 @@ fn u16_to_big_endian(val: u16) -> [u8; 2] {
     v
 }
 
+#[test]
+fn test_u16_to_big_endian() {
+    let val: u16 = 1312;
+    let slice = u16_to_big_endian(val);
+    assert_eq!([5, 32], slice);
+}
+
 impl FrameGenerator for u16 {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         let slice = u16_to_big_endian(self);
@@ -34,6 +42,14 @@ impl FrameGenerator for [u8; 2] {
         buf.push(self[1]);
         Ok(())
     }
+}
+
+#[test]
+fn test_slice_generate() {
+    let val: u16 = 1312;
+    let mut buf = vec![];
+    val.generate(&mut buf);
+    assert_eq!(buf.as_slice(), [5, 32]);
 }
 
 impl FrameGenerator for Id {
@@ -77,7 +93,7 @@ impl FrameGenerator for Option<Address> {
 impl FrameGenerator for Vec<u8> {
     fn generate(mut self, buf: &mut Vec<u8>) -> Result<()> {
         // First we push the length of the vector as a u16, then the vector itself
-        let length: u16 = buf
+        let length: u16 = self
             .len()
             .try_into()
             .map_err(|_| EncodingError::FrameTooLarge(buf.len()))?;
@@ -86,4 +102,22 @@ impl FrameGenerator for Vec<u8> {
         buf.append(&mut self);
         Ok(())
     }
+}
+
+impl FrameGenerator for DateTime<Utc> {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        let utc_string = self.to_rfc3339();
+        buf.extend_from_slice(utc_string.as_bytes());
+        Ok(())
+    }
+}
+
+#[test]
+fn vector_encode_decode() {
+    let v = super::random_payload(32);
+    let mut buf = vec![];
+    v.clone().generate(&mut buf);
+
+    assert_eq!(buf.len(), v.len() + 2);
+    assert_eq!(buf[0..=1], u16_to_big_endian(v.len() as u16));
 }

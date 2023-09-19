@@ -165,6 +165,11 @@ impl Id {
         let mut rng = rand::thread_rng();
         let mut buf = [0; ID_LEN];
 
+        // TODO: replace this with an async generator which always has
+        // SOME IDs ready to use and only runs occasionally to re-fill
+        // a buffer.  That way we can rely on quick ID access without
+        // random latency spikes if we end up generating a few IDs
+        // that aren't suitble for being used as IDs.
         loop {
             // IDs are not allowed to have ZERO bytes because
             // otherwise a whole bunch of crap breaks elsewhere.
@@ -175,7 +180,7 @@ impl Id {
                 break;
             }
 
-            eprintln!("ID generation failed, retrying...");
+            trace!("ID generation failed, retrying...");
         }
 
         Self(buf)

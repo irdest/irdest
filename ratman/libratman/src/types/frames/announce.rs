@@ -11,6 +11,22 @@ use byteorder::{BigEndian, ByteOrder};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug)]
+pub enum AnnounceFrame {
+    V1(AnnounceFrameV1),
+}
+
+impl FrameGenerator for AnnounceFrame {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        match self {
+            Self::V1(v1) => {
+                buf.push(1); // Prepend the version
+                v1.generate(buf)
+            }
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct AnnounceFrameV1 {
     /// Mandatory origin announce data
     ///
@@ -36,9 +52,25 @@ pub struct AnnounceFrameV1 {
     route: RouteDataV1,
 }
 
+impl FrameGenerator for AnnounceFrameV1 {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        self.origin.generate(buf)?;
+        self.origin_signature.generate(buf)?;
+        self.route.generate(buf)?;
+        Ok(())
+    }
+}
+
 #[derive(Debug)]
 pub struct OriginDataV1 {
     timestamp: DateTime<Utc>,
+}
+
+impl FrameGenerator for OriginDataV1 {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        self.timestamp.generate(buf)?;
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -53,4 +85,12 @@ pub struct RouteDataV1 {
     pub mtu: u16,
     /// Currently lowest size_hint encountered by this announcement
     pub size_hint: u16,
+}
+
+impl FrameGenerator for RouteDataV1 {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        self.mtu.generate(buf)?;
+        self.size_hint.generate(buf)?;
+        Ok(())
+    }
 }

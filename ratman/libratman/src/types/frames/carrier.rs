@@ -55,7 +55,7 @@ impl FrameParser for CarrierFrame {
 }
 
 /// Carrier frame format
-#[derive(Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct CarrierFrameV1 {
     /// Indicate the frame type enclosed by this carrier
     pub modes: u16,
@@ -104,6 +104,22 @@ impl CarrierFrameV1 {
             signature,
             payload: vec![],
         }
+    }
+
+    /// A utility function to fill in the payload field for a frame
+    ///
+    /// It first checks what the maximum size of the payload for the
+    /// given MTU is allowed to be, and fails if it can't
+    /// theoretically fit the metadata section.  Then it checks if
+    /// there's enough space available for the desired data chunk.
+    pub fn set_payload_checked(&mut self, mtu: u16, payload: Vec<u8>) -> Result<()> {
+        if payload.len() > self.get_max_size(mtu)? as usize {
+            // TODO: is this the right error type for this scenario?
+            return Err(EncodingError::FrameTooLarge(payload.len()).into());
+        }
+
+        self.payload = payload;
+        Ok(())
     }
 
     /// Calculate the size of the metadata head for this frame type
@@ -217,4 +233,27 @@ fn v1_data_frame_meta_size() {
     // 2 bytes of modes, 32 bytes each for the recipient, sender, and
     // seq_id and finally 1 zero-byte for the signature -> 99
     assert_eq!(f.get_meta_size(), 99);
+}
+
+/// Ensure that encoding and decoding is possible from and to the same
+/// binary representation.  This function constructs a fake carrier
+/// frame which is not used in normally, but which tests every field
+#[test]
+#[allow(deprecated)]
+fn v1_empty_carrier() {
+    let mut f = CarrierFrameV1::pre_alloc(
+        1312,
+        Some(Address::random()),
+        Address::random(),
+        Some(Id::random()),
+        Some(Id::random()),
+    );
+    f.set_payload_checked(1300, super::random_payload(1024));
+
+    let mut encoded = vec![];
+    f.clone().generate(&mut encoded).unwrap();
+
+    let (_, decoded) = CarrierFrameV1::parse(&encoded).unwrap();
+
+    assert_eq!(f, decoded);
 }
