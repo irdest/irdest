@@ -5,7 +5,7 @@ use crate::{
     RatmanError, Result,
 };
 use byteorder::{BigEndian, ByteOrder};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, TimeZone, Utc};
 
 /// A utility trait that represents a serialisable frame entity
 ///
@@ -38,8 +38,7 @@ impl FrameGenerator for u16 {
 
 impl FrameGenerator for [u8; 2] {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
-        buf.push(self[0]);
-        buf.push(self[1]);
+        buf.extend_from_slice(&self);
         Ok(())
     }
 }
@@ -104,12 +103,20 @@ impl FrameGenerator for Vec<u8> {
     }
 }
 
-impl FrameGenerator for DateTime<Utc> {
+impl<Tz: TimeZone> FrameGenerator for DateTime<Tz> {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         let utc_string = self.to_rfc3339();
         buf.extend_from_slice(utc_string.as_bytes());
         Ok(())
     }
+}
+
+#[test]
+fn test_datetime_generate() {
+    let dt = DateTime::parse_from_rfc3339("1993-06-09T21:34:22+02:00").unwrap();
+    let mut buf = vec![];
+    dt.generate(&mut buf).unwrap();
+    assert_eq!(buf.len(), 25);
 }
 
 #[test]

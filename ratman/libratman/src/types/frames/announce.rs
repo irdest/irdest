@@ -15,6 +15,25 @@ pub enum AnnounceFrame {
     V1(AnnounceFrameV1),
 }
 
+impl FrameParser for AnnounceFrame {
+    type Output = Result<Self>;
+
+    fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
+        let (input, v) = parse::take(1 as usize)(input)?;
+
+        match v[0] {
+            1 => {
+                let (input, inner) = AnnounceFrameV1::parse(input)?;
+                Ok((input, inner.map(|inner| AnnounceFrame::V1(inner))))
+            }
+            unknown_version => Ok((
+                input,
+                Err(EncodingError::InvalidVersion(unknown_version).into()),
+            )),
+        }
+    }
+}
+
 impl FrameGenerator for AnnounceFrame {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         match self {
@@ -52,6 +71,25 @@ pub struct AnnounceFrameV1 {
     route: RouteDataV1,
 }
 
+impl FrameParser for AnnounceFrameV1 {
+    type Output = Result<Self>;
+
+    fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
+        let (input, origin) = OriginDataV1::parse(input)?;
+        let (input, origin_signature) = parse::take_id(input)?;
+        let (input, route) = RouteDataV1::parse(input)?;
+
+        Ok((
+            input,
+            origin.map(|origin| Self {
+                origin,
+                origin_signature,
+                route,
+            }),
+        ))
+    }
+}
+
 impl FrameGenerator for AnnounceFrameV1 {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         self.origin.generate(buf)?;
@@ -64,6 +102,15 @@ impl FrameGenerator for AnnounceFrameV1 {
 #[derive(Debug)]
 pub struct OriginDataV1 {
     timestamp: DateTime<Utc>,
+}
+
+impl FrameParser for OriginDataV1 {
+    type Output = Result<Self>;
+
+    fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
+        let (input, timestamp) = parse::take_datetime(input)?;
+        Ok((input, timestamp.map(|timestamp| Self { timestamp })))
+    }
 }
 
 impl FrameGenerator for OriginDataV1 {
@@ -85,6 +132,16 @@ pub struct RouteDataV1 {
     pub mtu: u16,
     /// Currently lowest size_hint encountered by this announcement
     pub size_hint: u16,
+}
+
+impl FrameParser for RouteDataV1 {
+    type Output = Self;
+
+    fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
+        let (input, mtu) = parse::take_u16(input)?;
+        let (input, size_hint) = parse::take_u16(input)?;
+        Ok((input, Self { mtu, size_hint }))
+    }
 }
 
 impl FrameGenerator for RouteDataV1 {
