@@ -11,7 +11,7 @@ license = "AGPL-3.0-or-later"
 
 [dependencies]
 task-notify = { version = "1.0", path = "../../utils/task-notify" }
-libratman = { version = "0.5", path = "../../ratman/libratman", features = ["netmod"], package = "ratman" }
+libratman = { version = "0.5", path = "../../ratman/libratman", features = ["netmod"] }
 
 async-std = { version = "1.0", features = ["unstable"] }
 async-trait = "0.1"
