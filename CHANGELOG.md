@@ -7,7 +7,7 @@ sections should follow the order `Releases`, `Added`, `Changed`,
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
-## Unreleased
+## 0.5.0
 
 This release brings many small changes together that have accumulated
 over the last year or so.  Importantly, Irdest is once again grant
@@ -19,7 +19,7 @@ consists of lots of components, each with their own release versions.
 
 ### Releases
 
-- Ratman (ratmand) `0.5.0`
+- Ratman daemon (ratmand) `0.5.0`
 - libratman `0.5.0`
 - Irdest mblog `0.1.0`
 
@@ -27,8 +27,11 @@ consists of lots of components, each with their own release versions.
 
 - LoRa connection support via `netmod-lora`.  See the user manual on
   how to set up a LoRa modem.
-- Managed WiFi connection support via `netmod-raw` (supports Linux/
+- Managed WiFi connection support via `netmod-datalink` (supports Linux/
   NetworkManager)
+- `ratmand generate` command to pre-generate a ratmand configuration.
+  Overrides can be applied with the `--patch` (for simple key=value
+  configuration settings) and `--add-peer` (for peers) arguments.
 
 ### Changed
 
@@ -40,10 +43,9 @@ consists of lots of components, each with their own release versions.
 - Many internal and external structural changes that aren't directly
   reflected in the user experience, but will make development and
   maintenance easier and faster in the future
-  - Importantly the developer facing crates `ratman-client`,
-    `ratman-netmod`, `ratman-types`, etc have been consolidated into
-    `libratman` -- `ratman` on crates.io, which was previously the
-    daemon.
+  - The developer facing crates `ratman-client`, `ratman-netmod`,
+    `ratman-types`, etc have been consolidated into `libratman` --
+    `ratman` on crates.io, which was previously the daemon.
   - The daemon crate is now called `ratmand` and no longer available
     on crates.io.
 
@@ -58,6 +60,11 @@ consists of lots of components, each with their own release versions.
 - Cryptography was changed from libsodium to native Rust
   (dalek-cryptography)
 
+### Known bugs
+
+- Due to [kdl issue #65](https://github.com/kdl-org/kdl-rs/issues/65)
+  insertions made to the `peers` block of the ratmand configuration
+  produce wrong formatting for the first entry.
 
 ## 0.4.0 (2022-04-16)
 

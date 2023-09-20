@@ -1948,14 +1948,14 @@ name = "irdest-echo"
 version = "0.1.0"
 dependencies = [
  "async-std",
- "ratman",
+ "libratman",
 ]
 
 [[package]]
 name = "irdest-firmware-util"
 version = "0.1.0"
 dependencies = [
- "ratman",
+ "libratman",
 ]
 
 [[package]]
@@ -1980,10 +1980,10 @@ dependencies = [
  "clap 3.2.25",
  "directories",
  "gtk4",
+ "libratman",
  "once_cell",
  "protobuf",
  "protoc-rust",
- "ratman",
  "sled",
  "tempdir",
 ]
@@ -1997,7 +1997,7 @@ dependencies = [
  "clap 3.2.25",
  "directories",
  "libc",
- "ratman",
+ "libratman",
  "ratmand",
  "serde",
  "serde_json",
@@ -2097,6 +2097,32 @@ name = "libm"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fc7aa29613bd6a620df431842069224d8bc9011086b1db4c0e0cd47fa03ec9a"
+
+[[package]]
+name = "libratman"
+version = "0.5.0"
+dependencies = [
+ "async-std",
+ "async-trait",
+ "bincode",
+ "blake2 0.9.2",
+ "byteorder",
+ "cfg-if 1.0.0",
+ "chrono",
+ "hex",
+ "nix 0.23.2",
+ "prometheus-client",
+ "protobuf",
+ "protoc-rust",
+ "rand 0.7.3",
+ "regex",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tracing",
+ "tracing-subscriber",
+ "twox-hash",
+]
 
 [[package]]
 name = "libsqlite3-sys"
@@ -2257,10 +2283,10 @@ dependencies = [
  "async-trait",
  "bincode",
  "libc",
+ "libratman",
  "nix 0.25.1",
  "pnet",
  "pnet_datalink",
- "ratman",
  "serde",
  "task-notify",
  "tracing",
@@ -2276,7 +2302,7 @@ dependencies = [
  "async-std",
  "async-trait",
  "bincode",
- "ratman",
+ "libratman",
 ]
 
 [[package]]
@@ -2287,7 +2313,7 @@ dependencies = [
  "async-trait",
  "bincode",
  "byteorder",
- "ratman",
+ "libratman",
  "serde",
  "thiserror",
  "tracing",
@@ -2302,8 +2328,8 @@ dependencies = [
  "async-trait",
  "bincode",
  "libc",
+ "libratman",
  "pnet_datalink",
- "ratman",
  "serde",
  "task-notify",
  "tracing",
@@ -2316,7 +2342,7 @@ dependencies = [
  "async-std",
  "async-trait",
  "irdest-firmware-util",
- "ratman",
+ "libratman",
  "serde",
  "serialport",
  "task-notify",
@@ -2329,7 +2355,7 @@ version = "0.4.0"
 dependencies = [
  "async-std",
  "async-trait",
- "ratman",
+ "libratman",
 ]
 
 [[package]]
@@ -2338,7 +2364,7 @@ version = "0.2.0"
 dependencies = [
  "async-std",
  "async-trait",
- "ratman",
+ "libratman",
 ]
 
 [[package]]
@@ -2974,40 +3000,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "ratman"
-version = "0.5.0"
-dependencies = [
- "async-std",
- "async-trait",
- "bincode",
- "blake2 0.9.2",
- "byteorder",
- "cfg-if 1.0.0",
- "chrono",
- "hex",
- "nix 0.23.2",
- "prometheus-client",
- "protobuf",
- "protoc-rust",
- "rand 0.7.3",
- "regex",
- "serde",
- "serde_json",
- "thiserror",
- "tracing",
- "tracing-subscriber",
- "twox-hash",
-]
-
-[[package]]
 name = "ratman-tools"
 version = "0.5.0"
 dependencies = [
  "async-std",
  "clap 2.34.0",
  "directories",
+ "libratman",
  "nix 0.23.2",
- "ratman",
  "serde",
  "serde_json",
 ]
@@ -3031,6 +3031,7 @@ dependencies = [
  "igd",
  "ipnetwork",
  "kdl",
+ "libratman",
  "netmod-datalink",
  "netmod-inet",
  "netmod-lan",
@@ -3042,7 +3043,6 @@ dependencies = [
  "prometheus-client",
  "protobuf",
  "rand 0.7.3",
- "ratman",
  "rust-embed",
  "serde",
  "serde_json",
@@ -4172,7 +4172,7 @@ version = "0.1.0"
 dependencies = [
  "async-std",
  "bincode",
- "ratman",
+ "libratman",
  "serde",
 ]
 

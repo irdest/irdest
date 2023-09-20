@@ -4,6 +4,7 @@
 - [Social](./social/index.md)
   - [Contributions](./social/contributions.md)
   - [Code of Conduct](./social/code-of-conduct.md)
+  - [Cutting a release](./social/cut-a-release.md)
 - [Technical overview](./technical/index.md)
   - [Ratman SDK](./technical/ratman/client.md)
   - [Hacking](./technical/hacking.md)

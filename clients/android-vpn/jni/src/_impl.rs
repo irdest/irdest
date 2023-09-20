@@ -4,10 +4,9 @@ use jni::objects::{JClass, JString};
 use jni::sys::jstring;
 use jni::JNIEnv;
 use log::{debug, info, Level};
-use ratman::daemon;
 use std::error::Error;
 
-use netmod_mem::MemMod;
+// use netmod_mem::MemMod;
 // use ratman::Router; // FIXME
 
 #[allow(non_snake_case)]
@@ -23,18 +22,20 @@ pub extern "C" fn Java_org_irdest_IrdestVPN_Ratmand_receiveLog(env: JNIEnv, _: J
 #[allow(non_snake_case)]
 #[no_mangle]
 pub extern "C" fn Java_org_irdest_IrdestVPN_RatmandRunnable_runRouter(env: JNIEnv, _: JClass) {
-    let mut cfg = daemon::config::Config::new();
-    cfg.accept_unknown_peers = true;
-    info!("@android-dev#: config => {:?}", cfg);
+    // let mut cfg = daemon::config::Config::new();
+    // cfg.accept_unknown_peers = true;
+    // info!("@android-dev#: config => {:?}", cfg);
+
+    // FIXME !!!
 
     // Run ratmand.
-    async_std::task::block_on(ratman::daemon::startup::run_app(cfg)).unwrap();
+    // async_std::task::block_on(ratmand::start_with_configuration(cfg)).unwrap();
 }
 
 // Run ratman for the simple android test.
 async fn router_testing() -> Result<(), Box<dyn Error>> {
     // Build a simple channel in memory
-    let mm1 = MemMod::new();
+    // let mm1 = MemMod::new();
 
     // FIXME !!!
 

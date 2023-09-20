@@ -18,8 +18,10 @@ build-ratmand-static:
   stage: build
   needs: [ build-ratman-dashboard ]
   script:
+    - whoami
     - nix-env -iA cachix -f https://cachix.org/api/v1/install
     - cachix use irdest -O ~/.config/nix
+    - echo "trusted-public-keys = $CACHE_PUBKEYS" >> ~/.config/nix/nix.conf
     - nix-build nix -A pkgsStatic.buildPackages.rustc.all -A pkgsStatic.buildPackages.cargo -o toolchain
     - cachix push irdest ./toolchain* || echo "couldn't push"
     - nix-build nix -A pkgsStatic.ratmand -o result-ratmand
@@ -34,6 +36,7 @@ build-ratmand-static-aarch64:
   script:
     - nix-env -iA cachix -f https://cachix.org/api/v1/install
     - cachix use irdest -O ~/.config/nix
+    - echo "trusted-public-keys = $CACHE_PUBKEYS" >> ~/.config/nix/nix.conf
     - nix-build nix -A pkgsCross.aarch64-multiplatform.pkgsStatic.stdenv -A pkgsCross.aarch64-multiplatform.pkgsStatic.buildPackages.rustc.all -A pkgsCross.aarch64-multiplatform.pkgsStatic.buildPackages.cargo -o toolchain
     - cachix push irdest ./toolchain* || echo "couldn't push"
     - nix-build nix -A pkgsCross.aarch64-multiplatform.pkgsStatic.ratmand -o result-ratmand
@@ -50,6 +53,7 @@ build-ratman-tools-static:
   script:
     - nix-env -iA cachix -f https://cachix.org/api/v1/install
     - cachix use irdest -O ~/.config/nix
+    - echo "trusted-public-keys = $CACHE_PUBKEYS" >> ~/.config/nix/nix.conf
     - nix-build nix -A pkgsStatic.buildPackages.rustc.all -A pkgsStatic.buildPackages.cargo -o toolchain
     - cachix push irdest ./toolchain* || echo "couldn't push"
     - nix-build nix -A pkgsStatic.ratman-tools -o result-ratman-tools
@@ -63,6 +67,7 @@ build-ratman-tools-static-aarch64:
   script:
     - nix-env -iA cachix -f https://cachix.org/api/v1/install
     - cachix use irdest -O ~/.config/nix
+    - echo "trusted-public-keys = $CACHE_PUBKEYS" >> ~/.config/nix/nix.conf
     - nix-build nix -A pkgsCross.aarch64-multiplatform.pkgsStatic.stdenv -A pkgsCross.aarch64-multiplatform.pkgsStatic.buildPackages.rustc.all -A pkgsCross.aarch64-multiplatform.pkgsStatic.buildPackages.cargo -o toolchain
     - cachix push irdest ./toolchain* || echo "couldn't push"
     - nix-build nix -A pkgsCross.aarch64-multiplatform.pkgsStatic.ratman-tools -o result-ratman-tools
@@ -78,7 +83,8 @@ build-irdest-proxy-static:
   stage: build
   script:
     - nix-env -iA cachix -f https://cachix.org/api/v1/install
-    - cachix use irdest
+    - cachix use irdest -O ~/.config/nix
+    - echo "trusted-public-keys = $CACHE_PUBKEYS" >> ~/.config/nix/nix.conf
     - nix-build nix -A pkgsStatic.buildPackages.rustc -A pkgsStatic.buildPackages.cargo -o toolchain
     - cachix push irdest ./toolchain* || echo "couldn't push"
     - nix-build nix -A pkgsStatic.irdest-proxy -o result-irdest-proxy
@@ -91,7 +97,8 @@ build-irdest-proxy-static-aarch64:
   stage: build
   script:
     - nix-env -iA cachix -f https://cachix.org/api/v1/install
-    - cachix use irdest
+    - cachix use irdest -O ~/.config/nix
+    - echo "trusted-public-keys = $CACHE_PUBKEYS" >> ~/.config/nix/nix.conf
     - nix-build nix -A pkgsCross.aarch64-multiplatform.pkgsStatic.stdenv -A pkgsCross.aarch64-multiplatform.pkgsStatic.buildPackages.rustc -A pkgsCross.aarch64-multiplatform.pkgsStatic.buildPackages.cargo -o toolchain
     - cachix push irdest ./toolchain* || echo "couldn't push"
     - nix-build nix -A pkgsCross.aarch64-multiplatform.pkgsStatic.irdest-proxy -o result-irdest-proxy
@@ -115,6 +122,7 @@ build-installer-static:
   script:
     - nix-env -iA cachix -f https://cachix.org/api/v1/install
     - cachix use irdest -O ~/.config/nix
+    - echo "trusted-public-keys = $CACHE_PUBKEYS" >> ~/.config/nix/nix.conf
     - nix-build nix -A pkgsStatic.buildPackages.rustc.all -A pkgsStatic.buildPackages.cargo -o toolchain
     - cachix push irdest ./toolchain* || echo "couldn't push"
     - nix-build nix -A pkgsStatic.irdest-installer -o result-installer
@@ -128,6 +136,7 @@ build-installer-static-aarch64:
   script:
     - nix-env -iA cachix -f https://cachix.org/api/v1/install
     - cachix use irdest -O ~/.config/nix
+    - echo "trusted-public-keys = $CACHE_PUBKEYS" >> ~/.config/nix/nix.conf
     - nix-build nix -A pkgsCross.aarch64-multiplatform.pkgsStatic.stdenv -A pkgsCross.aarch64-multiplatform.pkgsStatic.buildPackages.rustc.all -A pkgsCross.aarch64-multiplatform.pkgsStatic.buildPackages.cargo -o toolchain
     - cachix push irdest ./toolchain* || echo "couldn't push"
     - nix-build nix -A pkgsCross.aarch64-multiplatform.pkgsStatic.irdest-installer -o result-installer
