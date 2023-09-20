@@ -5,8 +5,9 @@
 
 //! Slices `Message` into a series of Frames
 
-use crate::core::Payload;
-use libratman::types::{Frame, Message, SeqBuilder};
+use crate::{context::RatmanContext, core::Payload};
+use async_eris::{BlockSize, MemoryStorage, ReadCapability};
+use libratman::types::{Frame, Message, Result, SeqBuilder};
 
 /// Slices messages into managable chunks
 // TODO: refactor this type to be a rolling window slicer based on a
@@ -41,30 +42,32 @@ pub(crate) struct BlockSlicer;
 impl BlockSlicer {
     #[allow(unused)]
     // Signature should be Vec<Block<BS>> with BS
-    pub(crate) async fn slice<const BS: usize>(router: &(), msg: Message) -> Vec<Vec<u8>> {
-        // let mut blocks = MemoryStorage::new();
+    pub(crate) async fn slice<const BS: usize>(
+        ctx: &RatmanContext,
+        msg: Message,
+    ) -> Result<(ReadCapability, MemoryStorage)> {
+        let mut blocks = MemoryStorage::new();
 
-        // let key = router
-        //     .keys
-        //     .diffie_hellman(
-        //         msg.sender,
-        //         msg.recipient.scope().expect(
-        //             "Can't encrypt message to
-        //     missing recipient",
-        //         ),
-        //     )
-        //     .await
-        //     .expect("Failed to perform diffie-hellman");
+        let key = ctx
+            .keys
+            .diffie_hellman(
+                msg.sender,
+                msg.recipient
+                    .scope()
+                    .expect("Can't encrypt message to missing recipient"),
+            )
+            .await
+            .expect("failed to perform diffie-hellman");
 
-        // async_eris::encode(
-        //     &mut msg.payload.as_slice(),
-        //     key.as_bytes(),
-        //     BlockSize::_1K,
-        //     &mut blocks,
-        // )
-        // .await
-        // .unwrap();
+        let manifest = async_eris::encode(
+            &mut msg.payload.as_slice(),
+            key.as_bytes(),
+            BlockSize::_1K,
+            &mut blocks,
+        )
+        .await
+        .expect("failed to encode block stream");
 
-        vec![]
+        Ok((manifest, blocks))
     }
 }
