@@ -155,6 +155,11 @@ impl Core {
         self.routes.delete(id).await
     }
 
+    // FIXME: this is basically just moving the hard-coded value somewhere else
+    pub(crate) fn get_route_mtu(&self, _recipient: Option<Address>) -> u16 {
+        1300
+    }
+
     /// Return all known addresses.  Most likely this function is less
     /// useful than either [`local_addresses`](Self::local_addresses)
     /// or [`remote_addresses`](Self::remote_addresses).

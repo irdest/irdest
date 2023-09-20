@@ -12,9 +12,11 @@ mod proto {
 #[cfg(feature = "proto")]
 pub mod api;
 
+// Export all the frame formats in their own module
+pub mod frames;
+
 mod error;
 mod frame;
-mod frames;
 mod identifiers;
 mod message;
 mod seq;

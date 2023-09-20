@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
+#![deprecated]
+
 use crate::types::{Address, Id, Recipient, SeqBuilder, SeqData, ID_LEN};
 use serde::{Deserialize, Serialize};
 

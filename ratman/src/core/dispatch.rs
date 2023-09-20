@@ -8,7 +8,7 @@
 
 use crate::{
     core::{Collector, DriverMap, EpTargetPair, RouteTable},
-    slicer::TransportSlicer,
+    dispatcher::slicer::TransportSlicer,
 };
 use async_std::{sync::Arc, task};
 use libratman::{
@@ -45,6 +45,9 @@ impl Dispatch {
         self.metrics.register(registry);
     }
 
+    // FIXME: this function MUST accept a stream from the new
+    // dispatcher module.  In fact, maybe we want to merge the two?
+    // Do we even need this low level abstraction anymore?
     pub(crate) async fn send_msg(&self, msg: Message) -> Result<()> {
         let r = msg.recipient.clone();
         trace!("dispatching message to recpient: {:?}", r);

@@ -145,7 +145,7 @@ use libratman::types::Address;
 
 #[test]
 fn queue_one() {
-    use crate::slicer::TransportSlicer;
+    use crate::dispatcher::slicer::TransportSlicer;
     use libratman::types::{Recipient, TimePair};
 
     let (sender, recipient, id) = (Address::random(), Address::random(), Id::random());
@@ -188,7 +188,7 @@ fn queue_one() {
 #[ignore]
 #[test]
 fn queue_many() {
-    use crate::slicer::TransportSlicer;
+    use crate::dispatcher::slicer::TransportSlicer;
     use libratman::types::{Recipient, TimePair};
 
     let (sender, recipient, id) = (Address::random(), Address::random(), Id::random());

@@ -54,6 +54,12 @@ fn decode_base32<const BS: usize>(s: &str) -> Result<[u8; BS]> {
 #[debug(fmt = "{}", "self")]
 pub struct BlockReference([u8; 32]);
 
+impl BlockReference {
+    pub fn as_slice(&self) -> &[u8] {
+        &self.0
+    }
+}
+
 impl TryFrom<&String> for BlockReference {
     type Error = Error;
     fn try_from(s: &String) -> Result<BlockReference> {
@@ -67,6 +73,12 @@ impl TryFrom<&String> for BlockReference {
 #[display(fmt = "{}", "display_base32(&self.0)")]
 #[debug(fmt = "{}", "self")]
 pub struct BlockKey([u8; 32]);
+
+impl BlockKey {
+    pub fn as_slice(&self) -> &[u8] {
+        &self.0
+    }
+}
 
 impl TryFrom<&String> for BlockKey {
     type Error = Error;

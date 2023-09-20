@@ -26,8 +26,8 @@ mod clock;
 mod context;
 mod core;
 mod crypto;
+mod dispatcher;
 mod protocol;
-mod slicer;
 mod storage;
 
 #[cfg(feature = "dashboard")]

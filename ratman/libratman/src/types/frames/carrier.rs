@@ -65,6 +65,35 @@ impl FrameGenerator for CarrierFrame {
     }
 }
 
+/// Block hash and a sequential counter to allow for re-ordering
+#[derive(Clone, Debug, PartialEq)]
+pub struct SequenceIdV1 {
+    pub hash: Id,
+    pub num: u8,
+}
+
+impl FrameParser for SequenceIdV1 {
+    type Output = Option<Self>;
+    fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
+        let (input, hash) = parse::maybe_id(input)?;
+        match hash {
+            Some(hash) => {
+                let (input, num) = parse::take_byte(input)?;
+                Ok((input, Some(Self { hash, num })))
+            }
+            None => Ok((input, None)),
+        }
+    }
+}
+
+impl FrameGenerator for SequenceIdV1 {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        self.hash.generate(buf)?;
+        buf.push(self.num);
+        Ok(())
+    }
+}
+
 /// Carrier frame format
 #[derive(Clone, Debug, PartialEq)]
 pub struct CarrierFrameV1 {
@@ -81,12 +110,16 @@ pub struct CarrierFrameV1 {
     pub sender: Address,
     /// Optional sequence ID
     ///
-    /// If this frame is in a series of frames that re-composes
-    /// into a larger message, this identifier is used to
-    /// re-assemble the original message stream.  If a frame is
-    /// not part of a message sequence, this field MAP be NULL
-    // TODO: 32-bytes for this might be totally overkill
-    pub seq_id: Option<Id>,
+    /// Any message that is too large to fit into a single carrier
+    /// frame will need to be sliced across multiple carriers.  For
+    /// each frame in the sequence, the same sequence ID hash MUST be
+    /// used.  Additionally this field contains a numeric counter that
+    /// can be used to re-order payloads on the recipient side, if
+    /// they have arrived out of order.
+    ///
+    /// This field is not cryptographicly validated, and as such the
+    /// payload encoding MUST be verified to ensure data integrity.
+    pub seq_id: Option<SequenceIdV1>,
     /// Optional signature field
     ///
     /// Some frame payloads have internal signature handling.  In
@@ -104,7 +137,7 @@ impl CarrierFrameV1 {
         modes: u16,
         recipient: Option<Address>,
         sender: Address,
-        seq_id: Option<Id>,
+        seq_id: Option<SequenceIdV1>,
         signature: Option<Id>,
     ) -> Self {
         Self {
@@ -142,7 +175,7 @@ impl CarrierFrameV1 {
         };
         let sender_size = core::mem::size_of_val(&self.sender);
         let seq_id_size = match self.seq_id {
-            Some(_) => 32,
+            Some(ref seq_id) => core::mem::size_of_val(seq_id),
             None => 1,
         };
         let signature_size = match self.signature {
@@ -173,7 +206,7 @@ impl FrameParser for CarrierFrameV1 {
         let (input, modes) = parse::take_u16(input)?;
         let (input, recipient) = parse::maybe_address(input)?;
         let (input, sender) = parse::take_address(input)?;
-        let (input, seq_id) = parse::maybe_id(input)?;
+        let (input, seq_id) = SequenceIdV1::parse(input)?;
         let (input, signature) = parse::maybe_id(input)?;
         let (input, payload_length) = parse::take_u16(input)?;
         let (input, payload) = parse::take(payload_length as usize)(input)?;
@@ -227,12 +260,16 @@ fn v1_data_frame_meta_size() {
         2,
         Some(Address::random()),
         Address::random(),
-        Some(Id::random()),
+        Some(SequenceIdV1 {
+            hash: Id::random(),
+            num: 123,
+        }),
         None,
     );
-    // 2 bytes of modes, 32 bytes each for the recipient, sender, and
-    // seq_id and finally 1 zero-byte for the signature -> 99
-    assert_eq!(f.get_meta_size(), 99);
+    // 2 bytes of modes, 32 bytes each for the recipient, sender, a
+    // 32-byte seq_id and 1-byte re-ordering counter and finally 1
+    // zero-byte for the signature -> 100
+    assert_eq!(f.get_meta_size(), 100);
 }
 
 /// Ensure that encoding and decoding is possible from and to the same
@@ -245,7 +282,10 @@ fn v1_empty_carrier() {
         1312,
         Some(Address::random()),
         Address::random(),
-        Some(Id::random()),
+        Some(SequenceIdV1 {
+            hash: Id::random(),
+            num: 123,
+        }),
         Some(Id::random()),
     );
     f.set_payload_checked(1300, super::random_payload(1024));

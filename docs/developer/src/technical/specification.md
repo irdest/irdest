@@ -127,31 +127,62 @@ Announcement {
 }
 ```
 
-The announcement structure itself does not need to contain the announced address, since it is itself contained in a delivery frame, which contains the sending address.
+The announcement structure itself does not need to contain the
+announced address, since it is itself contained in a carrier frame,
+which contains the sending address.
 
-Three metadata sections are used to communicate authenticity, reliability and scale of connections across a network.
+Three metadata sections are used to communicate authenticity,
+reliability and scale of connections across a network.
 
-Origin metadata is provided by the origin of the announcement, and *MUST* thus be signed (via the `origin_sign` field).  As per this specification it *MUST* contain a timestamp of when the announcement was generated.
+Origin metadata is provided by the origin of the announcement, and
+*MUST* thus be signed (via the `origin_sign` field).  As per this
+specification it *MUST* contain a timestamp of when the announcement
+was generated.
 
-Additional announcement origin metadata MAY be included by the originator in the `origin` section.  Routers *MUST* NOT strip this metadata, since it would break the authenticity verification for the announcement.  **However** announcements with origin metadata fields larger than 1024 bytes *MUST* be discarded.  This limit may be reduced in a future version of this specification.
+Additional announcement origin metadata MAY be included by the
+originator in the `origin` section.  Routers *MUST* NOT strip this
+metadata, since it would break the authenticity verification for the
+announcement.  **However** announcements with origin metadata fields
+larger than 1024 bytes *MUST* be discarded.  This limit may be reduced
+in a future version of this specification.
 
-Peer metadata is provided by the immediate peer that an announcement was propagated via.  Let's look at the following example.
+Peer metadata is provided by the immediate peer that an announcement
+was propagated via.  Let's look at the following example.
 
 ```
 A  ->  B  ->  C
 ```
 
-In the above example, router A is connected to router B, which is connected to both A and C, and router C, which is only connected to router B.  Messages can flow from A to C via B bidirectionally.
+In the above example, router A is connected to router B, which is
+connected to both A and C, and router C, which is only connected to
+router B.  Messages can flow from A to C via B bidirectionally.
 
-An announcement from A to B will contain origin metadata from A, as well as peer metadata from A.  However when B replicates the announcement to C, origin metadata will still be from A, but peer metadata from B.
+An announcement from A to B will contain origin metadata from A, as
+well as peer metadata from A.  However when B replicates the
+announcement to C, origin metadata will still be from A, but peer
+metadata from B.
 
-Peer metadata is used to provide additional data about a network address, which may not be generally relevant to the network and instead only spread for a single hop.  Peer metadata is signed by the router's address key. For every incoming announcement, routers *MUST* replace the previous peer metadata section with their own.  If no metadata is provided both the `peer` and `peer_sign` fields *MUST* be filled with zeros.
+Peer metadata is used to provide additional data about a network
+address, which may not be generally relevant to the network and
+instead only spread for a single hop.  Peer metadata is signed by the
+router's address key. For every incoming announcement, routers *MUST*
+replace the previous peer metadata section with their own.  If no
+metadata is provided both the `peer` and `peer_sign` fields *MUST* be
+filled with zeros.
 
-Lastly an announcement contains route metadata, which is not signed and can not be trusted.  This field allows routers along the way to deposit helpful markers to other routers in the downstream of a particular announcement.
+Lastly an announcement contains route metadata, which is not signed
+and can not be trusted.  This field allows routers along the way to
+deposit helpful markers to other routers in the downstream of a
+particular announcement.
 
-This may be related to the reliability of connections, the limitation of bandwidth, or that a uni-directional network boundary was crossed.  Currently only the `mtu` field is specified.  Additional fields will be added by later revisions of this specification.
+This may be related to the reliability of connections, the limitation
+of bandwidth, or that a uni-directional network boundary was crossed.
+Currently only the `mtu` field is specified.  Additional fields will
+be added by later revisions of this specification.
 
-Additionally, the route metadata section *MUST* be pruned if it surpasses 512 bytes in length.  Pruning means that only recognized fields will be kept, while unknown keys are discarded.
+Additionally, the route metadata section *MUST* be pruned if it
+surpasses 512 bytes in length.  Pruning means that only recognized
+fields will be kept, while unknown keys are discarded.
 
 
 ## Route scoring
@@ -163,13 +194,23 @@ A -  B  - C
  \ D - E /
 ```
 
-Router A is connected to `B` and `D`, router `B` is connected to `A` and `C`, router `C` is connected to `B` and `E`, etc.
+Router A is connected to `B` and `D`, router `B` is connected to `A`
+and `C`, router `C` is connected to `B` and `E`, etc.
 
-Announcements from `A` will reach `C` both via the link from `B` to `C` and from `E` to `C`.  Thus, when `C` wants to send a message to `A` it needs to consider multiple routes for sending messages.  This is called "route scoring" and is implemented via the Route scoring API (see Appendix C).
+Announcements from `A` will reach `C` both via the link from `B` to
+`C` and from `E` to `C`.  Thus, when `C` wants to send a message to
+`A` it needs to consider multiple routes for sending messages.  This
+is called "route scoring" and is implemented via the Route scoring API
+(see Appendix C).
 
-There are many different approaches that can be taken for route scoring, especially for loop avoidance strategies.  By making this component modular, it means that future additions can radically change or overhaul the way that Ratman performs this scoring mechanism, without needing large amounts of re-engineering in the core of Ratman.
+There are many different approaches that can be taken for route
+scoring, especially for loop avoidance strategies.  By making this
+component modular, it means that future additions can radically change
+or overhaul the way that Ratman performs this scoring mechanism,
+without needing large amounts of re-engineering in the core of Ratman.
 
-This also allows network researchers to integrate their research code into an existing networking and testing platform.
+This also allows network researchers to integrate their research code
+into an existing networking and testing platform.
 
 
 ### Default greedy strategy
@@ -235,7 +276,7 @@ mechanism.  Thus user message integrity can be guaranteed.
 
 ## Message encoding & delivery
 
-User payloads are encoded via [ERIS], sliced into delivery Frames, and
+User payloads are encoded via [ERIS], sliced into carrier frames, and
 sent towards their destination (see [Appendix A] on details).
 
 This uses two basic message types: `DataFrame` and `ManifestFrame`.
@@ -246,13 +287,13 @@ messages before being exposed to the recipient application.
 ERIS specifies a *"Read Capability"* which for the purposes of Irdest
 and this spec we are calling the *"Manifest"*.
 
-For a `DataFrame` the payload of the underlying delivery Frame is
+For a `DataFrame` the payload of the underlying carrier frame is
 entirely filled with content from a re-aligned block stream.  Frames
 MUST NOT be padded with trailing zeros to fill the target MTU.
 
 A `ManifestFrame` contains a binary encoded version of the "Read
 Capability".  If this manifest is too large for the containing
-delivery frame, it is split into multiple frames (see [Appendix A:
+.carrcarrier frame, it is split into multiple frames (see [Appendix A:
 Manifest Frame](#Manifest-Frame))
 
 
@@ -289,9 +330,6 @@ SyncScopeRequest {
   addrs: BTreeSet<Address>,
 }
 ```
-
-
-
 
 *Outline:*
 
@@ -430,7 +468,7 @@ messages are encoded.  Any optional fields that are not present in a
 particular structure MUST be replaced with a NULL byte.
 
 The basic container type of any message in an Irdest network is a
-delivery frame, which has the following structure:
+.carrcarrier frame, which has the following structure:
 
 ```rust
 CarrierFrame {
@@ -481,7 +519,7 @@ invalid message MUST discard it.
 | `0000 0000 0000 0000` | Address Announcement  |
 | `0000 0000 0000 0010` | Data frame            |
 | `0000 0000 0000 0011` | Manifest frame        |
-| `0000 0000 0000 0100` | Router Announcement   |
+| `0000 0000 0000 0100` | Router Handshake      |
 | `0000 0000 0000 1xxx` | (Reserved)            |
 | `0000 0000 0010 0001` | SyncScopeRequest      |
 | `0000 0000 001x xxx0` | (Reserved)            |
@@ -531,17 +569,17 @@ message RouteData {
 
 ### Data Frame
 
-A data frame is already explicitly sliced to fit into a delivery frame
+A data frame is already explicitly sliced to fit into a .carrcarrier frame
 (see "MTU leap-frogging" for how to handle exceptions to this).
 Therefore the payload content can simply be encoded as a set of bytes.
 
-The delivery frame knows the size of the payload.  Thus no special
+The .carrcarrier frame knows the size of the payload.  Thus no special
 encoding for data frames is required.
 
 
 ### Manifest Frame
 
-Message manifests SHOULD generally fit into a single delivery frame.
+Message manifests SHOULD generally fit into a single .carrcarrier frame.
 This may not be the case on low-bandwidth connections.  Additionally,
 because the manifest has no well-defined representation in the [ERIS]
 spec, we need to wrap it in our own encoding schema.
@@ -619,7 +657,7 @@ PushNotice {
 A receiving router MAY accept this notice by simply not responding, or
 MAY reject the incoming message (for example via an automatic
 filtering rule).  The sequence ID can be obtained from the containing
-delivery frame.
+.carrcarrier frame.
 
 ```rust
 DenyNotice {

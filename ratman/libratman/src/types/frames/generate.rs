@@ -7,6 +7,8 @@ use crate::{
 use byteorder::{BigEndian, ByteOrder};
 use chrono::{DateTime, TimeZone, Utc};
 
+use super::SequenceIdV1;
+
 /// A utility trait that represents a serialisable frame entity
 ///
 /// This trait should be implemented for frame sub-types to avoid code
@@ -108,6 +110,18 @@ impl<Tz: TimeZone> FrameGenerator for DateTime<Tz> {
         let utc_string = self.to_rfc3339();
         buf.extend_from_slice(utc_string.as_bytes());
         Ok(())
+    }
+}
+
+impl FrameGenerator for Option<SequenceIdV1> {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        match self {
+            Some(seq_id) => seq_id.generate(buf),
+            None => {
+                buf.push(0);
+                Ok(())
+            }
+        }
     }
 }
 

@@ -18,6 +18,9 @@ pub(self) fn random_payload(size: usize) -> Vec<u8> {
     buf.into()
 }
 
-pub fn data_frame(data: Vec<u8>) -> CarrierFrame {
-    todo!()
+pub mod modes {
+    pub const ANNOUNCE: u16 = 0;
+    pub const DATA: u16 = 2;
+    pub const MANIFEST: u16 = 3;
+    pub const ROUTER_HANDSHAKE: u16 = 4;
 }
