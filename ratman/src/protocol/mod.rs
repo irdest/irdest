@@ -13,8 +13,13 @@
 //! - `Announce` is sent when a node comes online
 //! - `Sync` is a reply to an `Announce`, only omitted when `no_sync` is set
 
+mod announce;
+
 use crate::core::Core;
-use libratman::types::{Address, Frame, RatmanError, Result};
+use libratman::types::{
+    frames::{self, ProtoCarrierFrameMeta},
+    Address, Frame, RatmanError, Result,
+};
 
 use async_std::{
     sync::{Arc, Mutex},
@@ -117,6 +122,18 @@ impl Protocol {
 
         // Currently we just use the sender address as the "scope" of the
         Frame::inline_flood(sender, sender, payload)
+    }
+}
+
+/// Match the carrier modes bitfield to decide what kind of frame
+pub fn parse(carrier_meta: ProtoCarrierFrameMeta, bin_envelope: Vec<u8>) {
+    match carrier_meta.modes {
+        frames::modes::ANNOUNCE => {}
+        frames::modes::DATA => {}
+        frames::modes::MANIFEST => {}
+        _ => {
+            warn!("received frame with malformed metadata: {:?}", carrier_meta);
+        }
     }
 }
 
