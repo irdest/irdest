@@ -12,6 +12,8 @@ use core::mem::size_of;
 use nom::combinator::peek;
 pub use nom::{bytes::complete::take, IResult};
 
+use super::ProtoCarrierFrameMeta;
+
 /// A utility trait that represents a parsable frame entity
 ///
 /// This trait is a slim wrapper around the nom parsing
@@ -25,6 +27,25 @@ pub trait FrameParser {
 pub fn take_address(input: &[u8]) -> IResult<&[u8], Address> {
     let (input, slice) = take(32 as usize)(input)?;
     Ok((input, Address::from_bytes(slice)))
+}
+
+pub fn peek_carrier_meta(input: &[u8]) -> IResult<&[u8], ProtoCarrierFrameMeta> {
+    let (_, peeked_input) = peek(take((1 + 2 + 32 + 32) as usize))(input)?;
+
+    let (peeked_input, version) = take(1 as usize)(peeked_input).map(|(x, y)| (x, y[0]))?;
+    let (peeked_input, modes) = take_u16(peeked_input)?;
+    let (peeked_input, recipient) = maybe_address(peeked_input)?;
+    let (peeked_input, sender) = take_address(peeked_input)?;
+
+    Ok((
+        input,
+        ProtoCarrierFrameMeta {
+            version,
+            modes,
+            recipient,
+            sender,
+        },
+    ))
 }
 
 /// Read a single byte to check for existence of a payload, then maybe

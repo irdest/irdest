@@ -10,11 +10,43 @@ use crate::{
 use byteorder::{BigEndian, ByteOrder};
 
 /// Never sent across the network, but carries additional metadata
+// TODO: do we really need the full carrier frame?
 #[derive(Debug)]
-pub struct CarrierFrameMeta {
+pub struct FullCarrierFrameMeta {
     pub inner: CarrierFrame,
     // FIXME: we only need a receive timestamp for queue sorting
     pub time: TimePair,
+}
+
+/// A partially parsed CarrierFrame
+///
+/// A data stream originates in the Netmod API, uses
+/// `ProtoCarrierFrameMeta::from_peek(...)` to construct this metadata
+/// header, which can then be used for protocol parsing.  Messages
+/// that aren't directly addressed to this node, and are not required
+/// for routing negotiation can be left un-parsed and forwarded to the
+/// next transport hop as-is.
+#[derive(Debug, Clone)]
+pub struct ProtoCarrierFrameMeta {
+    pub version: u8,
+    pub modes: u16,
+    pub recipient: Option<Address>,
+    pub sender: Address,
+}
+
+use nom::{bytes::complete::take, combinator::peek};
+
+impl ProtoCarrierFrameMeta {
+    /// Peek into a data stream to read the first few meta fields
+    pub fn from_peek(input: &[u8]) -> Result<Self> {
+        match parse::peek_carrier_meta(input) {
+            Ok((_, meta)) => Ok(meta),
+            Err(_) => Err(EncodingError::Parsing(
+                "Not enough data for a carrier frame metadata section!".to_owned(),
+            )
+            .into()),
+        }
+    }
 }
 
 /// Basic carrier frame format
