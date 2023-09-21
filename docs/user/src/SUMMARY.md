@@ -3,7 +3,7 @@
 - [Introduction](./index.md)
 - [About this manual](./manual.md)
 - [Concepts & Ideas](./concepts.md)
-- [Installation](./install/index.md)
+- [Build and Install](./install/index.md)
   - [Build from source](./install/build.md)
   - [Stand-alone installer](./install/stand-alone.md)
 - [Setup Guides](./guides/index.md)
