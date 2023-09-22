@@ -97,7 +97,13 @@ follows
 - Run yarn
 
     ```console
-    yarn build
+    yarn && yarn build
+    ```
+
+- Go back the root of project
+
+    ```console
+    cd ../../
     ```
 
 - Run `cargo`
