@@ -1,6 +1,5 @@
 # Basic setup
 
-
 We trust that you have successfully installed Ratman (`ratmand`,
 `ratcat`, `ratctl`) on your system.  Please refer to the
 [Installation](../install/index.md) section for details.
@@ -16,15 +15,16 @@ addresses, known network peer addresses, connection statistics, and
 in-transit messages.  Delete these directories to wipe all data and
 re-start Ratman from a blank slate.
 
-  - XDG system: `$XDG_DATA_HOME/share/ratmand`.
-  - macOS:  `/Users/[USER_NAME]/Library/Application Support/org.irdest.ratmand`.
+- XDG system: `$XDG_DATA_HOME/share/ratmand`.
+- macOS:  `/Users/[USER_NAME]/Library/Application Support/org.irdest.ratmand`.
 
 **Since Ratman is still in alpha it may be neccessary to wipe
 application state in-between updates!  Please do not rely on this
 software yet!**
 
+## Public internet test network - coming soon
 
-## Public internet test network
+**This is not available yet. We are working hard to bring this.**
 
 As part of the Irdest project we put up a small test network between
 our servers.  You can join it via the internet!  This network is meant
@@ -46,11 +46,11 @@ First, make sure that Ratman is configured to support `inet` peering!
 }
 ```
 
-Download [public-test-network.pm]() (coming soon!) and place it next
-to the Ratman configuration.  After that, restart Ratman!
+Once available, you will be able to download `public-test-network.pm`
+and place it next to the Ratman configuration.
 
 ```console
-$ systemctl --user restart ratmand
+systemctl --user restart ratmand
 ```
 
 Next up you can check the router dashboard for incoming address
