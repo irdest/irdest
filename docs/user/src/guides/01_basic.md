@@ -8,7 +8,7 @@ We trust that you have successfully installed Ratman (`ratmand`,
 The Ratman daemon is primarily set-up from a configuration file.  You
 can find it at the following path, depending on your operating system:
 
-- XDG system: `$XDG_CONFIG_HOME/ratmand/config.json`.
+- XDG system: `$XDG_CONFIG_HOME/ratmand/ratmand.kdl`.
 - macOS: `Users/[USER_NAME]/Library/Application Support/org.irdest.ratmand`
 
 Ratman also stores some runtime state.  This includes registered local
