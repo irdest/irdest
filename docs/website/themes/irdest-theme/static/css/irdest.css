@@ -94,6 +94,11 @@ header.block, footer.block {
     margin: 0;
 }
 
+h3 {
+    font-size: 1.375rem;
+    padding-bottom: 0.5rem;
+}
+
 .block-intro {
     background: #2f556b;
     color: #EFEFEF;

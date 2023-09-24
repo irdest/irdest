@@ -1,8 +1,8 @@
-# Introduction
+# Welcome to the Irdest user manual
 
-**Welcome to the user manual for Irdest!**
+In this manual you will find setup instructions, basic concepts of how
+the Irdest network works, specific setup guides for various
+situations, and a usage reference of all Irdest user-tools.
 
-It explains how to use different programs developed by the Irdest
-project and the ideas behind them.  We recommend you read the section
-["Concepts & Ideas"](./concepts.md) next, before setting up Ratman on
-your computer!
+If you're new to mesh networking, you should read the ["Concepts &
+Ideas"](./concepts.md) first!

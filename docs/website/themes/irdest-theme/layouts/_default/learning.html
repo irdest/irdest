@@ -5,17 +5,7 @@
     <div class="title-image"><img src="/img/tobi_reads_xtra.png" width="227" height="350" /></div>
     <h1 class="title-header">{{ .Title }}</h1>
 
-    <p>{{ .Params.Intro }}</p>
-    
-    <div class="twocol">
-      <div class="col-padding">
-        <h2>{{ .Params.User_Title }}</h2>
-        {{ .Params.Users | markdownify }}
-      </div>
-      <div class="col-padding">
-        <h2>{{ .Params.Devs_Title }}</h2>
-        {{ .Params.Devs | markdownify }}
-      </div>
+    {{ .Content }}
     </div>
   </div>
 </main>

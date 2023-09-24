@@ -1,12 +1,11 @@
 # Stand-alone installer
 
-A stand-alone way to install Ratman on a system.  The installer is
-included in the Irdest bundle and statically linked, which means it
-has no external dependencies.  You can download a bundle on the
-[website](https://irde.st/download/)!
+This installer creates a stand-alone installation of Ratman and other
+Irdest tools for only the current user.  It's currently not recommend
+to install Ratman as a system user/ root.
 
-Make sure that you download the bundle for the correct CPU
-architecture (only 64bit x86 and 64bit ARM available at the moment)!
+You can find the download bundle link at the bottom of the [download
+page](https://irde.st/download).
 
 
 ## Unpack bundle
@@ -23,15 +22,16 @@ bin/  dist/  install*  man/  manual/  README.md
 
 ## Install or upgrade
 
-If you already have a previous version of Ratman installed on your
-system we recommend you uninstall it completely first:
+If you have an existing or older installation of Ratman installed,
+it's recommended to uninstall it completely first.  Currently there is
+**no compatibility between Ratman versions**!
 
 ```
 $ ./uninstall
 $ rm -r ~/.config/ratmand/ ~/.local/share/ratmand
 ```
 
-Then run the installer
+Then run the installer:
 
 ```console
 $ ./install
