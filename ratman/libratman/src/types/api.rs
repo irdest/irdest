@@ -95,6 +95,13 @@ pub fn anonymous() -> Setup {
     setup
 }
 
+pub fn ping(target: String) -> Setup {
+    let mut setup = Setup::new();
+    setup.set_field_type(Setup_Type::PING);
+    setup.set_id(target.as_bytes().to_vec());
+    setup
+}
+
 //////////// PEERS type
 
 /// Create a new discovery message

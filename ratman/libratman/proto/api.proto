@@ -47,6 +47,7 @@ message Setup {
                 /// Response type sent for a previous Setup message
                 ACK = 2;
                 ANONYMOUS = 3;
+                PING = 4;
         }
         Type type = 1;
         bytes id = 2;

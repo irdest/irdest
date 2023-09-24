@@ -3,9 +3,9 @@ use crate::types::{
     api::{
         self, ApiMessageEnum,
         Peers_Type::{DISCOVER, RESP},
-        Setup_Type::ACK,
+        Setup_Type::{self, ACK},
     },
-    encode_message, parse_message, read_with_length, write_with_length,
+    encode_message, parse_message, read_with_length, write_with_length, parse_message_nosey,
 };
 use async_std::{channel::Sender, net::TcpStream};
 
@@ -17,6 +17,12 @@ pub struct IpcSocket {
     // TODO: switch this to the `AddressBook` abstraction
     pub(crate) addr: Address,
     pub(crate) token: Id,
+}
+
+pub(crate) enum AddressRecipient {
+    Network(Address),
+    // FIXME pls
+    Router(String),
 }
 
 impl IpcSocket {
@@ -96,6 +102,25 @@ impl IpcSocket {
 
         write_with_length(&mut self.inner.clone(), &encode_message(msg)?).await?;
         Ok(())
+    }
+
+    pub async fn ping(&self, recipient: &str) -> Result<String> {
+        let msg = api::api_setup(api::ping(recipient.to_owned()).into());
+        write_with_length(&mut self.inner.clone(), &encode_message(msg)?).await?;
+
+        eprintln!("Sending always works!");
+        match parse_message_nosey(&mut self.inner.clone())
+            .await
+            .map(|m| m.inner)
+        {
+            Ok(Some(one_of)) => match one_of {
+                ApiMessageEnum::setup(s) if s.field_type == Setup_Type::PING => {
+                    Ok(String::from_utf8(s.id).unwrap_or_else(|_| "<invalid utf-8".to_string()))
+                }
+                _ => unreachable!(),
+            },
+            _ => unreachable!(),
+        }
     }
 
     /// Send some data to a remote peer

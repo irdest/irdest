@@ -52,6 +52,16 @@ pub fn build_cli() -> App<'static, 'static> {
                 .help("Don't use the new address as a default for ratcat in the future")
         )
         .arg(
+            Arg::with_name("PING")
+                .long("ping")
+                .help("Send a ping to the router")
+        )
+        .arg(
+            Arg::with_name("VERBOSE")
+                .long("verbose")
+                .help("Enable additional logging")
+        )
+        .arg(
             Arg::with_name("RECEIVE")
                 .long("recv")
                 .help("Set your computer to receive data via ratcat.")
@@ -82,8 +92,9 @@ async fn register(
     path: PathBuf,
     bind: &str,
     no_default: bool,
+    verbose: bool,
 ) -> Result<bool, Box<dyn std::error::Error>> {
-    let ipc = connect_ipc(None, None, bind).await?;
+    let ipc = connect_ipc(None, None, bind, verbose).await?;
     eprintln!("Registered address: {}", ipc.address());
 
     if !no_default {
@@ -105,17 +116,20 @@ async fn connect_ipc(
     addr: Option<Address>,
     token: Option<Id>,
     bind: &str,
+    verbose: bool,
 ) -> Result<RatmanIpc, Box<dyn std::error::Error>> {
     let mut res = Err(libratman::ClientError::ConnectionLost.into());
 
-    for _ in 0..3 {
+    for _ in 0..4 {
         res = RatmanIpc::connect(bind, addr, token).await;
         if res.is_ok() {
             break;
         }
 
-        eprintln!("ratmand connection failed: retrying in 750ms...");
-        async_std::task::sleep(std::time::Duration::from_millis(750)).await;
+        if verbose {
+            eprintln!("ratmand connection failed: retrying in 333ms...");
+        }
+        async_std::task::sleep(std::time::Duration::from_millis(333)).await;
     }
 
     Ok(res?)
@@ -185,6 +199,8 @@ async fn main() {
     let app = build_cli();
     let m = app.clone().get_matches();
 
+    let verbose = m.is_present("VERBOSE");
+
     //// Setup the application config directory
     let dirs = ProjectDirs::from("org", "irdest", "ratcat")
         .expect("Failed to initialise project directories for this platform!");
@@ -205,7 +221,7 @@ async fn main() {
     //// To register is a bit special because we terminate afterwards
     let api_addr = m.value_of("API_BIND").unwrap();
     if m.is_present("REGISTER") {
-        match register(cfg_dir, api_addr, m.is_present("NO_DEFAULT")).await {
+        match register(cfg_dir, api_addr, m.is_present("NO_DEFAULT"), verbose).await {
             Ok(true) => {
                 eprintln!("You may now run `ratcat` to send data");
                 std::process::exit(0);
@@ -240,14 +256,36 @@ async fn main() {
     }
 
     //// We always need to connect to the IPC backend with our address
-    eprintln!("Connecting to IPC backend...");
-    let ipc = match connect_ipc(Some(cfg.addr), Some(cfg.token), api_addr).await {
+    if verbose {
+        eprintln!("Connecting to IPC backend...");
+    }
+
+    let ipc = match connect_ipc(Some(cfg.addr), Some(cfg.token), api_addr, verbose).await {
         Ok(ipc) => ipc,
         Err(e) => {
             eprintln!("Failed to connect to Ratman daemon: {}", e);
             std::process::exit(1);
         }
     };
+
+    //// First we check if we are supposed to PING
+    if m.is_present("PING") {
+        println!("I always make it here at least ????");
+        
+        match {
+            // let ping_target = m.value_of("RECIPIENT").unwrap_or("0");
+            ipc.ping("0").await.map(|resp| ("0".to_owned(), resp))
+        } {
+            Ok((ping_target, response)) => {
+                println!("Router '{}' responds: {}", ping_target, response);
+                std::process::exit(0)
+            }
+            Err(e) => {
+                eprintln!("Failed to ping: {:?}", e);
+                std::process::exit(1);
+            }
+        }
+    }
 
     //// If we were given a recipient we send try to send some data
     if let Some(recipient) = m.value_of("RECIPIENT") {

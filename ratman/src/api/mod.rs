@@ -12,7 +12,7 @@ use crate::{api::client::OnlineClient, context::RatmanContext};
 use async_std::{
     net::{Incoming, SocketAddr, TcpListener},
     stream::StreamExt,
-    sync::Arc,
+    sync::{Arc, Mutex},
     task,
 };
 pub(crate) use client::BaseClient;
@@ -60,9 +60,9 @@ async fn run_relay(context: Arc<RatmanContext>) {
                 // wouldn't have marked the message to be relayed, and
                 // instead simply inserted it into the local journal.
                 let mut online = context.clients.online.lock().await;
-                if let Some(OnlineClient { ref mut io, .. }) = online.get_mut(&client_id) {
+                if let Some(OnlineClient { ref io, .. }) = online.get_mut(&client_id) {
                     info!("Forwarding message to online client!");
-                    if let Err(e) = parse::forward_recv(io.as_io(), recv).await {
+                    if let Err(e) = parse::forward_recv(&io, recv).await {
                         error!("Failed to forward received message: {}", e);
                     }
                 }
@@ -72,8 +72,8 @@ async fn run_relay(context: Arc<RatmanContext>) {
                 // "missed" a flood message.  Do we re-play flood
                 // messages at all?  It could get quite big.
                 let mut online = context.clients.online.lock().await;
-                for (_, OnlineClient { ref mut io, .. }) in online.iter_mut() {
-                    if let Err(e) = parse::forward_recv(io.as_io(), recv.clone()).await {
+                for (_, OnlineClient { ref io, .. }) in online.iter_mut() {
+                    if let Err(e) = parse::forward_recv(&io, recv.clone()).await {
                         error!("Failed to forward received message: {}", e);
                     }
                 }
@@ -89,7 +89,7 @@ async fn listen_for_connections(
 ) -> Result<Option<(Address, Io)>> {
     while let Some(stream) = listen.next().await {
         let stream = stream?;
-        let mut io = Io::Tcp(stream);
+        let mut io = Io::Tcp(Arc::new(Mutex::new(stream)));
 
         let (id, _) = match parse::handle_auth(&mut io, &context).await {
             Ok(Some(pair)) => {
@@ -122,15 +122,16 @@ pub async fn run(context: Arc<RatmanContext>, addr: SocketAddr) -> Result<()> {
 
     let relay = task::spawn(run_relay(Arc::clone(&context)));
 
-    while let Ok(io) = listen_for_connections(&mut incoming, &context).await {
-        let (_self, io) = match io {
-            Some(io) => io,
+    while let Ok(maybe_io) = listen_for_connections(&mut incoming, &context).await {
+        let (_self, io) = match maybe_io {
+            Some(tup) => tup,
             // Broken connections get dropped
             None => continue,
         };
 
         info!("Established new client connection");
-        task::spawn(parse::parse_stream(Arc::clone(&context), _self, io.clone()));
+        let future_io = io.clone();
+        task::spawn(parse::parse_stream(Arc::clone(&context), _self, future_io));
     }
 
     relay.cancel().await;

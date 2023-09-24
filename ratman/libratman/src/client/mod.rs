@@ -125,6 +125,13 @@ impl RatmanIpc {
         self.socket.token
     }
 
+    /// Send a ping to a router
+    ///
+    /// Currently only the current router can respond
+    pub async fn ping(&self, ping_target: &str) -> Result<String> {
+        self.socket.ping(ping_target).await
+    }
+
     /// Send some data to a remote peer
     pub async fn send_to(&self, recipient: Address, payload: Vec<u8>) -> Result<()> {
         self.socket.send_to(recipient, payload).await

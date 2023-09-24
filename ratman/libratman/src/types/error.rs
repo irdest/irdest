@@ -35,6 +35,8 @@ pub enum RatmanError {
     #[cfg(feature = "netmod")]
     #[error("a netmod error: {0}")]
     Netmod(#[from] crate::NetmodError),
+    #[error("(non fatal): {0}")]
+    Nonfatal(#[from] crate::NonfatalError),
     // #[cfg(all(feature = "daemon", target_family = "unix"))]
     // #[error("a unix system error: {0}")]
     // UnixSystem(#[from] nix::errno::Errno),
@@ -63,4 +65,7 @@ impl From<RatmanError> for io::Error {
 pub enum NonfatalError {
     #[error("ratman is running ephemaral mode: no data will be persisted to disk!")]
     IsEphemeral,
+    #[error("a read period did not produce a read")]
+    NoRead,
 }
+

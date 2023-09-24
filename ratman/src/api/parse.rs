@@ -7,15 +7,14 @@ use crate::{
     context::RatmanContext,
     util::transform,
 };
-use async_std::{io::Write, sync::Arc};
+use async_std::sync::Arc;
 use libratman::types::{
     self,
     api::{
-        self, all_peers, api_peers, api_setup, online_ack, ApiMessageEnum, Peers, Peers_Type,
+        self, all_peers, api_peers, api_setup, online_ack, ping, ApiMessageEnum, Peers, Peers_Type,
         Receive, Send, Setup_Type,
     },
-    encode_message, parse_message, write_with_length, Address, ClientError, Id, Message, Recipient,
-    Result,
+    encode_message, Address, ClientError, Id, Message, Recipient, Result,
 };
 
 async fn handle_send(ctx: &Arc<RatmanContext>, _self: Address, send: Send) -> Result<()> {
@@ -42,19 +41,14 @@ async fn handle_send(ctx: &Arc<RatmanContext>, _self: Address, send: Send) -> Re
                     signature.clone(),
                 ));
 
-                for (
-                    _client_id,
-                    OnlineClient {
-                        ref mut io,
-                        ref base,
-                    },
-                ) in ctx.clients.online.lock().await.iter_mut()
+                for (_client_id, OnlineClient { ref io, ref base }) in
+                    ctx.clients.online.lock().await.iter_mut()
                 {
                     // Skip if recipient is self and mirror = false
                     if base.primary_address() == _self && !mirror && continue {}
 
                     // Otherwise try to forward the message to the given I/O socket
-                    if let Err(e) = forward_recv(io.as_io(), recv.clone()).await {
+                    if let Err(e) = forward_recv(&io, recv.clone()).await {
                         error!("Failed to forward received message: {}", e);
                     }
                 }
@@ -66,7 +60,7 @@ async fn handle_send(ctx: &Arc<RatmanContext>, _self: Address, send: Send) -> Re
     Ok(())
 }
 
-async fn handle_peers(io: &mut Io, ctx: &Arc<RatmanContext>, peers: Peers) -> Result<()> {
+async fn handle_peers(io: &Io, ctx: &Arc<RatmanContext>, peers: Peers) -> Result<()> {
     if peers.field_type != Peers_Type::REQ {
         return Ok(()); // Ignore all other messages
     }
@@ -79,13 +73,19 @@ async fn handle_peers(io: &mut Io, ctx: &Arc<RatmanContext>, peers: Peers) -> Re
         .map(|(addr, _)| addr)
         .collect();
     let response = encode_message(api_peers(all_peers(all))).unwrap();
-    write_with_length(io.as_io(), &response).await?;
+    io.send_to(response).await;
     Ok(())
 }
 
-async fn send_online_ack<Io: Write + Unpin>(io: &mut Io, id: Address, token: Id) -> Result<()> {
+async fn send_ping_response(io: &Io, _: String) -> Result<()> {
+    let pong = encode_message(api_setup(ping("Howdy there!".to_owned()))).unwrap();
+    io.send_to(pong).await;
+    Ok(())
+}
+
+async fn send_online_ack(io: &Io, id: Address, token: Id) -> Result<()> {
     let ack = encode_message(api_setup(online_ack(id, token)))?;
-    write_with_length(io, &ack).await?;
+    io.send_to(ack).await;
     Ok(())
 }
 
@@ -104,7 +104,7 @@ async fn send_online_ack<Io: Write + Unpin>(io: &mut Io, id: Address, token: Id)
 ///
 /// If any error occurs during authentication, `Err(_)` is returned.
 pub(crate) async fn handle_auth(
-    io: &mut Io,
+    io: &Io,
     ctx: &Arc<RatmanContext>,
 ) -> Result<Option<(Address, Vec<u8>)>> {
     debug!("Handle authentication request for new connection");
@@ -118,7 +118,8 @@ pub(crate) async fn handle_auth(
     //   - Assign an address
     //   - Return address and auth token
     // 3. Any other payload is invalid
-    let one_of = parse_message(io.as_io())
+    let one_of = io
+        .read_message()
         .await
         .map(|msg| msg.inner)?
         .ok_or(ClientError::InvalidAuth)?;
@@ -156,14 +157,14 @@ pub(crate) async fn handle_auth(
                         }
 
                         if ctx.load_existing_address(address, &[0]).await.is_ok() {
-                            if let Err(e) = send_online_ack(io.as_io(), address, token).await {
+                            if let Err(e) = send_online_ack(&io, address, token).await {
                                 warn!("failed to send online_ack: {:?}", e);
                                 return Err(e.into());
                             }
                         }
 
                         // Reply to the client
-                        send_online_ack(io.as_io(), address, token).await?;
+                        send_online_ack(&io, address, token).await?;
 
                         // FIXME: what is the second argument here
                         // supposed to be doing anyway ?
@@ -179,7 +180,7 @@ pub(crate) async fn handle_auth(
                     let token = ctx.clients.register(address, io.clone()).await;
 
                     // Reply to the client
-                    send_online_ack(io.as_io(), address, token).await?;
+                    send_online_ack(io, address, token).await?;
 
                     // We try to write the new users out to disk, and
                     // return a non-fatal error if it fails
@@ -203,6 +204,13 @@ pub(crate) async fn handle_auth(
             }
         }
 
+        ApiMessageEnum::setup(setup) if setup.field_type == Setup_Type::PING => {
+            let p_target = String::from_utf8(setup.id).unwrap_or_else(|_| "0".to_string());
+            debug!("Incoming ping: {}", p_target);
+            send_ping_response(&io, p_target).await?;
+            Ok(None)
+        }
+
         // If the client wants to remain anonymous we don't return an ID/token pair
         ApiMessageEnum::setup(setup) if setup.field_type == Setup_Type::ANONYMOUS => {
             debug!("Authorisation for anonymous client");
@@ -215,23 +223,28 @@ pub(crate) async fn handle_auth(
 }
 
 /// Parse messages from a stream until it terminates
-pub(crate) async fn parse_stream(ctx: Arc<RatmanContext>, _self: Address, mut io: Io) {
+pub(crate) async fn parse_stream(ctx: Arc<RatmanContext>, _self: Address, io: Io) {
     loop {
         // Match on the msg type and call the appropriate handler
-        match parse_message(io.as_io()).await.map(|msg| {
+        match io.read_message().await.map(|msg| {
             trace!("Received message from stream {}", _self);
             msg.inner
         }) {
+            // If the payload is present
             Ok(Some(one_of)) => match one_of {
                 ApiMessageEnum::send(send) => handle_send(&ctx, _self, send).await,
-                ApiMessageEnum::peers(peers) => handle_peers(&mut io, &ctx, peers).await,
-                ApiMessageEnum::setup(_) => continue, // Handled in state.rs
+                ApiMessageEnum::peers(peers) => handle_peers(&io, &ctx, peers).await,
+                ApiMessageEnum::setup(_) => continue, // Otherwise handled during "auth"
                 ApiMessageEnum::recv(_) => continue,  // Ignore "Receive" messages
             },
+
+            // If the payload is missing
             Ok(None) => {
                 warn!("Received invalid message: empty payload");
                 continue;
             }
+
+            // Other fatal errors
             Err(e) => {
                 trace!("Error: {:?}", e);
                 info!("API stream was dropped by client");
@@ -242,11 +255,11 @@ pub(crate) async fn parse_stream(ctx: Arc<RatmanContext>, _self: Address, mut io
     }
 }
 
-pub(crate) async fn forward_recv<Io: Write + Unpin>(io: &mut Io, r: Receive) -> Result<()> {
+pub(crate) async fn forward_recv(io: &Io, r: Receive) -> Result<()> {
     let api = api::api_recv(r);
     trace!("Encoding received message...");
     let msg = types::encode_message(api)?;
     trace!("Forwarding payload through stream");
-    write_with_length(io, &msg).await?;
+    io.send_to(msg).await;
     Ok(())
 }

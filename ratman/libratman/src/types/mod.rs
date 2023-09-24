@@ -47,12 +47,40 @@ pub async fn write_with_length<T: Write + Unpin>(t: &mut T, buf: &Vec<u8>) -> Re
 
 /// First read a big-endian u64, then read the number of bytes
 pub async fn read_with_length<T: Read + Unpin>(r: &mut T) -> Result<Vec<u8>> {
-    let mut len_buf = vec![0; 8];
+    let mut len_buf: [u8; 8] = [0; 8];
+    r.read_exact(&mut len_buf).await?;
+    let len = BigEndian::read_u64(&len_buf);
+    let mut vec = vec![0; len as usize]; // FIXME: this might break on 32bit systems
+    r.read_exact(&mut vec).await?;
+    Ok(vec)
+}
+
+/// First read a big-endian u64, then read the number of bytes
+pub async fn read_with_length_nosey<T: Read + Unpin>(r: &mut T) -> Result<Vec<u8>> {
+    let mut len_buf: [u8; 8] = [0; 8];
+    println!("Waiting to read exactly {} bytes", len_buf.len());
     r.read_exact(&mut len_buf).await?;
     let len = BigEndian::read_u64(&len_buf);
 
-    let mut vec = vec![0; len as usize]; // FIXME: this might break on 32bit systems
+    eprintln!(
+        "Message length {} as: {}",
+        len,
+        len_buf
+            .iter()
+            .map(|i| format!("{:b}", i))
+            .collect::<Vec<_>>()
+            .join(" ")
+    );
+
+    let usize_len = dbg!((dbg!(len as u16)) as usize);
+
+    println!("???????");
+    // let mut vec = vec![0; 1024];
+
+    // let mut vec = vec![0; 1024 * 16];
+    let mut vec = vec![0; dbg!(usize_len)]; // FIXME: this might break on 32bit systems
     r.read_exact(&mut vec).await?;
+    eprintln!("Message reads as: {}", String::from_utf8_lossy(&vec));
     Ok(vec)
 }
 
@@ -60,6 +88,16 @@ pub async fn read_with_length<T: Read + Unpin>(r: &mut T) -> Result<Vec<u8>> {
 #[cfg(feature = "proto")]
 pub async fn parse_message<R: Read + Unpin>(r: &mut R) -> Result<ApiMessage> {
     let vec = read_with_length(r).await?;
+    decode_message(&vec)
+}
+
+/// Parse a single message from a reader stream
+#[cfg(feature = "proto")]
+pub async fn parse_message_nosey<R: Read + Unpin>(r: &mut R) -> Result<ApiMessage> {
+    println!("Before read");
+    let vec = read_with_length_nosey(r).await?;
+    println!("Read message: {:?}", vec);
+    println!("Read message: {}", String::from_utf8_lossy(vec.as_slice()));
     decode_message(&vec)
 }
 
