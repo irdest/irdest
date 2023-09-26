@@ -85,7 +85,7 @@ out the [clients] section.
 ## License
 
 Irdest is free software licensed under the [GNU Affero General Public
-License version 3](licenses/agpl-3.0.md) or later.
+License version 3](LICENSES/AGPL-3.0-or-later.md) or later.
 
 **Additional Permissions:** For Submission to the Apple App Store:
 
