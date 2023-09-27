@@ -97,6 +97,15 @@ pub type RKPair = (BlockReference, BlockKey);
 #[debug(fmt = "{}", "self")]
 pub struct Block<const BS: usize>([u8; BS]);
 
+impl<const BS: usize> Block<BS> {
+    // TODO: is this really slow and terrible ???
+    pub fn from_vec(vec: Vec<u8>) -> Self {
+        let mut buf = [0; BS];
+        buf.copy_from_slice(vec.as_slice());
+        Self(buf)
+    }
+}
+
 impl<const BS: usize> TryFrom<&String> for Block<BS> {
     type Error = Error;
     fn try_from(s: &String) -> Result<Block<BS>> {

@@ -26,7 +26,7 @@ mod clock;
 mod context;
 mod core;
 mod crypto;
-mod dispatcher;
+mod dispatch;
 mod protocol;
 mod storage;
 

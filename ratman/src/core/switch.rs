@@ -1,15 +1,18 @@
-// SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
+// SPDX-FileCopyrightText: 2019-2023 Katharina Fey <kookie@spacekookie.de>
 // SPDX-FileCopyrightText: 2022 Yureka Lilian <yuka@yuka.dev>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use async_std::{channel::bounded, sync::Arc, task};
-use libratman::types::Recipient;
-
 use crate::{
-    core::{Collector, Dispatch, DriverMap, Journal, RouteTable, RouteType},
+    core::{Dispatch, DriverMap, Journal, RouteTable, RouteType},
+    dispatch::BlockCollector,
     protocol::Protocol,
     util::IoPair,
+};
+use async_std::{channel::bounded, sync::Arc, task};
+use libratman::{
+    netmod::InMemoryEnvelope,
+    types::{frames::modes as fmodes, Recipient},
 };
 
 /// A frame switch inside Ratman to route packets and signals
@@ -25,7 +28,7 @@ pub(crate) struct Switch {
     routes: Arc<RouteTable>,
     journal: Arc<Journal>,
     dispatch: Arc<Dispatch>,
-    collector: Arc<Collector>,
+    collector: Arc<BlockCollector>,
     drivers: Arc<DriverMap>,
 
     /// Control channel to start new endpoints
@@ -71,7 +74,7 @@ impl Switch {
         task::spawn(async move {
             while let Ok(i) = self.ctrl.1.recv().await {
                 let switch = Arc::clone(&self);
-                task::spawn(switch.run_batch(i, 1024));
+                switch.run_batch(i, 1024).await;
             }
         });
     }
@@ -81,25 +84,34 @@ impl Switch {
         let ep = self.drivers.get(id).await;
 
         for _ in 0..batch_size {
-            let (f, t) = match ep.next().await {
+            let (InMemoryEnvelope { meta, buffer }, t) = match ep.next().await {
                 Ok(f) => f,
                 _ => continue,
             };
 
             trace!("Receiving frame from '{:?}'...", t);
 
-            #[cfg(feature = "dashboard")]
-            {
-                let metric_labels = &metrics::Labels {
-                    sender_id: f.sender,
-                    recp_type: (&f.recipient).into(),
-                    recp_id: f.recipient.scope().expect("empty recipient"),
-                };
-                self.metrics.frames_total.get_or_create(metric_labels).inc();
-                self.metrics
-                    .bytes_total
-                    .get_or_create(metric_labels)
-                    .inc_by(f.payload.len() as u64);
+            // #[cfg(feature = "dashboard")]
+            // {
+            //     let metric_labels = &metrics::Labels {
+            //         sender_id: f.sender,
+            //         recp_type: (&f.recipient).into(),
+            //         recp_id: f.recipient.scope().expect("empty recipient"),
+            //     };
+            //     self.metrics.frames_total.get_or_create(metric_labels).inc();
+            //     self.metrics
+            //         .bytes_total
+            //         .get_or_create(metric_labels)
+            //         .inc_by(f.payload.len() as u64);
+            // }
+
+            match meta.modes {
+                fmodes::ANNOUNCE => {}
+                fmodes::DATA => {},
+                fmodes::MANIFEST => {},
+                t => {
+                    warn!("Unknown frame type: {}", t);
+                }
             }
 
             // Switch the traffic to the appropriate place

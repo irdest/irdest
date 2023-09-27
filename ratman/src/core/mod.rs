@@ -9,22 +9,21 @@
 //! component. This has proven to be a hard to maintain approach, so
 //! instead the core has been split into several parts.
 
-mod collector;
 mod dispatch;
 mod drivers;
 mod journal;
 mod routes;
 mod switch;
 
-pub(self) use collector::Collector;
 pub(self) use dispatch::Dispatch;
 pub(self) use drivers::DriverMap;
 pub(self) use journal::Journal;
 pub(self) use routes::{EpTargetPair, RouteTable, RouteType};
 pub(self) use switch::Switch;
 
-pub(crate) use {collector::Payload, drivers::GenericEndpoint};
+pub(crate) use drivers::GenericEndpoint;
 
+use crate::dispatch::BlockCollector;
 use async_std::sync::Arc;
 use libratman::types::{Address, Frame, Message, RatmanError, Result};
 
@@ -40,7 +39,7 @@ use libratman::types::{Address, Frame, Message, RatmanError, Result};
 /// efficient access to this in-memory state via the `Core` API
 /// facade.
 pub(crate) struct Core {
-    collector: Arc<Collector>,
+    collector: Arc<BlockCollector>,
     dispatch: Arc<Dispatch>,
     _journal: Arc<Journal>,
     routes: Arc<RouteTable>,
@@ -55,7 +54,8 @@ impl Core {
         let routes = RouteTable::new();
         let _journal = Journal::new();
 
-        let collector = Collector::new();
+        let (jtx, jrx) = async_std::channel::bounded(16);
+        let collector = BlockCollector::new(jtx);
         let dispatch = Dispatch::new(
             Arc::clone(&routes),
             Arc::clone(&drivers),
@@ -72,7 +72,7 @@ impl Core {
 
         // Dispatch the runners
         Arc::clone(&switch).run();
-        Arc::clone(&_journal).run();
+        async_std::task::spawn(Arc::clone(&_journal).run(jrx));
 
         Self {
             dispatch,
