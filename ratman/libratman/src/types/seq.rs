@@ -4,7 +4,7 @@
 
 //! Sequence handling module
 
-use crate::types::{Address, Frame, Id, RatmanError, Recipient};
+use crate::types::{legacy_frame::Frame, Address, Id, RatmanError, Recipient};
 use serde::{Deserialize, Serialize};
 use std::hash::{BuildHasher, Hasher};
 use twox_hash::{RandomXxHashBuilder64 as RXHash64, XxHash64};

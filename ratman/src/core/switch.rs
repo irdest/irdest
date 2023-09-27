@@ -107,8 +107,8 @@ impl Switch {
 
             match meta.modes {
                 fmodes::ANNOUNCE => {}
-                fmodes::DATA => {},
-                fmodes::MANIFEST => {},
+                fmodes::DATA => {}
+                fmodes::MANIFEST => {}
                 t => {
                     warn!("Unknown frame type: {}", t);
                 }

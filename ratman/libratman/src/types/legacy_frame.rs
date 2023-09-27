@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-#![deprecated]
-
 use crate::types::{Address, Id, Recipient, SeqBuilder, SeqData, ID_LEN};
 use serde::{Deserialize, Serialize};
 
@@ -13,6 +11,7 @@ use serde::{Deserialize, Serialize};
 /// constructors assume chainable operations, such as a `Vec<Frame>`
 /// can be returned with all sequence ID information correctly setup.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[deprecated]
 pub struct Frame {
     /// Sender information
     pub sender: Address,

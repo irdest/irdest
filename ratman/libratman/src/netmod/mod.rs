@@ -39,4 +39,4 @@ mod frame;
 
 pub use endpoint::Endpoint;
 pub use error::NetmodError;
-pub use frame::Target;
+pub use frame::{InMemoryEnvelope, Target};

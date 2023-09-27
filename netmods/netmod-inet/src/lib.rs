@@ -22,8 +22,8 @@ use {resolve::Resolver, server::Server};
 
 use async_std::{channel::unbounded, io::WriteExt, net::TcpListener, sync::Arc, task};
 use libratman::{
-    netmod,
-    types::{Frame, RatmanError},
+    netmod::{self, InMemoryEnvelope},
+    types::RatmanError,
     NetmodError,
 };
 use serde::{Deserialize, Serialize};
@@ -124,12 +124,16 @@ impl InetEndpoint {
     /// to it, or it is currently being restarted, and we queue
     /// something for it.
     ///
-    pub async fn send(&self, target: Target, frame: Frame) -> Result<(), RatmanError> {
+    pub async fn send(
+        &self,
+        target: Target,
+        envelope: InMemoryEnvelope,
+    ) -> Result<(), RatmanError> {
         let valid = self.routes.exists(target).await;
         if valid {
             trace!("Target {} exists {}", target, valid);
             let peer = self.routes.get_peer_by_id(target).await.unwrap();
-            match peer.send(&frame).await {
+            match peer.send(&envelope).await {
                 // In case the connection was dropped, we remove the peer from the routing table
                 Err(_) => {
                     let peer = self.routes.remove_peer(target).await;
@@ -141,7 +145,11 @@ impl InetEndpoint {
         Ok(())
     }
 
-    pub async fn send_all(&self, frame: Frame, exclude: Option<Target>) -> Result<(), RatmanError> {
+    pub async fn send_all(
+        &self,
+        envelope: InMemoryEnvelope,
+        exclude: Option<Target>,
+    ) -> Result<(), RatmanError> {
         let all = self.routes.get_all_valid().await;
         for (peer, id) in all {
             match exclude {
@@ -149,7 +157,7 @@ impl InetEndpoint {
                 _ => {}
             }
 
-            if let Err(e) = peer.send(&frame).await {
+            if let Err(e) = peer.send(&envelope).await {
                 error!("failed to send frame to peer {}: {}", peer.id(), e);
                 self.routes.remove_peer(peer.id()).await;
             }
@@ -160,7 +168,7 @@ impl InetEndpoint {
 
     /// Get the next (Target, Frame) tuple from this endpoint
     // TODO: properly map error here
-    pub async fn next(&self) -> Option<(Target, Frame)> {
+    pub async fn next(&self) -> Option<(Target, InMemoryEnvelope)> {
         self.channel.1.recv().await.ok()
     }
 }
@@ -196,14 +204,14 @@ impl netmod::Endpoint for InetEndpoint {
     /// one-to-one endpoint, this ID can be ignored (set to 0).
     async fn send(
         &self,
-        frame: Frame,
+        envelope: InMemoryEnvelope,
         target: netmod::Target,
         exclude: Option<u16>,
     ) -> Result<(), RatmanError> {
         trace!("Sending message to {:?}", target);
         match target {
-            netmod::Target::Single(target) => self.send(target, frame).await?,
-            netmod::Target::Flood(_) => self.send_all(frame, exclude).await?,
+            netmod::Target::Single(target) => self.send(target, envelope).await?,
+            netmod::Target::Flood(_) => self.send_all(envelope, exclude).await?,
         }
 
         Ok(())
@@ -214,11 +222,11 @@ impl netmod::Endpoint for InetEndpoint {
     /// It's recommended to return transmission errors, even if there
     /// are no ways to correct the situation from the router's POV,
     /// simply to feed packet drop metrics.
-    async fn next(&self) -> Result<(Frame, netmod::Target), RatmanError> {
+    async fn next(&self) -> Result<(InMemoryEnvelope, netmod::Target), RatmanError> {
         self.next()
             .await
             .ok_or(RatmanError::Netmod(NetmodError::ConnectionLost))
-            .map(|(target, frame)| (frame, netmod::Target::Single(target)))
+            .map(|(target, envelope)| (envelope, netmod::Target::Single(target)))
     }
 }
 

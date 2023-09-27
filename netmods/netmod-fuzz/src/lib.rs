@@ -3,11 +3,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use async_std::channel::{unbounded, Receiver, Sender};
-use libratman::{netmod, types::Frame, RatmanError};
+use libratman::{
+    netmod::{self, InMemoryEnvelope},
+    types::frames::ProtoCarrierFrameMeta,
+    RatmanError,
+};
 
 pub struct FuzzEndpoint {
-    tx: Sender<(Frame, netmod::Target)>,
-    rx: Receiver<(Frame, netmod::Target)>,
+    tx: Sender<(InMemoryEnvelope, netmod::Target)>,
+    rx: Receiver<(InMemoryEnvelope, netmod::Target)>,
 }
 
 impl FuzzEndpoint {
@@ -17,8 +21,12 @@ impl FuzzEndpoint {
     }
 
     pub async fn recv(&self, buf: &[u8]) {
-        if let Ok(frame) = bincode::deserialize(&buf) {
-            let _ = self.tx.send((frame, netmod::Target::Single(0))).await;
+        if let Ok(meta) = ProtoCarrierFrameMeta::from_peek(buf) {
+            let buffer = buf.to_vec();
+            let _ = self
+                .tx
+                .send((InMemoryEnvelope { meta, buffer }, netmod::Target::Single(0)))
+                .await;
         }
     }
 }
@@ -29,11 +37,16 @@ impl netmod::Endpoint for FuzzEndpoint {
         0
     }
 
-    async fn send(&self, _: Frame, _: netmod::Target, _: Option<u16>) -> Result<(), RatmanError> {
+    async fn send(
+        &self,
+        _: InMemoryEnvelope,
+        _: netmod::Target,
+        _: Option<u16>,
+    ) -> Result<(), RatmanError> {
         Ok(())
     }
 
-    async fn next(&self) -> Result<(Frame, netmod::Target), RatmanError> {
+    async fn next(&self) -> Result<(InMemoryEnvelope, netmod::Target), RatmanError> {
         Ok(self.rx.recv().await.unwrap())
     }
 }

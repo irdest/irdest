@@ -1,6 +1,6 @@
 //! Networking frames
 
-use crate::types::Address;
+use crate::types::{frames::ProtoCarrierFrameMeta, Address};
 
 /// Describes an endpoint's send target
 ///
@@ -25,4 +25,11 @@ impl Default for Target {
     fn default() -> Self {
         Self::Single(0)
     }
+}
+
+/// Container for carrier frame metadata and a full message buffer
+#[derive(Debug, Clone)]
+pub struct InMemoryEnvelope {
+    pub meta: ProtoCarrierFrameMeta,
+    pub buffer: Vec<u8>,
 }

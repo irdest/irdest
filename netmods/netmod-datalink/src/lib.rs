@@ -18,7 +18,7 @@ use useful_netmod_bits::framing::Envelope;
 
 use async_std::{future, sync::Arc, task};
 use async_trait::async_trait;
-use libratman::netmod::{Endpoint as EndpointExt, Target};
+use libratman::netmod::{Endpoint as EndpointExt, InMemoryEnvelope, Target};
 use libratman::types::{Frame, RatmanError, Result};
 use pnet::util::MacAddr;
 use pnet_datalink::interfaces;
@@ -284,14 +284,17 @@ impl EndpointExt for Endpoint {
         1500
     }
 
-    async fn send(&self, frame: Frame, target: Target, exclude: Option<u16>) -> Result<()> {
-        let inner = bincode::serialize(&frame).unwrap();
-
-        if inner.len() > 1500 {
+    async fn send(
+        &self,
+        InMemoryEnvelope { buffer, .. }: InMemoryEnvelope,
+        target: Target,
+        exclude: Option<u16>,
+    ) -> Result<()> {
+        if buffer.len() > 1500 {
             return Err(RatmanError::Netmod(NetmodError::FrameTooLarge));
         }
 
-        let env = Envelope::Data(inner);
+        let env = Envelope::Data(buffer);
 
         match target {
             Target::Single(ref id) => {
@@ -323,7 +326,7 @@ impl EndpointExt for Endpoint {
         Ok(())
     }
 
-    async fn next(&self) -> Result<(Frame, Target)> {
+    async fn next(&self) -> Result<(InMemoryEnvelope, Target)> {
         let fe = self.socket.next().await;
         Ok((fe.0, fe.1))
     }

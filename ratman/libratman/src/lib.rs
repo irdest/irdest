@@ -29,4 +29,7 @@ pub mod types;
 // Re-export existing errors at the root to make them more convenient
 // to access.  Importantly errors are name-spaced while results are
 // not.  A result MUST always be of type Result<T, RatmanError>.
-pub use {client::ClientError, netmod::NetmodError, types::RatmanError, types::Result, types::EncodingError};
+pub use {
+    client::ClientError, netmod::NetmodError, types::EncodingError, types::RatmanError,
+    types::Result,
+};

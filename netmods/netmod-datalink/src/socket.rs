@@ -5,6 +5,7 @@
 
 //! Socket handler module
 
+use libratman::types::frames::ProtoCarrierFrameMeta;
 use useful_netmod_bits::addrs::AddrTable;
 use useful_netmod_bits::framing::{Envelope, FrameExt};
 
@@ -21,7 +22,7 @@ use pnet::{
 };
 use pnet_datalink::{channel, Channel, DataLinkReceiver, DataLinkSender, NetworkInterface};
 
-use libratman::netmod::Target;
+use libratman::netmod::{InMemoryEnvelope, Target};
 use nix::errno::Errno;
 use std::collections::VecDeque;
 use std::error::Error;
@@ -160,14 +161,26 @@ impl Socket {
                                     trace!("Receiving announce reply");
                                     table.set(peer).await;
                                 }
-                                Envelope::Data(vec) => {
+                                Envelope::Data(buffer) => {
                                     trace!("Received data frame");
-                                    let frame = bincode::deserialize(&vec).unwrap();
+                                    let meta = match ProtoCarrierFrameMeta::from_peek(&buffer) {
+                                        Ok(m) => m,
+                                        Err(e) => {
+                                            error!(
+                                                "failed to parse CarrierFrame metadata section: {}",
+                                                e
+                                            );
+                                            return;
+                                        }
+                                    };
 
                                     if let Some(id) = table.id(peer).await {
                                         // Append to the inbox and wake
                                         let mut inbox = arc.inbox.write().await;
-                                        inbox.push_back(FrameExt(frame, Target::Single(id)));
+                                        inbox.push_back(FrameExt(
+                                            InMemoryEnvelope { meta, buffer },
+                                            Target::Single(id),
+                                        ));
                                         Notify::wake(&mut inbox);
                                     }
                                 }

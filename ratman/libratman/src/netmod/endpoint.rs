@@ -1,8 +1,10 @@
 //! Endpoint abstraction module
 
-use crate::{netmod::Target, types::Frame, Result};
+use crate::{netmod::Target, types::frames::CarrierFrame, Result};
 use async_trait::async_trait;
 use std::sync::Arc;
+
+use super::frame::InMemoryEnvelope;
 
 /// The main trait describing a Ratman networking interface
 ///
@@ -62,14 +64,19 @@ pub trait Endpoint {
     /// to prevent endless replication of flood messages.  When
     /// implementing a one-to-one endpoint, the frame MUST be dropped
     /// when exclude contains any value!
-    async fn send(&self, frame: Frame, target: Target, exclude: Option<u16>) -> Result<()>;
+    async fn send(
+        &self,
+        envelope: InMemoryEnvelope,
+        target: Target,
+        exclude: Option<u16>,
+    ) -> Result<()>;
 
     /// Poll for the next available Frame from this interface
     ///
     /// It's recommended to return transmission errors, even if there
     /// are no ways to correct the situation from the router's POV,
     /// simply to feed packet drop metrics.
-    async fn next(&self) -> Result<(Frame, Target)>;
+    async fn next(&self) -> Result<(InMemoryEnvelope, Target)>;
 }
 
 #[async_trait]
@@ -78,11 +85,16 @@ impl<T: Endpoint + Send + Sync> Endpoint for Arc<T> {
         T::size_hint(self)
     }
 
-    async fn send(&self, frame: Frame, target: Target, exclude: Option<u16>) -> Result<()> {
-        T::send(self, frame, target, exclude).await
+    async fn send(
+        &self,
+        envelope: InMemoryEnvelope,
+        target: Target,
+        exclude: Option<u16>,
+    ) -> Result<()> {
+        T::send(self, envelope, target, exclude).await
     }
 
-    async fn next(&self) -> Result<(Frame, Target)> {
+    async fn next(&self) -> Result<(InMemoryEnvelope, Target)> {
         T::next(self).await
     }
 }

@@ -2,7 +2,7 @@
 
 Status: *pre-draft*
 Start date: *2022-04-05*
-Latest revision: *2023-09-09*
+Latest revision: *2023-09-27*
 
 The Irdest router Ratman exchanges user packets as well as routing
 metadata with neighbouring routers.  This communication is facilitated
@@ -468,7 +468,7 @@ messages are encoded.  Any optional fields that are not present in a
 particular structure MUST be replaced with a NULL byte.
 
 The basic container type of any message in an Irdest network is a
-.carrcarrier frame, which has the following structure:
+carrier frame, which has the following structure:
 
 ```rust
 CarrierFrame {
@@ -476,7 +476,7 @@ CarrierFrame {
   modes: u16,
   recipient: [u8; 32] (optional),
   sender: [u8; 32],
-  seq_id: [u8; 16] (optional),
+  seq_id: [u8; 34] (optional),
   signature: [u8; 32] (optional),
   pl_size: u16,
   payload: [u8, pl_size]
@@ -509,28 +509,28 @@ channels have a built-in checksum mechanism, and thus the effort would
 be duplicated.  It is up to any netmod to decide whether a
 transmission checksum is required.
 
-Following is a (*work in progress*) overview of valid bitfields.  If a
-field is _not_ listed it is _invalid_!  Routers that encounter an
+Following is a (*work in progress!*) overview of valid bitfields.  If
+a field is _not_ listed it is _invalid_!  Routers that encounter an
 invalid message MUST discard it.
 
 
-| Bitfield              | Frame type descriptor |
-|-----------------------|-----------------------|
-| `0000 0000 0000 0000` | Address Announcement  |
-| `0000 0000 0000 0010` | Data frame            |
-| `0000 0000 0000 0011` | Manifest frame        |
-| `0000 0000 0000 0100` | Router Handshake      |
-| `0000 0000 0000 1xxx` | (Reserved)            |
-| `0000 0000 0010 0001` | SyncScopeRequest      |
-| `0000 0000 001x xxx0` | (Reserved)            |
-| `0000 0000 0100 0001` | SourceRequest         |
-| `0000 0000 0010 0010` | SourceResponse        |
-| `0000 0000 01xx xx11` | (Reserved)            |
-| `0000 0000 1000 0001` | PushNotice            |
-| `0000 0000 1000 0010` | DenyNotice            |
-| `0000 0000 1000 0011` | PullRequest           |
-| `0xxx xxx1 xxxx xxxx` | (Reserved)            |
-| `1000 0000 0000 0001` | LinkLeapNotice        |
+| Bitfield states       | Frame type descriptor                    |
+|-----------------------|------------------------------------------|
+| `0000 0000 0000 01xx` | Base address announcements               |
+| `0000 0000 0000 1000` | ERIS Data frame                          |
+| `0000 0000 0000 1001` | ERIS Manifest frame                      |
+| `0000 0000 0000 1xxx` | *(Reserved for future data frame types)* |
+| `0000 0000 0001 xxxx` | *(Reserved)*                             |
+| `0000 0000 001x xxxx` | Netmod/ Wire peering frames              |
+| `0000 0000 01xx xxxx` | Router to Router peering frames          |
+| `???? ???? ???? ????` | SyncScopeRequest                         |
+| `???? ???? ???? ????` | SourceRequest                            |
+| `???? ???? ???? ????` | SourceResponse                           |
+| `???? ???? ???? ????` | PushNotice                               |
+| `???? ???? ???? ????` | DenyNotice                               |
+| `???? ???? ???? ????` | PullRequest                              |
+| `???? ???? ???? ????` | LinkLeapNotice                           |
+| `1xxx xxxx xxxx xxxx` | User specified packet type range         |
 
 Message payloads are encoded via their own Protobuf schemas (**TODO**:
 turn pseudo-code schemas from this specification into protobuf type
@@ -591,13 +591,37 @@ message Manifest {
 }
 ```
 
-### Router Announcement
+### Netmod peering range
+
+When establishing a peering relationship between two routers their
+respective netmods MAY have to negotiate some state between them.  In
+most cases this protocol should be simple.  In any case, the bitflag
+range `0000 0000 001x xxxx` is reserved for such purposes (in decimal
+numbers `32` to `63`).  CarrierFrame's in this modes range MUST not be
+passed to the router.  Instead their payloads SHOULD be parsed by the
+receiving netmod to influence peering decisions.
+
+It is left up to the netmod implementation to specify how this range
+is used.  Netmods that wish to interact with each other SHOULD
+coordinate usage of the same frame type flags.
+
+
+### Router peering range
+
+Similar to the netmod peering protocol range, routers have the ability
+to exchange data with their immediate peers about who they are, where
+they can route, and any other information that may impact neighbour
+routing decisions.  The bitblag range `0000 0000 01xx xxxx` is
+reserved for such purposes (in decimal numbers `64` to `127`).
+CarrierFrame's in this range MUST NOT be cached in the routing
+journal, or forwarded to any other peer.
 
 ```protobuf
 message RouterAnnouncement {
 
 }
 ```
+
 
 ### SyncScopeRequest
 

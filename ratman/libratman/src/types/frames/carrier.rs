@@ -26,15 +26,16 @@ pub struct FullCarrierFrameMeta {
 /// that aren't directly addressed to this node, and are not required
 /// for routing negotiation can be left un-parsed and forwarded to the
 /// next transport hop as-is.
+///
+/// Alternatively this header allows full parsing and message re-construction to be lazily deferred
 #[derive(Debug, Clone)]
 pub struct ProtoCarrierFrameMeta {
     pub version: u8,
     pub modes: u16,
     pub recipient: Option<Address>,
     pub sender: Address,
+    pub seq_id: Option<SequenceIdV1>,
 }
-
-use nom::{bytes::complete::take, combinator::peek};
 
 impl ProtoCarrierFrameMeta {
     /// Peek into a data stream to read the first few meta fields
@@ -100,8 +101,12 @@ impl FrameGenerator for CarrierFrame {
 /// Block hash and a sequential counter to allow for re-ordering
 #[derive(Clone, Debug, PartialEq)]
 pub struct SequenceIdV1 {
+    /// The block's content reference
     pub hash: Id,
+    /// Number of THIS frame
     pub num: u8,
+    /// Number of the LAST frame in the sequence
+    pub max: u8,
 }
 
 impl FrameParser for SequenceIdV1 {
@@ -111,7 +116,8 @@ impl FrameParser for SequenceIdV1 {
         match hash {
             Some(hash) => {
                 let (input, num) = parse::take_byte(input)?;
-                Ok((input, Some(Self { hash, num })))
+                let (input, max) = parse::take_byte(input)?;
+                Ok((input, Some(Self { hash, num, max })))
             }
             None => Ok((input, None)),
         }
@@ -122,6 +128,7 @@ impl FrameGenerator for SequenceIdV1 {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         self.hash.generate(buf)?;
         buf.push(self.num);
+        buf.push(self.max);
         Ok(())
     }
 }

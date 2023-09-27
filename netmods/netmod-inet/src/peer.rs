@@ -13,10 +13,10 @@ use async_std::{
     sync::{Arc, Mutex},
     task,
 };
-use libratman::types::Frame;
+use libratman::netmod::InMemoryEnvelope;
 
-pub(crate) type FrameReceiver = Receiver<(Target, Frame)>;
-pub(crate) type FrameSender = Sender<(Target, Frame)>;
+pub(crate) type FrameReceiver = Receiver<(Target, InMemoryEnvelope)>;
+pub(crate) type FrameSender = Sender<(Target, InMemoryEnvelope)>;
 
 /// Represent another node running netmod-inet
 ///
@@ -84,14 +84,14 @@ impl Peer {
     /// If the sending fails for any reason, the underlying
     /// `SessionData` is returned so that a new session may be
     /// started.
-    pub(crate) async fn send(self: &Arc<Self>, f: &Frame) -> Result<(), SessionError> {
+    pub(crate) async fn send(self: &Arc<Self>, env: &InMemoryEnvelope) -> Result<(), SessionError> {
         let mut txg = self.tx.lock().await;
 
         // The TcpStream SHOULD never just disappear
         let tx = txg.as_mut().unwrap();
 
         trace!("Writing data to stream {}", self.id());
-        match proto::write(&mut *tx, f).await {
+        match proto::write(&mut *tx, env).await {
             Ok(()) => Ok(()),
             Err(e) => {
                 warn!("Failed to send data for peer {}", self.session.id);
@@ -122,7 +122,7 @@ impl Peer {
                 None => break,
             };
 
-            let f: Frame = match proto::read(rx).await {
+            let envelope = match proto::read(rx).await {
                 Ok(f) => {
                     trace!("Received frame from stream {}", self.id());
                     f
@@ -149,7 +149,7 @@ impl Peer {
             };
 
             // If we received a correct frame we forward it to the receiver
-            self.receiver.send((self.session.id, f)).await;
+            self.receiver.send((self.session.id, envelope)).await;
         }
 
         trace!("Exit receive loop for peer {}", self.id());

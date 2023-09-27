@@ -12,7 +12,7 @@ use core::mem::size_of;
 use nom::combinator::peek;
 pub use nom::{bytes::complete::take, IResult};
 
-use super::ProtoCarrierFrameMeta;
+use super::{ProtoCarrierFrameMeta, SequenceIdV1};
 
 /// A utility trait that represents a parsable frame entity
 ///
@@ -36,6 +36,8 @@ pub fn peek_carrier_meta(input: &[u8]) -> IResult<&[u8], ProtoCarrierFrameMeta> 
     let (peeked_input, modes) = take_u16(peeked_input)?;
     let (peeked_input, recipient) = maybe_address(peeked_input)?;
     let (peeked_input, sender) = take_address(peeked_input)?;
+    let (peeked_input, sender) = take_address(peeked_input)?;
+    let (peeked_input, seq_id) = SequenceIdV1::parse(peeked_input)?;
 
     Ok((
         input,
@@ -44,6 +46,7 @@ pub fn peek_carrier_meta(input: &[u8]) -> IResult<&[u8], ProtoCarrierFrameMeta> 
             modes,
             recipient,
             sender,
+            seq_id,
         },
     ))
 }
