@@ -109,7 +109,7 @@ follows
 - Run `cargo`
 
     ```console
-    cargo release -p ratman --release
+    cargo build -p ratman --release
     ```
 
 Other buildable targets or features not enabled by default can be
