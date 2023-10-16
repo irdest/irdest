@@ -13,12 +13,12 @@ mod socket;
 pub(crate) use socket::Socket;
 
 mod framing;
-pub(crate) use framing::{Envelope, FrameExt};
+pub(crate) use framing::MemoryEnvelopeExt;
 
 use async_std::{sync::Arc, task};
 use async_trait::async_trait;
-use libratman::netmod::{Endpoint as EndpointExt, Target};
-use libratman::types::{Frame, Result};
+use libratman::netmod::{Endpoint as EndpointExt, InMemoryEnvelope, Target};
+use libratman::types::Result;
 use pnet_datalink::interfaces;
 
 #[derive(Clone)]
@@ -64,13 +64,17 @@ impl EndpointExt for Endpoint {
         0
     }
 
-    async fn send(&self, frame: Frame, target: Target, exclude: Option<u16>) -> Result<()> {
-        let inner = bincode::serialize(&frame).unwrap();
-        let env = Envelope::Data(inner);
+    async fn send(
+        &self,
+        envelope: InMemoryEnvelope,
+        target: Target,
+        exclude: Option<u16>,
+    ) -> Result<()> {
         match target {
             Target::Single(ref id) => {
                 self.socket
-                    .send(&env, self.addrs.ip(*id).await.unwrap())
+                    // todo: do we need to prefix a length here ???
+                    .send(&envelope, self.addrs.ip(*id).await.unwrap())
                     .await
             }
 
@@ -80,7 +84,7 @@ impl EndpointExt for Endpoint {
             // other) we can just not bother to send the message
             // again (hopefully)
             Target::Flood(_) if exclude.is_none() => {
-                self.socket.multicast(&env).await;
+                self.socket.multicast(&envelope).await;
             }
             _ => {}
         }
@@ -88,7 +92,7 @@ impl EndpointExt for Endpoint {
         Ok(())
     }
 
-    async fn next(&self) -> Result<(Frame, Target)> {
+    async fn next(&self) -> Result<(InMemoryEnvelope, Target)> {
         let fe = self.socket.next().await;
         Ok((fe.0, fe.1))
     }

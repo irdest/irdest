@@ -5,7 +5,14 @@
 
 //! UDP overlay protocol and framing
 
-use libratman::{netmod::Target, types::Frame};
+use libratman::{
+    netmod::{InMemoryEnvelope, Target},
+    types::{
+        frames::{CarrierFrame, CarrierFrameV1, FrameParser},
+        Address, NonfatalError,
+    },
+    EncodingError, Result,
+};
 use serde::{Deserialize, Serialize};
 
 /// A framing device to encapsulate the UDP overlay protocol
@@ -20,22 +27,47 @@ use serde::{Deserialize, Serialize};
 /// then done via Ratman and the netmod API which considers target
 /// state.
 #[derive(Debug, Serialize, Deserialize)]
-pub(crate) enum Envelope {
+pub(crate) enum Handshake {
     /// Announcing an endpoint via multicast
     Announce,
     /// Reply to an announce
     Reply,
-    /// A raw data frame
-    Data(Vec<u8>),
 }
 
-impl Envelope {
-    pub(crate) fn as_bytes(&self) -> Vec<u8> {
-        bincode::serialize(self).unwrap()
+pub(crate) mod modes {
+    pub const HANDSHAKE_ANNOUNCE: u16 = 32;
+    pub const HANDSHAKE_REPLY: u16 = 33;
+}
+
+impl Handshake {
+    pub(crate) fn from_carrier(env: &InMemoryEnvelope) -> Result<Self> {
+        match env.meta.modes {
+            modes::HANDSHAKE_ANNOUNCE | modes::HANDSHAKE_REPLY => {
+                let (_, carrier) = CarrierFrame::parse(&env.buffer)
+                    .map_err(|e| EncodingError::Parsing(e.to_string().into()))?;
+                let full_carrier = carrier?;
+                bincode::deserialize(&full_carrier.get_payload())
+                    .map_err(|e| EncodingError::Parsing(e.to_string()).into())
+            }
+            _ => Err(NonfatalError::MismatchedEncodingTypes.into()),
+        }
     }
 
-    pub(crate) fn from_bytes(vec: &Vec<u8>) -> Self {
-        bincode::deserialize(&vec).unwrap()
+    pub(crate) fn to_carrier(self) -> Result<InMemoryEnvelope> {
+        let (payload, modes) = match self {
+            ref hello @ Self::Announce => (
+                bincode::serialize(hello).expect("failed to encode Handshake::Hello"),
+                modes::HANDSHAKE_ANNOUNCE,
+            ),
+            ref ack @ Self::Reply => (
+                bincode::serialize(ack).expect("failed to encode Handshake::Ack"),
+                modes::HANDSHAKE_REPLY,
+            ),
+        };
+
+        let mut v1 = CarrierFrameV1::pre_alloc(modes, None, Address::random(), None, None);
+        v1.set_payload_checked(1000, payload);
+        CarrierFrame::V1(v1).to_in_mem_envelope()
     }
 }
 
@@ -44,4 +76,4 @@ impl Envelope {
 /// The ID can be resolved via the AddrTable to find out where to send
 /// a payload
 #[derive(Debug, Clone)]
-pub(crate) struct FrameExt(pub(crate) Frame, pub(crate) Target);
+pub(crate) struct MemoryEnvelopeExt(pub(crate) InMemoryEnvelope, pub(crate) Target);

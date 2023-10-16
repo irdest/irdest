@@ -4,7 +4,7 @@
 
 //! Socket handler module
 
-use crate::{AddrTable, Envelope, FrameExt};
+use crate::{framing::Handshake, AddrTable, MemoryEnvelopeExt};
 use async_std::{
     future::{self, Future},
     net::{Ipv6Addr, SocketAddr, SocketAddrV6, UdpSocket},
@@ -12,7 +12,10 @@ use async_std::{
     sync::{Arc, RwLock},
     task::{self, Poll},
 };
-use libratman::netmod::Target;
+use libratman::{
+    netmod::{InMemoryEnvelope, Target},
+    types::frames::{modes, ProtoCarrierFrameMeta},
+};
 use std::collections::VecDeque;
 use std::ffi::CString;
 use task_notify::Notify;
@@ -25,7 +28,7 @@ pub(crate) struct Socket {
     port: u16,
     scope: u32,
     sock: Arc<UdpSocket>,
-    inbox: Arc<RwLock<Notify<VecDeque<FrameExt>>>>,
+    inbox: Arc<RwLock<Notify<VecDeque<MemoryEnvelopeExt>>>>,
 }
 
 fn if_nametoindex(name: &str) -> std::io::Result<u32> {
@@ -67,22 +70,26 @@ impl Socket {
         });
 
         Self::incoming_handle(Arc::clone(&arc), table);
-        arc.multicast(&Envelope::Announce).await;
+        arc.multicast(&Handshake::Announce.to_carrier().unwrap())
+            .await;
 
         arc
     }
 
     /// Send a message to one specific client
-    pub(crate) async fn send(&self, env: &Envelope, peer: SocketAddrV6) {
-        self.sock.send_to(&env.as_bytes(), peer).await.unwrap();
+    pub(crate) async fn send(&self, env: &InMemoryEnvelope, peer: SocketAddrV6) {
+        self.sock
+            .send_to(&env.buffer.as_slice(), peer)
+            .await
+            .unwrap();
     }
 
-    /// Send a multicast with an Envelope
-    pub(crate) async fn multicast(&self, env: &Envelope) {
+    /// Send a multicast with an InMemoryEnvelope
+    pub(crate) async fn multicast(&self, env: &InMemoryEnvelope) {
         match self
             .sock
             .send_to(
-                &env.as_bytes(),
+                &env.buffer.as_slice(),
                 SocketAddrV6::new(MULTI.clone(), self.port, 0, self.scope),
             )
             .await
@@ -92,7 +99,7 @@ impl Socket {
         }
     }
 
-    pub(crate) async fn next(&self) -> FrameExt {
+    pub(crate) async fn next(&self) -> MemoryEnvelopeExt {
         future::poll_fn(|ctx| {
             let lock = &mut self.inbox.write();
             match unsafe { Pin::new_unchecked(lock).poll(ctx) } {
@@ -114,8 +121,8 @@ impl Socket {
     fn incoming_handle(arc: Arc<Self>, table: Arc<AddrTable>) {
         task::spawn(async move {
             loop {
-                // This is a bad idea
-                let mut buf = vec![0; 8192];
+                // fixme: aaaaaaaaaaaaaaaaaaaaaaaaaah
+                let mut buf = vec![0; 1024 * 16];
 
                 match arc.sock.recv_from(&mut buf).await {
                     Ok((_, peer)) => {
@@ -138,25 +145,31 @@ impl Socket {
                             }
                         };
 
-                        let env = Envelope::from_bytes(&buf);
-                        match env {
-                            Envelope::Announce => {
+                        let proto_carrier = ProtoCarrierFrameMeta::from_peek(&buf).unwrap();
+
+                        match proto_carrier.modes {
+                            crate::framing::modes::HANDSHAKE_ANNOUNCE => {
                                 trace!("Recieving announce");
                                 table.set(peer).await;
-                                arc.multicast(&Envelope::Reply).await;
+                                arc.multicast(&Handshake::Reply.to_carrier().unwrap()).await;
                             }
-                            Envelope::Reply => {
+                            crate::framing::modes::HANDSHAKE_REPLY => {
                                 trace!("Recieving announce reply");
                                 table.set(peer).await;
                             }
-                            Envelope::Data(vec) => {
-                                trace!("Recieved data frame");
-                                let frame = bincode::deserialize(&vec).unwrap();
+                            _ => {
+                                trace!("(Most likely) received data frame");
                                 let id = table.id(peer.into()).await.unwrap();
 
                                 // Append to the inbox and wake
                                 let mut inbox = arc.inbox.write().await;
-                                inbox.push_back(FrameExt(frame, Target::Single(id)));
+                                inbox.push_back(MemoryEnvelopeExt(
+                                    InMemoryEnvelope {
+                                        meta: proto_carrier,
+                                        buffer: buf,
+                                    },
+                                    Target::Single(id),
+                                ));
                                 Notify::wake(&mut inbox);
                             }
                         }
@@ -179,6 +192,7 @@ fn test_init() {
         let table = Arc::new(AddrTable::new());
         let sock = Socket::new("br42", 12322, table).await;
         println!("Multicasting");
-        sock.multicast(&Envelope::Announce).await;
+        sock.multicast(&Handshake::Announce.to_carrier().unwrap())
+            .await;
     });
 }
