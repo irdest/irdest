@@ -9,23 +9,14 @@ use async_std::{
 };
 use byteorder::ByteOrder;
 use libratman::{
-    error, netmod::InMemoryEnvelope, types::frames::ProtoCarrierFrameMeta, EncodingError, Result,
+    netmod::InMemoryEnvelope,
+    types::{
+        frames::{CarrierFrame, CarrierFrameV1, FrameParser, ProtoCarrierFrameMeta},
+        Address, NonfatalError,
+    },
+    EncodingError, RatmanError, Result,
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-
-// #[derive(Debug, thiserror::Error)]
-// pub enum ProtoError {
-//     #[error("tried reading from socket but no data was present")]
-//     NoData,
-//     #[error("underlying I/O failure: {}", 0)]
-//     Io(io::Error),
-// }
-
-// impl From<io::Error> for ProtoError {
-//     fn from(err: io::Error) -> Self {
-//         Self::Io(err)
-//     }
-// }
 
 #[inline]
 pub(crate) async fn read_blocking(mut rx: &TcpStream) -> Result<InMemoryEnvelope> {
@@ -62,9 +53,46 @@ pub(crate) async fn write(mut tx: &TcpStream, envelope: &InMemoryEnvelope) -> Re
     Ok(())
 }
 
+mod modes {
+    pub const HANDSHAKE_HELLO: u16 = 32;
+    pub const HANDSHAKE_ACK: u16 = 33;
+}
+
 /// A simple handshake type to send across a newly created connection
 #[derive(Serialize, Deserialize)]
 pub(crate) enum Handshake {
     Hello { tt: PeerType, self_port: u16 },
     Ack { tt: PeerType },
+}
+
+impl Handshake {
+    pub(crate) fn from_carrier(env: &InMemoryEnvelope) -> Result<Self> {
+        match env.meta.modes {
+            modes::HANDSHAKE_HELLO | modes::HANDSHAKE_ACK => {
+                let (_, carrier) = CarrierFrame::parse(&env.buffer)
+                    .map_err(|e| EncodingError::Parsing(e.to_string().into()))?;
+                let full_carrier = carrier?;
+                bincode::deserialize(&full_carrier.get_payload())
+                    .map_err(|e| EncodingError::Parsing(e.to_string()).into())
+            }
+            _ => Err(NonfatalError::MismatchedEncodingTypes.into()),
+        }
+    }
+
+    pub(crate) fn to_carrier(self) -> Result<InMemoryEnvelope> {
+        let (payload, modes) = match self {
+            ref hello @ Self::Hello { .. } => (
+                bincode::serialize(hello).expect("failed to encode Handshake::Hello"),
+                modes::HANDSHAKE_HELLO,
+            ),
+            ref ack @ Self::Ack { .. } => (
+                bincode::serialize(ack).expect("failed to encode Handshake::Ack"),
+                modes::HANDSHAKE_ACK,
+            ),
+        };
+
+        let mut v1 = CarrierFrameV1::pre_alloc(modes, None, Address::random(), None, None);
+        v1.set_payload_checked(1000, payload);
+        CarrierFrame::V1(v1).to_in_mem_envelope()
+    }
 }

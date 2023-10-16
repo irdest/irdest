@@ -4,6 +4,7 @@ use super::{
 };
 use crate::{
     client::TimePair,
+    netmod::InMemoryEnvelope,
     types::{error::EncodingError, Address, Id, NonfatalError},
     RatmanError, Result,
 };
@@ -66,6 +67,23 @@ impl CarrierFrame {
         };
 
         Ok(0)
+    }
+
+    /// Get access to the underlying payload
+    pub fn get_payload(&self) -> &Vec<u8> {
+        match self {
+            Self::V1(ref v1) => &v1.payload,
+        }
+    }
+    
+    /// Allow a CarrierFrame to be folded into an InMemoryEnvelope
+    pub fn to_in_mem_envelope(self) -> Result<InMemoryEnvelope> {
+        let mut buffer = vec![];
+        self.generate(&mut buffer)?;
+
+        let meta = ProtoCarrierFrameMeta::from_peek(&buffer)?;
+
+        Ok(InMemoryEnvelope { meta, buffer })
     }
 }
 

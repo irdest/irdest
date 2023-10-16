@@ -70,6 +70,8 @@ pub enum NonfatalError {
     IsEphemeral,
     #[error("the current MTU of a netmod channel is too small to fit the desired frame")]
     MtuTooSmallForFrame,
+    #[error("the frame couldn't be parsed as the type it was expected to be")]
+    MismatchedEncodingTypes,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -85,6 +87,7 @@ pub enum EncodingError {
     FrameTooLarge(usize),
     #[error("provided buffer did not contain any data")]
     NoData,
+    
 }
 
 impl<T: std::fmt::Debug> From<nom::Err<T>> for EncodingError {

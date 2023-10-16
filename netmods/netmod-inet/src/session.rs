@@ -12,6 +12,7 @@ use async_std::{
     sync::Arc,
     task,
 };
+use libratman::{netmod::InMemoryEnvelope, RatmanError};
 use std::{io, time::Duration};
 
 /// The number of attempts a session maskes to a peer before giving up
@@ -24,7 +25,7 @@ pub(crate) enum SessionError {
     #[error("existing connection to {} was dropped by peer", 0)]
     Dropped(SocketAddr),
     #[error("mismatched peering expectations with {:?}: {}", 0, 1)]
-    Handshake(SessionData, io::Error),
+    Handshake(SessionData, String),
 }
 
 /// Create a new session manager for a single peer
@@ -181,19 +182,29 @@ async fn handshake(
     restart: Sender<SessionData>,
     mut stream: TcpStream,
 ) -> Result<Arc<Peer>, SessionError> {
-    proto::write(
-        &mut stream,
-        &Handshake::Hello {
-            tt: data.tt,
-            self_port: 0,
-        },
-    )
-    .await
-    .map_err(|e| SessionError::Handshake(*data, e))?;
+    let hello = Handshake::Hello {
+        tt: data.tt,
+        self_port: 0,
+    }
+    .to_carrier()
+    .unwrap();
 
-    let ack: Handshake = proto::read_blocking(&mut stream)
+    proto::write(&mut stream, &hello)
         .await
-        .map_err(|e| SessionError::Handshake(*data, e))?;
+        .map_err(|e| SessionError::Handshake(*data, e.to_string()))?;
+
+    let ack_env: InMemoryEnvelope = proto::read_blocking(&mut stream)
+        .await
+        .map_err(|e| SessionError::Handshake(*data, e.to_string()))?;
+
+    let ack = match Handshake::from_carrier(&ack_env) {
+        Err(RatmanError::Nonfatal(nf)) => {
+            warn!("Expected to receive a Handshake::Ack but received something different!");
+            unreachable!();
+        }
+        Ok(ack) => ack,
+        Err(e) => return Err(SessionError::Handshake(*data, e.to_string())),
+    };
 
     match (data.tt, ack) {
         (outgoing, Handshake::Ack { tt }) if outgoing == tt => {

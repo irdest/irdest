@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use crate::proto::ProtoError;
 use crate::session::{SessionData, SessionError};
 use crate::{proto, routes::Target};
 use async_std::channel;
@@ -14,6 +13,7 @@ use async_std::{
     task,
 };
 use libratman::netmod::InMemoryEnvelope;
+use libratman::{EncodingError, RatmanError};
 
 pub(crate) type FrameReceiver = Receiver<(Target, InMemoryEnvelope)>;
 pub(crate) type FrameSender = Sender<(Target, InMemoryEnvelope)>;
@@ -127,12 +127,12 @@ impl Peer {
                     trace!("Received frame from stream {}", self.id());
                     f
                 }
-                Err(ProtoError::NoData) => {
+                Err(RatmanError::Encoding(EncodingError::NoData)) => {
                     drop(rxg);
                     task::yield_now();
                     continue;
                 }
-                Err(ProtoError::Io(io)) => {
+                Err(RatmanError::Io(io)) => {
                     error!(
                         "Peers {} encountered I/O error during receiving: {}",
                         self.id(),
@@ -146,6 +146,7 @@ impl Peer {
 
                     break;
                 }
+                _ => unreachable!(),
             };
 
             // If we received a correct frame we forward it to the receiver

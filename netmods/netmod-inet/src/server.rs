@@ -105,7 +105,10 @@ async fn handle_stream(s: TcpStream, sender: FrameSender, r: Arc<Routes>) {
     };
 
     // Spawn a task to listen for packets for this peer
-    task::spawn(Arc::clone(&peer).run());
+    let this_peer = Arc::clone(&peer);
+    task::spawn(async move {
+        this_peer.run().await;
+    });
 
     // Also add the peer to the routing table
     r.add_peer(peer.id(), peer).await;
@@ -119,7 +122,10 @@ async fn accept_connection(
     let addr = s.peer_addr()?;
 
     // First we read the handshake structure from the socket
-    let tt = match proto::read_blocking(&mut s).await? {
+    let frame = proto::read_blocking(&mut s).await?;
+    let handshake = Handshake::from_carrier(&frame)?;
+
+    let tt = match handshake {
         Handshake::Hello { tt, .. } => tt,
         Handshake::Ack { .. } => {
             drop(s);
@@ -138,7 +144,7 @@ async fn accept_connection(
         addr,
     };
 
-    proto::write(&mut s, &Handshake::Ack { tt }).await?;
+    // proto::write(&mut s, &Handshake::Ack { tt }).await?;
     info!("Successfully connected with new peer #{} :)", target);
     Ok(Peer::standard(data, sender, None, s))
 }
