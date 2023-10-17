@@ -19,7 +19,7 @@ use useful_netmod_bits::framing::Envelope;
 use async_std::{future, sync::Arc, task};
 use async_trait::async_trait;
 use libratman::netmod::{Endpoint as EndpointExt, InMemoryEnvelope, Target};
-use libratman::types::{Frame, RatmanError, Result};
+use libratman::types::{RatmanError, Result};
 use pnet::util::MacAddr;
 use pnet_datalink::interfaces;
 

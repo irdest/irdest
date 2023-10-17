@@ -15,7 +15,10 @@ use async_std::{
     task,
 };
 use async_trait::async_trait;
-use libratman::types::{Frame, RatmanError, Result as NetResult};
+use libratman::{
+    netmod::InMemoryEnvelope,
+    types::{RatmanError, Result as NetResult},
+};
 use libratman::{
     netmod::{Endpoint, Target},
     NetmodError,
@@ -94,7 +97,12 @@ impl Endpoint for MemMod {
     ///
     /// Returns `OperationNotSupported` if attempting to send through
     /// a connection that is not yet connected.
-    async fn send(&self, frame: Frame, _: Target, exclude: Option<u16>) -> NetResult<()> {
+    async fn send(
+        &self,
+        frame: InMemoryEnvelope,
+        _: Target,
+        exclude: Option<u16>,
+    ) -> NetResult<()> {
         let io = self.io.read().await;
         match *io {
             None => Err(RatmanError::Netmod(NetmodError::NotSupported)),
@@ -103,7 +111,7 @@ impl Endpoint for MemMod {
         }
     }
 
-    async fn next(&self) -> NetResult<(Frame, Target)> {
+    async fn next(&self) -> NetResult<(InMemoryEnvelope, Target)> {
         let io = self.io.read().await;
         match *io {
             None => Err(RatmanError::Netmod(NetmodError::NotSupported)),

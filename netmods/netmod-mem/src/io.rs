@@ -3,12 +3,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use async_std::channel::{bounded, Receiver, Sender};
-use libratman::types::Frame;
+use libratman::netmod::InMemoryEnvelope;
 
 /// A simple I/O wrapper around channels
 pub(crate) struct Io {
-    pub out: Sender<Frame>,
-    pub inc: Receiver<Frame>,
+    pub out: Sender<InMemoryEnvelope>,
+    pub inc: Receiver<InMemoryEnvelope>,
 }
 
 impl Io {

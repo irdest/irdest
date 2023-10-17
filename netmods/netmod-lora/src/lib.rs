@@ -5,8 +5,7 @@ extern crate tracing;
 
 use irdest_firmware_util::{decode_frame, encode_frame};
 use libratman::{
-    netmod::{Endpoint, Target},
-    types::Frame,
+    netmod::{Endpoint, InMemoryEnvelope, Target},
     Result as RatmanResult,
 };
 
@@ -93,7 +92,7 @@ impl LoraPacket {
 }
 
 pub struct LoraEndpoint {
-    rx: channel::Receiver<Frame>,
+    rx: channel::Receiver<InMemoryEnvelope>,
     serial: Mutex<TTYPort>,
 }
 
@@ -116,7 +115,7 @@ impl LoraEndpoint {
         this
     }
 
-    async fn read_serial(self: Arc<Self>, c: channel::Sender<Frame>) {
+    async fn read_serial(self: Arc<Self>, c: channel::Sender<InMemoryEnvelope>) {
         debug!("Starting serial Read loop");
         let mut buffer: [u8; RADIO_MTU] = [0; RADIO_MTU];
         loop {
@@ -157,7 +156,12 @@ impl Endpoint for LoraEndpoint {
         PAYLOAD_SIZE
     }
 
-    async fn send(&self, frame: Frame, _target: Target, exclude: Option<u16>) -> RatmanResult<()> {
+    async fn send(
+        &self,
+        frame: InMemoryEnvelope,
+        _target: Target,
+        exclude: Option<u16>,
+    ) -> RatmanResult<()> {
         if exclude.is_some() {
             warn!("Cannot send messages containing exlude fields");
             return Ok(());
@@ -197,7 +201,7 @@ impl Endpoint for LoraEndpoint {
         Ok(())
     }
 
-    async fn next(&self) -> RatmanResult<(Frame, Target)> {
+    async fn next(&self) -> RatmanResult<(InMemoryEnvelope, Target)> {
         let frame = self.rx.recv().await.unwrap();
         trace!("delivering frame to deamon");
         Ok((frame, Target::Single(0)))
