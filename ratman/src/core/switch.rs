@@ -4,15 +4,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use crate::{
-    core::{Dispatch, DriverMap, Journal, RouteTable, RouteType},
+    core::{Dispatch, DriverMap, Journal, RouteTable},
     dispatch::BlockCollector,
-    protocol::Protocol,
     util::IoPair,
 };
 use async_std::{channel::bounded, sync::Arc, task};
 use libratman::{
     netmod::InMemoryEnvelope,
-    types::{frames::modes as fmodes, Recipient},
+    types::{self, frames::modes as fmodes, Recipient},
 };
 
 /// A frame switch inside Ratman to route packets and signals
@@ -44,7 +43,7 @@ impl Switch {
         routes: Arc<RouteTable>,
         journal: Arc<Journal>,
         dispatch: Arc<Dispatch>,
-        collector: Arc<Collector>,
+        collector: Arc<BlockCollector>,
         drivers: Arc<DriverMap>,
     ) -> Arc<Self> {
         Arc::new(Self {
@@ -91,6 +90,46 @@ impl Switch {
 
             trace!("Receiving frame from '{:?}'...", t);
 
+            // // Switch the traffic to the appropriate place
+            // use {Recipient::*, RouteType::*};
+            // match f.recipient {
+            //     Flood(_ns) => {
+            //         let seqid = f.seq.seqid;
+            //         if self.journal.unknown(&seqid).await {
+            //             if let Some(sender) = Protocol::is_announce(&f) {
+            //                 debug!("Received announcement for {}", sender);
+            //                 self.routes.update(id as u8, t, sender).await;
+            //             } else {
+            //                 self.collector.queue_and_spawn(f.seqid(), f.clone()).await;
+            //             }
+
+            //             self.dispatch.reflood(f, id, t).await;
+            //         }
+            //     }
+            //     ref recp @ Standard(_) => match recp.scope() {
+            //         Some(scope) => match self.routes.reachable(scope).await {
+            //             Some(Local) => self.collector.queue_and_spawn(f.seqid(), f).await,
+            //             Some(Remote(_)) => self.dispatch.send_one(f).await.unwrap(),
+            //             None => self.journal.queue(f).await,
+            //         },
+            //         None => {}
+            //     },
+            // }
+
+            // Match on the modes bitfield to determine what kind of
+            // frame we have
+            match meta.modes {
+                fmodes::ANNOUNCE => {
+                    debug!("Reiceved announcement for {}", meta.sender);
+                    self.routes.update(id as u8, t, meta.sender).await;
+                }
+                fmodes::DATA if meta.recipient.is_some() => {}
+                fmodes::MANIFEST => {}
+                f_type => {
+                    warn!("Received unknown frame type: {}", f_type);
+                }
+            }
+
             // #[cfg(feature = "dashboard")]
             // {
             //     let metric_labels = &metrics::Labels {
@@ -105,40 +144,16 @@ impl Switch {
             //         .inc_by(f.payload.len() as u64);
             // }
 
-            match meta.modes {
-                fmodes::ANNOUNCE => {}
-                fmodes::DATA => {}
-                fmodes::MANIFEST => {}
-                t => {
-                    warn!("Unknown frame type: {}", t);
-                }
-            }
+            // match meta.modes {
+            //     fmodes::ANNOUNCE => {}
+            //     fmodes::DATA => {}
+            //     fmodes::MANIFEST => {}
+            //     t => {
+            //         warn!("Unknown frame type: {}", t);
+            //     }
+            // }
 
-            // Switch the traffic to the appropriate place
-            use {Recipient::*, RouteType::*};
-            match f.recipient {
-                Flood(_ns) => {
-                    let seqid = f.seq.seqid;
-                    if self.journal.unknown(&seqid).await {
-                        if let Some(sender) = Protocol::is_announce(&f) {
-                            debug!("Received announcement for {}", sender);
-                            self.routes.update(id as u8, t, sender).await;
-                        } else {
-                            self.collector.queue_and_spawn(f.seqid(), f.clone()).await;
-                        }
-
-                        self.dispatch.reflood(f, id, t).await;
-                    }
-                }
-                ref recp @ Standard(_) => match recp.scope() {
-                    Some(scope) => match self.routes.reachable(scope).await {
-                        Some(Local) => self.collector.queue_and_spawn(f.seqid(), f).await,
-                        Some(Remote(_)) => self.dispatch.send_one(f).await.unwrap(),
-                        None => self.journal.queue(f).await,
-                    },
-                    None => {}
-                },
-            }
+            todo!()
         }
     }
 }

@@ -13,7 +13,7 @@ pub use manifest::*;
 
 ////// Expose the generator and parser APIs for other types
 pub use generate::FrameGenerator;
-pub use parse::{FrameParser, IResult as ParserResult};
+pub use parse::{take_address, FrameParser, IResult as ParserResult};
 
 use rand::RngCore;
 

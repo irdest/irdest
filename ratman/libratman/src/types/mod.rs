@@ -19,6 +19,7 @@ mod error;
 mod identifiers;
 mod legacy_frame;
 mod message;
+mod recipient;
 mod seq;
 mod timepair;
 

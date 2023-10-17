@@ -75,7 +75,7 @@ impl CarrierFrame {
             Self::V1(ref v1) => &v1.payload,
         }
     }
-    
+
     /// Allow a CarrierFrame to be folded into an InMemoryEnvelope
     pub fn to_in_mem_envelope(self) -> Result<InMemoryEnvelope> {
         let mut buffer = vec![];
@@ -117,7 +117,7 @@ impl FrameGenerator for CarrierFrame {
 }
 
 /// Block hash and a sequential counter to allow for re-ordering
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SequenceIdV1 {
     /// The block's content reference
     pub hash: Id,
@@ -320,13 +320,14 @@ fn v1_data_frame_meta_size() {
         Some(SequenceIdV1 {
             hash: Id::random(),
             num: 123,
+            max: 234,
         }),
         None,
     );
-    // 2 bytes of modes, 32 bytes each for the recipient, sender, a
-    // 32-byte seq_id and 1-byte re-ordering counter and finally 1
-    // zero-byte for the signature -> 100
-    assert_eq!(f.get_meta_size(), 100);
+    // 2 bytes of modes, 32 bytes each for the recipient (+1 for flood
+    // vs target), sender, a 32-byte seq_id and 1-byte re-ordering
+    // counter and finally 1 zero-byte for the signature -> 101
+    assert_eq!(f.get_meta_size(), 101);
 }
 
 /// Ensure that encoding and decoding is possible from and to the same
@@ -342,6 +343,7 @@ fn v1_empty_carrier() {
         Some(SequenceIdV1 {
             hash: Id::random(),
             num: 123,
+            max: 234,
         }),
         Some(Id::random()),
     );
