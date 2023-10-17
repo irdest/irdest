@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use crate::types::{Address, Id, Recipient, SeqBuilder, SeqData, ID_LEN};
+use crate::types::{Address, Id, ApiRecipient, SeqBuilder, SeqData, ID_LEN};
 use serde::{Deserialize, Serialize};
 
 /// A sequence of data, represented by a single network packet
@@ -16,7 +16,7 @@ pub struct Frame {
     /// Sender information
     pub sender: Address,
     /// Recipient information
-    pub recipient: Recipient,
+    pub recipient: ApiRecipient,
     /// Data sequence identifiers
     pub seq: SeqData,
     /// Raw data payload
@@ -28,7 +28,7 @@ impl Frame {
     pub fn dummy() -> Self {
         SeqBuilder::new(
             Address::from_bytes(&[0; ID_LEN]),
-            Recipient::Flood(Address::random()),
+            ApiRecipient::Flood(Address::random()),
             Id::random(),
         )
         .add(vec![0x41, 0x43, 0x41, 0x42])
@@ -38,7 +38,7 @@ impl Frame {
 
     /// Build a one-off frame with inline payload
     pub fn inline_flood(sender: Address, scope: Address, payload: Vec<u8>) -> Frame {
-        SeqBuilder::new(sender, Recipient::Flood(scope), Id::random())
+        SeqBuilder::new(sender, ApiRecipient::Flood(scope), Id::random())
             .add(payload)
             .build()
             .remove(0)

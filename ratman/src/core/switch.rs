@@ -11,7 +11,7 @@ use crate::{
 use async_std::{channel::bounded, sync::Arc, task};
 use libratman::{
     netmod::InMemoryEnvelope,
-    types::{self, frames::modes as fmodes, Recipient},
+    types::{self, frames::modes as fmodes, ApiRecipient},
 };
 
 /// A frame switch inside Ratman to route packets and signals
@@ -160,7 +160,7 @@ impl Switch {
 
 #[cfg(feature = "dashboard")]
 mod metrics {
-    use libratman::types::{Address, Recipient};
+    use libratman::types::{Address, ApiRecipient};
     use prometheus_client::{
         encoding::text::Encode,
         metrics::{counter::Counter, family::Family},
@@ -180,11 +180,11 @@ mod metrics {
         Flood,
     }
 
-    impl From<&Recipient> for IdentityType {
-        fn from(v: &Recipient) -> Self {
+    impl From<&ApiRecipient> for IdentityType {
+        fn from(v: &ApiRecipient) -> Self {
             match v {
-                &Recipient::Standard(_) => Self::Standard,
-                &Recipient::Flood(_) => Self::Flood,
+                &ApiRecipient::Standard(_) => Self::Standard,
+                &ApiRecipient::Flood(_) => Self::Flood,
             }
         }
     }

@@ -4,7 +4,7 @@
 
 use libratman::{
     netmod::InMemoryEnvelope,
-    types::{Address, Id, Recipient, SeqData, XxSignature},
+    types::{Address, Id, ApiRecipient, SeqData, XxSignature},
 };
 use std::io::{Read, Write};
 
@@ -144,8 +144,8 @@ pub fn decode_frame<T: Read>(stream: &mut T) -> Result<InMemoryEnvelope, std::io
     let recipient_match = read_exactly(1, stream)?;
     let recipient_buf = read_exactly(32, stream)?;
     let recipient = match recipient_match[0] {
-        0x13 => Recipient::Standard(vec![Address::from_bytes(&recipient_buf)]),
-        0x12 => Recipient::Flood(Address::from_bytes(&recipient_buf)),
+        0x13 => ApiRecipient::Standard(vec![Address::from_bytes(&recipient_buf)]),
+        0x12 => ApiRecipient::Flood(Address::from_bytes(&recipient_buf)),
         code => panic!("Invalid recipient code: {}", code), // TODO: don't panic here
     };
 

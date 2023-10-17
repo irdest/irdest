@@ -18,7 +18,7 @@ use async_std::{
 pub(crate) use client::BaseClient;
 pub(crate) use connection::ConnectionManager;
 use libratman::{
-    types::{api, Address, Message, Recipient},
+    types::{api, Address, Message, ApiRecipient},
     Result,
 };
 
@@ -43,7 +43,7 @@ async fn run_relay(context: Arc<RatmanContext>) {
         ));
 
         match recipient {
-            ref recp @ Recipient::Standard(_) => {
+            ref recp @ ApiRecipient::Standard(_) => {
                 let client_id = context
                     .clients
                     .get_client_for_address(&recp.scope().expect("empty recipient!"))
@@ -67,7 +67,7 @@ async fn run_relay(context: Arc<RatmanContext>) {
                     }
                 }
             }
-            Recipient::Flood(_) => {
+            ApiRecipient::Flood(_) => {
                 // TODO: how to determine whether a client has
                 // "missed" a flood message.  Do we re-play flood
                 // messages at all?  It could get quite big.

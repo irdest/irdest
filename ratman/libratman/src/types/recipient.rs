@@ -6,11 +6,13 @@ use crate::{
     Result,
 };
 use nom::{bytes::complete::take, IResult};
+use serde::{Deserialize, Serialize};
 
 /// Represent a message recipient on the network
 ///
 /// This can either be a single address, or an address namespace for
 /// flooding.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Recipient {
     /// Contains a single targeted message
     Target(Address),

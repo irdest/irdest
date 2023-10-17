@@ -4,7 +4,7 @@
 
 use libratman::types::{
     api::{Send, Send_Type},
-    Address, Id, Message, Recipient, TimePair,
+    Address, Id, Message, ApiRecipient, TimePair,
 };
 
 /// Turn an API `Send` to a `Message`
@@ -18,9 +18,9 @@ pub(crate) fn send_to_message(s: Send) -> Vec<Message> {
             .get_std()
             .get_standard()
             .into_iter()
-            .map(|addr| Recipient::Standard(vec![Address::from_bytes(&addr)]))
+            .map(|addr| ApiRecipient::Standard(vec![Address::from_bytes(&addr)]))
             .collect(),
-        Send_Type::FLOOD => vec![Recipient::Flood(Address::from_bytes(s.scope.as_slice()))],
+        Send_Type::FLOOD => vec![ApiRecipient::Flood(Address::from_bytes(s.scope.as_slice()))],
     };
     let timesig = TimePair::sending();
 

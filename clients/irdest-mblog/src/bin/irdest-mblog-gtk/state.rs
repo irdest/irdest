@@ -6,7 +6,7 @@ use async_std::{
 use irdest_mblog::{Envelope, Message, Payload, NAMESPACE};
 use libratman::{
     client::RatmanIpc,
-    types::{Message as RatmanMessage, Recipient},
+    types::{Message as RatmanMessage, ApiRecipient},
 };
 use protobuf::Message as _;
 use std::convert::{TryFrom, TryInto};
@@ -91,8 +91,8 @@ impl AppState {
             .await
             // Drop flood messages for the wrong namespace.
             .filter(|(_tt, ratmsg)| match ratmsg.get_recipient() {
-                Recipient::Flood(ns) => ns == NAMESPACE.into(),
-                Recipient::Standard(_) => true,
+                ApiRecipient::Flood(ns) => ns == NAMESPACE.into(),
+                ApiRecipient::Standard(_) => true,
             })
         {
             self.parse_and_store(&ratmsg)
@@ -190,7 +190,7 @@ impl Iterator for MessageIterator {
 mod tests {
     use super::AppState;
     use irdest_mblog::{Header, Message, Payload, Post, NAMESPACE};
-    use libratman::types::{Address, Message as RatmanMessage, Recipient};
+    use libratman::types::{Address, Message as RatmanMessage, ApiRecipient};
     use protobuf::Message as _;
 
     #[test]
@@ -205,7 +205,7 @@ mod tests {
         };
         let ratmsg = RatmanMessage::new(
             Address::random(),
-            Recipient::Flood(NAMESPACE.into()),
+            ApiRecipient::Flood(NAMESPACE.into()),
             msg.clone().into_proto().write_to_bytes().unwrap(),
             vec![],
         );

@@ -11,12 +11,17 @@ use crate::{
     },
     core::Core,
     crypto::Keystore,
+    dispatch::{BlockSlicer, StreamSlicer},
     protocol::Protocol,
     util::{self, codes, runtime_state::RuntimeState, setup_logging, Os, StateDirectoryLock},
 };
+use async_eris::BlockSize;
 use async_std::sync::Arc;
 use atomptr::AtomPtr;
-use libratman::{types::Address, Result};
+use libratman::{
+    types::{Address, ApiRecipient, Message, Recipient},
+    Result,
+};
 
 /// Top-level Ratman router state handle
 ///
@@ -233,5 +238,27 @@ impl RatmanContext {
     pub async fn set_address_offline(&self, addr: Address) -> Result<()> {
         self.core.known(addr, true).await?;
         self.protocol.offline(addr).await
+    }
+
+    /// Dispatch a given message
+    pub async fn send(self: &Arc<Self>, msg: Message, block_size: BlockSize) -> Result<()> {
+        let (manifest, blocks) = match block_size {
+            BlockSize::_1K => BlockSlicer::slice::<1_024>(self, &msg).await?,
+            BlockSize::_32K => BlockSlicer::slice::<32_768>(self, &msg).await?,
+        };
+
+        // we remap the recipient type here because the client API
+        // sucks ass
+        let recipient = match msg.recipient {
+            ApiRecipient::Standard(t) => {
+                Recipient::Target(*t.first().expect("no recipient in message!"))
+            }
+            ApiRecipient::Flood(t) => Recipient::Flood(t),
+        };
+
+        let data_frames =
+            StreamSlicer::slice(Arc::clone(self), recipient, msg.sender, blocks.into_iter())?;
+
+        Ok(())
     }
 }

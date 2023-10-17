@@ -1,6 +1,6 @@
 use crate::{
     client::{Address, Id},
-    types::error::EncodingError,
+    types::{error::EncodingError, Recipient},
     RatmanError, Result,
 };
 use byteorder::{BigEndian, ByteOrder};
@@ -34,7 +34,7 @@ pub fn peek_carrier_meta(input: &[u8]) -> IResult<&[u8], ProtoCarrierFrameMeta> 
 
     let (peeked_input, version) = take(1 as usize)(peeked_input).map(|(x, y)| (x, y[0]))?;
     let (peeked_input, modes) = take_u16(peeked_input)?;
-    let (peeked_input, recipient) = maybe_address(peeked_input)?;
+    let (peeked_input, recipient) = Option::<Recipient>::parse(input)?;
     let (peeked_input, sender) = take_address(peeked_input)?;
     let (peeked_input, sender) = take_address(peeked_input)?;
     let (peeked_input, seq_id) = SequenceIdV1::parse(peeked_input)?;

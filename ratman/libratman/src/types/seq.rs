@@ -4,7 +4,7 @@
 
 //! Sequence handling module
 
-use crate::types::{legacy_frame::Frame, Address, Id, RatmanError, Recipient};
+use crate::types::{legacy_frame::Frame, Address, Id, RatmanError, ApiRecipient};
 use serde::{Deserialize, Serialize};
 use std::hash::{BuildHasher, Hasher};
 use twox_hash::{RandomXxHashBuilder64 as RXHash64, XxHash64};
@@ -65,14 +65,14 @@ pub struct SeqBuilder {
     #[doc(hidden)]
     pub sender: Address,
     #[doc(hidden)]
-    pub recp: Recipient,
+    pub recp: ApiRecipient,
     #[doc(hidden)]
     pub data: Vec<Vec<u8>>,
 }
 
 impl SeqBuilder {
     /// Initialise a Sequence builder
-    pub fn new(sender: Address, recp: Recipient, seqid: Id) -> Self {
+    pub fn new(sender: Address, recp: ApiRecipient, seqid: Id) -> Self {
         Self {
             sender,
             recp,
@@ -213,7 +213,7 @@ impl SeqBuilder {
     }
 
     /// Read the recipient back from the builder
-    pub fn recp(&self) -> Recipient {
+    pub fn recp(&self) -> ApiRecipient {
         self.recp.clone()
     }
 
@@ -227,7 +227,7 @@ impl SeqBuilder {
 fn setup() -> Vec<Frame> {
     let sender = Address::expand_input(&vec![1]);
     let recp = Address::expand_input(&vec![2]);
-    SeqBuilder::new(sender, Recipient::Standard(vec![recp]), Id::random())
+    SeqBuilder::new(sender, ApiRecipient::Standard(vec![recp]), Id::random())
         .add(vec![42])
         .add(vec![13, 12])
         .add(vec![13, 37])

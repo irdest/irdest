@@ -7,19 +7,19 @@
 //! Asynchronous Ratman routing core
 
 use crate::{
-    core::{Collector, DriverMap, EpTargetPair, RouteTable},
-    dispatcher::slicer::TransportSlicer,
+    core::{BlockCollector, DriverMap, EpTargetPair, RouteTable},
+    dispatch::{BlockSlicer, StreamSlicer},
 };
 use async_std::{sync::Arc, task};
 use libratman::{
     netmod::Target,
-    types::{Frame, Message, Recipient, Result},
+    types::{Message, ApiRecipient, Result},
 };
 
 pub(crate) struct Dispatch {
     routes: Arc<RouteTable>,
     drivers: Arc<DriverMap>,
-    collector: Arc<Collector>,
+    collector: Arc<BlockCollector>,
     #[cfg(feature = "dashboard")]
     metrics: Arc<metrics::Metrics>,
 }
@@ -29,7 +29,7 @@ impl Dispatch {
     pub(crate) fn new(
         routes: Arc<RouteTable>,
         drivers: Arc<DriverMap>,
-        collector: Arc<Collector>,
+        collector: Arc<BlockCollector>,
     ) -> Arc<Self> {
         Arc::new(Self {
             routes,
@@ -64,11 +64,13 @@ impl Dispatch {
         // to the interface we're broadcasting on and we potentially
         // need a way to re-slice, or combine frames that we encounter
         // for better transmission metrics
-        let frames = TransportSlicer::slice(1312, msg);
+        // let frames = TransportSlicer::slice(1312, msg);
+
+        //        let slicer =
 
         frames.into_iter().fold(Ok(()), |res, f| match (res, &r) {
-            (Ok(()), Recipient::Standard(_)) => task::block_on(self.send_one(f)),
-            (Ok(()), Recipient::Flood(_)) => task::block_on(self.flood(f)),
+            (Ok(()), ApiRecipient::Standard(_)) => task::block_on(self.send_one(f)),
+            (Ok(()), ApiRecipient::Flood(_)) => task::block_on(self.flood(f)),
             (res, _) => res,
         })
     }
@@ -76,8 +78,8 @@ impl Dispatch {
     /// Dispatch a single frame across the network
     pub(crate) async fn send_one(&self, frame: Frame) -> Result<()> {
         let scope = match frame.recipient {
-            ref recp @ Recipient::Standard(_) => recp.scope().expect("empty recipient"),
-            Recipient::Flood(_) => unreachable!(),
+            ref recp @ ApiRecipient::Standard(_) => recp.scope().expect("empty recipient"),
+            ApiRecipient::Flood(_) => unreachable!(),
         };
 
         #[cfg(feature = "dashboard")]
@@ -165,7 +167,7 @@ impl Dispatch {
 
 #[cfg(feature = "dashboard")]
 mod metrics {
-    use libratman::types::{Address, Recipient};
+    use libratman::types::{Address, ApiRecipient};
     use prometheus_client::{
         encoding::text::Encode,
         metrics::{counter::Counter, family::Family},
@@ -184,11 +186,11 @@ mod metrics {
         Flood,
     }
 
-    impl From<&Recipient> for RecipientType {
-        fn from(v: &Recipient) -> Self {
+    impl From<&ApiRecipient> for RecipientType {
+        fn from(v: &ApiRecipient) -> Self {
             match v {
-                &Recipient::Standard(_) => Self::Standard,
-                &Recipient::Flood(_) => Self::Flood,
+                &ApiRecipient::Standard(_) => Self::Standard,
+                &ApiRecipient::Flood(_) => Self::Flood,
             }
         }
     }

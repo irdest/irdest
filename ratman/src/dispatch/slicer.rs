@@ -7,18 +7,18 @@
 
 #![allow(unused)]
 
-use crate::{context::RatmanContext, core::Payload};
+use crate::context::RatmanContext;
 use async_eris::{BlockReference, BlockSize, MemoryStorage, ReadCapability};
 use async_std::sync::Arc;
 use libratman::types::{
     frames::{modes, CarrierFrame, CarrierFrameV1, SequenceIdV1},
-    Address, Frame, Id, Message, Result, SeqBuilder,
+    Address, Id, Message, Recipient, Result, SeqBuilder,
 };
 
 pub struct StreamSlicer;
 
 fn new_carrier_v1(
-    recipient: Option<Address>,
+    recipient: Option<Recipient>,
     sender: Address,
     seq_id: SequenceIdV1,
 ) -> CarrierFrameV1 {
@@ -33,13 +33,13 @@ impl StreamSlicer {
     // TODO: update this function to be a stream
     pub fn slice<I: Iterator<Item = (BlockReference, Vec<u8>)>>(
         ctx: Arc<RatmanContext>,
-        recipient: Option<Address>,
+        recipient: Recipient,
         sender: Address,
         input: I,
     ) -> Result<Vec<CarrierFrame>> {
         let mut buf = vec![];
         let schema_frame = new_carrier_v1(
-            recipient,
+            Some(recipient),
             sender,
             SequenceIdV1 {
                 hash: Id::random(),
@@ -53,7 +53,8 @@ impl StreamSlicer {
         // of the SequenceId to make re-association on the other side
         // possible.
         for (block_ref, block_data) in input {
-            let max_payload_size = schema_frame.get_max_size(ctx.core.get_route_mtu(recipient))?;
+            let max_payload_size =
+                schema_frame.get_max_size(ctx.core.get_route_mtu(Some(recipient)))?;
             let block_ref = Id::from_bytes(block_ref.as_slice());
 
             // We chunk the data block into as many pieces as are
@@ -69,7 +70,7 @@ impl StreamSlicer {
                     max: todo!(),
                 };
 
-                let mut carrier_v1 = new_carrier_v1(recipient, sender, seq_id);
+                let mut carrier_v1 = new_carrier_v1(Some(recipient), sender, seq_id);
                 carrier_v1.payload = chunk.into();
                 buf.push(CarrierFrame::V1(carrier_v1));
                 ctr += 1;

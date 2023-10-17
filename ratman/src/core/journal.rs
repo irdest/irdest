@@ -2,10 +2,19 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use async_eris::{Block, BlockSize};
-use async_std::sync::{Arc, RwLock};
-use libratman::types::{Frame, Id};
-use std::collections::BTreeSet;
+use async_eris::{Block, BlockReference, BlockSize};
+use async_std::{
+    channel::{Receiver, Sender},
+    sync::{Arc, RwLock},
+};
+use libratman::{
+    netmod::InMemoryEnvelope,
+    types::{frames::SequenceIdV1, Id},
+};
+use std::collections::{BTreeMap, BTreeSet};
+
+pub(crate) type JournalSender = Sender<(Vec<u8>, SequenceIdV1)>;
+pub(crate) type JournalReceiver = Receiver<(Vec<u8>, SequenceIdV1)>;
 
 /// Remote frame journal
 pub(crate) struct Journal {
@@ -23,6 +32,15 @@ enum StorageBlock {
     _32K(Block<32768>),
 }
 
+impl StorageBlock {
+    fn reference(&self) -> BlockReference {
+        match self {
+            Self::_1K(b) => b.reference(),
+            Self::_32K(b) => b.reference(),
+        }
+    }
+}
+
 impl Journal {
     pub(crate) fn new() -> Arc<Self> {
         Arc::new(Self {
@@ -32,15 +50,15 @@ impl Journal {
     }
 
     /// Dispatches a long-running task to run the journal logic
-    pub(crate) async fn run(self: Arc<Self>, block_output: Receiver<Vec<u8>>) {
-        while let Some(block_buf) = block_output.recv().await {
-            let (eris_block, block_size) = match block_buf.len() {
-                1024 => (Block::<1024>::from_vec(block), BlockSize::_1K),
-                32768 => (Block::<32768>::from_vec(block), BlockSize::_32K),
+    pub(crate) async fn run(self: Arc<Self>, block_output: JournalReceiver) {
+        while let Ok((block_buf, sequence_id)) = block_output.recv().await {
+            let eris_block = match block_buf.len() {
+                1024 => StorageBlock::_1K(Block::<1024>::from_vec(block_buf)),
+                32768 => StorageBlock::_32K(Block::<32768>::from_vec(block_buf)),
                 length => {
                     error!(
                         "Block collected from id {} resulted in invalid block length: {}",
-                        seq_id, length
+                        sequence_id.hash, length
                     );
                     continue;
                 }
@@ -48,28 +66,25 @@ impl Journal {
 
             // Verify the block hash
             let block_ref = eris_block.reference();
-            if block_ref != self.sequence_id {
+            if block_ref.as_slice() != sequence_id.hash.as_bytes() {
                 error!(
                     "Block collected from id {} resulted in invalid block reference: {}",
-                    seq_id, eris_block.reference
+                    sequence_id.hash, block_ref,
                 );
                 continue;
             }
-        }
 
-        self.blocks.write().await.insert(
-            block_ref,
-            match block_size {
-                BlockSize::_1K => StorageBlock::_1K(eris_block),
-                BlockSize::_32K => StorageBlock::_32K(eris_block),
-            },
-        )
+            self.blocks
+                .write()
+                .await
+                .insert(Id::from_bytes(block_ref.as_slice()), eris_block);
+        }
     }
 
     /// Add a new frame to the known set
-    pub(crate) async fn queue(&self, _: Frame) {}
+    pub(crate) async fn queue(&self, _: InMemoryEnvelope) {}
 
-    /// Save a FrameID in the known journal page
+    /// Save a InMemoryEnvelopeID in the known journal page
     #[allow(unused)]
     pub(crate) async fn save(&self, fid: &Id) {
         self.known.write().await.insert(fid.clone());

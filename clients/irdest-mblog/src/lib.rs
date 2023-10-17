@@ -5,7 +5,7 @@ use async_std::fs::read_to_string;
 use chrono::{DateTime, TimeZone, Utc};
 use libratman::{
     client::RatmanIpc,
-    types::{Address, Id, Message as RatmanMessage, Recipient, TimePair},
+    types::{Address, Id, Message as RatmanMessage, ApiRecipient, TimePair},
 };
 use protobuf::Message as _;
 use std::convert::TryFrom;
@@ -50,14 +50,14 @@ impl Envelope {
                 .map(|v| v.as_bytes().into())
                 .unwrap_or_default(),
             recipient_type: match &self.header.recipient {
-                &Recipient::Flood(_) => proto::db::RecipientType::RECIPIENT_FLOOD,
-                &Recipient::Standard(_) => proto::db::RecipientType::RECIPIENT_STANDARD,
+                &ApiRecipient::Flood(_) => proto::db::RecipientType::RECIPIENT_FLOOD,
+                &ApiRecipient::Standard(_) => proto::db::RecipientType::RECIPIENT_STANDARD,
             },
             recipients: match self.header.recipient {
                 // Don't store the address if it's Flood(NAMESPACE); it's implicit.
-                Recipient::Flood(a) if a.as_bytes() == &NAMESPACE[..] => vec![].into(),
-                Recipient::Flood(a) => vec![a.as_bytes().into()].into(),
-                Recipient::Standard(aa) => aa
+                ApiRecipient::Flood(a) if a.as_bytes() == &NAMESPACE[..] => vec![].into(),
+                ApiRecipient::Flood(a) => vec![a.as_bytes().into()].into(),
+                ApiRecipient::Standard(aa) => aa
                     .iter()
                     .map(|a| a.as_bytes().into())
                     .collect::<Vec<_>>()
@@ -96,14 +96,14 @@ impl From<proto::db::Envelope> for Envelope {
                         //
                         // As of writing, we discard all incoming messages for other namespaces,
                         // but this code will correctly handle them anyway if one is in the DB.
-                        Recipient::Flood(Address::from_bytes(
+                        ApiRecipient::Flood(Address::from_bytes(
                             v.recipients
                                 .first()
                                 .map(|b| &b[..])
                                 .unwrap_or(&NAMESPACE[..]),
                         ))
                     }
-                    proto::db::RecipientType::RECIPIENT_STANDARD => Recipient::Standard(
+                    proto::db::RecipientType::RECIPIENT_STANDARD => ApiRecipient::Standard(
                         v.recipients
                             .iter()
                             .map(|b| Address::from_bytes(&b[..]))
@@ -121,7 +121,7 @@ pub struct Header {
     pub id: Id,
     pub time: DateTime<Utc>,
     pub sender: Option<Address>,
-    pub recipient: Recipient,
+    pub recipient: ApiRecipient,
 }
 
 impl Header {
@@ -141,7 +141,7 @@ impl Default for Header {
             id: Id::random(),
             time: TimePair::sending().local(),
             sender: None,
-            recipient: Recipient::Flood(NAMESPACE.into()),
+            recipient: ApiRecipient::Flood(NAMESPACE.into()),
         }
     }
 }
@@ -186,7 +186,7 @@ Why don't you say hello? :)",
         RatmanMessage::received(
             Id::random(),
             addr,
-            Recipient::Flood(NAMESPACE.into()),
+            ApiRecipient::Flood(NAMESPACE.into()),
             payload,
             time.local().to_string(),
             vec![],
@@ -328,7 +328,7 @@ pub async fn load_or_create_addr() -> Result<(bool, Address, Id)> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use libratman::types::Recipient;
+    use libratman::types::ApiRecipient;
 
     #[test]
     // The single most common recipient is Flood(NAMESPACE), so we special-case that:
@@ -339,7 +339,7 @@ mod tests {
             header: Header::default(),
             payload: vec![],
         };
-        assert_eq!(envl.header.recipient, Recipient::Flood(NAMESPACE.into()));
+        assert_eq!(envl.header.recipient, ApiRecipient::Flood(NAMESPACE.into()));
 
         let penvl = envl.clone().into_proto();
         assert_eq!(
@@ -361,7 +361,7 @@ mod tests {
             payload: vec![],
         };
         let ns: Vec<u8> = NAMESPACE.iter().rev().copied().collect();
-        envl.header.recipient = Recipient::Flood(Address::from_bytes(&ns));
+        envl.header.recipient = ApiRecipient::Flood(Address::from_bytes(&ns));
 
         let penvl = envl.clone().into_proto();
         assert_eq!(
@@ -382,7 +382,7 @@ mod tests {
             payload: vec![],
         };
         let rcpt = Address::random();
-        envl.header.recipient = Recipient::Standard(vec![rcpt]);
+        envl.header.recipient = ApiRecipient::Standard(vec![rcpt]);
 
         let penvl = envl.clone().into_proto();
         assert_eq!(
@@ -405,7 +405,7 @@ mod tests {
         let rcpt1 = Address::random();
         let rcpt2 = Address::random();
         let rcpt3 = Address::random();
-        envl.header.recipient = Recipient::Standard(vec![rcpt1, rcpt2, rcpt3]);
+        envl.header.recipient = ApiRecipient::Standard(vec![rcpt1, rcpt2, rcpt3]);
 
         let penvl = envl.clone().into_proto();
         assert_eq!(

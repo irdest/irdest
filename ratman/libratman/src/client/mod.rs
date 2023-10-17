@@ -35,7 +35,7 @@ mod tests;
 
 // FIXME: REMOVE THESE RE-EXPORTS
 pub use crate::types::{
-    api::Receive_Type, Address, Id, Message, RatmanError as Error, Recipient, Result, TimePair,
+    api::Receive_Type, Address, Id, Message, RatmanError as Error, ApiRecipient, Result, TimePair,
 };
 
 pub use error::Error as ClientError;

@@ -9,6 +9,8 @@ use libratman::{
 };
 use std::collections::BTreeMap;
 
+use crate::core::JournalSender;
+
 type EnvSender = Sender<(SequenceIdV1, InMemoryEnvelope)>;
 type EnvReceiver = Receiver<(SequenceIdV1, InMemoryEnvelope)>;
 type SenderStore = Arc<RwLock<BTreeMap<Id, EnvSender>>>;
@@ -64,7 +66,7 @@ pub struct BlockCollector {
 }
 
 impl BlockCollector {
-    pub fn new(output: Sender<Vec<u8>>) -> Arc<Self> {
+    pub fn new(output: JournalSender) -> Arc<Self> {
         Arc::new(Self {
             inner: Default::default(),
             output,

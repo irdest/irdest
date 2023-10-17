@@ -1,4 +1,4 @@
-pub use crate::types::{api::Receive_Type, Address, Id, Message, Recipient, Result, TimePair};
+pub use crate::types::{api::Receive_Type, Address, Id, Message, ApiRecipient, Result, TimePair};
 use crate::types::{
     api::{
         self, ApiMessageEnum,

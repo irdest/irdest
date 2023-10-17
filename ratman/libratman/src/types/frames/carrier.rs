@@ -5,7 +5,7 @@ use super::{
 use crate::{
     client::TimePair,
     netmod::InMemoryEnvelope,
-    types::{error::EncodingError, Address, Id, NonfatalError},
+    types::{error::EncodingError, recipient::Recipient, Address, Id, NonfatalError},
     RatmanError, Result,
 };
 use byteorder::{BigEndian, ByteOrder};
@@ -33,7 +33,7 @@ pub struct FullCarrierFrameMeta {
 pub struct ProtoCarrierFrameMeta {
     pub version: u8,
     pub modes: u16,
-    pub recipient: Option<Address>,
+    pub recipient: Option<Recipient>,
     pub sender: Address,
     pub seq_id: Option<SequenceIdV1>,
 }
@@ -162,7 +162,7 @@ pub struct CarrierFrameV1 {
     /// addressed to the whole network, and not part of a flood
     /// namespace.  Only a limited number of frame types may set
     /// this condition (for example protocol announcements).
-    pub recipient: Option<Address>,
+    pub recipient: Option<Recipient>,
     /// Mandatory sender address key
     pub sender: Address,
     /// Optional sequence ID
@@ -192,7 +192,7 @@ pub struct CarrierFrameV1 {
 impl CarrierFrameV1 {
     pub fn pre_alloc(
         modes: u16,
-        recipient: Option<Address>,
+        recipient: Option<Recipient>,
         sender: Address,
         seq_id: Option<SequenceIdV1>,
         signature: Option<Id>,
@@ -227,7 +227,9 @@ impl CarrierFrameV1 {
     fn get_meta_size(&self) -> u16 {
         let modes_size = core::mem::size_of_val(&self.modes);
         let recipient_size = match self.recipient {
-            Some(_) => 32,
+            // Recipient adds one more byte to distinguish between
+            // Targeted and Flood send
+            Some(_) => 32 + 1,
             None => 1,
         };
         let sender_size = core::mem::size_of_val(&self.sender);
@@ -261,7 +263,7 @@ impl FrameParser for CarrierFrameV1 {
 
     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
         let (input, modes) = parse::take_u16(input)?;
-        let (input, recipient) = parse::maybe_address(input)?;
+        let (input, recipient) = Option::<Recipient>::parse(input)?;
         let (input, sender) = parse::take_address(input)?;
         let (input, seq_id) = SequenceIdV1::parse(input)?;
         let (input, signature) = parse::maybe_id(input)?;

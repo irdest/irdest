@@ -17,15 +17,21 @@ mod switch;
 
 pub(self) use dispatch::Dispatch;
 pub(self) use drivers::DriverMap;
-pub(self) use journal::Journal;
+pub(self) use journal::{Journal, JournalSender};
 pub(self) use routes::{EpTargetPair, RouteTable, RouteType};
 pub(self) use switch::Switch;
 
 pub(crate) use drivers::GenericEndpoint;
 
-use crate::dispatch::BlockCollector;
+use crate::dispatch::{BlockCollector, BlockSlicer};
 use async_std::sync::Arc;
-use libratman::types::{Address, Frame, Message, RatmanError, Result};
+use libratman::{
+    netmod::InMemoryEnvelope,
+    types::{
+        frames::{CarrierFrame, CarrierFrameV1, SequenceIdV1},
+        Address, Message, RatmanError, Recipient, Result,
+    },
+};
 
 /// The Ratman routing core interface
 ///
@@ -92,24 +98,40 @@ impl Core {
         self.switch.register_metrics(registry);
     }
 
-    /// Asynchronously send a Message
-    pub(crate) async fn send(&self, msg: Message) -> Result<()> {
-        self.dispatch.send_msg(msg).await
+    /// Dispatch a single frame
+    pub(crate) async fn dispatch_frame(&self, envelope: InMemoryEnvelope) -> Result<()> {
+        let target_address = match envelope.meta.recipient {
+            Some(Recipient::Target(addr)) => addr,
+            // fixme: introduce a better error kind here
+            _ => return Err(RatmanError::NoSuchAddress(Address::random())),
+        };
+
+        let EpTargetPair(epid, trgt) = match self.routes.resolve(target_address).await {
+            // Return the endpoint/target ID pair from the resolver
+            Some(resolve) => resolve,
+
+            None => return Err(RatmanError::NoSuchAddress(target_address)),
+        };
+
+        let ep = self.drivers.get(epid as usize).await;
+        ep.send(envelope, trgt, None).await
     }
 
-    /// Send a frame directly, without message slicing
-    ///
-    /// Some components in Ratman, outside of the routing core, need
-    /// access to direct frame intercepts, because protocol logic
-    /// depends on unmodified frames.
-    pub(crate) async fn raw_flood(&self, f: Frame) -> Result<()> {
-        self.dispatch.flood(f).await
-    }
+    // /// Send a frame directly, without message slicing
+    // ///
+    // /// Some components in Ratman, outside of the routing core, need
+    // /// access to direct frame intercepts, because protocol logic
+    // /// depends on unmodified frames.
+    // #[deprecated]
+    // pub(crate) async fn raw_flood(&self, f: Frame) -> Result<()> {
+    //     self.dispatch.flood(f).await
+    // }
 
-    /// Poll for the incoming Message
-    pub(crate) async fn next(&self) -> Message {
-        self.collector.completed().await
-    }
+    // /// Poll for the incoming Message
+    // #[deprecated]
+    // pub(crate) async fn next(&self) -> Message {
+    //     self.collector.completed().await
+    // }
 
     /// Check if an Id is present in the routing table
     pub(crate) async fn known(&self, id: Address, local: bool) -> Result<()> {
@@ -155,8 +177,8 @@ impl Core {
         self.routes.delete(id).await
     }
 
-    // FIXME: this is basically just moving the hard-coded value somewhere else
-    pub(crate) fn get_route_mtu(&self, _recipient: Option<Address>) -> u16 {
+    // fixme: this is basically just moving the hard-coded value somewhere else
+    pub(crate) fn get_route_mtu(&self, _recipient: Option<Recipient>) -> u16 {
         1300
     }
 

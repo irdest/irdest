@@ -9,14 +9,15 @@ pub use crate::types::proto::message::Message as ProtoMessage;
 use crate::types::{timepair::TimePair, Address, Id};
 use serde::{Deserialize, Serialize};
 
-/// Specify the message recipient
+/// Specify the message recipient in the client API
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub enum Recipient {
+#[deprecated]
+pub enum ApiRecipient {
     Standard(Vec<Address>),
     Flood(Address),
 }
 
-impl Recipient {
+impl ApiRecipient {
     /// Return the scope of this recipient
     ///
     /// This is either the target user identity or the flood scope
@@ -37,7 +38,7 @@ impl Recipient {
     }
 }
 
-impl From<Vec<Address>> for Recipient {
+impl From<Vec<Address>> for ApiRecipient {
     fn from(vec: Vec<Address>) -> Self {
         Self::Standard(vec)
     }
@@ -51,7 +52,7 @@ impl From<Vec<Address>> for Recipient {
 pub struct Message {
     pub id: Id,
     pub sender: Address,
-    pub recipient: Recipient,
+    pub recipient: ApiRecipient,
     pub time: TimePair,
     pub payload: Vec<u8>,
     pub signature: Vec<u8>,
@@ -60,7 +61,7 @@ pub struct Message {
 impl Message {
     pub fn new(
         sender: Address,
-        recipient: impl Into<Recipient>,
+        recipient: impl Into<ApiRecipient>,
         payload: Vec<u8>,
         signature: Vec<u8>,
     ) -> Self {
@@ -82,7 +83,7 @@ impl Message {
         self.sender.clone()
     }
 
-    pub fn get_recipient(&self) -> Recipient {
+    pub fn get_recipient(&self) -> ApiRecipient {
         self.recipient.clone()
     }
 
@@ -103,7 +104,7 @@ impl Message {
     pub fn received(
         id: Id,
         sender: Address,
-        recipient: Recipient,
+        recipient: ApiRecipient,
         payload: Vec<u8>,
         timesig: String,
         sign: Vec<u8>,
@@ -116,7 +117,7 @@ impl Message {
 
         let mut r = ProtoRecipient::new();
         match recipient {
-            Recipient::Standard(addrs) => {
+            ApiRecipient::Standard(addrs) => {
                 let mut std_r = StandardRecipient::new();
                 std_r.set_standard(
                     addrs
@@ -127,7 +128,7 @@ impl Message {
                 );
                 r.set_std(std_r);
             }
-            Recipient::Flood(ns) => {
+            ApiRecipient::Flood(ns) => {
                 r.set_flood_scope(ns.as_bytes().to_vec().into());
             }
         }
@@ -149,14 +150,14 @@ impl From<ProtoMessage> for Message {
 
         let mut r = msg.take_recipient();
         let recipient = match r.inner {
-            Some(Recipient_oneof_inner::std(ref mut std)) => Recipient::Standard(
+            Some(Recipient_oneof_inner::std(ref mut std)) => ApiRecipient::Standard(
                 std.take_standard()
                     .into_iter()
                     .map(|id| Address::from_bytes(&id))
                     .collect(),
             ),
             Some(Recipient_oneof_inner::flood_scope(ref id)) => {
-                Recipient::Flood(Address::from_bytes(id))
+                ApiRecipient::Flood(Address::from_bytes(id))
             }
             _ => unreachable!(),
         };
@@ -183,7 +184,7 @@ impl From<Message> for ProtoMessage {
 
         let mut r = ProtoRecipient::new();
         match msg.recipient {
-            Recipient::Standard(addrs) => {
+            ApiRecipient::Standard(addrs) => {
                 let mut std_r = StandardRecipient::new();
                 std_r.set_standard(
                     addrs
@@ -194,7 +195,7 @@ impl From<Message> for ProtoMessage {
                 );
                 r.set_std(std_r);
             }
-            Recipient::Flood(ns) => {
+            ApiRecipient::Flood(ns) => {
                 r.set_flood_scope(ns.as_bytes().to_vec().into());
             }
         }
