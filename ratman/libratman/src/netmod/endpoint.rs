@@ -1,6 +1,6 @@
 //! Endpoint abstraction module
 
-use crate::{netmod::Target, types::frames::CarrierFrame, Result};
+use crate::{netmod::Target, Result};
 use async_trait::async_trait;
 use std::sync::Arc;
 

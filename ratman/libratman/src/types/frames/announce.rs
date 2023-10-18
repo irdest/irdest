@@ -56,9 +56,9 @@ pub struct AnnounceFrameV1 {
     /// before, only parts of the networks that didn't see the
     /// original announcement can be fooled by a maliciously crafted
     /// announcement frame.
-    origin: OriginDataV1,
+    pub origin: OriginDataV1,
     /// Corresponding origin data signature
-    origin_signature: Id,
+    pub origin_signature: [u8; 64],
 
     /// Mandatory route announcement data
     ///
@@ -68,7 +68,7 @@ pub struct AnnounceFrameV1 {
     ///
     /// This means that the data can't be relied on to be
     /// cryptigraphically correct.
-    route: RouteDataV1,
+    pub route: RouteDataV1,
 }
 
 impl FrameParser for AnnounceFrameV1 {
@@ -76,14 +76,15 @@ impl FrameParser for AnnounceFrameV1 {
 
     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
         let (input, origin) = OriginDataV1::parse(input)?;
-        let (input, origin_signature) = parse::take_id(input)?;
+        let (input, origin_signature) = parse::maybe_signature(input)?;
         let (input, route) = RouteDataV1::parse(input)?;
 
         Ok((
             input,
             origin.map(|origin| Self {
                 origin,
-                origin_signature,
+                // fixme: handle error explicitly
+                origin_signature: origin_signature.unwrap(),
                 route,
             }),
         ))
@@ -102,6 +103,14 @@ impl FrameGenerator for AnnounceFrameV1 {
 #[derive(Debug)]
 pub struct OriginDataV1 {
     timestamp: DateTime<Utc>,
+}
+
+impl OriginDataV1 {
+    pub fn now() -> Self {
+        Self {
+            timestamp: Utc::now(),
+        }
+    }
 }
 
 impl FrameParser for OriginDataV1 {

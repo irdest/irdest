@@ -1,14 +1,19 @@
-use super::{
-    generate::FrameGenerator,
-    parse::{self, FrameParser, IResult},
-};
 use crate::{
     client::TimePair,
     netmod::InMemoryEnvelope,
-    types::{error::EncodingError, recipient::Recipient, Address, Id, NonfatalError},
+    types::{
+        error::EncodingError,
+        frames::{
+            generate::FrameGenerator,
+            parse::{self, FrameParser, IResult},
+        },
+        recipient::Recipient,
+        Address, Id, NonfatalError,
+    },
     RatmanError, Result,
 };
 use byteorder::{BigEndian, ByteOrder};
+use rand::{rngs::ThreadRng, thread_rng};
 
 /// Never sent across the network, but carries additional metadata
 // TODO: do we really need the full carrier frame?
@@ -193,7 +198,7 @@ pub struct CarrierFrameV1 {
     ///
     /// Some frame payloads have internal signature handling.  In
     /// these cases this field MAY be ommitted.
-    pub signature: Option<Id>,
+    pub signature: Option<[u8; 64]>,
     /// Frame payload field
     ///
     /// When encoding, the payload MUST be preceded with a u16
@@ -207,7 +212,7 @@ impl CarrierFrameV1 {
         recipient: Option<Recipient>,
         sender: Address,
         seq_id: Option<SequenceIdV1>,
-        signature: Option<Id>,
+        signature: Option<[u8; 64]>,
     ) -> Self {
         Self {
             modes,
@@ -216,6 +221,16 @@ impl CarrierFrameV1 {
             seq_id,
             signature,
             payload: vec![],
+        }
+    }
+
+    pub fn as_meta(&self) -> ProtoCarrierFrameMeta {
+        ProtoCarrierFrameMeta {
+            version: 1,
+            modes: self.modes,
+            recipient: self.recipient,
+            sender: self.sender,
+            seq_id: self.seq_id,
         }
     }
 
@@ -278,7 +293,7 @@ impl FrameParser for CarrierFrameV1 {
         let (input, recipient) = Option::<Recipient>::parse(input)?;
         let (input, sender) = parse::take_address(input)?;
         let (input, seq_id) = SequenceIdV1::parse(input)?;
-        let (input, signature) = parse::maybe_id(input)?;
+        let (input, signature) = parse::maybe_signature(input)?;
         let (input, payload_length) = parse::take_u16(input)?;
         let (input, payload) = parse::take(payload_length as usize)(input)?;
 
@@ -350,6 +365,10 @@ fn v1_data_frame_meta_size() {
 #[test]
 #[allow(deprecated)]
 fn v1_empty_carrier() {
+    use rand::RngCore;
+    let mut signature = [0; 64];
+    thread_rng().fill_bytes(&mut signature);
+
     let mut f = CarrierFrameV1::pre_alloc(
         1312,
         Some(Recipient::Target(Address::random())),
@@ -359,7 +378,7 @@ fn v1_empty_carrier() {
             num: 123,
             max: 234,
         }),
-        Some(Id::random()),
+        Some(signature),
     );
     f.set_payload_checked(1300, super::random_payload(1024));
 

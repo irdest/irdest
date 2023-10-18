@@ -1,13 +1,11 @@
 //! Generator utilities
 
 use crate::{
-    types::{error::EncodingError, Address, Id},
+    types::{error::EncodingError, frames::SequenceIdV1, Address, Id},
     RatmanError, Result,
 };
 use byteorder::{BigEndian, ByteOrder};
 use chrono::{DateTime, TimeZone, Utc};
-
-use super::SequenceIdV1;
 
 /// A utility trait that represents a serialisable frame entity
 ///
@@ -35,13 +33,6 @@ impl FrameGenerator for u16 {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         let slice = u16_to_big_endian(self);
         slice.generate(buf)
-    }
-}
-
-impl FrameGenerator for [u8; 2] {
-    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
-        buf.extend_from_slice(&self);
-        Ok(())
     }
 }
 
@@ -87,6 +78,26 @@ impl FrameGenerator for Option<Address> {
             None => buf.push(0),
         }
 
+        Ok(())
+    }
+}
+
+// Implement FrameGenerator for any array
+impl<const LENGTH: usize> FrameGenerator for [u8; LENGTH] {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        buf.extend_from_slice(&self);
+        Ok(())
+    }
+}
+
+impl<const LENGTH: usize> FrameGenerator for Option<[u8; LENGTH]> {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        match self {
+            // If the signature exists, we write it
+            Some(ref this) => buf.extend_from_slice(this),
+            // Otherwise write a zero-byte
+            None => buf.push(0),
+        }
         Ok(())
     }
 }

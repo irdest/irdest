@@ -112,3 +112,16 @@ pub fn take_datetime(input: &[u8]) -> IResult<&[u8], Result<DateTime<Utc>>> {
         }),
     ))
 }
+
+pub fn maybe_signature(input: &[u8]) -> IResult<&[u8], Option<[u8; 64]>> {
+    let (input, first) = peek(take(1 as usize))(input)?;
+    if first == &[0] {
+        let (input, slice) = take(64 as usize)(input)?;
+        let mut signature = [0; 64];
+        signature.copy_from_slice(slice);
+        Ok((input, Some(signature)))
+    } else {
+        let (input, _) = take(1 as usize)(input)?;
+        Ok((input, None))
+    }
+}

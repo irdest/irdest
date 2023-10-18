@@ -17,10 +17,8 @@ pub mod frames;
 
 mod error;
 mod identifiers;
-mod legacy_frame;
 mod message;
 mod recipient;
-mod seq;
 mod timepair;
 
 pub use crate::client::ClientError;
@@ -28,7 +26,6 @@ pub use error::{EncodingError, NonfatalError, RatmanError, Result};
 pub use identifiers::{address::Address, id::Id, ID_LEN};
 pub use message::{ApiRecipient, Message};
 pub use recipient::Recipient;
-pub use seq::{SeqBuilder, SeqData, XxSignature};
 pub use timepair::TimePair;
 
 use async_std::{
