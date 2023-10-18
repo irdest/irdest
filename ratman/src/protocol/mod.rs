@@ -18,7 +18,7 @@ mod announce;
 use crate::core::Core;
 use libratman::types::{
     frames::{self, ProtoCarrierFrameMeta},
-    Address, Frame, RatmanError, Result,
+    Address, RatmanError, Result,
 };
 
 use async_std::{
@@ -101,28 +101,28 @@ impl Protocol {
             .map_or(Err(RatmanError::NoSuchAddress(id)), |_| Ok(()))
     }
 
-    /// Try to parse a frame as an announcement
-    pub(crate) fn is_announce(f: &Frame) -> Option<Address> {
-        let Frame { ref payload, .. } = f;
+    // /// Try to parse a frame as an announcement
+    // pub(crate) fn is_announce(f: &Frame) -> Option<Address> {
+    //     let Frame { ref payload, .. } = f;
 
-        bincode::deserialize(payload)
-            .map(|p| match p {
-                ProtoPayload::Announce { id, .. } => id,
-            })
-            .ok()
-    }
+    //     bincode::deserialize(payload)
+    //         .map(|p| match p {
+    //             ProtoPayload::Announce { id, .. } => id,
+    //         })
+    //         .ok()
+    // }
 
-    /// Build an announcement message for a user
-    fn announce(sender: Address) -> Frame {
-        let payload = bincode::serialize(&ProtoPayload::Announce {
-            id: sender,
-            no_sync: true,
-        })
-        .unwrap();
+    // /// Build an announcement message for a user
+    // fn announce(sender: Address) -> Frame {
+    //     let payload = bincode::serialize(&ProtoPayload::Announce {
+    //         id: sender,
+    //         no_sync: true,
+    //     })
+    //     .unwrap();
 
-        // Currently we just use the sender address as the "scope" of the
-        Frame::inline_flood(sender, sender, payload)
-    }
+    //     // Currently we just use the sender address as the "scope" of the
+    //     Frame::inline_flood(sender, sender, payload)
+    // }
 }
 
 /// Match the carrier modes bitfield to decide what kind of frame

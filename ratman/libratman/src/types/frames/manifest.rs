@@ -6,7 +6,8 @@ use crate::{
     types::{error::EncodingError, Id},
     Result,
 };
-use nom::IResult;
+use async_eris::ReadCapability;
+use nom::{AsBytes, IResult};
 
 pub enum ManifestFrame {
     V1(ManifestFrameV1),
@@ -85,5 +86,20 @@ impl FrameGenerator for ManifestFrameV1 {
         buf.extend_from_slice(self.root_reference.as_bytes());
         buf.extend_from_slice(self.root_key.as_bytes());
         Ok(())
+    }
+}
+
+impl From<ReadCapability> for ManifestFrameV1 {
+    fn from(rc: ReadCapability) -> Self {
+        Self {
+            block_size: match rc.block_size {
+                1024 => 1,
+                32768 => 32,
+                _ => unreachable!(),
+            },
+            block_level: rc.level,
+            root_reference: Id::from_bytes(rc.root_reference.as_bytes()),
+            root_key: Id::from_bytes(rc.root_key.as_bytes()),
+        }
     }
 }

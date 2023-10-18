@@ -9,28 +9,23 @@
 //! component. This has proven to be a hard to maintain approach, so
 //! instead the core has been split into several parts.
 
-mod dispatch;
 mod drivers;
 mod journal;
 mod routes;
 mod switch;
 
-pub(self) use dispatch::Dispatch;
+pub(crate) use drivers::GenericEndpoint;
+
 pub(self) use drivers::DriverMap;
 pub(self) use journal::{Journal, JournalSender};
 pub(self) use routes::{EpTargetPair, RouteTable, RouteType};
 pub(self) use switch::Switch;
 
-pub(crate) use drivers::GenericEndpoint;
-
-use crate::dispatch::{BlockCollector, BlockSlicer};
+use crate::dispatch::BlockCollector;
 use async_std::sync::Arc;
 use libratman::{
-    netmod::InMemoryEnvelope,
-    types::{
-        frames::{CarrierFrame, CarrierFrameV1, SequenceIdV1},
-        Address, Message, RatmanError, Recipient, Result,
-    },
+    netmod::{InMemoryEnvelope, Target},
+    types::{Address, RatmanError, Recipient, Result},
 };
 
 /// The Ratman routing core interface
@@ -46,7 +41,6 @@ use libratman::{
 /// facade.
 pub(crate) struct Core {
     collector: Arc<BlockCollector>,
-    dispatch: Arc<Dispatch>,
     _journal: Arc<Journal>,
     routes: Arc<RouteTable>,
     switch: Arc<Switch>,
@@ -62,16 +56,10 @@ impl Core {
 
         let (jtx, jrx) = async_std::channel::bounded(16);
         let collector = BlockCollector::new(jtx);
-        let dispatch = Dispatch::new(
-            Arc::clone(&routes),
-            Arc::clone(&drivers),
-            Arc::clone(&collector),
-        );
 
         let switch = Switch::new(
             Arc::clone(&routes),
             Arc::clone(&_journal),
-            Arc::clone(&dispatch),
             Arc::clone(&collector),
             Arc::clone(&drivers),
         );
@@ -81,7 +69,6 @@ impl Core {
         async_std::task::spawn(Arc::clone(&_journal).run(jrx));
 
         Self {
-            dispatch,
             routes,
             collector,
             _journal,
@@ -94,7 +81,6 @@ impl Core {
     #[cfg(feature = "dashboard")]
     pub fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
         self.routes.register_metrics(registry);
-        self.dispatch.register_metrics(registry);
         self.switch.register_metrics(registry);
     }
 
@@ -103,7 +89,7 @@ impl Core {
         let target_address = match envelope.meta.recipient {
             Some(Recipient::Target(addr)) => addr,
             // fixme: introduce a better error kind here
-            _ => return Err(RatmanError::NoSuchAddress(Address::random())),
+            _ => unreachable!(),
         };
 
         let EpTargetPair(epid, trgt) = match self.routes.resolve(target_address).await {
@@ -113,25 +99,31 @@ impl Core {
             None => return Err(RatmanError::NoSuchAddress(target_address)),
         };
 
-        let ep = self.drivers.get(epid as usize).await;
+        let (_, ep) = self.drivers.get(epid as usize).await;
         ep.send(envelope, trgt, None).await
     }
 
-    // /// Send a frame directly, without message slicing
-    // ///
-    // /// Some components in Ratman, outside of the routing core, need
-    // /// access to direct frame intercepts, because protocol logic
-    // /// depends on unmodified frames.
-    // #[deprecated]
-    // pub(crate) async fn raw_flood(&self, f: Frame) -> Result<()> {
-    //     self.dispatch.flood(f).await
-    // }
+    pub(crate) async fn flood_frame(&self, envelope: InMemoryEnvelope) -> Result<()> {
+        let flood_address = match envelope.meta.recipient {
+            Some(Recipient::Flood(addr)) => addr,
+            // fixme: introduce a better error kind here
+            _ => unreachable!(),
+        };
 
-    // /// Poll for the incoming Message
-    // #[deprecated]
-    // pub(crate) async fn next(&self) -> Message {
-    //     self.collector.completed().await
-    // }
+        // Loop over every driver and send a version of the envelope to it
+        for (ep_name, ep) in self.drivers.get_all().await.into_iter() {
+            let env = envelope.clone();
+            let target = Target::Flood(flood_address);
+            if let Err(e) = ep.send(env, target, None).await {
+                error!(
+                    "failed to flood frame {:?} on endpoint {}: {}",
+                    envelope.meta.seq_id, ep_name, e
+                );
+            }
+        }
+
+        Ok(())
+    }
 
     /// Check if an Id is present in the routing table
     pub(crate) async fn known(&self, id: Address, local: bool) -> Result<()> {
@@ -151,14 +143,14 @@ impl Core {
     }
 
     /// Insert a new endpoint
-    pub(crate) async fn add_ep(&self, ep: Arc<GenericEndpoint>) -> usize {
-        let id = self.drivers.add(ep).await;
+    pub(crate) async fn add_ep(&self, name: String, ep: Arc<GenericEndpoint>) -> usize {
+        let id = self.drivers.add(name, ep).await;
         self.switch.add(id).await;
         id
     }
 
     /// Get an endpoint back from the driver set via it's ID
-    pub(crate) async fn get_ep(&self, id: usize) -> Arc<GenericEndpoint> {
+    pub(crate) async fn get_ep(&self, id: usize) -> (String, Arc<GenericEndpoint>) {
         self.drivers.get(id).await
     }
 

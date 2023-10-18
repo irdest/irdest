@@ -11,7 +11,7 @@ use crate::{
     },
     core::Core,
     crypto::Keystore,
-    dispatch::{BlockSlicer, StreamSlicer},
+    dispatch::{new_carrier_v1, BlockSlicer, StreamSlicer},
     protocol::Protocol,
     util::{self, codes, runtime_state::RuntimeState, setup_logging, Os, StateDirectoryLock},
 };
@@ -19,7 +19,11 @@ use async_eris::BlockSize;
 use async_std::sync::Arc;
 use atomptr::AtomPtr;
 use libratman::{
-    types::{Address, ApiRecipient, Message, Recipient},
+    netmod::InMemoryEnvelope,
+    types::{
+        frames::{CarrierFrame, FrameGenerator, ManifestFrame, ManifestFrameV1},
+        Address, ApiRecipient, Message, Recipient,
+    },
     Result,
 };
 
@@ -125,8 +129,8 @@ impl RatmanContext {
                 // peering builder or driver map anymore, so we
                 // dissolve both and add everything to the routing
                 // core.
-                for (_, ep) in peer_builder.consume() {
-                    let _ep_id = this.core.add_ep(ep).await;
+                for (name, ep) in peer_builder.consume() {
+                    let _ep_id = this.core.add_ep(name, ep).await;
                 }
             }
 
@@ -242,13 +246,9 @@ impl RatmanContext {
 
     /// Dispatch a given message
     pub async fn send(self: &Arc<Self>, msg: Message, block_size: BlockSize) -> Result<()> {
-        let (manifest, blocks) = match block_size {
-            BlockSize::_1K => BlockSlicer::slice::<1_024>(self, &msg).await?,
-            BlockSize::_32K => BlockSlicer::slice::<32_768>(self, &msg).await?,
-        };
+        let sender = msg.sender;
 
-        // we remap the recipient type here because the client API
-        // sucks ass
+        // remap the recipient type because the client API sucks ass
         let recipient = match msg.recipient {
             ApiRecipient::Standard(t) => {
                 Recipient::Target(*t.first().expect("no recipient in message!"))
@@ -256,9 +256,42 @@ impl RatmanContext {
             ApiRecipient::Flood(t) => Recipient::Flood(t),
         };
 
-        let data_frames =
-            StreamSlicer::slice(Arc::clone(self), recipient, msg.sender, blocks.into_iter())?;
+        let (read_capability, blocks) = match block_size {
+            BlockSize::_1K => BlockSlicer::slice::<1_024>(self, msg).await?,
+            BlockSize::_32K => BlockSlicer::slice::<32_768>(self, msg).await?,
+        };
 
-        Ok(())
+        let data_frames =
+            StreamSlicer::slice(Arc::clone(self), recipient, sender, blocks.into_iter())?;
+
+        // Iterate over all the data frames and send them off
+        for carrier in data_frames {
+            let mut buffer = vec![];
+            let meta = carrier.as_meta();
+
+            carrier.generate(&mut buffer)?;
+            let envelope = InMemoryEnvelope { meta, buffer };
+            self.core.dispatch_frame(envelope).await?;
+        }
+
+        // Create a final manifest frame from the ReadCapability
+        {
+            let mut inner_buffer = vec![];
+            let manifest = ManifestFrame::V1(ManifestFrameV1::from(read_capability));
+            manifest.generate(&mut inner_buffer)?;
+
+            let mut manifest = new_carrier_v1(Some(recipient), sender, None);
+            manifest.set_payload_checked(1300, inner_buffer)?;
+
+            let manifest_carrier = CarrierFrame::V1(manifest);
+            let meta = manifest_carrier.as_meta();
+
+            let mut buffer = vec![];
+            manifest_carrier.generate(&mut buffer)?;
+            let manifest_env = InMemoryEnvelope { meta, buffer };
+
+            // Finally send off the manifest
+            self.core.dispatch_frame(manifest_env).await
+        }
     }
 }

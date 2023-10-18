@@ -2134,6 +2134,7 @@ checksum = "9cdc71e17332e86d2e1d38c1f99edcb6288ee11b815fb1a4b049eaa2114d369b"
 name = "libratman"
 version = "0.5.0"
 dependencies = [
+ "async-eris",
  "async-std",
  "async-trait",
  "bincode",

@@ -1,5 +1,7 @@
 //! Networking frames
 
+use std::fmt::{self, Display};
+
 use crate::types::{frames::ProtoCarrierFrameMeta, Address};
 
 /// Describes an endpoint's send target
@@ -19,6 +21,19 @@ pub enum Target {
     Flood(Address),
     /// Encodes a specific target ID
     Single(u16),
+}
+
+impl Display for Target {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Flood(addr) => format!("Flood({})", addr),
+                Self::Single(t) => format!("Peer({})", t),
+            }
+        )
+    }
 }
 
 impl Default for Target {

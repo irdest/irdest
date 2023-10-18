@@ -1,3 +1,4 @@
+use crate::core::JournalSender;
 use async_std::{
     channel::{self, Receiver, Sender},
     sync::{Arc, RwLock},
@@ -8,8 +9,6 @@ use libratman::{
     types::{frames::SequenceIdV1, Id},
 };
 use std::collections::BTreeMap;
-
-use crate::core::JournalSender;
 
 type EnvSender = Sender<(SequenceIdV1, InMemoryEnvelope)>;
 type EnvReceiver = Receiver<(SequenceIdV1, InMemoryEnvelope)>;

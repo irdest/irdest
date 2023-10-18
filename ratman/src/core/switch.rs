@@ -4,15 +4,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use crate::{
-    core::{Dispatch, DriverMap, Journal, RouteTable},
+    context::RatmanContext,
+    core::{DriverMap, Journal, RouteTable},
     dispatch::BlockCollector,
     util::IoPair,
 };
 use async_std::{channel::bounded, sync::Arc, task};
-use libratman::{
-    netmod::InMemoryEnvelope,
-    types::{self, frames::modes as fmodes, ApiRecipient},
-};
+use libratman::{netmod::InMemoryEnvelope, types::frames::modes as fmodes};
 
 /// A frame switch inside Ratman to route packets and signals
 ///
@@ -20,13 +18,11 @@ use libratman::{
 /// send the incoming frames to various points.
 ///
 /// - Journal: the ID is not reachable
-/// - Dispatch: the ID _is_ reachable
 /// - Collector: the ID is local
 pub(crate) struct Switch {
     /// Used only to check if the route is deemed reachable
     routes: Arc<RouteTable>,
     journal: Arc<Journal>,
-    dispatch: Arc<Dispatch>,
     collector: Arc<BlockCollector>,
     drivers: Arc<DriverMap>,
 
@@ -42,14 +38,12 @@ impl Switch {
     pub(crate) fn new(
         routes: Arc<RouteTable>,
         journal: Arc<Journal>,
-        dispatch: Arc<Dispatch>,
         collector: Arc<BlockCollector>,
         drivers: Arc<DriverMap>,
     ) -> Arc<Self> {
         Arc::new(Self {
             routes,
             journal,
-            dispatch,
             collector,
             drivers,
             ctrl: bounded(1),
@@ -80,7 +74,7 @@ impl Switch {
 
     /// Get one batch of messages from the driver interface points
     async fn run_batch(self: Arc<Self>, id: usize, batch_size: usize) {
-        let ep = self.drivers.get(id).await;
+        let (ep_name, ep) = self.drivers.get(id).await;
 
         for _ in 0..batch_size {
             let (InMemoryEnvelope { meta, buffer }, t) = match ep.next().await {
@@ -88,7 +82,7 @@ impl Switch {
                 _ => continue,
             };
 
-            trace!("Receiving frame from '{:?}'...", t);
+            trace!("Receiving frame via from {}/{}", ep_name, t);
 
             // // Switch the traffic to the appropriate place
             // use {Recipient::*, RouteType::*};

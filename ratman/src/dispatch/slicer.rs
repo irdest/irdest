@@ -17,12 +17,12 @@ use libratman::types::{
 
 pub struct StreamSlicer;
 
-fn new_carrier_v1(
+pub(crate) fn new_carrier_v1(
     recipient: Option<Recipient>,
     sender: Address,
-    seq_id: SequenceIdV1,
+    seq_id: Option<SequenceIdV1>,
 ) -> CarrierFrameV1 {
-    CarrierFrameV1::pre_alloc(modes::DATA, recipient, sender, Some(seq_id), None)
+    CarrierFrameV1::pre_alloc(modes::DATA, recipient, sender, seq_id, None)
 }
 
 impl StreamSlicer {
@@ -41,11 +41,11 @@ impl StreamSlicer {
         let schema_frame = new_carrier_v1(
             Some(recipient),
             sender,
-            SequenceIdV1 {
+            Some(SequenceIdV1 {
                 hash: Id::random(),
                 num: 123,
                 max: 123,
-            },
+            }),
         );
 
         // Iterate over all available blocks and their hash
@@ -67,10 +67,12 @@ impl StreamSlicer {
                 let seq_id = SequenceIdV1 {
                     hash: block_ref,
                     num: ctr,
-                    max: todo!(),
+                    // fixme: properly handle this casting, and make
+                    // sure we don't get weird division errors here!
+                    max: (block_data.as_slice().len() / max_payload_size as usize) as u8,
                 };
 
-                let mut carrier_v1 = new_carrier_v1(Some(recipient), sender, seq_id);
+                let mut carrier_v1 = new_carrier_v1(Some(recipient), sender, Some(seq_id));
                 carrier_v1.payload = chunk.into();
                 buf.push(CarrierFrame::V1(carrier_v1));
                 ctr += 1;

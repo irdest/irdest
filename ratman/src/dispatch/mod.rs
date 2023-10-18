@@ -10,4 +10,4 @@ mod collector;
 pub(crate) use collector::BlockCollector;
 
 mod slicer;
-pub(crate) use slicer::{BlockSlicer, StreamSlicer};
+pub(crate) use slicer::{BlockSlicer, StreamSlicer, new_carrier_v1};

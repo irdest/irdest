@@ -61,6 +61,18 @@ pub enum CarrierFrame {
 }
 
 impl CarrierFrame {
+    pub fn as_meta(&self) -> ProtoCarrierFrameMeta {
+        match self {
+            Self::V1(carrier) => ProtoCarrierFrameMeta {
+                version: 1,
+                modes: carrier.modes,
+                recipient: carrier.recipient,
+                sender: carrier.sender,
+                seq_id: carrier.seq_id,
+            },
+        }
+    }
+
     pub fn get_max_payload(&self, mtu: u16) -> Result<u16> {
         let max_inner = match self {
             Self::V1(v1) => v1.get_max_size(mtu),
@@ -317,7 +329,7 @@ fn v1_announce_frame_meta_size() {
 fn v1_data_frame_meta_size() {
     let f = CarrierFrameV1::pre_alloc(
         2,
-        Some(Address::random()),
+        Some(Recipient::Target(Address::random())),
         Address::random(),
         Some(SequenceIdV1 {
             hash: Id::random(),
@@ -340,7 +352,7 @@ fn v1_data_frame_meta_size() {
 fn v1_empty_carrier() {
     let mut f = CarrierFrameV1::pre_alloc(
         1312,
-        Some(Address::random()),
+        Some(Recipient::Target(Address::random())),
         Address::random(),
         Some(SequenceIdV1 {
             hash: Id::random(),
