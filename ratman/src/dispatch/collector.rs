@@ -20,7 +20,7 @@ pub struct BlockCollectorWorker {
     max_num: u8,
     buffer: Vec<InMemoryEnvelope>,
     senders: SenderStore,
-    output: Sender<Vec<u8>>,
+    output: JournalSender,
 }
 
 impl BlockCollectorWorker {
@@ -53,7 +53,7 @@ impl BlockCollectorWorker {
                     });
 
                 // Then offer the finished block up to the block god
-                this.output.send(block).await;
+                this.output.send((block, seq_id)).await;
             }
         }
     }
@@ -61,7 +61,7 @@ impl BlockCollectorWorker {
 
 pub struct BlockCollector {
     inner: SenderStore,
-    output: Sender<Vec<u8>>,
+    output: JournalSender,
 }
 
 impl BlockCollector {

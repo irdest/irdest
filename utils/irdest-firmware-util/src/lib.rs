@@ -4,91 +4,10 @@
 
 use libratman::{
     netmod::InMemoryEnvelope,
-    types::{Address, Id, ApiRecipient, SeqData, XxSignature},
+    types::{Address, ApiRecipient},
 };
 use std::io::{Read, Write};
 
-struct SeqDataEncoded {
-    num: [u8; 4],    // u32
-    sig: [u8; 16],   // 2x u64
-    seqid: [u8; 32], // Irdest ID
-    next: [u8; 9],   // u64 + Option marker
-}
-
-impl From<&'_ SeqData> for SeqDataEncoded {
-    fn from(seq: &'_ SeqData) -> Self {
-        let mut this = Self {
-            num: seq.num.to_be_bytes(),
-            sig: [0; 16],   // fill in later
-            seqid: [0; 32], // fill in later
-            next: [0; 9],   // fill in later,
-        };
-
-        // Encode both parts of the Signature and append them into the
-        // same fixed-size buffer
-        let sig_sig = seq.sig.sig.to_be_bytes();
-        let sig_seed = seq.sig.seed.to_be_bytes();
-        sig_sig
-            .into_iter()
-            .chain(sig_seed.into_iter())
-            .enumerate()
-            .for_each(|(idx, byte)| this.sig[idx] = byte);
-
-        // Encode the variable length identity and copy it into a
-        // fixed-size buffer
-        let seqid = seq.seqid.as_bytes();
-        seqid
-            .into_iter()
-            .enumerate()
-            .for_each(|(idx, byte)| this.seqid[idx] = *byte);
-
-        // Encode next ID as big-endian and append option marker
-        match seq.next {
-            Some(next) => {
-                this.next[0] = true as u8;
-                next.to_be_bytes()
-                    .into_iter()
-                    .enumerate()
-                    .for_each(|(idx, byte)| this.next[idx + 1] = byte);
-            }
-            None => {
-                this.next[1] = false as u8;
-            }
-        };
-
-        this
-    }
-}
-
-impl From<SeqDataEncoded> for SeqData {
-    fn from(enc: SeqDataEncoded) -> Self {
-        let num = u32::from_be_bytes(enc.num);
-        let sig = {
-            let sig = u64::from_be_bytes(unsafe { enc.sig[0..8].try_into().unwrap_unchecked() });
-            let seed = u64::from_be_bytes(unsafe { enc.sig[8..16].try_into().unwrap_unchecked() });
-            XxSignature { sig, seed }
-        };
-
-        let seqid = Id::from_bytes(&enc.seqid);
-
-        let next = {
-            if enc.next[0] == true as u8 {
-                Some(u64::from_be_bytes(unsafe {
-                    enc.next[1..9].try_into().unwrap_unchecked()
-                }))
-            } else {
-                None
-            }
-        };
-
-        Self {
-            num,
-            sig,
-            seqid,
-            next,
-        }
-    }
-}
 
 /// Encode a frame for basic wire formats
 pub fn encode_frame<T: Write>(
@@ -155,14 +74,14 @@ pub fn decode_frame<T: Read>(stream: &mut T) -> Result<InMemoryEnvelope, std::io
     let seqid = read_exactly(32, stream)?;
     let next = read_exactly(9, stream)?;
 
-    let seq = SeqData::from(unsafe {
-        SeqDataEncoded {
-            num: num.try_into().unwrap_unchecked(),
-            sig: sig.try_into().unwrap_unchecked(),
-            seqid: seqid.try_into().unwrap_unchecked(),
-            next: next.try_into().unwrap_unchecked(),
-        }
-    });
+    // let seq = SeqData::from(unsafe {
+    //     SeqDataEncoded {
+    //         num: num.try_into().unwrap_unchecked(),
+    //         sig: sig.try_into().unwrap_unchecked(),
+    //         seqid: seqid.try_into().unwrap_unchecked(),
+    //         next: next.try_into().unwrap_unchecked(),
+    //     }
+    // });
 
     let payload_len_buf = read_exactly(4, stream)?;
     let payload_len = u32::from_be_bytes(unsafe { payload_len_buf.try_into().unwrap_unchecked() });

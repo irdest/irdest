@@ -18,7 +18,7 @@ use async_std::{
 pub(crate) use client::BaseClient;
 pub(crate) use connection::ConnectionManager;
 use libratman::{
-    types::{api, Address, Message, ApiRecipient},
+    types::{api, Address, ApiRecipient, Message},
     Result,
 };
 

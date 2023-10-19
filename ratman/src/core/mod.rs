@@ -15,9 +15,9 @@ mod routes;
 mod switch;
 
 pub(crate) use drivers::GenericEndpoint;
+pub(crate) use journal::{Journal, JournalSender};
 
 pub(self) use drivers::DriverMap;
-pub(self) use journal::{Journal, JournalSender};
 pub(self) use routes::{EpTargetPair, RouteTable, RouteType};
 pub(self) use switch::Switch;
 
@@ -25,7 +25,7 @@ use crate::dispatch::BlockCollector;
 use async_std::sync::Arc;
 use libratman::{
     netmod::{InMemoryEnvelope, Target},
-    types::{Address, RatmanError, Recipient, Result},
+    types::{Address, Message, RatmanError, Recipient, Result},
 };
 
 /// The Ratman routing core interface
@@ -41,7 +41,7 @@ use libratman::{
 /// facade.
 pub(crate) struct Core {
     collector: Arc<BlockCollector>,
-    _journal: Arc<Journal>,
+    journal: Arc<Journal>,
     routes: Arc<RouteTable>,
     switch: Arc<Switch>,
     drivers: Arc<DriverMap>,
@@ -52,26 +52,26 @@ impl Core {
     pub(crate) fn init() -> Self {
         let drivers = DriverMap::new();
         let routes = RouteTable::new();
-        let _journal = Journal::new();
+        let journal = Journal::new();
 
         let (jtx, jrx) = async_std::channel::bounded(16);
         let collector = BlockCollector::new(jtx);
 
         let switch = Switch::new(
             Arc::clone(&routes),
-            Arc::clone(&_journal),
+            Arc::clone(&journal),
             Arc::clone(&collector),
             Arc::clone(&drivers),
         );
 
         // Dispatch the runners
         Arc::clone(&switch).run();
-        async_std::task::spawn(Arc::clone(&_journal).run(jrx));
+        async_std::task::spawn(Arc::clone(&journal).run(jrx));
 
         Self {
             routes,
             collector,
-            _journal,
+            journal,
             switch,
             drivers,
         }
@@ -140,6 +140,10 @@ impl Core {
     /// Returns users that were newly discovered in the network
     pub(crate) async fn discover(&self) -> Address {
         self.routes.discover().await
+    }
+
+    pub(crate) async fn next(&self) -> Message {
+        self.journal.next().await
     }
 
     /// Insert a new endpoint

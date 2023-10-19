@@ -2,19 +2,19 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use async_eris::{Block, BlockReference, BlockSize};
+use async_eris::{Block, BlockReference};
 use async_std::{
     channel::{Receiver, Sender},
     sync::{Arc, RwLock},
 };
 use libratman::{
     netmod::InMemoryEnvelope,
-    types::{frames::SequenceIdV1, Id},
+    types::{frames::SequenceIdV1, Id, Message},
 };
 use std::collections::{BTreeMap, BTreeSet};
 
-pub(crate) type JournalSender = Sender<(Vec<u8>, SequenceIdV1)>;
-pub(crate) type JournalReceiver = Receiver<(Vec<u8>, SequenceIdV1)>;
+pub type JournalSender = Sender<(Vec<u8>, SequenceIdV1)>;
+pub type JournalReceiver = Receiver<(Vec<u8>, SequenceIdV1)>;
 
 /// Remote frame journal
 pub(crate) struct Journal {
@@ -79,6 +79,10 @@ impl Journal {
                 .await
                 .insert(Id::from_bytes(block_ref.as_slice()), eris_block);
         }
+    }
+
+    pub(crate) async fn next(&self) -> Message {
+        todo!()
     }
 
     /// Add a new frame to the known set

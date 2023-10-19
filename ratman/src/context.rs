@@ -244,16 +244,16 @@ impl RatmanContext {
         self.protocol.offline(addr).await
     }
 
-    /// Dispatch a given message
+    /// Dispatch a high-level message
     pub async fn send(self: &Arc<Self>, msg: Message, block_size: BlockSize) -> Result<()> {
         let sender = msg.sender;
 
         // remap the recipient type because the client API sucks ass
         let recipient = match msg.recipient {
-            ApiRecipient::Standard(t) => {
+            ApiRecipient::Standard(ref t) => {
                 Recipient::Target(*t.first().expect("no recipient in message!"))
             }
-            ApiRecipient::Flood(t) => Recipient::Flood(t),
+            ApiRecipient::Flood(ref t) => Recipient::Flood(*t),
         };
 
         let (read_capability, blocks) = match block_size {

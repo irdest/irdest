@@ -100,7 +100,7 @@ impl FrameGenerator for AnnounceFrameV1 {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct OriginDataV1 {
     timestamp: DateTime<Utc>,
 }

@@ -78,7 +78,7 @@ impl Protocol {
                 #[cfg(feature = "dashboard")]
                 self.metrics.announcements_total.inc();
 
-                core.raw_flood(Self::announce(id)).await.unwrap();
+                // core.raw_flood(Self::announce(id)).await.unwrap();
                 task::sleep(Duration::from_secs(2)).await;
 
                 if !b.load(Ordering::Relaxed) && break {}

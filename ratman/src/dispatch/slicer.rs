@@ -12,7 +12,7 @@ use async_eris::{BlockReference, BlockSize, MemoryStorage, ReadCapability};
 use async_std::sync::Arc;
 use libratman::types::{
     frames::{modes, CarrierFrame, CarrierFrameV1, SequenceIdV1},
-    Address, Id, Message, Recipient, Result, SeqBuilder,
+    Address, Id, Message, Recipient, Result,
 };
 
 pub struct StreamSlicer;

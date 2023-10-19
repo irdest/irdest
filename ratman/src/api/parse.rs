@@ -14,8 +14,8 @@ use libratman::types::{
         self, all_peers, api_peers, api_setup, online_ack, ApiMessageEnum, Peers, Peers_Type,
         Receive, Send, Setup_Type,
     },
-    encode_message, parse_message, write_with_length, Address, ClientError, Id, Message, ApiRecipient,
-    Result,
+    encode_message, parse_message, write_with_length, Address, ApiRecipient, ClientError, Id,
+    Message, Result,
 };
 
 async fn handle_send(ctx: &Arc<RatmanContext>, _self: Address, send: Send) -> Result<()> {
@@ -61,7 +61,7 @@ async fn handle_send(ctx: &Arc<RatmanContext>, _self: Address, send: Send) -> Re
             }
             _ => {}
         }
-        ctx.core.send(msg).await?;
+        ctx.send(msg, async_eris::BlockSize::_1K).await?;
     }
     Ok(())
 }
