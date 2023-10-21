@@ -1,7 +1,7 @@
 //! Generator utilities
 
 use crate::{
-    types::{error::EncodingError, frames::SequenceIdV1, Address, Id},
+    types::{error::EncodingError, SequenceIdV1, Address, Id},
     RatmanError, Result,
 };
 use byteorder::{BigEndian, ByteOrder};

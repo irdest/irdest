@@ -20,6 +20,7 @@ mod identifiers;
 mod message;
 mod recipient;
 mod timepair;
+mod sequence_id;
 
 pub use crate::client::ClientError;
 pub use error::{EncodingError, NonfatalError, RatmanError, Result};
@@ -27,6 +28,7 @@ pub use identifiers::{address::Address, id::Id, ID_LEN};
 pub use message::{ApiRecipient, Message};
 pub use recipient::Recipient;
 pub use timepair::TimePair;
+pub use sequence_id::SequenceIdV1;
 
 use async_std::{
     io::{Read, Write},

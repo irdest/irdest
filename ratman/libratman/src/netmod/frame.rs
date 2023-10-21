@@ -1,9 +1,6 @@
 //! Networking frames
 
-use crate::types::{
-    frames::{CarrierFrameV1, ProtoCarrierFrameMeta},
-    Address,
-};
+use crate::types::{frames::CarrierFrameHeader, Address};
 use std::fmt::{self, Display};
 
 /// Describes an endpoint's send target
@@ -47,6 +44,6 @@ impl Default for Target {
 /// Container for carrier frame metadata and a full message buffer
 #[derive(Debug, Clone)]
 pub struct InMemoryEnvelope {
-    pub meta: ProtoCarrierFrameMeta,
+    pub meta: CarrierFrameHeader,
     pub buffer: Vec<u8>,
 }
