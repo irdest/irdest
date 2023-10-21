@@ -13,6 +13,8 @@ use libratman::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::storage::block::StorageBlock;
+
 pub type JournalSender = Sender<(Vec<u8>, SequenceIdV1)>;
 pub type JournalReceiver = Receiver<(Vec<u8>, SequenceIdV1)>;
 
@@ -22,23 +24,6 @@ pub(crate) struct Journal {
     known: RwLock<BTreeSet<Id>>,
     /// Simple in-memory block store ???
     blocks: RwLock<BTreeMap<Id, StorageBlock>>,
-}
-
-/// Remove the types from block
-enum StorageBlock {
-    /// 1K block size
-    _1K(Block<1024>),
-    /// 32K block size
-    _32K(Block<32768>),
-}
-
-impl StorageBlock {
-    fn reference(&self) -> BlockReference {
-        match self {
-            Self::_1K(b) => b.reference(),
-            Self::_32K(b) => b.reference(),
-        }
-    }
 }
 
 impl Journal {
@@ -52,14 +37,14 @@ impl Journal {
     /// Dispatches a long-running task to run the journal logic
     pub(crate) async fn run(self: Arc<Self>, block_output: JournalReceiver) {
         while let Ok((block_buf, sequence_id)) = block_output.recv().await {
-            let eris_block = match block_buf.len() {
-                1024 => StorageBlock::_1K(Block::<1024>::from_vec(block_buf)),
-                32768 => StorageBlock::_32K(Block::<32768>::from_vec(block_buf)),
-                length => {
+            let eris_block = match StorageBlock::reconstruct(block_buf) {
+                Ok(block) => block,
+                Err(e) => {
                     error!(
-                        "Block collected from id {} resulted in invalid block length: {}",
-                        sequence_id.hash, length
+                        "Block collected from id {} failed because {}",
+                        sequence_id.hash, e
                     );
+
                     continue;
                 }
             };

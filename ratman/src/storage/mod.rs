@@ -5,6 +5,7 @@ use libratman::types::Result;
 use std::path::PathBuf;
 
 pub mod addrs;
+pub mod block;
 pub mod client;
 
 /// Represent a database connection
