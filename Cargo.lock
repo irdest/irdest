@@ -230,6 +230,7 @@ dependencies = [
  "chacha20",
  "derive_more",
  "futures-lite",
+ "rand 0.7.3",
  "serde",
  "serde_json",
  "thiserror",
