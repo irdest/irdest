@@ -138,7 +138,7 @@ pub fn sysv_daemonize_app(cfg: ConfigTree) -> StdResult<(), Box<dyn Error>> {
     write(write_pipe_fd, &pid_bytes)?;
     close(write_pipe_fd)?;
 
-    let _ = async_std::task::block_on(start_with_configuration(cfg));
+    let _ = start_with_configuration(cfg);
 
     // Unlock and close/delete pid file
     drop(pid_file);

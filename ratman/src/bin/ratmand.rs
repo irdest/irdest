@@ -5,6 +5,7 @@
 
 //! Ratman daemon entrypoint
 #![allow(warnings)]
+use async_std::task::block_on;
 use ratmand::{
     config::ConfigTree,
     start_with_configuration,
@@ -16,8 +17,8 @@ async fn generate_default_config(path: &PathBuf) {
     let cfg = ConfigTree::default_in_memory();
 }
 
-#[async_std::main]
-async fn main() {
+//#[async_std::main]
+fn main() {
     let arg_matches = cli::build_cli();
 
     let cfg_path = arg_matches
@@ -47,9 +48,10 @@ async fn main() {
             }
         }
 
-        if let Err(e) = cfg.write_changes(&cfg_path).await {
+        if let Err(e) = block_on(async { cfg.write_changes(&cfg_path).await }) {
             eprintln!("failed to write default configuration: {}", e);
         }
+
         std::process::exit(0);
     }
 
@@ -57,13 +59,13 @@ async fn main() {
     // limited to eprintln and exiting the application manually if
     // something goes catastrophically wrong.
 
-    let mut config = match ConfigTree::load_path(&cfg_path).await {
+    let mut config = match block_on(ConfigTree::load_path(&cfg_path)) {
         Ok(cfg) => cfg,
         Err(_) => {
             // If the configuration couldn't be loaded we assume that
             // it just doesn't exist yet and we try to create it.
             let cfg = ConfigTree::default_in_memory();
-            if let Err(_) = cfg.write_changes(&cfg_path).await {
+            if let Err(_) = block_on(cfg.write_changes(&cfg_path)) {
                 eprintln!(
                     "failed to write configuration to path {}",
                     cfg_path
@@ -105,6 +107,6 @@ async fn main() {
     }
     // Otherwise just normally initialise the Context
     else {
-        start_with_configuration(config).await
+        start_with_configuration(config)
     }
 }

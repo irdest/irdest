@@ -16,7 +16,7 @@ use crate::{
     util::{self, codes, runtime_state::RuntimeState, setup_logging, Os, StateDirectoryLock},
 };
 use async_eris::BlockSize;
-use async_std::sync::Arc;
+use async_std::{sync::Arc, task::block_on};
 use atomptr::AtomPtr;
 use libratman::{
     netmod::InMemoryEnvelope,
@@ -73,7 +73,7 @@ impl RatmanContext {
     }
 
     /// Create and start a new Ratman router context with a config
-    pub async fn start(cfg: ConfigTree) -> Arc<Self> {
+    pub fn start(cfg: ConfigTree) -> Arc<Self> {
         let this = Self::new_in_memory();
 
         // Parse the ratmand config tree
@@ -89,7 +89,7 @@ impl RatmanContext {
             warn!("State directory locking is unimplemented");
             warn!("Take care that peering hardware is not used from multiple drivers!");
         } else {
-            match Os::lock_state_directory(None).await {
+            match block_on(Os::lock_state_directory(None)) {
                 Ok(Some(lock)) => {
                     this._statedir_lock.swap(Some(lock));
                 }
@@ -103,10 +103,10 @@ impl RatmanContext {
             }
         }
         // Load existing client/address relations
-        this.clients.load_users(&this).await;
+        block_on(this.clients.load_users(&this));
 
         // This never fails, we will have a map of netmods here, even if it is empty
-        let driver_map = initialise_netmods(&cfg).await;
+        let driver_map = block_on(initialise_netmods(&cfg));
 
         // Get the initial set of peers from the configuration.
         // Either this is done via the `peer_file` field, which is
@@ -124,7 +124,7 @@ impl RatmanContext {
             Some(peers) => {
                 let mut peer_builder = PeeringBuilder::new(driver_map);
                 for peer in peers {
-                    if let Err(e) = peer_builder.attach(peer.as_str()).await {
+                    if let Err(e) = block_on(peer_builder.attach(peer.as_str())) {
                         error!("failed to add peer: {}", e);
                     }
                 }
@@ -134,7 +134,7 @@ impl RatmanContext {
                 // dissolve both and add everything to the routing
                 // core.
                 for (name, ep) in peer_builder.consume() {
-                    let _ep_id = this.core.add_ep(name, ep).await;
+                    let _ep_id = block_on(this.core.add_ep(name, ep));
                 }
             }
 
@@ -168,7 +168,7 @@ impl RatmanContext {
             this.core.register_metrics(&mut registry);
             this.protocol.register_metrics(&mut registry);
 
-            if let Err(e) = crate::web::start(this.clone(), registry, dashboard_bind).await {
+            if let Err(e) = block_on(crate::web::start(this.clone(), registry, dashboard_bind)) {
                 error!("failed to start web dashboard server: {}", e);
             }
         }
@@ -195,7 +195,9 @@ impl RatmanContext {
             }
         };
 
-        if let Err(e) = api::run(Arc::clone(&this), api_bind_addr).await {
+        // We block execution on running the API module
+        if let Err(e) = block_on(api::run(Arc::clone(&this), api_bind_addr)) {
+            // If we returned an error, the API module has crashed
             error!("API connector crashed with error: {}", e);
             this.runtime_state.kill();
         }

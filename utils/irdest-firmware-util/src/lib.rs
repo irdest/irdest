@@ -8,7 +8,6 @@ use libratman::{
 };
 use std::io::{Read, Write};
 
-
 /// Encode a frame for basic wire formats
 pub fn encode_frame<T: Write>(
     _stream: &mut T,

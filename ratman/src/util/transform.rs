@@ -4,7 +4,7 @@
 
 use libratman::types::{
     api::{Send, Send_Type},
-    Address, Id, Message, ApiRecipient, TimePair,
+    Address, ApiRecipient, Id, Message, TimePair,
 };
 
 /// Turn an API `Send` to a `Message`

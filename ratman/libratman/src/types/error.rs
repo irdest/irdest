@@ -87,7 +87,6 @@ pub enum EncodingError {
     FrameTooLarge(usize),
     #[error("provided buffer did not contain any data")]
     NoData,
-    
 }
 
 impl<T: std::fmt::Debug> From<nom::Err<T>> for EncodingError {

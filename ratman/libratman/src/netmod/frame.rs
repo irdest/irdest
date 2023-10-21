@@ -1,6 +1,9 @@
 //! Networking frames
 
-use crate::types::{frames::ProtoCarrierFrameMeta, Address};
+use crate::types::{
+    frames::{CarrierFrameV1, ProtoCarrierFrameMeta},
+    Address,
+};
 use std::fmt::{self, Display};
 
 /// Describes an endpoint's send target
