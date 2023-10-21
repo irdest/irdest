@@ -8,7 +8,7 @@
 use libratman::{
     netmod::{InMemoryEnvelope, Target},
     types::{
-        frames::{CarrierFrame, CarrierFrameV1, FrameParser},
+        frames::{CarrierFrameHeader, FrameGenerator, FrameParser},
         Address, NonfatalError,
     },
     EncodingError, Result,
@@ -41,12 +41,9 @@ pub(crate) mod modes {
 
 impl Handshake {
     pub(crate) fn from_carrier(env: &InMemoryEnvelope) -> Result<Self> {
-        match env.meta.modes {
+        match env.header.get_modes() {
             modes::HANDSHAKE_ANNOUNCE | modes::HANDSHAKE_REPLY => {
-                let (_, carrier) = CarrierFrame::parse(&env.buffer)
-                    .map_err(|e| EncodingError::Parsing(e.to_string().into()))?;
-                let full_carrier = carrier?;
-                bincode::deserialize(&full_carrier.get_payload())
+                bincode::deserialize(env.get_payload_slice())
                     .map_err(|e| EncodingError::Parsing(e.to_string()).into())
             }
             _ => Err(NonfatalError::MismatchedEncodingTypes.into()),
@@ -54,7 +51,7 @@ impl Handshake {
     }
 
     pub(crate) fn to_carrier(self) -> Result<InMemoryEnvelope> {
-        let (payload, modes) = match self {
+        let (mut payload, modes) = match self {
             ref hello @ Self::Announce => (
                 bincode::serialize(hello).expect("failed to encode Handshake::Hello"),
                 modes::HANDSHAKE_ANNOUNCE,
@@ -65,9 +62,15 @@ impl Handshake {
             ),
         };
 
-        let mut v1 = CarrierFrameV1::pre_alloc(modes, None, Address::random(), None, None);
-        v1.set_payload_checked(1000, payload);
-        CarrierFrame::V1(v1).to_in_mem_envelope()
+        InMemoryEnvelope::from_header(
+            CarrierFrameHeader::new_netmodproto_frame(
+                modes,
+                // todo: get router root key!
+                Address::random(),
+                payload.len() as u16,
+            ),
+            payload,
+        )
     }
 }
 

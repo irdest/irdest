@@ -2,11 +2,13 @@ use crate::{
     client::Address,
     types::{
         frames::{generate, parse, FrameGenerator, FrameParser},
-        Recipient, SequenceIdV1,
+        Id, Recipient, SequenceIdV1,
     },
     EncodingError, Result,
 };
 use nom::IResult;
+
+use super::modes;
 
 //////
 ///////////   TOP LEVEL SECTION
@@ -22,19 +24,74 @@ pub enum CarrierFrameHeader {
 }
 
 impl CarrierFrameHeader {
+    /// Allocate a new Header for a netmod peering protocol
+    pub fn new_netmodproto_frame(modes: u16, router_addr: Address, payload_length: u16) -> Self {
+        Self::V1(CarrierFrameHeaderV1 {
+            modes,
+            recipient: None,
+            sender: router_addr,
+            seq_id: None,
+            auxiliary_data: None,
+            payload_length,
+        })
+    }
+
+    /// Allocate a new header for an ERIS-block data frame
+    pub fn new_blockdata_frame(
+        sender: Address,
+        recipient: Recipient,
+        seq_id: SequenceIdV1,
+        payload_length: u16,
+    ) -> Self {
+        Self::V1(CarrierFrameHeaderV1 {
+            modes: modes::DATA,
+            recipient: Some(recipient),
+            sender,
+            seq_id: Some(seq_id),
+            auxiliary_data: None,
+            payload_length,
+        })
+    }
+
+    /// Allocate a new header for an address announcement frame
+    pub fn new_announce_frame(sender: Address, payload_length: u16) -> Self {
+        Self::V1(CarrierFrameHeaderV1 {
+            modes: modes::ANNOUNCE,
+            recipient: None,
+            sender,
+            seq_id: None,
+            auxiliary_data: None,
+            payload_length,
+        })
+    }
+
+    pub fn get_blockdata_size(sender: Address, recipient: Recipient) -> usize {
+        CarrierFrameHeader::new_blockdata_frame(
+            sender,
+            recipient,
+            SequenceIdV1 {
+                hash: Id::random(),
+                num: 0,
+                max: 0,
+            },
+            0,
+        )
+        .get_size()
+    }
+
     /// Calculate the size of this metadata header
     pub fn get_size(&self) -> usize {
         match self {
             Self::V1(header) => {
                 let modes_size = core::mem::size_of_val(&header.modes);
                 let payload_len_size = core::mem::size_of_val(&header.payload_length);
+                let sender_size = core::mem::size_of_val(&header.sender);
                 let recipient_size = match header.recipient {
                     // Recipient adds one more byte to distinguish between
                     // Targeted and Flood send
                     Some(_) => 32 + 1,
                     None => 1,
                 };
-                let sender_size = core::mem::size_of_val(&header.sender);
                 let seq_id_size = match header.seq_id {
                     Some(ref seq_id) => core::mem::size_of_val(seq_id),
                     None => 1,
@@ -46,12 +103,42 @@ impl CarrierFrameHeader {
 
                 (1 // Include 1 byte for the version field itself
                     + modes_size
-                    + recipient_size
                     + sender_size
+                    + recipient_size
                     + seq_id_size
                     + aux_data_size
                     + payload_len_size)
             }
+        }
+    }
+
+    pub fn get_modes(&self) -> u16 {
+        match self {
+            Self::V1(inner) => inner.modes,
+        }
+    }
+
+    pub fn get_sender(&self) -> Address {
+        match self {
+            Self::V1(inner) => inner.sender,
+        }
+    }
+
+    pub fn get_recipient(&self) -> Option<Recipient> {
+        match self {
+            Self::V1(inner) => inner.recipient,
+        }
+    }
+
+    pub fn get_seq_id(&self) -> Option<SequenceIdV1> {
+        match self {
+            Self::V1(inner) => inner.seq_id,
+        }
+    }
+
+    pub fn get_payload_length(&self) -> usize {
+        match self {
+            Self::V1(inner) => inner.payload_length as usize,
         }
     }
 }
@@ -64,8 +151,8 @@ impl FrameParser for CarrierFrameHeader {
         match version[0] {
             1 => {
                 let (input, modes) = parse::take_u16(input)?;
-                let (input, recipient) = Option::<Recipient>::parse(input)?;
                 let (input, sender) = parse::take_address(input)?;
+                let (input, recipient) = Option::<Recipient>::parse(input)?;
                 let (input, seq_id) = SequenceIdV1::parse(input)?;
                 let (input, auxiliary_data_slice) = parse::take(64 as usize)(input)?;
                 let (input, payload_length) = parse::take_u16(input)?;
@@ -77,8 +164,8 @@ impl FrameParser for CarrierFrameHeader {
                     input,
                     Ok(CarrierFrameHeader::V1(CarrierFrameHeaderV1 {
                         modes,
-                        recipient,
                         sender,
+                        recipient,
                         seq_id,
                         auxiliary_data: Some(auxiliary_data),
                         payload_length,
@@ -99,8 +186,8 @@ impl FrameGenerator for CarrierFrameHeader {
             Self::V1(inner) => {
                 buf.push(1); // version byte
                 inner.modes.generate(buf)?;
-                inner.recipient.generate(buf)?;
                 inner.sender.generate(buf)?;
+                inner.recipient.generate(buf)?;
                 inner.seq_id.generate(buf)?;
                 inner.auxiliary_data.generate(buf)?;
                 inner.payload_length.generate(buf)?;
@@ -133,16 +220,19 @@ impl FrameGenerator for CarrierFrameHeader {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct CarrierFrameHeaderV1 {
     /// Indicate the frame type enclosed by this carrier
-    pub modes: u16,
+    modes: u16,
+    /// Mandatory sender address key
+    ///
+    /// For certain protocol messages this MAY be the router's root
+    /// key.
+    sender: Address,
     /// Optional recipient address key
     ///
     /// The recipient field MAY be NULL if the contained frame is
     /// addressed to the whole network, and not part of a flood
     /// namespace.  Only a limited number of frame types may set
     /// this condition (for example protocol announcements).
-    pub recipient: Option<Recipient>,
-    /// Mandatory sender address key
-    pub sender: Address,
+    recipient: Option<Recipient>,
     /// Optional sequence ID
     ///
     /// Any message that is too large to fit into a single carrier
@@ -154,16 +244,13 @@ pub struct CarrierFrameHeaderV1 {
     ///
     /// This field is not cryptographicly validated, and as such the
     /// payload encoding MUST be verified to ensure data integrity.
-    pub seq_id: Option<SequenceIdV1>,
+    seq_id: Option<SequenceIdV1>,
     /// Optional auxiliary data field
     ///
     /// Some message types may use this field for signatures, others
     /// for additional connection metadata.  MAY be left blank with a
     /// single zero-byte.
-    pub auxiliary_data: Option<[u8; 64]>,
-    /// Length of the remaining payload section
-    pub payload_length: u16,
+    auxiliary_data: Option<[u8; 64]>,
+    /// Length of the trailing payload section
+    payload_length: u16,
 }
-
-#[test]
-fn v1_header_size() {}

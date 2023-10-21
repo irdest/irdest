@@ -9,7 +9,7 @@ use async_std::{
 };
 use libratman::{
     netmod::InMemoryEnvelope,
-    types::{frames::SequenceIdV1, Id, Message},
+    types::{Id, Message, SequenceIdV1},
 };
 use std::collections::{BTreeMap, BTreeSet};
 

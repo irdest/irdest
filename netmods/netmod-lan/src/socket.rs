@@ -14,7 +14,7 @@ use async_std::{
 };
 use libratman::{
     netmod::{InMemoryEnvelope, Target},
-    types::frames::{modes, ProtoCarrierFrameMeta},
+    types::frames::{modes, CarrierFrameHeader},
 };
 use std::collections::VecDeque;
 use std::ffi::CString;
@@ -145,9 +145,8 @@ impl Socket {
                             }
                         };
 
-                        let proto_carrier = ProtoCarrierFrameMeta::from_peek(&buf).unwrap();
-
-                        match proto_carrier.modes {
+                        let env = InMemoryEnvelope::parse_from_buffer(buf).unwrap();
+                        match env.header.get_modes() {
                             crate::framing::modes::HANDSHAKE_ANNOUNCE => {
                                 trace!("Recieving announce");
                                 table.set(peer).await;
@@ -163,13 +162,7 @@ impl Socket {
 
                                 // Append to the inbox and wake
                                 let mut inbox = arc.inbox.write().await;
-                                inbox.push_back(MemoryEnvelopeExt(
-                                    InMemoryEnvelope {
-                                        meta: proto_carrier,
-                                        buffer: buf,
-                                    },
-                                    Target::Single(id),
-                                ));
+                                inbox.push_back(MemoryEnvelopeExt(env, Target::Single(id)));
                                 Notify::wake(&mut inbox);
                             }
                         }

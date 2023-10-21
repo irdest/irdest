@@ -86,7 +86,7 @@ impl Core {
 
     /// Dispatch a single frame
     pub(crate) async fn dispatch_frame(&self, envelope: InMemoryEnvelope) -> Result<()> {
-        let target_address = match envelope.meta.recipient {
+        let target_address = match envelope.header.get_recipient() {
             Some(Recipient::Target(addr)) => addr,
             // fixme: introduce a better error kind here
             _ => unreachable!(),
@@ -104,7 +104,7 @@ impl Core {
     }
 
     pub(crate) async fn flood_frame(&self, envelope: InMemoryEnvelope) -> Result<()> {
-        let flood_address = match envelope.meta.recipient {
+        let flood_address = match envelope.header.get_recipient() {
             Some(Recipient::Flood(addr)) => addr,
             // fixme: introduce a better error kind here
             _ => unreachable!(),
@@ -117,7 +117,9 @@ impl Core {
             if let Err(e) = ep.send(env, target, None).await {
                 error!(
                     "failed to flood frame {:?} on endpoint {}: {}",
-                    envelope.meta.seq_id, ep_name, e
+                    envelope.header.get_seq_id(),
+                    ep_name,
+                    e
                 );
             }
         }

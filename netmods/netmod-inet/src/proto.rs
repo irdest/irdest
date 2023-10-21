@@ -11,18 +11,19 @@ use byteorder::ByteOrder;
 use libratman::{
     netmod::InMemoryEnvelope,
     types::{
-        frames::{CarrierFrame, CarrierFrameV1, FrameParser, ProtoCarrierFrameMeta},
+        frames::{CarrierFrameHeader, FrameGenerator, FrameParser},
         Address, NonfatalError,
     },
     EncodingError, RatmanError, Result,
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
+/// Read 8 bytes
 #[inline]
 pub(crate) async fn read_blocking(mut rx: &TcpStream) -> Result<InMemoryEnvelope> {
-    let mut len_buf = [0; 8];
+    let mut len_buf = [0; 4];
     rx.read_exact(&mut len_buf).await?;
-    let len = u64::from_be_bytes(len_buf);
+    let len = u32::from_be_bytes(len_buf);
 
     if len > 4196 {
         warn!("Receiving a message larger than 4169 bytes.  This might be a DOS attempt..");
@@ -31,15 +32,16 @@ pub(crate) async fn read_blocking(mut rx: &TcpStream) -> Result<InMemoryEnvelope
     let mut buffer = vec![0; len as usize];
     rx.read_exact(&mut buffer).await?;
 
-    Ok(ProtoCarrierFrameMeta::from_peek(&buffer).map(|meta| InMemoryEnvelope { meta, buffer })?)
+    InMemoryEnvelope::parse_from_buffer(buffer)
 }
 
 /// Attempt to read from the socket and return NoData if not enough
 /// data was present to be read.  YOU MUST NOT PANIC ON THIS ERROR
 /// TYPE
 pub(crate) async fn read(mut rx: &TcpStream) -> Result<InMemoryEnvelope> {
-    let mut len_buf = [0; 8];
-    if rx.peek(&mut len_buf).await? < 8 {
+    let mut len_buf = [0; 4];
+    if rx.peek(&mut len_buf).await? < 4 {
+        // return Err(NonfatalError::NoData.into());
         return Err(EncodingError::NoData.into());
     }
 
@@ -47,7 +49,7 @@ pub(crate) async fn read(mut rx: &TcpStream) -> Result<InMemoryEnvelope> {
 }
 
 pub(crate) async fn write(mut tx: &TcpStream, envelope: &InMemoryEnvelope) -> Result<()> {
-    let mut len_buf = (envelope.buffer.len() as u64).to_be_bytes();
+    let mut len_buf = (envelope.buffer.len() as u32).to_be_bytes();
     tx.write(&len_buf).await?;
     tx.write(&envelope.buffer).await?;
     Ok(())
@@ -67,12 +69,9 @@ pub(crate) enum Handshake {
 
 impl Handshake {
     pub(crate) fn from_carrier(env: &InMemoryEnvelope) -> Result<Self> {
-        match env.meta.modes {
+        match env.header.get_modes() {
             modes::HANDSHAKE_HELLO | modes::HANDSHAKE_ACK => {
-                let (_, carrier) = CarrierFrame::parse(&env.buffer)
-                    .map_err(|e| EncodingError::Parsing(e.to_string().into()))?;
-                let full_carrier = carrier?;
-                bincode::deserialize(&full_carrier.get_payload())
+                bincode::deserialize(env.get_payload_slice())
                     .map_err(|e| EncodingError::Parsing(e.to_string()).into())
             }
             _ => Err(NonfatalError::MismatchedEncodingTypes.into()),
@@ -80,7 +79,7 @@ impl Handshake {
     }
 
     pub(crate) fn to_carrier(self) -> Result<InMemoryEnvelope> {
-        let (payload, modes) = match self {
+        let (mut payload, modes) = match self {
             ref hello @ Self::Hello { .. } => (
                 bincode::serialize(hello).expect("failed to encode Handshake::Hello"),
                 modes::HANDSHAKE_HELLO,
@@ -91,8 +90,14 @@ impl Handshake {
             ),
         };
 
-        let mut v1 = CarrierFrameV1::pre_alloc(modes, None, Address::random(), None, None);
-        v1.set_payload_checked(1000, payload);
-        CarrierFrame::V1(v1).to_in_mem_envelope()
+        InMemoryEnvelope::from_header(
+            CarrierFrameHeader::new_netmodproto_frame(
+                modes,
+                // todo: get router root key!
+                Address::random(),
+                payload.len() as u16,
+            ),
+            payload,
+        )
     }
 }

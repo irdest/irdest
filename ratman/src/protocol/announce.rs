@@ -1,8 +1,12 @@
-use crate::{context::RatmanContext, dispatch::new_carrier_v1};
+use crate::{config::ConfigTree, context::RatmanContext};
 use async_std::{sync::Arc, task};
-use libratman::types::{
-    frames::{AnnounceFrameV1, CarrierFrame, FrameGenerator, OriginDataV1, RouteDataV1},
-    Address, Id,
+use bincode::Config;
+use libratman::{
+    netmod::InMemoryEnvelope,
+    types::{
+        frames::{AnnounceFrameV1, CarrierFrameHeader, FrameGenerator, OriginDataV1, RouteDataV1},
+        Address, Id,
+    },
 };
 use std::{
     sync::atomic::{AtomicBool, Ordering},
@@ -16,11 +20,23 @@ pub struct AddressAnnouncer {
 }
 
 impl AddressAnnouncer {
-    pub(crate) async fn run(self, online: Arc<AtomicBool>, ctx: Arc<RatmanContext>) {
+    pub(crate) async fn run(
+        self,
+        online: Arc<AtomicBool>,
+        cfg: &ConfigTree,
+        ctx: Arc<RatmanContext>,
+    ) {
+        let announce_delay = cfg
+            .get_subtree("ratmand")
+            .and_then(|subtree| subtree.get_number_value("announce_delay"))
+            .unwrap_or_else(|| {
+                debug!("ratmand/announce_delay was not set, assuming default of 2 seconds");
+                2
+            }) as u64;
+
         while online.load(Ordering::Acquire) {
             // Create some OriginData and sign it
             let origin = OriginDataV1::now();
-
             let origin_signature = {
                 let mut origin_buf = vec![];
                 origin.clone().generate(&mut origin_buf).unwrap();
@@ -30,7 +46,7 @@ impl AddressAnnouncer {
                     .unwrap()
             };
 
-            // Create a full announcement
+            // Create a full announcement and encode it
             let announce = AnnounceFrameV1 {
                 origin,
                 origin_signature: origin_signature.to_bytes(),
@@ -40,21 +56,29 @@ impl AddressAnnouncer {
                 },
             };
 
+            let announcement_payload = {
+                let mut buffer = vec![];
+                announce.generate(&mut buffer);
+                buffer
+            };
+
             // Pack it into a carrier and handle the nested encoding
-            let mut carrier = new_carrier_v1(None, self.address, None);
-            announce.generate(&mut carrier.payload).unwrap();
-            let meta = carrier.as_meta();
-            let mut buffer = vec![];
-            CarrierFrame::V1(carrier).generate(&mut buffer).unwrap();
+            let header = CarrierFrameHeader::new_announce_frame(
+                self.address,
+                announcement_payload.len() as u16,
+            );
 
             // Send it into the network
-            ctx.core
-                .flood_frame(libratman::netmod::InMemoryEnvelope { meta, buffer })
+            if let Err(e) = ctx
+                .core
+                .flood_frame(InMemoryEnvelope::from_header(header, announcement_payload).unwrap())
                 .await
-                .unwrap();
+            {
+                error!("failed to flood announcement: {}", e)
+            }
 
             // Wait some amount of time
-            task::sleep(Duration::from_secs(2)).await;
+            task::sleep(Duration::from_secs(announce_delay)).await;
         }
     }
 }

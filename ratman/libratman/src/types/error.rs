@@ -72,6 +72,8 @@ pub enum NonfatalError {
     MtuTooSmallForFrame,
     #[error("the frame couldn't be parsed as the type it was expected to be")]
     MismatchedEncodingTypes,
+    #[error("the stream or buffer didn't have any data at this time")]
+    NoData,
 }
 
 #[derive(Debug, thiserror::Error)]

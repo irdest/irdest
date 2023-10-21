@@ -17,7 +17,7 @@ mod announce;
 
 use crate::core::Core;
 use libratman::types::{
-    frames::{self, ProtoCarrierFrameMeta},
+    frames::{self, CarrierFrameHeader},
     Address, RatmanError, Result,
 };
 
@@ -126,8 +126,8 @@ impl Protocol {
 }
 
 /// Match the carrier modes bitfield to decide what kind of frame
-pub fn parse(carrier_meta: ProtoCarrierFrameMeta, bin_envelope: Vec<u8>) {
-    match carrier_meta.modes {
+pub fn parse(carrier_meta: CarrierFrameHeader, bin_envelope: Vec<u8>) {
+    match carrier_meta.get_modes() {
         frames::modes::ANNOUNCE => {}
         frames::modes::DATA => {}
         frames::modes::MANIFEST => {}

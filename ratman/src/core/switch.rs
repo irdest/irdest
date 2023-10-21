@@ -77,7 +77,7 @@ impl Switch {
         let (ep_name, ep) = self.drivers.get(id).await;
 
         for _ in 0..batch_size {
-            let (InMemoryEnvelope { meta, buffer }, t) = match ep.next().await {
+            let (InMemoryEnvelope { header, buffer }, t) = match ep.next().await {
                 Ok(f) => f,
                 _ => continue,
             };
@@ -112,12 +112,12 @@ impl Switch {
 
             // Match on the modes bitfield to determine what kind of
             // frame we have
-            match meta.modes {
+            match header.get_modes() {
                 fmodes::ANNOUNCE => {
-                    debug!("Reiceved announcement for {}", meta.sender);
-                    self.routes.update(id as u8, t, meta.sender).await;
+                    debug!("Reiceved announcement for {}", header.get_sender());
+                    self.routes.update(id as u8, t, header.get_sender()).await;
                 }
-                fmodes::DATA if meta.recipient.is_some() => {}
+                fmodes::DATA if header.get_recipient().is_some() => {}
                 fmodes::MANIFEST => {}
                 f_type => {
                     warn!("Received unknown frame type: {}", f_type);

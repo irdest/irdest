@@ -6,7 +6,7 @@ use async_std::{
 };
 use libratman::{
     netmod::InMemoryEnvelope,
-    types::{frames::SequenceIdV1, Id},
+    types::{Id, SequenceIdV1},
 };
 use std::collections::BTreeMap;
 
@@ -30,12 +30,11 @@ impl BlockCollectorWorker {
         while let Ok((seq_id, envelope)) = recv.recv().await {
             this.buffer.insert(seq_id.num.into(), envelope);
             this.buffer.sort_by(|a, b| {
-                a.meta
-                    .seq_id
-                    .as_ref()
+                a.header
+                    .get_seq_id()
                     .unwrap()
                     .hash
-                    .partial_cmp(&b.meta.seq_id.as_ref().unwrap().hash)
+                    .partial_cmp(&b.header.get_seq_id().unwrap().hash)
                     .unwrap()
             });
 

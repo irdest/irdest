@@ -5,28 +5,25 @@
 
 //! Socket handler module
 
-use libratman::types::frames::ProtoCarrierFrameMeta;
-use useful_netmod_bits::addrs::AddrTable;
-use useful_netmod_bits::framing::{Envelope, FrameExt};
-
 use async_std::{
     future::{self, Future},
     pin::Pin,
     sync::{Arc, Mutex, RwLock},
     task::{self, Poll},
 };
+use libratman::netmod::{InMemoryEnvelope, Target};
+use nix::errno::Errno;
 use pnet::{
     packet::ethernet::{EtherType, EthernetPacket, MutableEthernetPacket},
     packet::Packet,
     util::MacAddr,
 };
 use pnet_datalink::{channel, Channel, DataLinkReceiver, DataLinkSender, NetworkInterface};
-
-use libratman::netmod::{InMemoryEnvelope, Target};
-use nix::errno::Errno;
 use std::collections::VecDeque;
 use std::error::Error;
 use task_notify::Notify;
+use useful_netmod_bits::addrs::AddrTable;
+use useful_netmod_bits::framing::{Envelope, FrameExt};
 
 /// Wraps the pnet ethernet channel and the input queue
 pub(crate) struct Socket {
@@ -163,13 +160,11 @@ impl Socket {
                                 }
                                 Envelope::Data(buffer) => {
                                     trace!("Received data frame");
-                                    let meta = match ProtoCarrierFrameMeta::from_peek(&buffer) {
+                                    let envelope = match InMemoryEnvelope::parse_from_buffer(buffer)
+                                    {
                                         Ok(m) => m,
                                         Err(e) => {
-                                            error!(
-                                                "failed to parse CarrierFrame metadata section: {}",
-                                                e
-                                            );
+                                            error!("failed to parse CarrierFrame header: {}", e);
                                             return;
                                         }
                                     };
@@ -177,10 +172,7 @@ impl Socket {
                                     if let Some(id) = table.id(peer).await {
                                         // Append to the inbox and wake
                                         let mut inbox = arc.inbox.write().await;
-                                        inbox.push_back(FrameExt(
-                                            InMemoryEnvelope { meta, buffer },
-                                            Target::Single(id),
-                                        ));
+                                        inbox.push_back(FrameExt(envelope, Target::Single(id)));
                                         Notify::wake(&mut inbox);
                                     }
                                 }

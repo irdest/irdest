@@ -11,7 +11,7 @@ use crate::{
     },
     core::Core,
     crypto::Keystore,
-    dispatch::{new_carrier_v1, BlockSlicer, StreamSlicer},
+    dispatch::{BlockSlicer, StreamSlicer},
     protocol::Protocol,
     util::{self, codes, runtime_state::RuntimeState, setup_logging, Os, StateDirectoryLock},
 };
@@ -21,7 +21,7 @@ use atomptr::AtomPtr;
 use libratman::{
     netmod::InMemoryEnvelope,
     types::{
-        frames::{CarrierFrame, FrameGenerator, ManifestFrame, ManifestFrameV1},
+        frames::{CarrierFrameHeader, FrameGenerator, ManifestFrame, ManifestFrameV1},
         Address, ApiRecipient, Message, Recipient,
     },
     Result,

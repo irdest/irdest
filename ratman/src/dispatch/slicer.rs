@@ -15,20 +15,15 @@ use async_std::{
     io::{BufReader, Cursor},
     sync::Arc,
 };
-use libratman::types::{
-    frames::{modes, CarrierFrame, CarrierFrameV1, SequenceIdV1},
-    Address, Id, Message, Recipient, Result,
+use libratman::{
+    netmod::InMemoryEnvelope,
+    types::{
+        frames::{modes, CarrierFrameHeader},
+        Address, Id, Message, Recipient, Result, SequenceIdV1,
+    },
 };
 
 pub struct StreamSlicer;
-
-pub(crate) fn new_carrier_v1(
-    recipient: Option<Recipient>,
-    sender: Address,
-    seq_id: Option<SequenceIdV1>,
-) -> CarrierFrameV1 {
-    CarrierFrameV1::pre_alloc(modes::DATA, recipient, sender, seq_id, None)
-}
 
 impl StreamSlicer {
     /// Take a stream of ERIS blocks and slice them into
@@ -41,25 +36,17 @@ impl StreamSlicer {
         recipient: Recipient,
         sender: Address,
         input: I,
-    ) -> Result<Vec<CarrierFrame>> {
+    ) -> Result<Vec<InMemoryEnvelope>> {
         let mut buf = vec![];
-        let schema_frame = new_carrier_v1(
-            Some(recipient),
-            sender,
-            Some(SequenceIdV1 {
-                hash: Id::random(),
-                num: 123,
-                max: 123,
-            }),
-        );
+        let header_size = CarrierFrameHeader::get_blockdata_size(sender, recipient);
 
         // Iterate over all available blocks and their hash
         // references.  The hash reference is used as the first part
         // of the SequenceId to make re-association on the other side
         // possible.
         for (block_ref, block_data) in input {
-            let max_payload_size =
-                schema_frame.get_max_size(ctx.core.get_route_mtu(Some(recipient)))?;
+            let max_payload_size = ctx.core.get_route_mtu(Some(recipient)) - header_size as u16;
+            let max_in_sequence = block_data.as_slice().len() / max_payload_size as usize;
             let block_ref = Id::from_bytes(block_ref.as_slice());
 
             // We chunk the data block into as many pieces as are
@@ -74,12 +61,19 @@ impl StreamSlicer {
                     num: ctr,
                     // fixme: properly handle this casting, and make
                     // sure we don't get weird division errors here!
-                    max: (block_data.as_slice().len() / max_payload_size as usize) as u8,
+                    max: max_in_sequence as u8,
                 };
 
-                let mut carrier_v1 = new_carrier_v1(Some(recipient), sender, Some(seq_id));
-                carrier_v1.payload = chunk.into();
-                buf.push(CarrierFrame::V1(carrier_v1));
+                // Create a header and encode it into an InMemoryEnvelope
+                let header = CarrierFrameHeader::new_blockdata_frame(
+                    sender,
+                    recipient,
+                    seq_id,
+                    chunk.len() as u16,
+                );
+                buf.push(InMemoryEnvelope::from_header(header, chunk.to_vec())?);
+
+                // Increment sequence counter
                 ctr += 1;
             }
         }

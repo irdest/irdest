@@ -98,8 +98,7 @@ pub type RKPair = (BlockReference, BlockKey);
 pub struct Block<const BS: usize>([u8; BS]);
 
 impl<const BS: usize> Block<BS> {
-    // TODO: is this really slow and terrible ???
-    pub fn from_vec(vec: Vec<u8>) -> Self {
+    pub fn copy_from_vec(vec: Vec<u8>) -> Self {
         let mut buf = [0; BS];
         buf.copy_from_slice(vec.as_slice());
         Self(buf)

@@ -12,7 +12,7 @@ pub(crate) use collector::BlockCollector;
 
 mod slicer;
 use libratman::types::{Address, Recipient};
-pub(crate) use slicer::{new_carrier_v1, BlockSlicer, StreamSlicer};
+pub(crate) use slicer::{BlockSlicer, StreamSlicer};
 
 /// Verify that a set of blocks can be turned into stream data
 /// (CarrierFrames), and re-collected into full blocks again.
