@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
+#![allow(warnings)]
+
 //! # Ratman packet router
 //!
 //! **Note** most likely you are interested in the
@@ -29,6 +31,7 @@ mod crypto;
 mod dispatch;
 mod protocol;
 mod storage;
+
 
 #[cfg(feature = "dashboard")]
 mod web;

@@ -14,7 +14,7 @@
 //!
 //! 2. To write a ratman-netmod driver.  Use the types and functions
 //! exported from the [netmod](crate::netmod) module
-
+#![allow(warnings)]
 #[macro_use]
 extern crate tracing;
 

@@ -1,9 +1,8 @@
 // SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
-
+#![allow(warnings)]
 //! A tcp overlay netmod to connect router across the internet
-#![allow(unused)]
 
 #[macro_use]
 extern crate tracing;

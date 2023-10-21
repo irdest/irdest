@@ -175,7 +175,7 @@ impl Core {
 
     // fixme: this is basically just moving the hard-coded value somewhere else
     pub(crate) fn get_route_mtu(&self, _recipient: Option<Recipient>) -> u16 {
-        1300
+        400
     }
 
     /// Return all known addresses.  Most likely this function is less

@@ -54,23 +54,27 @@ pub struct RatmanContext {
 }
 
 impl RatmanContext {
-    /// Create and start a new Ratman router context with a config
-    pub async fn start(cfg: ConfigTree) -> Arc<Self> {
+    /// Create the in-memory Context, without any initialisation
+    pub(crate) fn new_in_memory() -> Arc<Self> {
         let runtime_state = RuntimeState::start_initialising();
-
         let protocol = Protocol::new();
         let core = Arc::new(Core::init());
         let keys = Arc::new(Keystore::new());
         let clients = Arc::new(ConnectionManager::new());
 
-        let this = Arc::new(Self {
+        Arc::new(Self {
             core,
             protocol,
             keys,
             clients,
             runtime_state,
             _statedir_lock: Arc::new(AtomPtr::new(None)),
-        });
+        })
+    }
+
+    /// Create and start a new Ratman router context with a config
+    pub async fn start(cfg: ConfigTree) -> Arc<Self> {
+        let this = Self::new_in_memory();
 
         // Parse the ratmand config tree
         let ratmand_config = cfg.get_subtree(CFG_RATMAND).expect("no 'ratmand' tree");
@@ -256,42 +260,39 @@ impl RatmanContext {
             ApiRecipient::Flood(ref t) => Recipient::Flood(*t),
         };
 
-        let (read_capability, blocks) = match block_size {
-            BlockSize::_1K => BlockSlicer::slice::<1_024>(self, msg).await?,
-            BlockSize::_32K => BlockSlicer::slice::<32_768>(self, msg).await?,
-        };
+        //let (read_capability, blocks) = BlockSlicer::slice(self, msg, block_size).await?;
+        todo!()
 
-        let data_frames =
-            StreamSlicer::slice(Arc::clone(self), recipient, sender, blocks.into_iter())?;
+        //     let data_frames = StreamSlicer::slice(self, recipient, sender, blocks.into_iter())?;
 
-        // Iterate over all the data frames and send them off
-        for carrier in data_frames {
-            let mut buffer = vec![];
-            let meta = carrier.as_meta();
+        //     // Iterate over all the data frames and send them off
+        //     for carrier in data_frames {
+        //         let mut buffer = vec![];
+        //         let meta = carrier.as_meta();
 
-            carrier.generate(&mut buffer)?;
-            let envelope = InMemoryEnvelope { meta, buffer };
-            self.core.dispatch_frame(envelope).await?;
-        }
+        //         carrier.generate(&mut buffer)?;
+        //         let envelope = InMemoryEnvelope { meta, buffer };
+        //         self.core.dispatch_frame(envelope).await?;
+        //     }
 
-        // Create a final manifest frame from the ReadCapability
-        {
-            let mut inner_buffer = vec![];
-            let manifest = ManifestFrame::V1(ManifestFrameV1::from(read_capability));
-            manifest.generate(&mut inner_buffer)?;
+        //     // Create a final manifest frame from the ReadCapability
+        //     {
+        //         let mut inner_buffer = vec![];
+        //         let manifest = ManifestFrame::V1(ManifestFrameV1::from(read_capability));
+        //         manifest.generate(&mut inner_buffer)?;
 
-            let mut manifest = new_carrier_v1(Some(recipient), sender, None);
-            manifest.set_payload_checked(1300, inner_buffer)?;
+        //         let mut manifest = new_carrier_v1(Some(recipient), sender, None);
+        //         manifest.set_payload_checked(1300, inner_buffer)?;
 
-            let manifest_carrier = CarrierFrame::V1(manifest);
-            let meta = manifest_carrier.as_meta();
+        //         let manifest_carrier = CarrierFrame::V1(manifest);
+        //         let meta = manifest_carrier.as_meta();
 
-            let mut buffer = vec![];
-            manifest_carrier.generate(&mut buffer)?;
-            let manifest_env = InMemoryEnvelope { meta, buffer };
+        //         let mut buffer = vec![];
+        //         manifest_carrier.generate(&mut buffer)?;
+        //         let manifest_env = InMemoryEnvelope { meta, buffer };
 
-            // Finally send off the manifest
-            self.core.dispatch_frame(manifest_env).await
-        }
+        //         // Finally send off the manifest
+        //         self.core.dispatch_frame(manifest_env).await
+        //     }
     }
 }

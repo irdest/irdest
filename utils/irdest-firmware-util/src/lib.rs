@@ -1,7 +1,7 @@
 // TODO: can we set no_std only when the "std" feature is not set?
 // #[cfg(not(feature = "std"))] // <-- this doesn't seem to work?
 // #![no_std]
-
+#![allow(warnings)]
 use libratman::{
     netmod::InMemoryEnvelope,
     types::{Address, ApiRecipient},

@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 //! Ratman daemon entrypoint
-
+#![allow(warnings)]
 use ratmand::{
     config::ConfigTree,
     start_with_configuration,

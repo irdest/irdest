@@ -7,9 +7,14 @@
 
 #![allow(unused)]
 
+use std::time::Duration;
+
 use crate::context::RatmanContext;
 use async_eris::{BlockReference, BlockSize, MemoryStorage, ReadCapability};
-use async_std::sync::Arc;
+use async_std::{
+    io::{BufReader, Cursor},
+    sync::Arc,
+};
 use libratman::types::{
     frames::{modes, CarrierFrame, CarrierFrameV1, SequenceIdV1},
     Address, Id, Message, Recipient, Result,
@@ -32,7 +37,7 @@ impl StreamSlicer {
     //
     // TODO: update this function to be a stream
     pub fn slice<I: Iterator<Item = (BlockReference, Vec<u8>)>>(
-        ctx: Arc<RatmanContext>,
+        ctx: &Arc<RatmanContext>,
         recipient: Recipient,
         sender: Address,
         input: I,
@@ -88,12 +93,12 @@ impl StreamSlicer {
 pub(crate) struct BlockSlicer;
 
 impl BlockSlicer {
-    pub(crate) async fn slice<const BS: usize>(
+    pub(crate) async fn slice(
         ctx: &RatmanContext,
-        msg: Message,
+        mut msg: Message,
+        block_size: BlockSize,
     ) -> Result<(ReadCapability, MemoryStorage)> {
         let mut blocks = MemoryStorage::new();
-
         let key = ctx
             .keys
             .diffie_hellman(
@@ -104,16 +109,11 @@ impl BlockSlicer {
             )
             .await
             .expect("failed to perform diffie-hellman");
-
-        let manifest = async_eris::encode(
-            &mut msg.payload.as_slice(),
-            key.as_bytes(),
-            BlockSize::_1K,
-            &mut blocks,
-        )
-        .await
-        .expect("failed to encode block stream");
-
-        Ok((manifest, blocks))
+        let key2 = key.to_bytes();
+        let mut content = msg.payload;
+        let read_cap = async_eris::encode(&mut &*content, &key2, block_size, &mut blocks)
+            .await
+            .unwrap();
+        Ok((read_cap, blocks))
     }
 }

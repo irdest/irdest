@@ -112,9 +112,9 @@ impl Keystore {
     }
 
     /// Sign a payload with your secret key
-    pub async fn sign_message(&self, _self: Address, msg: &[u8]) -> Option<Signature> {
+    pub async fn sign_message(&self, _this: Address, msg: &[u8]) -> Option<Signature> {
         let map = self.inner.read().await;
-        let self_keypair = map.get(&_self)?;
+        let self_keypair = map.get(&_this)?;
         Some(self_keypair.inner.sign(msg))
     }
 
