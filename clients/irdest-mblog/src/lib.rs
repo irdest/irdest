@@ -5,7 +5,7 @@ use async_std::fs::read_to_string;
 use chrono::{DateTime, TimeZone, Utc};
 use libratman::{
     client::RatmanIpc,
-    types::{Address, Id, Message as RatmanMessage, ApiRecipient, TimePair},
+    types::{Address, ApiRecipient, Id, Message as RatmanMessage, TimePair},
 };
 use protobuf::Message as _;
 use std::convert::TryFrom;

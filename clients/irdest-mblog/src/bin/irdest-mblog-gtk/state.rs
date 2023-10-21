@@ -6,7 +6,7 @@ use async_std::{
 use irdest_mblog::{Envelope, Message, Payload, NAMESPACE};
 use libratman::{
     client::RatmanIpc,
-    types::{Message as RatmanMessage, ApiRecipient},
+    types::{ApiRecipient, Message as RatmanMessage},
 };
 use protobuf::Message as _;
 use std::convert::{TryFrom, TryInto};
@@ -190,7 +190,7 @@ impl Iterator for MessageIterator {
 mod tests {
     use super::AppState;
     use irdest_mblog::{Header, Message, Payload, Post, NAMESPACE};
-    use libratman::types::{Address, Message as RatmanMessage, ApiRecipient};
+    use libratman::types::{Address, ApiRecipient, Message as RatmanMessage};
     use protobuf::Message as _;
 
     #[test]
