@@ -7,17 +7,17 @@
 //! into full ERIS blocks.
 
 mod collector;
-use std::collections::HashMap;
+mod slicer;
 
+use crate::{config::ConfigTree, storage::block::StorageBlock};
 use async_eris::{BlockReference, MemoryStorage};
 use async_std::task::block_on;
-pub(crate) use collector::BlockCollector;
-
-mod slicer;
+use curve25519_dalek::traits::VartimePrecomputedMultiscalarMul;
 use libratman::types::{Address, Recipient};
-pub(crate) use slicer::{BlockSlicer, StreamSlicer};
+use std::collections::{HashMap, HashSet};
 
-use crate::storage::block::StorageBlock;
+pub(crate) use collector::BlockCollector;
+pub(crate) use slicer::{BlockSlicer, StreamSlicer};
 
 /// Verify that a set of blocks can be turned into stream data
 /// (CarrierFrames), and re-collected into full blocks again.
@@ -30,6 +30,7 @@ pub fn block_stream_level() -> libratman::Result<()> {
     use libratman::types::{ApiRecipient, Id, Message, TimePair};
     use rand::{rngs::OsRng, RngCore};
 
+    // Very verbose logging environment
     crate::util::setup_test_logging();
 
     let ctx = RatmanContext::new_in_memory();
@@ -42,7 +43,7 @@ pub fn block_stream_level() -> libratman::Result<()> {
         recipient: ApiRecipient::Standard(vec![that]),
         time: TimePair::sending(),
         // 32kb of data
-        payload: vec![0; 1024 * 32],
+        payload: vec![0; 1024 * 2],
         signature: vec![],
     };
 
@@ -54,10 +55,13 @@ pub fn block_stream_level() -> libratman::Result<()> {
     ////  Actual test begins
 
     let ctx2 = Arc::clone(&ctx);
-    let (manifest, blocks) =
-        async_std::task::block_on(
-            async move { BlockSlicer::slice(&ctx2, msg, BlockSize::_1K).await },
-        )?;
+    let (manifest, mut blocks) = async_std::task::block_on(async move {
+        BlockSlicer::slice(&ctx2, &mut msg, BlockSize::_1K).await
+    })?;
+
+    for (block_ref, block_buf) in &blocks {
+        info!("block_ref: {} block_length: {}", block_ref, block_buf.len());
+    }
 
     // Turn the blocks into a set of carrier frames
     let carriers = StreamSlicer::slice(
@@ -67,11 +71,12 @@ pub fn block_stream_level() -> libratman::Result<()> {
         blocks.clone().into_iter(),
     )?;
 
-    println!(
-        "{} bytes of data resulted in {} blocks of 1K, resulted in {} carrier frames",
+    info!(
+        "{} bytes of data resulted in {} blocks of 1K, resulted in {} carrier frames for MTU {}",
         payload_len,
         blocks.len(),
         carriers.len(),
+        ctx.core.get_route_mtu(None),
     );
 
     //  Create a new block collector just for this test!
@@ -82,11 +87,22 @@ pub fn block_stream_level() -> libratman::Result<()> {
         block_on(collector.queue_and_spawn(envelope))?;
     }
 
-    let mut recollected_blocks = HashMap::new();
+    info!("Queued all blocks...");
+    // collector.shutdown();
+
     while let Ok((block, seq_id)) = block_on(rx.recv()) {
-        recollected_blocks.insert(BlockReference::from(seq_id.hash.slice()), block);
+        assert_eq!(block.len(), 1024);
+
+        info!("Re-collected another block: {}", seq_id.hash);
+        let previous_block = blocks
+            .remove(&BlockReference::from(seq_id.hash.slice()))
+            .unwrap();
+        assert_eq!(previous_block, block);
+
+        if blocks.len() == 0 {
+            break;
+        }
     }
 
-    assert_eq!(blocks, recollected_blocks);
     Ok(())
 }

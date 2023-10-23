@@ -50,11 +50,13 @@ pub(crate) fn env_xdg_config() -> Option<String> {
     std::env::var("XDG_CONFIG_HOME").ok()
 }
 
+/// Setup a very verbose output for test environments
 pub fn setup_test_logging() {
     let cfg = ConfigTree::default_in_memory().patch("ratmand/verbosity", "trace");
     setup_logging(cfg.get_subtree("ratmand").as_ref().unwrap());
 }
 
+/// Setup default logging output with a configuration
 pub fn setup_logging(ratmand_config: &SubConfig) {
     let lvl = ratmand_config
         .get_string_value("verbosity")

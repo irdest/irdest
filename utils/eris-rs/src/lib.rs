@@ -104,6 +104,10 @@ impl<const BS: usize> Block<BS> {
         buf.copy_from_slice(vec.as_slice());
         Self(buf)
     }
+
+    pub fn to_vec(self) -> Vec<u8> {
+        self.0.to_vec()
+    }
 }
 
 impl<const BS: usize> TryFrom<&String> for Block<BS> {

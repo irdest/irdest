@@ -6,7 +6,7 @@ use nom::IResult;
 use serde::{Deserialize, Serialize};
 
 /// Block hash and a sequential counter to allow carrier re-ordering
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SequenceIdV1 {
     /// The block's content reference
     pub hash: Id,

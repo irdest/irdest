@@ -24,6 +24,7 @@ pub(crate) async fn read_blocking(mut rx: &TcpStream) -> Result<InMemoryEnvelope
     let mut len_buf = [0; 4];
     rx.read_exact(&mut len_buf).await?;
     let len = u32::from_be_bytes(len_buf);
+    trace!("Reading {len} bytes from socket");
 
     if len > 4196 {
         warn!("Receiving a message larger than 4169 bytes.  This might be a DOS attempt..");
@@ -49,6 +50,7 @@ pub(crate) async fn read(mut rx: &TcpStream) -> Result<InMemoryEnvelope> {
 }
 
 pub(crate) async fn write(mut tx: &TcpStream, envelope: &InMemoryEnvelope) -> Result<()> {
+    trace!("Writing {} bytes to buffer", envelope.buffer.len());
     let mut len_buf = (envelope.buffer.len() as u32).to_be_bytes();
     tx.write(&len_buf).await?;
     tx.write(&envelope.buffer).await?;

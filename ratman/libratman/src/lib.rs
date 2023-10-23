@@ -30,6 +30,7 @@ pub mod types;
 // to access.  Importantly errors are name-spaced while results are
 // not.  A result MUST always be of type Result<T, RatmanError>.
 pub use {
-    client::ClientError, netmod::NetmodError, types::BlockError, types::EncodingError,
-    types::RatmanError, types::Result,
+    client::ClientError,
+    netmod::NetmodError,
+    types::{BlockError, EncodingError, NonfatalError, RatmanError, Result},
 };

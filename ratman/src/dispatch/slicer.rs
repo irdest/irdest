@@ -55,13 +55,20 @@ impl StreamSlicer {
             // incrementing numerical count.  This way we can re-order
             // frames that have arrived out of order.
             let mut ctr = 0;
+            let max = 1 + (block_data.as_slice().len() / max_payload_size as usize);
             for chunk in block_data.as_slice().chunks(max_payload_size as usize) {
+                assert!(ctr as usize <= max);
+                trace!(
+                    "Cutting block {} into {} length chunk",
+                    block_ref,
+                    chunk.len()
+                );
+
+                use std::convert::TryFrom;
                 let seq_id = SequenceIdV1 {
                     hash: block_ref,
                     num: ctr,
-                    // fixme: properly handle this casting, and make
-                    // sure we don't get weird division errors here!
-                    max: max_in_sequence as u8,
+                    max: u8::try_from(max).expect("maximum frame number too large!"),
                 };
 
                 // Create a header and encode it into an InMemoryEnvelope
@@ -89,7 +96,7 @@ pub(crate) struct BlockSlicer;
 impl BlockSlicer {
     pub(crate) async fn slice(
         ctx: &RatmanContext,
-        mut msg: Message,
+        msg: &mut Message,
         block_size: BlockSize,
     ) -> Result<(ReadCapability, MemoryStorage)> {
         let mut blocks = MemoryStorage::new();
@@ -104,7 +111,7 @@ impl BlockSlicer {
             .await
             .expect("failed to perform diffie-hellman");
         let key2 = key.to_bytes();
-        let mut content = msg.payload;
+        let mut content = core::mem::take(&mut msg.payload);
         let read_cap = async_eris::encode(&mut &*content, &key2, block_size, &mut blocks)
             .await
             .unwrap();

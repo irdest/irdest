@@ -5,7 +5,7 @@
 use async_std::channel::{unbounded, Receiver, Sender};
 use libratman::{
     netmod::{self, InMemoryEnvelope},
-    types::frames::ProtoCarrierFrameMeta,
+    types::frames::{CarrierFrameHeader, FrameParser},
     RatmanError,
 };
 
@@ -21,12 +21,8 @@ impl FuzzEndpoint {
     }
 
     pub async fn recv(&self, buf: &[u8]) {
-        if let Ok(meta) = ProtoCarrierFrameMeta::from_peek(buf) {
-            let buffer = buf.to_vec();
-            let _ = self
-                .tx
-                .send((InMemoryEnvelope { meta, buffer }, netmod::Target::Single(0)))
-                .await;
+        if let Ok(env) = InMemoryEnvelope::parse_from_buffer(buf.to_vec()) {
+            let _ = self.tx.send((env, netmod::Target::Single(0))).await;
         }
     }
 }

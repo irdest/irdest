@@ -151,7 +151,7 @@ pub(crate) async fn connect(
             PeerType::Standard if ctr >= SESSION_TIMEOUT && holdoff < 4096 => holdoff *= 2,
             // Limited connections are not implemented yet
             PeerType::Limited(_) => {
-                error!("APOLOGIES this feature is not yet implemented, despite what the documentation tells you");
+                error!("APOLOGIES this feature is not yet implemented, despite what the documentation tells you >:(");
                 todo!()
             }
             // The match block does nothing

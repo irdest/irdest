@@ -260,7 +260,7 @@ async fn simple_transmission() {
 
     async_std::task::sleep(std::time::Duration::from_millis(500)).await;
 
-    let data = Frame::dummy();
+    let data = InMemoryEnvelope::test_envelope();
     client.send(0, data.clone()).await.unwrap();
 
     let (_, received_data) = server.next().await.unwrap();

@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use crate::types::Address;
+use async_eris::BlockReference;
 use async_std::io;
 
 pub type Result<T> = std::result::Result<T, RatmanError>;
@@ -40,7 +41,7 @@ pub enum RatmanError {
     #[cfg(feature = "netmod")]
     #[error("a netmod error: {0}")]
     Netmod(#[from] crate::NetmodError),
-    #[error("an invalid block: {0}")]
+    #[error("a block error: {0}")]
     Block(#[from] crate::BlockError),
     // #[cfg(all(feature = "daemon", target_family = "unix"))]
     // #[error("a unix system error: {0}")]
@@ -101,6 +102,11 @@ impl<T: std::fmt::Debug> From<nom::Err<T>> for EncodingError {
 
 #[derive(Debug, thiserror::Error)]
 pub enum BlockError {
-    #[error("ERIS block was the wrong length to decode")]
+    #[error("provided data block had an invalid length: {0}")]
     InvalidLength(usize),
+    #[error("provided data block integrity could not be verified (expected reference {expected}, got {got})")]
+    InvalidReference {
+        expected: BlockReference,
+        got: BlockReference,
+    },
 }

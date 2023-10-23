@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// This can either be a single address, or an address namespace for
 /// flooding.
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Recipient {
     /// Contains a single targeted message
     Target(Address),

@@ -18,7 +18,7 @@ use super::modes;
 /////////// facilities, to avoid duplication errors.
 
 /// Contains top-level CarrierFrame metadata structure
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub enum CarrierFrameHeader {
     V1(CarrierFrameHeaderV1),
 }
@@ -217,7 +217,7 @@ impl FrameGenerator for CarrierFrameHeader {
 /// Inner CarrierFrame metadata header (initial version)
 ///
 ///
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct CarrierFrameHeaderV1 {
     /// Indicate the frame type enclosed by this carrier
     modes: u16,

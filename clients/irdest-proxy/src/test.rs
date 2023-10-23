@@ -12,7 +12,7 @@ fn integration() {
             .patch("ratmand/accept_unknown_peers", true)
             .patch("lan/enable", false);
 
-        async_std::task::block_on(start_with_configuration(cfg));
+        start_with_configuration(cfg);
     });
 
     #[allow(deprecated)]
@@ -28,7 +28,7 @@ fn integration() {
             .patch("ratmand/accept_unknown_peers", true)
             .patch("lan/enable", false);
 
-        async_std::task::block_on(start_with_configuration(cfg));
+        start_with_configuration(cfg);
     });
 
     #[allow(deprecated)]

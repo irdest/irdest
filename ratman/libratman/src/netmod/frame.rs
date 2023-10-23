@@ -1,7 +1,7 @@
 //! Networking frames
 
 use crate::types::{
-    frames::{CarrierFrameHeader, FrameGenerator, FrameParser},
+    frames::{AnnounceFrame, CarrierFrameHeader, FrameGenerator, FrameParser, OriginDataV1},
     Address, EncodingError, Result,
 };
 use std::fmt::{self, Display};
@@ -45,13 +45,20 @@ impl Default for Target {
 }
 
 /// Container for carrier frame metadata and a full message buffer
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct InMemoryEnvelope {
     pub header: CarrierFrameHeader,
     pub buffer: Vec<u8>,
 }
 
 impl InMemoryEnvelope {
+    pub fn test_envelope() -> Self {
+        let header = CarrierFrameHeader::new_announce_frame(Address::random(), 0);
+        let mut buffer = vec![];
+        header.generate(&mut buffer);
+        Self { header, buffer }
+    }
+
     pub fn from_header(header: CarrierFrameHeader, mut payload: Vec<u8>) -> Result<Self> {
         let mut buffer = vec![];
         header.generate(&mut buffer)?;
@@ -79,5 +86,11 @@ impl InMemoryEnvelope {
     pub fn get_payload_slice(&self) -> &[u8] {
         let header_end = self.header.get_size();
         &self.buffer.as_slice()[header_end..]
+    }
+
+    /// Get mutable access to the underlying payload section
+    pub fn mut_payload_slice(&mut self) -> &mut [u8] {
+        let header_end = self.header.get_size();
+        &mut self.buffer.as_mut_slice()[header_end..]
     }
 }
