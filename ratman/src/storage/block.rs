@@ -26,8 +26,8 @@ impl StorageBlock {
     /// yield more useful errors in case block lengths didn't align.
     pub fn reconstruct(block_buf: Vec<u8>) -> Result<Self> {
         match block_buf.len() {
-            1024 => Ok(StorageBlock::_1K(Block::<1024>::from_vec(block_buf))),
-            32768 => Ok(StorageBlock::_32K(Block::<32768>::from_vec(block_buf))),
+            1024 => Ok(StorageBlock::_1K(Block::<1024>::copy_from_vec(block_buf))),
+            32768 => Ok(StorageBlock::_32K(Block::<32768>::copy_from_vec(block_buf))),
             length => Err(RatmanError::Block(BlockError::InvalidLength(length))),
         }
     }

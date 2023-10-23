@@ -40,6 +40,8 @@ pub enum RatmanError {
     #[cfg(feature = "netmod")]
     #[error("a netmod error: {0}")]
     Netmod(#[from] crate::NetmodError),
+    #[error("an invalid block: {0}")]
+    Block(#[from] crate::BlockError),
     // #[cfg(all(feature = "daemon", target_family = "unix"))]
     // #[error("a unix system error: {0}")]
     // UnixSystem(#[from] nix::errno::Errno),
@@ -95,4 +97,10 @@ impl<T: std::fmt::Debug> From<nom::Err<T>> for EncodingError {
     fn from(nom: nom::Err<T>) -> Self {
         Self::Parsing(format!("{}", nom))
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum BlockError {
+    #[error("ERIS block was the wrong length to decode")]
+    InvalidLength(usize),
 }

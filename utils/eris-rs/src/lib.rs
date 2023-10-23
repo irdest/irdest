@@ -98,6 +98,7 @@ pub type RKPair = (BlockReference, BlockKey);
 pub struct Block<const BS: usize>([u8; BS]);
 
 impl<const BS: usize> Block<BS> {
+    /// Take a `Vec<u8>` and move its contents into an array
     pub fn copy_from_vec(vec: Vec<u8>) -> Self {
         let mut buf = [0; BS];
         buf.copy_from_slice(vec.as_slice());
