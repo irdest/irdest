@@ -7,23 +7,30 @@
 //! into full ERIS blocks.
 
 mod collector;
-use async_eris::MemoryStorage;
+use std::collections::HashMap;
+
+use async_eris::{BlockReference, MemoryStorage};
+use async_std::task::block_on;
 pub(crate) use collector::BlockCollector;
 
 mod slicer;
 use libratman::types::{Address, Recipient};
 pub(crate) use slicer::{BlockSlicer, StreamSlicer};
 
+use crate::storage::block::StorageBlock;
+
 /// Verify that a set of blocks can be turned into stream data
 /// (CarrierFrames), and re-collected into full blocks again.
 #[test]
 #[allow(deprecated)]
-fn block_stream_level() -> libratman::Result<()> {
+pub fn block_stream_level() -> libratman::Result<()> {
     use crate::context::RatmanContext;
     use async_eris::BlockSize;
     use async_std::sync::Arc;
     use libratman::types::{ApiRecipient, Id, Message, TimePair};
     use rand::{rngs::OsRng, RngCore};
+
+    crate::util::setup_test_logging();
 
     let ctx = RatmanContext::new_in_memory();
     let this = async_std::task::block_on(ctx.keys.create_address());
@@ -71,5 +78,15 @@ fn block_stream_level() -> libratman::Result<()> {
     let (tx, rx) = async_std::channel::bounded(8);
     let mut collector = BlockCollector::new(tx);
 
+    for envelope in carriers {
+        block_on(collector.queue_and_spawn(envelope))?;
+    }
+
+    let mut recollected_blocks = HashMap::new();
+    while let Ok((block, seq_id)) = block_on(rx.recv()) {
+        recollected_blocks.insert(BlockReference::from(seq_id.hash.slice()), block);
+    }
+
+    assert_eq!(blocks, recollected_blocks);
     Ok(())
 }

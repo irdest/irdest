@@ -16,7 +16,10 @@ pub(crate) mod runtime_state;
 pub(crate) mod transform;
 // pub(crate) mod upnp; // FIXME: this currently doesn't work
 
-use crate::{config::SubConfig, core::GenericEndpoint};
+use crate::{
+    config::{ConfigTree, SubConfig},
+    core::GenericEndpoint,
+};
 use async_std::channel::{Receiver, Sender};
 use nix::unistd::Uid;
 use std::{collections::BTreeMap, sync::Arc};
@@ -45,6 +48,11 @@ pub(crate) fn env_xdg_data() -> Option<String> {
 /// Get XDG_CONFIG_HOME from the environment
 pub(crate) fn env_xdg_config() -> Option<String> {
     std::env::var("XDG_CONFIG_HOME").ok()
+}
+
+pub fn setup_test_logging() {
+    let cfg = ConfigTree::default_in_memory().patch("ratmand/verbosity", "trace");
+    setup_logging(cfg.get_subtree("ratmand").as_ref().unwrap());
 }
 
 pub fn setup_logging(ratmand_config: &SubConfig) {

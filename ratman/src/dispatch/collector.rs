@@ -6,7 +6,8 @@ use async_std::{
 };
 use libratman::{
     netmod::InMemoryEnvelope,
-    types::{Id, SequenceIdV1},
+    types::{Id, Result, SequenceIdV1},
+    RatmanError,
 };
 use std::collections::BTreeMap;
 
@@ -72,21 +73,28 @@ impl BlockCollector {
     }
 
     /// Queue a new frame and spawn a collection worker if none exists yet
-    pub async fn queue_and_spawn(
-        self: &Arc<Self>,
-        sequence_id: SequenceIdV1,
-        max_num: u8,
-        env: InMemoryEnvelope,
-    ) {
+    pub async fn queue_and_spawn(self: &Arc<Self>, env: InMemoryEnvelope) -> Result<()> {
+        let sequence_id = env
+            .header
+            .get_seq_id()
+            .map_or(Err(RatmanError::DesequenceFault), |i| Ok(i))?;
+        let max_num = sequence_id.max;
+
         let read = self.inner.read().await;
         let maybe_sender = read.get(&sequence_id.hash);
         match maybe_sender {
             Some(sender) => {
+                debug!("Queue new frame for block_id {}", sequence_id.hash);
                 sender.send((sequence_id, env)).await;
+                Ok(())
             }
             None => {
                 let (tx, rx) = channel::bounded(8);
                 let senders = Arc::clone(&self.inner);
+                debug!(
+                    "Spawn new frame collector for block_id {}",
+                    sequence_id.hash
+                );
                 task::spawn(
                     BlockCollectorWorker {
                         sequence_id: sequence_id.hash,
@@ -97,7 +105,9 @@ impl BlockCollector {
                     }
                     .run(rx),
                 );
+                drop(read);
                 self.inner.write().await.insert(sequence_id.hash, tx);
+                Ok(())
             }
         }
     }
