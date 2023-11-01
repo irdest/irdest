@@ -6,20 +6,17 @@
 
 //! Asynchronous Ratman routing core
 
-use crate::{
-    core::{BlockCollector, DriverMap, EpTargetPair, RouteTable},
-    dispatch::{BlockSlicer, StreamSlicer},
-};
+use crate::core::{BlockCollector, DriverMap, EpTargetPair, RouteTable};
 use async_std::{sync::Arc, task};
 use libratman::{
-    netmod::Target,
-    types::{Message, ApiRecipient, Result},
+    netmod::{InMemoryEnvelope, Target},
+    types::{ApiRecipient, Message, Recipient, Result},
+    RatmanError,
 };
 
 pub(crate) struct Dispatch {
     routes: Arc<RouteTable>,
     drivers: Arc<DriverMap>,
-    collector: Arc<BlockCollector>,
     #[cfg(feature = "dashboard")]
     metrics: Arc<metrics::Metrics>,
 }
@@ -34,7 +31,6 @@ impl Dispatch {
         Arc::new(Self {
             routes,
             drivers,
-            collector,
             #[cfg(feature = "dashboard")]
             metrics: Arc::new(metrics::Metrics::default()),
         })
@@ -45,123 +41,47 @@ impl Dispatch {
         self.metrics.register(registry);
     }
 
-    // FIXME: this function MUST accept a stream from the new
-    // dispatcher module.  In fact, maybe we want to merge the two?
-    // Do we even need this low level abstraction anymore?
-    pub(crate) async fn send_msg(&self, msg: Message) -> Result<()> {
-        let r = msg.recipient.clone();
-        trace!("dispatching message to recpient: {:?}", r);
-        #[cfg(feature = "dashboard")]
-        self.metrics
-            .messages_total
-            .get_or_create(&metrics::Labels {
-                recp_type: (&r).into(),
-                recp_id: r.scope().expect("empty recipient"),
-            })
-            .inc();
-
-        // This is a hardcoded MTU for now.  We need to adapt the MTU
-        // to the interface we're broadcasting on and we potentially
-        // need a way to re-slice, or combine frames that we encounter
-        // for better transmission metrics
-        // let frames = TransportSlicer::slice(1312, msg);
-
-        //        let slicer =
-
-        frames.into_iter().fold(Ok(()), |res, f| match (res, &r) {
-            (Ok(()), ApiRecipient::Standard(_)) => task::block_on(self.send_one(f)),
-            (Ok(()), ApiRecipient::Flood(_)) => task::block_on(self.flood(f)),
-            (res, _) => res,
-        })
-    }
-
-    /// Dispatch a single frame across the network
-    pub(crate) async fn send_one(&self, frame: Frame) -> Result<()> {
-        let scope = match frame.recipient {
-            ref recp @ ApiRecipient::Standard(_) => recp.scope().expect("empty recipient"),
-            ApiRecipient::Flood(_) => unreachable!(),
+    /// Dispatch a single frame
+    pub(crate) async fn dispatch_frame(&self, envelope: InMemoryEnvelope) -> Result<()> {
+        let target_address = match envelope.header.get_recipient() {
+            Some(Recipient::Target(addr)) => addr,
+            // fixme: introduce a better error kind here
+            _ => unreachable!(),
         };
 
-        #[cfg(feature = "dashboard")]
-        {
-            let metric_labels = &metrics::Labels {
-                recp_type: metrics::RecipientType::Standard,
-                recp_id: scope,
-            };
-            self.metrics.frames_total.get_or_create(metric_labels).inc();
-            self.metrics
-                .bytes_total
-                .get_or_create(metric_labels)
-                .inc_by(frame.payload.len() as u64);
-        }
-
-        let EpTargetPair(epid, trgt) = match self.routes.resolve(scope).await {
+        let EpTargetPair(epid, trgt) = match self.routes.resolve(target_address).await {
+            // Return the endpoint/target ID pair from the resolver
             Some(resolve) => resolve,
 
-            // FIXME: "local address" needs to be handled in a
-            // much more robust manner than this!  Previously this
-            // issue was caught on a different layer, but we can't
-            // rely on this anymore.  So: differentiate between
-            // local and remote addresses and route accordingly.
-            None => {
-                self.collector.queue_and_spawn(frame.seqid(), frame).await;
-                return Ok(());
-            }
+            None => return Err(RatmanError::NoSuchAddress(target_address)),
         };
 
-        let ep = self.drivers.get(epid as usize).await;
-        Ok(ep.send(frame, trgt, None).await?)
+        let (_, ep) = self.drivers.get(epid as usize).await;
+        ep.send(envelope, trgt, None).await
     }
 
-    pub(crate) async fn flood(&self, frame: Frame) -> Result<()> {
-        for ep in self.drivers.get_all().await.into_iter() {
-            let f = frame.clone();
-            let scope = frame.recipient.scope().expect("empty recipient");
-            let target = Target::Flood(scope);
+    pub(crate) async fn flood_frame(&self, envelope: InMemoryEnvelope) -> Result<()> {
+        let flood_address = match envelope.header.get_recipient() {
+            Some(Recipient::Flood(addr)) => addr,
+            // fixme: introduce a better error kind here
+            _ => unreachable!(),
+        };
 
-            #[cfg(feature = "dashboard")]
-            {
-                let metric_labels = &metrics::Labels {
-                    recp_type: metrics::RecipientType::Flood,
-                    recp_id: scope,
-                };
-                self.metrics.frames_total.get_or_create(metric_labels).inc();
-                self.metrics
-                    .bytes_total
-                    .get_or_create(metric_labels)
-                    .inc_by(frame.payload.len() as u64);
+        // Loop over every driver and send a version of the envelope to it
+        for (ep_name, ep) in self.drivers.get_all().await.into_iter() {
+            let env = envelope.clone();
+            let target = Target::Flood(flood_address);
+            if let Err(e) = ep.send(env, target, None).await {
+                error!(
+                    "failed to flood frame {:?} on endpoint {}: {}",
+                    envelope.header.get_seq_id(),
+                    ep_name,
+                    e
+                );
             }
-
-            ep.send(f, target, None).await.unwrap();
         }
 
         Ok(())
-    }
-
-    /// Reflood a message to the network, except the previous interface
-    pub(crate) async fn reflood(
-        &self,
-        frame: Frame,
-        originator_ep: usize,
-        originator_peer: Target,
-    ) {
-        for (ep, ep_id) in self.drivers.get_with_ids().await.into_iter() {
-            // When looking at the driver that handed us the flood we
-            // explicitly exclude the originating peering target to
-            // avoid endless replication.  But importantly we _must_
-            // pass the flood back to the originating driver because
-            // it may be handling a segmented peer space
-            // (i.e. connections with peers that don't peer amongst
-            // themselves).
-            let exclude = match originator_peer {
-                Target::Single(id) if ep_id == originator_ep => Some(id),
-                _ => None,
-            };
-
-            let f = frame.clone();
-            let target = Target::Flood(f.recipient.scope().expect("empty recipient"));
-            task::spawn(async move { ep.send(f, target, exclude).await.unwrap() });
-        }
     }
 }
 

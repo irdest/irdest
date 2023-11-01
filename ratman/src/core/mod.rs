@@ -9,6 +9,7 @@
 //! component. This has proven to be a hard to maintain approach, so
 //! instead the core has been split into several parts.
 
+mod dispatch;
 mod drivers;
 mod journal;
 mod routes;
@@ -28,6 +29,8 @@ use libratman::{
     types::{Address, Message, RatmanError, Recipient, Result},
 };
 
+use self::dispatch::Dispatch;
+
 /// The Ratman routing core interface
 ///
 /// The core handles maintaining routing table state, sending message
@@ -40,11 +43,12 @@ use libratman::{
 /// efficient access to this in-memory state via the `Core` API
 /// facade.
 pub(crate) struct Core {
-    collector: Arc<BlockCollector>,
-    journal: Arc<Journal>,
-    routes: Arc<RouteTable>,
-    switch: Arc<Switch>,
-    drivers: Arc<DriverMap>,
+    pub(crate) collector: Arc<BlockCollector>,
+    pub(crate) dispatch: Arc<Dispatch>,
+    pub(crate) drivers: Arc<DriverMap>,
+    pub(crate) journal: Arc<Journal>,
+    pub(crate) routes: Arc<RouteTable>,
+    pub(crate) switch: Arc<Switch>,
 }
 
 impl Core {
@@ -57,11 +61,17 @@ impl Core {
         let (jtx, jrx) = async_std::channel::bounded(16);
         let collector = BlockCollector::new(jtx);
 
+        let dispatch = Dispatch::new(
+            Arc::clone(&routes),
+            Arc::clone(&drivers),
+            Arc::clone(&collector),
+        );
         let switch = Switch::new(
             Arc::clone(&routes),
             Arc::clone(&journal),
             Arc::clone(&collector),
             Arc::clone(&drivers),
+            Arc::clone(&dispatch),
         );
 
         // Dispatch the runners
@@ -69,11 +79,12 @@ impl Core {
         async_std::task::spawn(Arc::clone(&journal).run(jrx));
 
         Self {
-            routes,
             collector,
-            journal,
-            switch,
+            dispatch,
             drivers,
+            journal,
+            routes,
+            switch,
         }
     }
 
@@ -82,49 +93,6 @@ impl Core {
     pub fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
         self.routes.register_metrics(registry);
         self.switch.register_metrics(registry);
-    }
-
-    /// Dispatch a single frame
-    pub(crate) async fn dispatch_frame(&self, envelope: InMemoryEnvelope) -> Result<()> {
-        let target_address = match envelope.header.get_recipient() {
-            Some(Recipient::Target(addr)) => addr,
-            // fixme: introduce a better error kind here
-            _ => unreachable!(),
-        };
-
-        let EpTargetPair(epid, trgt) = match self.routes.resolve(target_address).await {
-            // Return the endpoint/target ID pair from the resolver
-            Some(resolve) => resolve,
-
-            None => return Err(RatmanError::NoSuchAddress(target_address)),
-        };
-
-        let (_, ep) = self.drivers.get(epid as usize).await;
-        ep.send(envelope, trgt, None).await
-    }
-
-    pub(crate) async fn flood_frame(&self, envelope: InMemoryEnvelope) -> Result<()> {
-        let flood_address = match envelope.header.get_recipient() {
-            Some(Recipient::Flood(addr)) => addr,
-            // fixme: introduce a better error kind here
-            _ => unreachable!(),
-        };
-
-        // Loop over every driver and send a version of the envelope to it
-        for (ep_name, ep) in self.drivers.get_all().await.into_iter() {
-            let env = envelope.clone();
-            let target = Target::Flood(flood_address);
-            if let Err(e) = ep.send(env, target, None).await {
-                error!(
-                    "failed to flood frame {:?} on endpoint {}: {}",
-                    envelope.header.get_seq_id(),
-                    ep_name,
-                    e
-                );
-            }
-        }
-
-        Ok(())
     }
 
     /// Check if an Id is present in the routing table
@@ -145,7 +113,7 @@ impl Core {
     }
 
     pub(crate) async fn next(&self) -> Message {
-        self.journal.next().await
+        self.journal.next_block().await
     }
 
     /// Insert a new endpoint

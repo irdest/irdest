@@ -9,7 +9,7 @@ use async_std::{
 };
 use libratman::{
     netmod::InMemoryEnvelope,
-    types::{Id, Message, SequenceIdV1},
+    types::{frames::ManifestFrame, Id, Message, SequenceIdV1},
 };
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -22,8 +22,19 @@ pub type JournalReceiver = Receiver<(Vec<u8>, SequenceIdV1)>;
 pub(crate) struct Journal {
     /// Keeps track of known frames to do reflood
     known: RwLock<BTreeSet<Id>>,
-    /// Simple in-memory block store ???
+    /// In-memory block queue
+    ///
+    /// These are blocks that were fullly re-assembled, but either are
+    /// addressed to a flood namespace and haven't been marked as
+    /// "seen", or are directly addressed to a recipient which is
+    /// offline.
     blocks: RwLock<BTreeMap<Id, StorageBlock>>,
+    /// In-memory frame queue
+    ///
+    /// This queue is used for individual frames which could not be
+    /// forwarded to a valid recipient, but which could also not be
+    /// decoded into a valid block.
+    frames: RwLock<BTreeMap<Id, InMemoryEnvelope>>,
 }
 
 impl Journal {
@@ -31,6 +42,7 @@ impl Journal {
         Arc::new(Self {
             known: Default::default(),
             blocks: Default::default(),
+            frames: Default::default(),
         })
     }
 
@@ -66,12 +78,23 @@ impl Journal {
         }
     }
 
-    pub(crate) async fn next(&self) -> Message {
+    pub(crate) async fn next_block(&self) -> Message {
         todo!()
     }
 
     /// Add a new frame to the known set
-    pub(crate) async fn queue(&self, _: InMemoryEnvelope) {}
+    pub(crate) async fn frame_queue(&self, _: InMemoryEnvelope) {
+        warn!("Journal is unimplemented; frame is dropped!")
+    }
+
+    pub(crate) async fn get_frame(&self, id: SequenceIdV1) -> InMemoryEnvelope {
+        todo!()
+    }
+
+    /// Provide a block manifest and collect a full message
+    pub(crate) async fn collect_manifest(&self, manifest: ManifestFrame) -> Vec<u8> {
+        todo!()
+    }
 
     /// Save a InMemoryEnvelopeID in the known journal page
     #[allow(unused)]

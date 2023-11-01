@@ -5,12 +5,17 @@
 
 use crate::{
     context::RatmanContext,
-    core::{DriverMap, Journal, RouteTable},
+    core::{DriverMap, Journal, RouteTable, RouteType},
     dispatch::BlockCollector,
     util::IoPair,
 };
 use async_std::{channel::bounded, sync::Arc, task};
-use libratman::{netmod::InMemoryEnvelope, types::frames::modes as fmodes};
+use libratman::{
+    netmod::InMemoryEnvelope,
+    types::{frames::modes as fmodes, Recipient},
+};
+
+use super::dispatch::Dispatch;
 
 /// A frame switch inside Ratman to route packets and signals
 ///
@@ -25,6 +30,7 @@ pub(crate) struct Switch {
     journal: Arc<Journal>,
     collector: Arc<BlockCollector>,
     drivers: Arc<DriverMap>,
+    dispatch: Arc<Dispatch>,
 
     /// Control channel to start new endpoints
     ctrl: IoPair<usize>,
@@ -40,12 +46,14 @@ impl Switch {
         journal: Arc<Journal>,
         collector: Arc<BlockCollector>,
         drivers: Arc<DriverMap>,
+        dispatch: Arc<Dispatch>,
     ) -> Arc<Self> {
         Arc::new(Self {
             routes,
             journal,
             collector,
             drivers,
+            dispatch,
             ctrl: bounded(1),
             #[cfg(feature = "dashboard")]
             metrics: Arc::new(metrics::Metrics::default()),
@@ -83,6 +91,79 @@ impl Switch {
             };
 
             trace!("Receiving frame via from {}/{}", ep_name, t);
+
+            // Examine the frame, it will be one of the following:
+            //
+            // - An announcement
+            // - A data frame, addressed to a local address
+            // - A manifest frame, addressed to a localaddress
+            // - A data frame, to be forwarded
+            // - A manifest frame, to be forwarded
+
+            match (header.get_modes(), header.get_recipient()) {
+                // For an announcement frame we ignore the recipient, even if it exists
+                (fmodes::ANNOUNCE, _) => {
+                    let announce_id = match header.get_seq_id() {
+                        Some(seq) => seq.hash,
+                        None => {
+                            warn!("Received Announce frame with invalid SequenceId! Ignoring");
+                            continue;
+                        }
+                    };
+
+                    // Check that we haven't seen this announcement before
+                    if self.journal.unknown(&announce_id).await {
+                        self.routes.update(id as u8, t, header.get_sender()).await;
+                        
+                        // todo: reflood
+                    }
+                }
+                // A data frame that is addressed to a particular address
+                (fmodes::DATA, Some(Recipient::Target(address))) => {
+                    // Check if the target address is "reachable"
+                    match self.routes.reachable(address).await {
+                        // A frame for a local address will be queued
+                        // in the collector
+                        Some(RouteType::Local) => {
+                            if let Err(e) = self
+                                .collector
+                                .queue_and_spawn(InMemoryEnvelope { header, buffer })
+                                .await
+                            {
+                                error!(
+                                    "Faied to queue frame in sequence {:?}",
+                                    header.get_seq_id()
+                                );
+                                continue;
+                            }
+                        }
+                        // A frame for a reachable remote address will be forwarded
+                        Some(RouteType::Remote(ep)) => todo!(),
+                        // A frame for an unreachable address (either
+                        // local or remote) will be queued in the
+                        // journal
+                        None => {
+                            self.journal
+                                .frame_queue(InMemoryEnvelope { header, buffer })
+                                .await
+                        }
+                    }
+                }
+                // A data frame that is addressed to a network namespace
+                (fmodes::DATA, Some(Recipient::Flood(ns))) => {}
+                // A manifest frame that is addressed to a particular address
+                (fmodes::MANIFEST, Some(Recipient::Target(address))) => {}
+                // A manifest frame that is addressed to a network namespace
+                (fmodes::MANIFEST, Some(Recipient::Flood(ns))) => {}
+                // Unknown/ Invalid frame types get logged
+                (_ftype, recipient) => {
+                    warn!(
+                        "Received unknown/invalid frame type {} (recipient: {:?})",
+                        _ftype, recipient
+                    );
+                    continue;
+                }
+            }
 
             // // Switch the traffic to the appropriate place
             // use {Recipient::*, RouteType::*};

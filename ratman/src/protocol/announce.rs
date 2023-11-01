@@ -71,6 +71,7 @@ impl AddressAnnouncer {
             // Send it into the network
             if let Err(e) = ctx
                 .core
+                .dispatch
                 .flood_frame(InMemoryEnvelope::from_header(header, announcement_payload).unwrap())
                 .await
             {
