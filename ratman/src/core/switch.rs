@@ -12,7 +12,10 @@ use crate::{
 use async_std::{channel::bounded, sync::Arc, task};
 use libratman::{
     netmod::InMemoryEnvelope,
-    types::{frames::modes as fmodes, Recipient},
+    types::{
+        frames::modes::{self as fmodes, DATA, MANIFEST},
+        Recipient,
+    },
 };
 
 use super::dispatch::Dispatch;
@@ -100,7 +103,13 @@ impl Switch {
             // - A data frame, to be forwarded
             // - A manifest frame, to be forwarded
 
+            ////////////////////////////////////////////
+            //
+            // Match on the header MODES and RECIPIENT
+            //
+            ////////////////////////////////////////////
             match (header.get_modes(), header.get_recipient()) {
+                //
                 // For an announcement frame we ignore the recipient, even if it exists
                 (fmodes::ANNOUNCE, _) => {
                     let announce_id = match header.get_seq_id() {
@@ -113,18 +122,21 @@ impl Switch {
 
                     // Check that we haven't seen this announcement before
                     if self.journal.unknown(&announce_id).await {
+                        // Update the routing table and re-flood the announcement
                         self.routes.update(id as u8, t, header.get_sender()).await;
-                        
-                        // todo: reflood
+                        self.dispatch
+                            .flood_frame(InMemoryEnvelope { header, buffer })
+                            .await;
                     }
                 }
+                //
                 // A data frame that is addressed to a particular address
-                (fmodes::DATA, Some(Recipient::Target(address))) => {
+                (mode, Some(Recipient::Target(address))) => {
                     // Check if the target address is "reachable"
                     match self.routes.reachable(address).await {
-                        // A frame for a local address will be queued
-                        // in the collector
-                        Some(RouteType::Local) => {
+                        // A locally addressed data frame is inserted
+                        // into the collector
+                        Some(RouteType::Local) if mode == DATA => {
                             if let Err(e) = self
                                 .collector
                                 .queue_and_spawn(InMemoryEnvelope { header, buffer })
@@ -137,24 +149,59 @@ impl Switch {
                                 continue;
                             }
                         }
-                        // A frame for a reachable remote address will be forwarded
-                        Some(RouteType::Remote(ep)) => todo!(),
+                        // A locally addressed manifest is given to
+                        // the journal to collect
+                        Some(RouteType::Local) if mode == MANIFEST => {
+                            self.journal
+                                .collect_manifest(InMemoryEnvelope { header, buffer })
+                                .await;
+                        }
+                        // Any other frame types are currently ignored
+                        Some(RouteType::Local) => {
+                            warn!("Received invalid frame type: {}", mode);
+                            continue;
+                        }
+                        // Any frame for a reachable remote address will be forwarded
+                        Some(RouteType::Remote(_)) => {
+                            self.dispatch
+                                .dispatch_frame(InMemoryEnvelope { header, buffer })
+                                .await;
+                        }
                         // A frame for an unreachable address (either
                         // local or remote) will be queued in the
                         // journal
                         None => {
                             self.journal
                                 .frame_queue(InMemoryEnvelope { header, buffer })
-                                .await
+                                .await;
                         }
                     }
                 }
-                // A data frame that is addressed to a network namespace
-                (fmodes::DATA, Some(Recipient::Flood(ns))) => {}
-                // A manifest frame that is addressed to a particular address
-                (fmodes::MANIFEST, Some(Recipient::Target(address))) => {}
-                // A manifest frame that is addressed to a network namespace
-                (fmodes::MANIFEST, Some(Recipient::Flood(ns))) => {}
+                //
+                // A data or manifest frame that is addressed to a network namespace
+                (_, Some(Recipient::Flood(ns))) => {
+                    let announce_id = match header.get_seq_id() {
+                        Some(seq) => seq.hash,
+                        None => {
+                            warn!("Received Data::Flood frame with invalid SequenceId! Ignoring");
+                            continue;
+                        }
+                    };
+
+                    // todo: check if a local subscription for this
+                    // namespace exists!
+
+                    // If we haven seen this frame before, we keep
+                    // track of it and then re-flood it into the
+                    // network.
+                    if self.journal.unknown(&announce_id).await {
+                        self.journal.save(&announce_id).await;
+                        self.dispatch
+                            .flood_frame(InMemoryEnvelope { header, buffer })
+                            .await;
+                    }
+                }
+                //
                 // Unknown/ Invalid frame types get logged
                 (_ftype, recipient) => {
                     warn!(
@@ -165,70 +212,20 @@ impl Switch {
                 }
             }
 
-            // // Switch the traffic to the appropriate place
-            // use {Recipient::*, RouteType::*};
-            // match f.recipient {
-            //     Flood(_ns) => {
-            //         let seqid = f.seq.seqid;
-            //         if self.journal.unknown(&seqid).await {
-            //             if let Some(sender) = Protocol::is_announce(&f) {
-            //                 debug!("Received announcement for {}", sender);
-            //                 self.routes.update(id as u8, t, sender).await;
-            //             } else {
-            //                 self.collector.queue_and_spawn(f.seqid(), f.clone()).await;
-            //             }
-
-            //             self.dispatch.reflood(f, id, t).await;
-            //         }
-            //     }
-            //     ref recp @ Standard(_) => match recp.scope() {
-            //         Some(scope) => match self.routes.reachable(scope).await {
-            //             Some(Local) => self.collector.queue_and_spawn(f.seqid(), f).await,
-            //             Some(Remote(_)) => self.dispatch.send_one(f).await.unwrap(),
-            //             None => self.journal.queue(f).await,
-            //         },
-            //         None => {}
-            //     },
-            // }
-
-            // Match on the modes bitfield to determine what kind of
-            // frame we have
-            match header.get_modes() {
-                fmodes::ANNOUNCE => {
-                    debug!("Reiceved announcement for {}", header.get_sender());
-                    self.routes.update(id as u8, t, header.get_sender()).await;
-                }
-                fmodes::DATA if header.get_recipient().is_some() => {}
-                fmodes::MANIFEST => {}
-                f_type => {
-                    warn!("Received unknown frame type: {}", f_type);
-                }
+            #[cfg(feature = "dashboard")]
+            {
+                // todo: fix this
+                // let metric_labels = &metrics::Labels {
+                //     sender_id: header.sender,
+                //     recp_type: (&header.recipient).into(),
+                //     recp_id: header.recipient.scope().expect("empty recipient"),
+                // };
+                // self.metrics.frames_total.get_or_create(metric_labels).inc();
+                // self.metrics
+                //     .bytes_total
+                //     .get_or_create(metric_labels)
+                //     .inc_by(f.payload.len() as u64);
             }
-
-            // #[cfg(feature = "dashboard")]
-            // {
-            //     let metric_labels = &metrics::Labels {
-            //         sender_id: f.sender,
-            //         recp_type: (&f.recipient).into(),
-            //         recp_id: f.recipient.scope().expect("empty recipient"),
-            //     };
-            //     self.metrics.frames_total.get_or_create(metric_labels).inc();
-            //     self.metrics
-            //         .bytes_total
-            //         .get_or_create(metric_labels)
-            //         .inc_by(f.payload.len() as u64);
-            // }
-
-            // match meta.modes {
-            //     fmodes::ANNOUNCE => {}
-            //     fmodes::DATA => {}
-            //     fmodes::MANIFEST => {}
-            //     t => {
-            //         warn!("Unknown frame type: {}", t);
-            //     }
-            // }
-
-            todo!()
         }
     }
 }

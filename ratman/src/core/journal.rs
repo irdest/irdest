@@ -92,7 +92,7 @@ impl Journal {
     }
 
     /// Provide a block manifest and collect a full message
-    pub(crate) async fn collect_manifest(&self, manifest: ManifestFrame) -> Vec<u8> {
+    pub(crate) async fn collect_manifest(&self, envelope: InMemoryEnvelope) {
         todo!()
     }
 

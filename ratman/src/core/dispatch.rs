@@ -41,7 +41,9 @@ impl Dispatch {
         self.metrics.register(registry);
     }
 
-    /// Dispatch a single frame
+    /// Resolve the target address and dispatch the frame
+    ///
+    /// Returns an error if resolving or sending failed
     pub(crate) async fn dispatch_frame(&self, envelope: InMemoryEnvelope) -> Result<()> {
         let target_address = match envelope.header.get_recipient() {
             Some(Recipient::Target(addr)) => addr,
@@ -60,6 +62,7 @@ impl Dispatch {
         ep.send(envelope, trgt, None).await
     }
 
+    ///
     pub(crate) async fn flood_frame(&self, envelope: InMemoryEnvelope) -> Result<()> {
         let flood_address = match envelope.header.get_recipient() {
             Some(Recipient::Flood(addr)) => addr,
