@@ -17,7 +17,7 @@ pub(crate) type Target = u16;
 #[derive(Default)]
 pub(crate) struct Routes {
     latest: AtomicU16,
-    inner: RwLock<BTreeMap<Target, Arc<Peer>>>,
+    pub(crate) inner: RwLock<BTreeMap<Target, Arc<Peer>>>,
 }
 
 impl Routes {

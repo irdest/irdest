@@ -49,7 +49,7 @@ pub(crate) type FrameSender = Sender<(Target, InMemoryEnvelope)>;
 ///
 /// The two inverse scenarios exist on the "server" side.
 pub struct Peer {
-    session: SessionData,
+    pub(crate) session: SessionData,
     tx: Mutex<Option<TcpStream>>,
     rx: Mutex<Option<TcpStream>>,
     receiver: FrameSender,
@@ -85,6 +85,8 @@ impl Peer {
     /// `SessionData` is returned so that a new session may be
     /// started.
     pub(crate) async fn send(self: &Arc<Self>, env: &InMemoryEnvelope) -> Result<(), SessionError> {
+        debug!("Sending data: {:?}", env);
+        
         let mut txg = self.tx.lock().await;
 
         // The TcpStream SHOULD never just disappear
@@ -116,11 +118,16 @@ impl Peer {
     /// Repeatedly attempt to read from the reading socket
     pub(crate) async fn run(self: Arc<Self>) {
         loop {
+            trace!("Peer::run loop for {:?}", self.session);
             let mut rxg = self.rx.lock().await;
             let rx = match rxg.as_mut() {
                 Some(rx) => rx,
-                None => break,
+                None => {
+                    warn!("Peer {:?} became invalid", self.session);
+                    break;
+                }
             };
+
 
             let envelope = match proto::read(rx).await {
                 Ok(f) => {
@@ -128,6 +135,7 @@ impl Peer {
                     f
                 }
                 Err(RatmanError::Encoding(EncodingError::NoData)) => {
+                    trace!("No data for server");
                     drop(rxg);
                     task::yield_now();
                     continue;

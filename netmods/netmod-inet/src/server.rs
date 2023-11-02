@@ -122,8 +122,8 @@ async fn accept_connection(
     let addr = s.peer_addr()?;
 
     // First we read the handshake structure from the socket
-    let frame = proto::read_blocking(&mut s).await?;
-    let handshake = Handshake::from_carrier(&frame)?;
+    let frame = proto::read_blocking(&mut s).await.unwrap();
+    let handshake = Handshake::from_carrier(&frame).unwrap();
 
     let tt = match handshake {
         Handshake::Hello { tt, .. } => tt,
@@ -135,6 +135,11 @@ async fn accept_connection(
             ));
         }
     };
+
+    // Send back an ACK to the client so it can chill out a bit
+    let ack = Handshake::Ack { tt };
+    let envelope = ack.to_carrier().unwrap();
+    proto::write(&mut s, &envelope).await.unwrap();
 
     let target = r.next_target();
     let data = SessionData {

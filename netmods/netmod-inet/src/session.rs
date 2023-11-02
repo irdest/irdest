@@ -49,14 +49,17 @@ pub(crate) async fn start_connection(
             Ok(tcp) => tcp,
             Err(e) => {
                 error!("failed to establish session: {}", e);
-                return;
+                todo!()
+                //            return;
             }
         };
+
         let peer = match handshake(&session_data, sender2, tx, tcp_stream).await {
             Ok(peer) => peer,
             Err(e) => {
                 error!("peering handshake failed: {}", e);
-                return;
+                todo!()
+                //            return;
             }
         };
 
@@ -81,6 +84,7 @@ pub(crate) async fn setup_cleanuptask(
     // thus this code will never be run on a server.  Woops :)
     let routes = Arc::clone(&routes);
     task::spawn(async move {
+        debug!("setup_cleanuptask spawned");
         match rx.recv().await {
             Ok(session_data) => {
                 debug!("Restart hook notified!");
@@ -132,11 +136,11 @@ pub(crate) async fn connect(
     loop {
         match TcpStream::connect(addr).await {
             Ok(c) => {
-                info!("Successfully peered with {}", addr);
+                info!("Successfully connected to {}", addr);
                 return Ok(c);
             }
             Err(_) => {
-                error!("Failed peering with {} [attempt {}]", addr, ctr);
+                error!("Failed connecting to {} [attempt {}]", addr, ctr);
                 task::sleep(Duration::from_secs(holdoff)).await;
                 ctr += 1;
             }
@@ -191,11 +195,13 @@ async fn handshake(
 
     proto::write(&mut stream, &hello)
         .await
-        .map_err(|e| SessionError::Handshake(*data, e.to_string()))?;
+        .map_err(|e| SessionError::Handshake(*data, e.to_string()))
+        .unwrap();
 
     let ack_env: InMemoryEnvelope = proto::read_blocking(&mut stream)
         .await
-        .map_err(|e| SessionError::Handshake(*data, e.to_string()))?;
+        .map_err(|e| SessionError::Handshake(*data, e.to_string()))
+        .unwrap();
 
     let ack = match Handshake::from_carrier(&ack_env) {
         Err(RatmanError::Nonfatal(nf)) => {

@@ -33,6 +33,9 @@ pub(crate) async fn read_blocking(mut rx: &TcpStream) -> Result<InMemoryEnvelope
     let mut buffer = vec![0; len as usize];
     rx.read_exact(&mut buffer).await?;
 
+    trace!("Read length buffer: {:?}", len_buf);
+    trace!("Read envelope buffer: {:?}", buffer);
+
     InMemoryEnvelope::parse_from_buffer(buffer)
 }
 
@@ -52,6 +55,9 @@ pub(crate) async fn read(mut rx: &TcpStream) -> Result<InMemoryEnvelope> {
 pub(crate) async fn write(mut tx: &TcpStream, envelope: &InMemoryEnvelope) -> Result<()> {
     trace!("Writing {} bytes to buffer", envelope.buffer.len());
     let mut len_buf = (envelope.buffer.len() as u32).to_be_bytes();
+    trace!("Writing length buffer: {:?}", len_buf);
+    trace!("Writing envelope buffer: {:?}", envelope.buffer);
+
     tx.write(&len_buf).await?;
     tx.write(&envelope.buffer).await?;
     Ok(())
@@ -63,7 +69,7 @@ mod modes {
 }
 
 /// A simple handshake type to send across a newly created connection
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub(crate) enum Handshake {
     Hello { tt: PeerType, self_port: u16 },
     Ack { tt: PeerType },
@@ -102,4 +108,39 @@ impl Handshake {
             payload,
         )
     }
+}
+
+#[test]
+fn encode_decode_handshake() {
+    let hello = Handshake::Hello {
+        tt: PeerType::Standard,
+        self_port: 12,
+    };
+
+    let envelope = hello.clone().to_carrier().unwrap();
+    println!(
+        "Envelope payload length: {}",
+        envelope.header.get_payload_length()
+    );
+    println!("Envelope payload: {:?}", envelope.get_payload_slice());
+    println!("Full Envelope: {:?}", envelope.buffer);
+    let hello2 = Handshake::from_carrier(&envelope).unwrap();
+
+    assert_eq!(hello, hello2);
+}
+
+#[test]
+fn decode_wellknown() {
+    let raw = vec![
+        1, 0, 32, 37, 84, 247, 144, 109, 131, 170, 164, 136, 214, 192, 145, 92, 9, 50, 64, 179,
+        239, 68, 23, 201, 246, 171, 240, 209, 11, 114, 121, 208, 71, 90, 251, 0, 0, 0, 0, 10, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+    ];
+
+    let envelope = InMemoryEnvelope::parse_from_buffer(raw).unwrap();
+    println!("Envelope header: {:?}", envelope.header);
+
+    let payload = envelope.get_payload_slice();
+    println!("Envelope payload is: {:?}", payload);
+    let h: Handshake = bincode::deserialize(&payload).unwrap();
 }

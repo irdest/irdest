@@ -139,6 +139,8 @@ impl InetEndpoint {
                 }
                 _ => {}
             };
+        } else {
+            error!("Requested peer wasn't found: {:?}", target);
         }
 
         Ok(())
@@ -258,12 +260,16 @@ async fn simple_transmission() {
     let client = InetEndpoint::start("[::]:13000").await.unwrap();
     client.add_peer("[::1]:12000").await.unwrap();
 
-    async_std::task::sleep(std::time::Duration::from_millis(500)).await;
+    async_std::task::sleep(std::time::Duration::from_millis(1000)).await;
+    info!("Waited for 1000ms, sending some data now");
 
     let data = InMemoryEnvelope::test_envelope();
+    info!("============= SENDING =============");
     client.send(0, data.clone()).await.unwrap();
+    info!("Data sent");
 
     let (_, received_data) = server.next().await.unwrap();
+    info!("Data received!");
 
     assert_eq!(data, received_data);
 }
