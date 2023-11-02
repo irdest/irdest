@@ -154,11 +154,8 @@ impl FrameParser for CarrierFrameHeader {
                 let (input, sender) = parse::take_address(input)?;
                 let (input, recipient) = Option::<Recipient>::parse(input)?;
                 let (input, seq_id) = SequenceIdV1::parse(input)?;
-                let (input, auxiliary_data_slice) = parse::take(64 as usize)(input)?;
+                let (input, auxiliary_data) = parse::maybe::<64>(input)?;
                 let (input, payload_length) = parse::take_u16(input)?;
-
-                let mut auxiliary_data = [0; 64];
-                auxiliary_data.copy_from_slice(auxiliary_data_slice);
 
                 Ok((
                     input,
@@ -167,7 +164,7 @@ impl FrameParser for CarrierFrameHeader {
                         sender,
                         recipient,
                         seq_id,
-                        auxiliary_data: Some(auxiliary_data),
+                        auxiliary_data,
                         payload_length,
                     })),
                 ))

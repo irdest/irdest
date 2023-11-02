@@ -9,8 +9,11 @@ use core::mem::size_of;
 
 // Re-export the most common nom combinators and make sure we use the
 // same ones everewhere
-use nom::combinator::peek;
 pub use nom::{bytes::complete::take, IResult};
+use nom::{
+    combinator::{opt, peek},
+    Parser,
+};
 
 /// A utility trait that represents a parsable frame entity
 ///
@@ -20,6 +23,26 @@ pub use nom::{bytes::complete::take, IResult};
 pub trait FrameParser {
     type Output;
     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output>;
+}
+
+/// Peek one byte to check if the next section exists, if so, read LEN
+/// bytes, otherwise burn the zero byte
+pub fn maybe<const LEN: usize>(input: &[u8]) -> IResult<&[u8], Option<[u8; LEN]>> {
+    // take one, check if it's null
+    let (input, first) = peek(take(1 as usize))(input)?;
+    if first == &[0] {
+        // Take the byte we just peeked into to burn it
+        let (input, _) = take(1 as usize)(input)?;
+        Ok((input, None))
+    } else {
+        let (input, maybe_slice) = take(LEN)(input).map(|(i, s)| {
+            let mut buf = [0; LEN];
+            buf.copy_from_slice(&s);
+            (i, Some(buf))
+        })?;
+
+        Ok((input, maybe_slice))
+    }
 }
 
 pub fn take_address(input: &[u8]) -> IResult<&[u8], Address> {
