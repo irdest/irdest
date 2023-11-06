@@ -5,7 +5,7 @@
 
 use crate::{
     context::RatmanContext,
-    core::{DriverMap, Journal, RouteTable, RouteType},
+    core::{switch::metrics::IdentityType, DriverMap, Journal, RouteTable, RouteType},
     dispatch::BlockCollector,
     util::IoPair,
 };
@@ -83,7 +83,7 @@ impl Switch {
         });
     }
 
-    /// Get one batch of messages from the driver interface points
+    /// Handle one batch of messages from the driver interface points
     async fn run_batch(self: Arc<Self>, id: usize, batch_size: usize) {
         let (ep_name, ep) = self.drivers.get(id).await;
 
@@ -95,13 +95,36 @@ impl Switch {
 
             trace!("Receiving frame via from {}/{}", ep_name, t);
 
-            // Examine the frame, it will be one of the following:
+            // If the dashboard feature is enabled we first update the
+            // metrics engine before all the data gets moved away >:(
+            #[cfg(feature = "dashboard")]
+            {
+                let metric_labels = &metrics::Labels {
+                    sender_id: header.get_sender(),
+                    recp_type: header.get_recipient().as_ref().into(),
+                    recp_id: header.get_recipient().map(|r| r.address()),
+                };
+                self.metrics.frames_total.get_or_create(metric_labels).inc();
+                self.metrics
+                    .bytes_total
+                    .get_or_create(metric_labels)
+                    .inc_by(header.get_payload_length() as u64);
+            }
+
+            // This is the core Ratman switch logic.  The accepted
+            // frame header will be inspected below, and then the full
+            // contents of the frame are handled appropriately.
+            //
+            // Currently a frame can be one of the following:
             //
             // - An announcement
-            // - A data frame, addressed to a local address
-            // - A manifest frame, addressed to a localaddress
             // - A data frame, to be forwarded
+            // - A data frame, sent to a local address
             // - A manifest frame, to be forwarded
+            // - A manifest frame, sent to a local address
+            //
+            // In future this function will also handle other
+            // ratman-to-ratman protocols.
 
             ////////////////////////////////////////////
             //
@@ -120,7 +143,9 @@ impl Switch {
                         }
                     };
 
-                    // Check that we haven't seen this announcement before
+                    // Check that we haven't seen this frame/ message
+                    // ID before.  This prevents infinite replication
+                    // of any flooded frame.
                     if self.journal.unknown(&announce_id).await {
                         // Update the routing table and re-flood the announcement
                         self.routes.update(id as u8, t, header.get_sender()).await;
@@ -153,7 +178,7 @@ impl Switch {
                         // the journal to collect
                         Some(RouteType::Local) if mode == MANIFEST => {
                             self.journal
-                                .collect_manifest(InMemoryEnvelope { header, buffer })
+                                .queue_manifest(InMemoryEnvelope { header, buffer })
                                 .await;
                         }
                         // Any other frame types are currently ignored
@@ -211,28 +236,13 @@ impl Switch {
                     continue;
                 }
             }
-
-            #[cfg(feature = "dashboard")]
-            {
-                // todo: fix this
-                // let metric_labels = &metrics::Labels {
-                //     sender_id: header.sender,
-                //     recp_type: (&header.recipient).into(),
-                //     recp_id: header.recipient.scope().expect("empty recipient"),
-                // };
-                // self.metrics.frames_total.get_or_create(metric_labels).inc();
-                // self.metrics
-                //     .bytes_total
-                //     .get_or_create(metric_labels)
-                //     .inc_by(f.payload.len() as u64);
-            }
         }
     }
 }
 
 #[cfg(feature = "dashboard")]
 mod metrics {
-    use libratman::types::{Address, ApiRecipient};
+    use libratman::types::{Address, ApiRecipient, Recipient};
     use prometheus_client::{
         encoding::text::Encode,
         metrics::{counter::Counter, family::Family},
@@ -243,13 +253,24 @@ mod metrics {
     pub(super) struct Labels {
         pub sender_id: Address,
         pub recp_type: IdentityType,
-        pub recp_id: Address,
+        pub recp_id: Option<Address>,
     }
 
     #[derive(Clone, Hash, PartialEq, Eq)]
     pub(super) enum IdentityType {
         Standard,
         Flood,
+        Empty,
+    }
+
+    impl From<Option<&Recipient>> for IdentityType {
+        fn from(v: Option<&Recipient>) -> Self {
+            match v {
+                Some(&Recipient::Target(_)) => Self::Standard,
+                Some(&Recipient::Flood(_)) => Self::Flood,
+                None => Self::Empty,
+            }
+        }
     }
 
     impl From<&ApiRecipient> for IdentityType {
@@ -267,6 +288,7 @@ mod metrics {
             match self {
                 Self::Standard => write!(w, "standard"),
                 Self::Flood => write!(w, "flood"),
+                Self::Empty => write!(w, "none"),
             }
         }
     }

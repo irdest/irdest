@@ -20,6 +20,15 @@ pub enum Recipient {
     Flood(Address),
 }
 
+impl Recipient {
+    pub fn address(&self) -> Address {
+        match self {
+            Self::Target(addr) => *addr,
+            Self::Flood(addr) => *addr,
+        }
+    }
+}
+
 impl FrameGenerator for Option<Recipient> {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         match self {

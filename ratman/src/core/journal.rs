@@ -162,7 +162,7 @@ impl Journal {
     }
 
     /// Provide a block manifest and collect a full message
-    pub(crate) async fn collect_manifest(&self, envelope: InMemoryEnvelope) {
+    pub(crate) async fn queue_manifest(&self, envelope: InMemoryEnvelope) {
         let seq_id = envelope.header.get_seq_id().unwrap().hash;
         let manifest_notifier = self.manifest_notifier.0.clone();
 
