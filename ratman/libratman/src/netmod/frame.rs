@@ -59,7 +59,10 @@ impl InMemoryEnvelope {
         Self { header, buffer }
     }
 
-    pub fn from_header(header: CarrierFrameHeader, mut payload: Vec<u8>) -> Result<Self> {
+    pub fn from_header_and_payload(
+        header: CarrierFrameHeader,
+        mut payload: Vec<u8>,
+    ) -> Result<Self> {
         let mut buffer = vec![];
         header.generate(&mut buffer)?;
         buffer.append(&mut payload);

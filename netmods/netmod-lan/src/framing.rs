@@ -62,7 +62,7 @@ impl Handshake {
             ),
         };
 
-        InMemoryEnvelope::from_header(
+        InMemoryEnvelope::from_header_and_payload(
             CarrierFrameHeader::new_netmodproto_frame(
                 modes,
                 // todo: get router root key!

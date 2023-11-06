@@ -86,7 +86,7 @@ impl Peer {
     /// started.
     pub(crate) async fn send(self: &Arc<Self>, env: &InMemoryEnvelope) -> Result<(), SessionError> {
         debug!("Sending data: {:?}", env);
-        
+
         let mut txg = self.tx.lock().await;
 
         // The TcpStream SHOULD never just disappear
@@ -127,7 +127,6 @@ impl Peer {
                     break;
                 }
             };
-
 
             let envelope = match proto::read(rx).await {
                 Ok(f) => {

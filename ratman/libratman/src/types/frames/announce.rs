@@ -106,6 +106,7 @@ pub struct OriginDataV1 {
 }
 
 impl OriginDataV1 {
+    /// Create an OriginDataV1 with the current time in Utc
     pub fn now() -> Self {
         Self {
             timestamp: Utc::now(),

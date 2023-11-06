@@ -78,7 +78,10 @@ impl StreamSlicer {
                     seq_id,
                     chunk.len() as u16,
                 );
-                buf.push(InMemoryEnvelope::from_header(header, chunk.to_vec())?);
+                buf.push(InMemoryEnvelope::from_header_and_payload(
+                    header,
+                    chunk.to_vec(),
+                )?);
 
                 // Increment sequence counter
                 ctr += 1;
