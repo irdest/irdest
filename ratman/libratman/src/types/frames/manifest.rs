@@ -52,13 +52,13 @@ impl FrameGenerator for ManifestFrame {
 /// [1]: https://eris.codeberg.page/spec/#name-binary-encoding-of-read-cap
 pub struct ManifestFrameV1 {
     /// Block size for this manifest set
-    block_size: u8,
+    pub block_size: u8,
     /// Block level indicator
-    block_level: u8,
+    pub block_level: u8,
     /// Block root reference
-    root_reference: Id,
+    pub root_reference: Id,
     /// Root block key
-    root_key: Id,
+    pub root_key: Id,
 }
 
 impl FrameParser for ManifestFrameV1 {

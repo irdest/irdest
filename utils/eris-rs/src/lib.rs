@@ -92,7 +92,7 @@ impl TryFrom<&String> for BlockKey {
 pub type RKPair = (BlockReference, BlockKey);
 
 /// An encoded data block of size `BLOCKSIZE`
-#[derive(Deref, DerefMut, From, Display, DebugCustom)]
+#[derive(Clone, Deref, DerefMut, From, Display, DebugCustom)]
 #[display(fmt = "{}", "display_base32(&self.0)")]
 #[debug(fmt = "{}", "self")]
 pub struct Block<const BS: usize>([u8; BS]);

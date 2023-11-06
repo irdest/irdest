@@ -3139,6 +3139,7 @@ version = "0.5.0"
 dependencies = [
  "async-eris",
  "async-std",
+ "async-trait",
  "atomptr",
  "bincode",
  "byteorder",
