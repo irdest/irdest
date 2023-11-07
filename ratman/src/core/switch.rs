@@ -5,7 +5,7 @@
 
 use crate::{
     context::RatmanContext,
-    core::{switch::metrics::IdentityType, DriverMap, Journal, RouteTable, RouteType},
+    core::{DriverMap, Journal, RouteTable, RouteType},
     dispatch::BlockCollector,
     util::IoPair,
 };

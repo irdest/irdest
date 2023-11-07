@@ -7,9 +7,17 @@
 //!
 
 use crate::{config::ConfigTree, util::DriverMap};
+
+#[cfg(feature = "datalink")]
 use netmod_datalink::Endpoint as DatalinkEndpoint;
+
+#[cfg(feature = "inet")]
 use netmod_inet::InetEndpoint;
+
+#[cfg(feature = "lan")]
 use netmod_lan::Endpoint as LanEndpoint;
+
+#[cfg(feature = "lora")]
 use netmod_lora::LoraEndpoint;
 
 /// This function does not fail or abort router initialisation.  In
@@ -21,6 +29,7 @@ pub(crate) async fn initialise_netmods(cfg: &ConfigTree) -> DriverMap {
     let mut map = DriverMap::new();
 
     //// If the 'inet' config tree exists...
+    #[cfg(feature = "inet")]
     if let Some(tree) = cfg.get_subtree("inet") {
         let enable = tree.get_bool_value("enable");
         let bind = tree.get_string_value("bind");
@@ -55,6 +64,7 @@ pub(crate) async fn initialise_netmods(cfg: &ConfigTree) -> DriverMap {
     }
 
     //// If the 'lan' subtree exists...
+    #[cfg(feature = "lan")]
     if let Some(tree) = cfg.get_subtree("lan") {
         let iface = tree.get_string_value("interface");
         let enable = tree.get_bool_value("enable");
@@ -80,6 +90,7 @@ pub(crate) async fn initialise_netmods(cfg: &ConfigTree) -> DriverMap {
     }
 
     //// If the 'lora' subtree exists
+    #[cfg(feature = "lora")]
     if let Some(tree) = cfg.get_subtree("lora") {
         let enable = tree.get_bool_value("enable");
         let port = tree.get_string_value("port");
@@ -100,6 +111,7 @@ pub(crate) async fn initialise_netmods(cfg: &ConfigTree) -> DriverMap {
         }
     }
 
+    #[cfg(feature = "datalink")]
     if let Some(tree) = cfg.get_subtree("datalink") {
         let enable = tree.get_bool_value("enable");
         let interface = tree.get_string_value("interface");
