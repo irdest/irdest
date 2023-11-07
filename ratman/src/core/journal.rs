@@ -197,12 +197,12 @@ impl Journal {
                         let mut ctr = 0;
 
                         loop {
-                            let secs = (1 + (ctr * 2)).clamp(0, 32);
+                            let millis = (100 + (ctr * 20)).clamp(0, 32);
                             debug!(
-                                "Waiting {}s for attempt #{} to assemble message {}",
-                                secs, ctr, message_id,
+                                "Waiting {}ms for attempt #{} to assemble message {}",
+                                millis, ctr, message_id,
                             );
-                            async_std::task::sleep(Duration::from_secs(secs)).await;
+                            async_std::task::sleep(Duration::from_millis(millis)).await;
                             match this.decode_message(&message_notifier).await {
                                 Ok(msg) => {
                                     this.incoming.0.send(msg).await;
