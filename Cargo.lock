@@ -3143,6 +3143,7 @@ dependencies = [
  "atomptr",
  "bincode",
  "byteorder",
+ "chacha20",
  "chrono",
  "clap 2.34.0",
  "clockctrl",

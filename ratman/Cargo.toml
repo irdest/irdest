@@ -50,6 +50,7 @@ twox-hash = "1.5"
 curve25519-dalek = "3.0.0"
 ed25519-dalek = "1.0.0"
 x25519-dalek = { version = "2.0.0-rc.2", features = ["static_secrets"] }
+chacha20 = "0.9"
 rand = "0.7"
 
 ## Storage & Configuration
