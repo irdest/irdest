@@ -70,6 +70,12 @@ pub fn build_cli() -> App<'static, 'static> {
                 .help("Specify the API socket bind address")
                 .default_value("127.0.0.1:5852"),
         )
+        .arg(
+            Arg::with_name("CONFG")
+                .takes_value(true)
+                .long("config")
+                .help("Override the position where ratcat should store its state configuration")
+        )
 }
 
 #[derive(Serialize, Deserialize)]
@@ -83,8 +89,19 @@ async fn register(
     bind: &str,
     no_default: bool,
 ) -> Result<bool, Box<dyn std::error::Error>> {
+    let stdout = stdout();
+    let is_tty = nix::unistd::isatty(stdout.as_raw_fd()).unwrap_or(false);
+
     let ipc = connect_ipc(None, None, bind).await?;
-    eprintln!("Registered address: {}", ipc.address());
+
+    // For humans we print a friendly message
+    if is_tty {
+        eprintln!("Registered address: {}", ipc.address());
+    }
+    // For machines we get straight to the point
+    else {
+        println!("{}", ipc.address());
+    }
 
     if !no_default {
         let mut f = File::create(path.join("config")).await?;
@@ -185,12 +202,23 @@ async fn main() {
     let app = build_cli();
     let m = app.clone().get_matches();
 
-    //// Setup the application config directory
-    let dirs = ProjectDirs::from("org", "irdest", "ratcat")
-        .expect("Failed to initialise project directories for this platform!");
-    let cfg_dir = env_xdg_config()
+    //// Setup the config location
+    ////
+    //// 1) If it is provided, use the command-line version
+    //// 2) Otherwise use the environment variable
+    //// 3) OTHERWISE use the XDG_CONFIG_HOME location
+    let cfg_dir = m
+        .value_of("CONFIG")
         .map(|path| PathBuf::new().join(path))
-        .unwrap_or_else(|| dirs.config_dir().to_path_buf());
+        .unwrap_or_else(|| {
+            env_xdg_config()
+                .map(|path| PathBuf::new().join(path))
+                .unwrap_or_else(|| {
+                    let dirs = ProjectDirs::from("org", "irdest", "ratcat")
+                        .expect("Failed to initialise project directories for this platform!");
+                    dirs.config_dir().to_path_buf()
+                })
+        });
     let _ = create_dir_all(&cfg_dir).await;
 
     let num: usize = match m.value_of("RECV_COUNT").map(|c| c.parse().ok()) {

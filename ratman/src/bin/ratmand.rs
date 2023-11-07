@@ -38,7 +38,16 @@ fn main() {
                     eprintln!("Invalid patch syntax!  Usage: <key>=<value>");
                 }
 
-                cfg = cfg.patch(key, value);
+                // turn things into actual types
+                if value == "true" {
+                    cfg = cfg.patch(key, true);
+                } else if value == "false" {
+                    cfg = cfg.patch(key, false);
+                } else if let Some(num) = value.parse::<i64>().ok() {
+                    cfg = cfg.patch(key, num);
+                } else {
+                    cfg = cfg.patch(key, value);
+                }
             }
         }
 
@@ -58,6 +67,8 @@ fn main() {
     // Since this code runs before the logger initialisation we're
     // limited to eprintln and exiting the application manually if
     // something goes catastrophically wrong.
+
+    eprintln!("Loading config from {:?}", cfg_path);
 
     let mut config = match block_on(ConfigTree::load_path(&cfg_path)) {
         Ok(cfg) => cfg,
