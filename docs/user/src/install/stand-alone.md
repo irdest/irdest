@@ -1,8 +1,9 @@
 # Stand-alone installer
 
-This installer creates a stand-alone installation of Ratman and other
-Irdest tools for only the current user.  It's currently not recommend
-to install Ratman as a system user/ root.
+This installer creates a per-user installation of Ratman, which
+doesn't require root access.  It comes with the Ratman router, the
+basic tools of interacting with it, a manual, and some setup scripts
+that can be used to customise the installation.
 
 You can find the download bundle link at the bottom of the [download
 page](https://irde.st/download).

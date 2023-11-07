@@ -3,7 +3,8 @@
 An Irdest network is created via the "Ratman" router, and other Irdest
 applications.  Different devices can be connected together locally
 (via WiFi, ethernet, or long-range radio) or over the internet, as a
-VPN-like network.
+virtual public network.
+
 
 ## Network basics
 
@@ -12,15 +13,15 @@ Irdest traffic can be routed via the existing internet, but creates
 its own address space and routing rules.  **An Irdest network does not
 use IP addresses!**
 
-Instead an address is a cryptographic key.  This allows all network
-traffic to be encrypted and verified by default!
+Instead an address is a cryptographic public key.  This allows all
+data sent through the network to be encrypted and verified by default.
 
 Because of the cryptographic nature of an address, a computer can also
-have many addresses registered at the same time.  Different addresses
-can either be used for different applications or for different
-identities via the same application (if it supports this).  There is
-no central authority for handing out addresses.  Every computer
-self-generates new addresses as they are needed.
+have many addresses online at the same time.  Different addresses can
+either be used for different applications or for different identities
+via the same application (if it supports this).  There is no central
+authority for handing out addresses.  Every computer self-generates
+new addresses as they are needed.
 
 
 ## Ratman architecture
@@ -53,7 +54,7 @@ Ratman developer tools.
 Irdest is a mesh network, which means that anyone on the network can
 communicate with anyone else by passing messages to participants in
 between you and your recipient.  **This also means that there is no
-central authority on how data is transported.**
+central authority on how packets is transported.**
 
 When registering an address, Ratman starts announcing it to its
 neighbours (Ratman instances that it is peered to).  These neighbours
