@@ -8,13 +8,18 @@
 //! private key is not shared outside the router.
 
 use crate::storage::addrs::StorageAddress;
-use async_std::sync::RwLock;
-use curve25519_dalek::edwards::CompressedEdwardsY;
-use ed25519_dalek::{ExpandedSecretKey, PublicKey, SecretKey, Signature, Signer, Verifier};
 use libratman::types::Address;
+
+use async_std::sync::RwLock;
 use rand::rngs::OsRng;
+use rand::{thread_rng, RngCore};
 use std::collections::BTreeMap;
 use std::convert::TryInto;
+
+use chacha20::cipher::{KeyIvInit, StreamCipher};
+use chacha20::ChaCha20;
+use curve25519_dalek::edwards::CompressedEdwardsY;
+use ed25519_dalek::{ExpandedSecretKey, PublicKey, SecretKey, Signature, Signer, Verifier};
 use x25519_dalek::{PublicKey as X25519Pubkey, SharedSecret, StaticSecret as X25519Secret};
 
 /// An ed25519 keypair
@@ -28,6 +33,30 @@ impl Keypair {
     fn to_expanded(&self) -> ExpandedSecretKey {
         ExpandedSecretKey::from(&self.inner.secret)
     }
+}
+
+/// Encrypt a data chunk with a shared secret and random nonce
+///
+/// Returns the encrypted chunk as well as the selected nonce, which
+/// must be provided for decoding
+pub fn encrypt_chunk(shared_key: &SharedSecret, mut chunk: Vec<u8>) -> (Vec<u8>, [u8; 12]) {
+    let mut nonce = [0; 12];
+    thread_rng().fill_bytes(&mut nonce);
+
+    let mut cipher = ChaCha20::new(&(*shared_key.as_bytes()).into(), &nonce.into());
+    cipher.apply_keystream(&mut chunk);
+    (chunk, nonce)
+}
+
+/// Decrypt a data chunk with a shared secret and nonce
+pub fn decrypt_chunk(
+    shared_key: &SharedSecret,
+    nonce: [u8; 12],
+    mut encrypted_chunk: Vec<u8>,
+) -> Vec<u8> {
+    let mut cipher = ChaCha20::new(&(*shared_key.as_bytes()).into(), &nonce.into());
+    cipher.apply_keystream(&mut encrypted_chunk);
+    encrypted_chunk
 }
 
 pub struct Keystore {
@@ -164,4 +193,19 @@ async fn manifest_signature() {
         store.verify_message(alice, manifest.as_slice(), signature),
         Some(())
     )
+}
+
+#[async_std::test]
+async fn diffie_hellman_chacha20() {
+    let store = Keystore::new();
+    let alice = store.create_address().await;
+    let bob = store.create_address().await;
+
+    let message = vec![7, 6, 9, 6, 5, 8, 7, 4, 3, 6, 8, 8, 5, 5, 7, 8, 5, 5, 87];
+    let message_len = message.len();
+    let alice_to_bob = store.diffie_hellman(alice, bob).await.unwrap();
+
+    let nonce = [0; 12];
+    let mut cipher = ChaCha20::new(&(*alice_to_bob.as_bytes()).into(), &nonce.into());
+    cipher.apply_keystream(&mut **self);
 }
