@@ -45,6 +45,13 @@ impl Dispatch {
     ///
     /// Returns an error if resolving or sending failed
     pub(crate) async fn dispatch_frame(&self, envelope: InMemoryEnvelope) -> Result<()> {
+        trace!(
+            "Dispatch frame in sequence {}",
+            match envelope.header.get_seq_id() {
+                Some(seq_id) => format!("{}", seq_id.hash),
+                None => format!("<???>"),
+            }
+        );
         let target_address = match envelope.header.get_recipient() {
             Some(Recipient::Target(addr)) => addr,
             // fixme: introduce a better error kind here
@@ -62,19 +69,16 @@ impl Dispatch {
         ep.send(envelope, trgt, None).await
     }
 
-    ///
-    pub(crate) async fn flood_frame(&self, envelope: InMemoryEnvelope) -> Result<()> {
-        let flood_address = match envelope.header.get_recipient() {
-            Some(Recipient::Flood(addr)) => addr,
-            // fixme: introduce a better error kind here
-            _ => unreachable!(),
-        };
-
+    // todo: implement the exception mechanism
+    pub(crate) async fn flood_frame(
+        &self,
+        envelope: InMemoryEnvelope,
+        _except: Option<(String, Target)>,
+    ) -> Result<()> {
         // Loop over every driver and send a version of the envelope to it
         for (ep_name, ep) in self.drivers.get_all().await.into_iter() {
             let env = envelope.clone();
-            let target = Target::Flood(flood_address);
-            if let Err(e) = ep.send(env, target, None).await {
+            if let Err(e) = ep.send(env, Target::Flood, None).await {
                 error!(
                     "failed to flood frame {:?} on endpoint {}: {}",
                     envelope.header.get_seq_id(),

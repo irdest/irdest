@@ -17,10 +17,7 @@ use std::{
 };
 
 /// Periodically announce an address to the network
-pub struct AddressAnnouncer {
-    address: Address,
-    key_id: Id,
-}
+pub struct AddressAnnouncer(pub Address);
 
 impl AddressAnnouncer {
     pub(crate) async fn generate_announce(&self, ctx: &Arc<RatmanContext>) -> AnnounceFrame {
@@ -29,7 +26,7 @@ impl AddressAnnouncer {
             let mut origin_buf = vec![];
             origin.clone().generate(&mut origin_buf).unwrap();
             ctx.keys
-                .sign_message(self.address, origin_buf.as_slice())
+                .sign_message(self.0, origin_buf.as_slice())
                 .await
                 .unwrap()
         };
@@ -48,17 +45,9 @@ impl AddressAnnouncer {
     pub(crate) async fn run(
         self,
         online: Arc<AtomicBool>,
-        cfg: &ConfigTree,
+        announce_delay: u16,
         ctx: Arc<RatmanContext>,
     ) {
-        let announce_delay = cfg
-            .get_subtree("ratmand")
-            .and_then(|subtree| subtree.get_number_value("announce_delay"))
-            .unwrap_or_else(|| {
-                debug!("ratmand/announce_delay was not set, assuming default of 2 seconds");
-                2
-            }) as u64;
-
         while online.load(Ordering::Acquire) {
             // Create a new announcement
             let announce = self.generate_announce(&ctx).await;
@@ -70,7 +59,15 @@ impl AddressAnnouncer {
 
             // Pack it into a carrier and handle the nested encoding
             let header =
-                CarrierFrameHeader::new_announce_frame(self.address, announce_buffer.len() as u16);
+                CarrierFrameHeader::new_announce_frame(self.0, announce_buffer.len() as u16);
+
+            // Pre-maturely mark this announcement as "known", so that
+            // the switch locally will ignore it when it is inevitably
+            // sent back to us.
+            ctx.core
+                .journal
+                .save_as_known(&header.get_seq_id().unwrap().hash)
+                .await;
 
             // Send it into the network
             if let Err(e) = ctx
@@ -78,14 +75,17 @@ impl AddressAnnouncer {
                 .dispatch
                 .flood_frame(
                     InMemoryEnvelope::from_header_and_payload(header, announce_buffer).unwrap(),
+                    None,
                 )
                 .await
             {
                 error!("failed to flood announcement: {}", e)
             }
 
+            // debug!("Sent address announcement for {}", self.0);
+
             // Wait some amount of time
-            task::sleep(Duration::from_secs(announce_delay)).await;
+            task::sleep(Duration::from_secs(announce_delay as u64)).await;
         }
     }
 }

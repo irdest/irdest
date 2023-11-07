@@ -212,12 +212,13 @@ async fn handshake(
         Err(e) => return Err(SessionError::Handshake(*data, e.to_string())),
     };
 
+    // ??? what does this match block actually do
     match (data.tt, ack) {
         (outgoing, Handshake::Ack { tt }) if outgoing == tt => {
-            debug!("Received valid ACK session data");
+            debug!("Handshake with {:?} was successful!", stream.peer_addr());
         }
         _ => {
-            error!("Received invalid ACK session data");
+            error!("Handshake with {:?} was unsuccessful", stream.peer_addr());
             drop(stream);
             return Err(SessionError::Dropped(data.addr));
         }

@@ -19,7 +19,6 @@ use libratman::types::{
 };
 
 async fn handle_send(ctx: &Arc<RatmanContext>, _self: Address, send: Send) -> Result<()> {
-    debug!("Queuing message to send");
     let mirror = send.mirror;
     for msg in transform::send_to_message(send) {
         let Message {
@@ -30,6 +29,7 @@ async fn handle_send(ctx: &Arc<RatmanContext>, _self: Address, send: Send) -> Re
             ref time,
             ref signature,
         } = msg;
+        info!("Queuing message of size {} to send", payload.len());
 
         match msg.recipient {
             ApiRecipient::Flood(_) => {
@@ -61,7 +61,7 @@ async fn handle_send(ctx: &Arc<RatmanContext>, _self: Address, send: Send) -> Re
             }
             _ => {}
         }
-        ctx.send(msg, async_eris::BlockSize::_1K).await?;
+        ctx.send(msg).await?;
     }
     Ok(())
 }

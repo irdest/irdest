@@ -149,7 +149,10 @@ async fn accept_connection(
         addr,
     };
 
-    // proto::write(&mut s, &Handshake::Ack { tt }).await?;
-    info!("Successfully connected with new peer #{} :)", target);
+    info!(
+        "Successfully connected with new peer #{} ({:?}) :)",
+        target,
+        s.peer_addr()
+    );
     Ok(Peer::standard(data, sender, None, s))
 }

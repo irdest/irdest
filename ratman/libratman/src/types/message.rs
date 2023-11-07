@@ -9,6 +9,8 @@ pub use crate::types::proto::message::Message as ProtoMessage;
 use crate::types::{timepair::TimePair, Address, Id};
 use serde::{Deserialize, Serialize};
 
+use super::Recipient;
+
 /// Specify the message recipient in the client API
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[deprecated]
@@ -35,6 +37,15 @@ impl ApiRecipient {
     /// Create a flood message recipient
     pub fn flood(namespace: Address) -> Self {
         Self::Flood(namespace)
+    }
+}
+
+impl From<Recipient> for ApiRecipient {
+    fn from(r: Recipient) -> Self {
+        match r {
+            Recipient::Target(addr) => ApiRecipient::Standard(vec![addr]),
+            Recipient::Flood(ns) => ApiRecipient::Flood(ns),
+        }
     }
 }
 

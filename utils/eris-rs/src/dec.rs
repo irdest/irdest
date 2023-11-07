@@ -9,18 +9,18 @@ use thiserror::Error as ThisError;
 
 #[derive(ThisError, Debug)]
 pub enum Error {
-    #[error("Invalid padding")]
+    #[error("invalid padding")]
     Padding,
-    #[error("{0}")]
+    #[error("i/o error: {0}")]
     Io(#[from] std::io::Error),
-    #[error("Block not found in storage")]
+    #[error("a block was not found in storage")]
     BlockNotFound,
-    #[error("Non-standard block size")]
+    #[error("non-standard block size")]
     NonstandardBlockSize,
-    #[error("Unexpected block size")]
+    #[error("unexpected block size")]
     UnexpectedBlockSize,
     /// Mostly used for testing
-    #[error("Invalid base32 encoding")]
+    #[error("invalid base32 encoding")]
     InvalidBase32,
 }
 

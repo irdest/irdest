@@ -33,7 +33,7 @@ pub fn block_stream_level() -> libratman::Result<()> {
     // Very verbose logging environment
     crate::util::setup_test_logging();
 
-    let ctx = RatmanContext::new_in_memory();
+    let ctx = RatmanContext::new_in_memory(ConfigTree::default_in_memory());
     let this = async_std::task::block_on(ctx.keys.create_address());
     let that = async_std::task::block_on(ctx.keys.create_address());
 

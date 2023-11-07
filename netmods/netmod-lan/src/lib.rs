@@ -83,7 +83,7 @@ impl EndpointExt for Endpoint {
             // is not segmented (i.e. all peers all also know each
             // other) we can just not bother to send the message
             // again (hopefully)
-            Target::Flood(_) if exclude.is_none() => {
+            Target::Flood if exclude.is_none() => {
                 self.socket.multicast(&envelope).await;
             }
             _ => {}

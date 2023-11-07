@@ -302,7 +302,7 @@ impl EndpointExt for Endpoint {
                     .send(&env, self.addrs.addr(*id).await.unwrap())
                     .await;
             }
-            Target::Flood(_) => match exclude {
+            Target::Flood => match exclude {
                 Some(u) => {
                     let exc = self
                         .addrs

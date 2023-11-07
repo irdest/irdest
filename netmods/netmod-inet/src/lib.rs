@@ -212,7 +212,7 @@ impl netmod::Endpoint for InetEndpoint {
         trace!("Sending message to {:?}", target);
         match target {
             netmod::Target::Single(target) => self.send(target, envelope).await?,
-            netmod::Target::Flood(_) => self.send_all(envelope, exclude).await?,
+            netmod::Target::Flood => self.send_all(envelope, exclude).await?,
         }
 
         Ok(())

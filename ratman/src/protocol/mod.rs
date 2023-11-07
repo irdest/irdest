@@ -15,7 +15,9 @@
 
 mod announce;
 
-use crate::core::Core;
+use crate::{
+    config::ConfigTree, context::RatmanContext, core::Core, protocol::announce::AddressAnnouncer,
+};
 use libratman::types::{
     frames::{self, CarrierFrameHeader},
     Address, RatmanError, Result,
@@ -58,34 +60,34 @@ impl Protocol {
     }
 
     /// Dispatch a task to announce a user periodically
-    pub(crate) async fn online(self: Arc<Self>, id: Address, core: Arc<Core>) -> Result<()> {
+    pub(crate) async fn online(
+        self: Arc<Self>,
+        address: Address,
+        ctx: Arc<RatmanContext>,
+    ) -> Result<()> {
         let mut map = self.online.lock().await;
-        if map.get(&id).map(|arc| arc.load(Ordering::Relaxed)) == Some(true) {
+        if map.get(&address).map(|arc| arc.load(Ordering::Relaxed)) == Some(true) {
             // If a user is already online we don't have to do anything
             return Ok(());
         }
 
-        info!("Setting address {} to 'online'", id);
+        info!("Setting address {} to 'online'", address);
 
         let b = Arc::new(AtomicBool::new(true));
-        map.insert(id, Arc::clone(&b));
+        map.insert(address, Arc::clone(&b));
         drop(map);
 
+        let announce_delay = ctx
+            .config
+            .get_subtree("ratmand")
+            .and_then(|subtree| subtree.get_number_value("announce_delay"))
+            .unwrap_or_else(|| {
+                debug!("ratmand/announce_delay was not set, assuming default of 2 seconds");
+                2
+            }) as u16;
+
         task::spawn(async move {
-            loop {
-                debug!("Sending announcement for {}", id);
-
-                #[cfg(feature = "dashboard")]
-                self.metrics.announcements_total.inc();
-
-                // core.raw_flood(Self::announce(id)).await.unwrap();
-                task::sleep(Duration::from_secs(2)).await;
-
-                if !b.load(Ordering::Relaxed) && break {}
-            }
-
-            // Remove the runtime bool again
-            self.online.lock().await.remove(&id);
+            AddressAnnouncer(address).run(b, announce_delay, ctx).await;
         });
 
         Ok(())

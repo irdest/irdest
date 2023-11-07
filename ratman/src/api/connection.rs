@@ -47,9 +47,9 @@ impl ConnectionManager {
     }
 
     /// Load an existing set of users from the storage path
-    pub async fn load_users(&self, context: &RatmanContext) {
+    pub async fn load_users(&self, context: &Arc<RatmanContext>) {
         let path = Os::match_os().data_path().join("users.json");
-        debug!("Loading registered users from file {:?}", path);
+        info!("Loading registered users from file {:?}", path);
 
         let json = {
             let mut json = String::new();
@@ -87,6 +87,7 @@ impl ConnectionManager {
                         }
 
                         // Also insert the address into the addr_map
+                        debug!("Loading address {}", *address);
                         addr_map.insert(*address, *id);
                     }
 

@@ -85,14 +85,17 @@ impl Peer {
     /// `SessionData` is returned so that a new session may be
     /// started.
     pub(crate) async fn send(self: &Arc<Self>, env: &InMemoryEnvelope) -> Result<(), SessionError> {
-        debug!("Sending data: {:?}", env);
-
+        trace!(
+            "Sending data for '{}'",
+            match env.header.get_seq_id() {
+                Some(seq_id) => format!("{}", seq_id.hash),
+                None => format!("<???>"),
+            }
+        );
         let mut txg = self.tx.lock().await;
 
         // The TcpStream SHOULD never just disappear
         let tx = txg.as_mut().unwrap();
-
-        trace!("Writing data to stream {}", self.id());
         match proto::write(&mut *tx, env).await {
             Ok(()) => Ok(()),
             Err(e) => {
@@ -117,6 +120,8 @@ impl Peer {
 
     /// Repeatedly attempt to read from the reading socket
     pub(crate) async fn run(self: Arc<Self>) {
+        let mut no_data_ctr = 0;
+
         loop {
             trace!("Peer::run loop for {:?}", self.session);
             let mut rxg = self.rx.lock().await;
@@ -130,14 +135,21 @@ impl Peer {
 
             let envelope = match proto::read(rx).await {
                 Ok(f) => {
-                    trace!("Received frame from stream {}", self.id());
+                    // trace!("Received frame from stream {}", self.id());
+                    no_data_ctr = 0;
                     f
                 }
                 Err(RatmanError::Encoding(EncodingError::NoData)) => {
-                    trace!("No data for server");
+                    // trace!("No data for server");
+                    no_data_ctr += 1;
                     drop(rxg);
-                    task::yield_now();
-                    continue;
+
+                    if no_data_ctr > 128 {
+                        break;
+                    } else {
+                        task::yield_now();
+                        continue;
+                    }
                 }
                 Err(RatmanError::Io(io)) => {
                     error!(

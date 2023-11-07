@@ -68,6 +68,8 @@ impl RouteTable {
         // Only "announce" a new user if it was not known before
         if tbl.insert(id, route).is_none() {
             info!("Discovered new address {}", id);
+            debug!("New routing table state is: {:#?}", tbl);
+
             #[cfg(feature = "dashboard")]
             self.metrics
                 .routes_count

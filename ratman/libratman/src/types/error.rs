@@ -109,4 +109,6 @@ pub enum BlockError {
         expected: BlockReference,
         got: BlockReference,
     },
+    #[error("ERIS block decoding failed because {0}")]
+    Eris(#[from] async_eris::Error),
 }

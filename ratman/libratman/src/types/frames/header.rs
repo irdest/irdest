@@ -53,13 +53,34 @@ impl CarrierFrameHeader {
         })
     }
 
+    /// Allocate a new header for an ERIS-block data frame
+    pub fn new_blockmanifest_frame(
+        sender: Address,
+        recipient: Recipient,
+        seq_id: SequenceIdV1,
+        payload_length: u16,
+    ) -> Self {
+        Self::V1(CarrierFrameHeaderV1 {
+            modes: modes::MANIFEST,
+            recipient: Some(recipient),
+            sender,
+            seq_id: Some(seq_id),
+            auxiliary_data: None,
+            payload_length,
+        })
+    }
+
     /// Allocate a new header for an address announcement frame
     pub fn new_announce_frame(sender: Address, payload_length: u16) -> Self {
         Self::V1(CarrierFrameHeaderV1 {
             modes: modes::ANNOUNCE,
             recipient: None,
             sender,
-            seq_id: None,
+            seq_id: Some(SequenceIdV1 {
+                hash: Id::random(),
+                num: 0,
+                max: 0,
+            }),
             auxiliary_data: None,
             payload_length,
         })

@@ -15,14 +15,17 @@ use crate::{
     protocol::Protocol,
     util::{self, codes, runtime_state::RuntimeState, setup_logging, Os, StateDirectoryLock},
 };
-use async_eris::BlockSize;
+use async_eris::{BlockSize, ReadCapability};
 use async_std::{sync::Arc, task::block_on};
 use atomptr::AtomPtr;
 use libratman::{
     netmod::InMemoryEnvelope,
     types::{
-        frames::{CarrierFrameHeader, FrameGenerator, ManifestFrame, ManifestFrameV1},
-        Address, ApiRecipient, Message, Recipient,
+        frames::{
+            CarrierFrameHeader, CarrierFrameHeaderV1, FrameGenerator, ManifestFrame,
+            ManifestFrameV1,
+        },
+        Address, ApiRecipient, Message, Recipient, SequenceIdV1,
     },
     Result,
 };
@@ -32,8 +35,10 @@ use libratman::{
 /// This type is responsible for starting and owning various types
 /// that control client and driver connections, and internal coherency
 /// tasks.
-#[derive(Clone)]
+// #[derive(Clone)]
 pub struct RatmanContext {
+    /// Keep a version of the launch configuration around
+    pub(crate) config: ConfigTree,
     /// Abstraction over the internal routing logic
     pub(crate) core: Arc<Core>,
     /// A protocol state machine
@@ -55,7 +60,7 @@ pub struct RatmanContext {
 
 impl RatmanContext {
     /// Create the in-memory Context, without any initialisation
-    pub(crate) fn new_in_memory() -> Arc<Self> {
+    pub(crate) fn new_in_memory(config: ConfigTree) -> Arc<Self> {
         let runtime_state = RuntimeState::start_initialising();
         let protocol = Protocol::new();
         let core = Arc::new(Core::init());
@@ -63,6 +68,7 @@ impl RatmanContext {
         let clients = Arc::new(ConnectionManager::new());
 
         Arc::new(Self {
+            config,
             core,
             protocol,
             keys,
@@ -74,10 +80,13 @@ impl RatmanContext {
 
     /// Create and start a new Ratman router context with a config
     pub fn start(cfg: ConfigTree) -> Arc<Self> {
-        let this = Self::new_in_memory();
+        let this = Self::new_in_memory(cfg);
 
         // Parse the ratmand config tree
-        let ratmand_config = cfg.get_subtree(CFG_RATMAND).expect("no 'ratmand' tree");
+        let ratmand_config = this
+            .config
+            .get_subtree(CFG_RATMAND)
+            .expect("no 'ratmand' tree");
 
         // Before we do anything else, make sure we see logs
         setup_logging(&ratmand_config);
@@ -102,11 +111,12 @@ impl RatmanContext {
                 }
             }
         }
+
         // Load existing client/address relations
         block_on(this.clients.load_users(&this));
 
         // This never fails, we will have a map of netmods here, even if it is empty
-        let driver_map = block_on(initialise_netmods(&cfg));
+        let driver_map = block_on(initialise_netmods(&this.config));
 
         // Get the initial set of peers from the configuration.
         // Either this is done via the `peer_file` field, which is
@@ -141,16 +151,17 @@ impl RatmanContext {
             // If no peers exist, check if there are alternative
             // peering mechanisms (currently either
             // 'accept_uknown_peers' or having 'lan' discovery
-            // enabled).  We print a warning in this case
+            // enabled).  We print a warning otherwise
             None if !ratmand_config
                 .get_bool_value("accept_unknown_peers")
                 .unwrap_or(false)
-                && cfg
+                & /* and */ this
+                    .config
                     .get_subtree("lan")
                     .and_then(|tree| tree.get_bool_value("enable"))
                     .unwrap_or(false) =>
             {
-                warn!("No peers were provided, but no alternative peering mechanism was detected!")
+                warn!("No peers were provided, but no alternative peering mechanism was detected!  You won't be able to talk to anyone.")
             }
 
             // If no peers exist, but other peering mechanisms exist
@@ -214,7 +225,7 @@ impl RatmanContext {
     /// This function creates a new keypair, inserts the address part
     /// into the local routing table, and starts announcing it to the
     /// rest of the network.
-    pub async fn create_new_address(&self) -> Result<Address> {
+    pub async fn create_new_address(self: &Arc<Self>) -> Result<Address> {
         let addr = self.keys.create_address().await;
         self.core.add_local_address(addr).await?;
         self.online(addr).await?;
@@ -222,20 +233,24 @@ impl RatmanContext {
     }
 
     // TODO: this function must handle address key decryption
-    pub async fn load_existing_address(&self, addr: Address, key_data: &[u8]) -> Result<()> {
+    pub async fn load_existing_address(
+        self: &Arc<Self>,
+        addr: Address,
+        key_data: &[u8],
+    ) -> Result<()> {
         self.keys.add_address(addr, key_data).await;
         self.core.add_local_address(addr).await?;
         self.online(addr).await?;
         Ok(())
     }
 
-    async fn online(&self, addr: Address) -> Result<()> {
+    async fn online(self: &Arc<Self>, addr: Address) -> Result<()> {
         // This checks whether the address actually exists first
         self.core.known(addr, true).await?;
 
         // Then start a new protocol handler task for the address
         Arc::clone(&self.protocol)
-            .online(addr, Arc::clone(&self.core))
+            .online(addr, Arc::clone(self))
             .await
     }
 
@@ -251,7 +266,13 @@ impl RatmanContext {
     }
 
     /// Dispatch a high-level message
-    pub async fn send(self: &Arc<Self>, msg: Message, block_size: BlockSize) -> Result<()> {
+    // todo: this function should do a few more things around the
+    // journal!
+    //
+    // - If sending fails, insert the frame into the journal frame queue
+    // - Insert created blocks into the journal for future store & forward
+    // - Slice manifest correctly if needed
+    pub async fn send(self: &Arc<Self>, mut msg: Message) -> Result<()> {
         let sender = msg.sender;
 
         // remap the recipient type because the client API sucks ass
@@ -262,39 +283,62 @@ impl RatmanContext {
             ApiRecipient::Flood(ref t) => Recipient::Flood(*t),
         };
 
-        //let (read_capability, blocks) = BlockSlicer::slice(self, msg, block_size).await?;
-        todo!()
+        // Turn the message into blocks, based on the size of the
+        // message payload.  Currently the cut-off between 1K blocks
+        // and 32K blocks is 14kb
+        let selected_block_size = if msg.payload.len() > 14336 {
+            BlockSize::_32K
+        } else {
+            BlockSize::_1K
+        };
 
-        //     let data_frames = StreamSlicer::slice(self, recipient, sender, blocks.into_iter())?;
+        let (read_capability, mut blocks) =
+            BlockSlicer::slice(self, &mut msg, selected_block_size).await?;
 
-        //     // Iterate over all the data frames and send them off
-        //     for carrier in data_frames {
-        //         let mut buffer = vec![];
-        //         let meta = carrier.as_meta();
+        // Then turn the set of blocks into a series of MTU-sliced
+        // carrier frames
+        let carriers = StreamSlicer::slice(self, recipient, sender, blocks.clone().into_iter())?;
+        info!(
+            "Message ID {} resulted in {} blocks (of size {}), yielding {} carrier frames",
+            msg.id,
+            blocks.len(),
+            match selected_block_size {
+                BlockSize::_1K => "1K",
+                _ => "32K",
+            },
+            carriers.len()
+        );
 
-        //         carrier.generate(&mut buffer)?;
-        //         let envelope = InMemoryEnvelope { meta, buffer };
-        //         self.core.dispatch_frame(envelope).await?;
-        //     }
+        // Iterate over all the data frames and send them off
+        for envelope in carriers {
+            self.core.dispatch.dispatch_frame(envelope).await?;
+        }
 
-        //     // Create a final manifest frame from the ReadCapability
-        //     {
-        //         let mut inner_buffer = vec![];
-        //         let manifest = ManifestFrame::V1(ManifestFrameV1::from(read_capability));
-        //         manifest.generate(&mut inner_buffer)?;
+        // Finally create a Manifest frame and send that off last
+        {
+            let manifest_frame = ManifestFrame::V1(ManifestFrameV1::from(read_capability));
+            let mut manifest_payload = vec![];
+            manifest_frame.generate(&mut manifest_payload)?;
 
-        //         let mut manifest = new_carrier_v1(Some(recipient), sender, None);
-        //         manifest.set_payload_checked(1300, inner_buffer)?;
+            // todo: currently we don't try to slice the manifest at
+            // all.  If it gets too big it may not fit across every
+            // transport channel.
+            let m_header = CarrierFrameHeader::new_blockmanifest_frame(
+                sender,
+                recipient,
+                SequenceIdV1 {
+                    hash: msg.get_id(),
+                    num: 1,
+                    max: 1,
+                },
+                manifest_payload.len() as u16,
+            );
 
-        //         let manifest_carrier = CarrierFrame::V1(manifest);
-        //         let meta = manifest_carrier.as_meta();
+            let m_envelope = InMemoryEnvelope::from_header_and_payload(m_header, manifest_payload)?;
+            self.core.dispatch.dispatch_frame(m_envelope).await?;
+            trace!("Sending message manifest was successful!");
+        }
 
-        //         let mut buffer = vec![];
-        //         manifest_carrier.generate(&mut buffer)?;
-        //         let manifest_env = InMemoryEnvelope { meta, buffer };
-
-        //         // Finally send off the manifest
-        //         self.core.dispatch_frame(manifest_env).await
-        //     }
+        Ok(())
     }
 }

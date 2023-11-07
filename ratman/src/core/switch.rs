@@ -92,8 +92,15 @@ impl Switch {
                 Ok(f) => f,
                 _ => continue,
             };
-
-            trace!("Receiving frame via from {}/{}", ep_name, t);
+            trace!(
+                "Received frame ({}) from {}/{}",
+                match header.get_seq_id() {
+                    Some(seq_id) => format!("{}", seq_id.hash),
+                    None => format!("<???>"),
+                },
+                ep_name,
+                t
+            );
 
             // If the dashboard feature is enabled we first update the
             // metrics engine before all the data gets moved away >:(
@@ -102,7 +109,10 @@ impl Switch {
                 let metric_labels = &metrics::Labels {
                     sender_id: header.get_sender(),
                     recp_type: header.get_recipient().as_ref().into(),
-                    recp_id: header.get_recipient().map(|r| r.address()),
+                    recp_id: header
+                        .get_recipient()
+                        .map(|r| r.address().to_string())
+                        .unwrap_or_else(|| "None".to_owned()),
                 };
                 self.metrics.frames_total.get_or_create(metric_labels).inc();
                 self.metrics
@@ -146,11 +156,17 @@ impl Switch {
                     // Check that we haven't seen this frame/ message
                     // ID before.  This prevents infinite replication
                     // of any flooded frame.
-                    if self.journal.unknown(&announce_id).await {
+                    if self.journal.is_unknown(&announce_id).await {
+                        self.journal.save_as_known(&announce_id).await;
+                        // debug!("Received announcement for {}", header.get_sender());
+
                         // Update the routing table and re-flood the announcement
                         self.routes.update(id as u8, t, header.get_sender()).await;
                         self.dispatch
-                            .flood_frame(InMemoryEnvelope { header, buffer })
+                            .flood_frame(
+                                InMemoryEnvelope { header, buffer },
+                                Some((ep_name.clone(), t)),
+                            )
                             .await;
                     }
                 }
@@ -168,7 +184,7 @@ impl Switch {
                                 .await
                             {
                                 error!(
-                                    "Faied to queue frame in sequence {:?}",
+                                    "Failed to queue frame in sequence {:?}",
                                     header.get_seq_id()
                                 );
                                 continue;
@@ -219,10 +235,10 @@ impl Switch {
                     // If we haven seen this frame before, we keep
                     // track of it and then re-flood it into the
                     // network.
-                    if self.journal.unknown(&announce_id).await {
-                        self.journal.save(&announce_id).await;
+                    if self.journal.is_unknown(&announce_id).await {
+                        self.journal.save_as_known(&announce_id).await;
                         self.dispatch
-                            .flood_frame(InMemoryEnvelope { header, buffer })
+                            .flood_frame(InMemoryEnvelope { header, buffer }, None)
                             .await;
                     }
                 }
@@ -253,7 +269,8 @@ mod metrics {
     pub(super) struct Labels {
         pub sender_id: Address,
         pub recp_type: IdentityType,
-        pub recp_id: Option<Address>,
+        // todo: can we make this an address type again?  Should we?
+        pub recp_id: String,
     }
 
     #[derive(Clone, Hash, PartialEq, Eq)]

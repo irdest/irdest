@@ -16,11 +16,11 @@ use std::fmt::{self, Display};
 ///
 /// If your endpoint doesn't implement a one-to-many link (i.e. if
 /// it's always one-to-one), just let this value to `Single(0)`
-/// (`Target::default()`)
+/// (or `Target::default()`)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Target {
     /// Send message to all reachable endpoints
-    Flood(Address),
+    Flood,
     /// Encodes a specific target ID
     Single(u16),
 }
@@ -31,7 +31,7 @@ impl Display for Target {
             f,
             "{}",
             match self {
-                Self::Flood(addr) => format!("Flood({})", addr),
+                Self::Flood => format!("Flood"),
                 Self::Single(t) => format!("Peer({})", t),
             }
         )

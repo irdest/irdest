@@ -15,8 +15,12 @@ use libratman::{
         frames::{CarrierFrameHeader, FrameParser, ManifestFrame, ManifestFrameV1},
         ApiRecipient, Id, Message, Recipient, SequenceIdV1, TimePair,
     },
+    BlockError, RatmanError, Result,
 };
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    time::Duration,
+};
 
 pub type JournalSender = Sender<(Vec<u8>, SequenceIdV1)>;
 pub type JournalReceiver = Receiver<(Vec<u8>, SequenceIdV1)>;
@@ -56,7 +60,41 @@ struct MessageNotifier {
     header: CarrierFrameHeader,
 }
 
-/// Remote frame journal
+/// Combined frame and block journal
+///
+/// This component has three parts to it
+///
+/// ## Frame Journal
+///
+/// Frames that can't be delivered, either because the local address
+/// is offline, or because the remote address isn't reachable via the
+/// currently available connections are given to the frame journal.
+///
+/// When an address comes online, the contents of this journal (for
+/// that particular address) are then either given to the dispatcher,
+/// or the collector.
+///
+///
+/// ## Block Journal
+///
+/// The collector assembles frames into completed blocks that are
+/// inserted into the block journal.  It is shared amongst all
+/// addresses, meaning that if two users/ applications on the same
+/// machine received the same message twice (for example via a flood
+/// namespace), it is only kept in storage once.
+///
+/// When a manifest is received an assembler task is spawned which
+/// checks the block journal for the required block hashes, then
+/// assembles a complete message stream and hands it to the client API
+/// handler.
+///
+/// ## Known frames page
+///
+/// To avoid endless replication of messages the journal keeps track
+/// of frame IDs that it has seen before, even when the contents
+/// aren't being saved.  This is an important mechanism in the case of
+/// announcements, which will otherwise keep echoing through the
+/// network forever... *makes haunting noises*.
 pub(crate) struct Journal {
     /// Keeps track of known frames to do reflood
     known: RwLock<HashSet<Id>>,
@@ -78,6 +116,8 @@ pub(crate) struct Journal {
     /// The channel only contains the block ID, which can then be
     /// received from the main block queue
     manifest_notifier: (Sender<MessageNotifier>, Receiver<MessageNotifier>),
+    /// A channel which can be polled to wait for new incoming messages
+    incoming: (Sender<Message>, Receiver<Message>),
 }
 
 impl Journal {
@@ -87,12 +127,21 @@ impl Journal {
             blocks: Default::default(),
             frames: Default::default(),
             manifest_notifier: bounded(8),
+            incoming: bounded(8),
         })
     }
 
-    /// Dispatches a long-running task to run the journal logic
-    pub(crate) async fn run(self: Arc<Self>, block_output: JournalReceiver) {
+    /// Run an async task that accepts completed blocks from the
+    /// collector, checks their integrity and then inserts them into
+    /// the block journal.
+    pub(crate) async fn run_block_acceptor(self: Arc<Self>, block_output: JournalReceiver) {
         while let Ok((block_buf, sequence_id)) = block_output.recv().await {
+            debug!(
+                "Attempting to re-construct block({} bytes)for sequence {}",
+                block_buf.len(),
+                sequence_id.hash
+            );
+
             let eris_block = match StorageBlock::reconstruct(block_buf) {
                 Ok(block) => block,
                 Err(e) => {
@@ -120,37 +169,106 @@ impl Journal {
                 .await
                 .0
                 .insert(Id::from_bytes(block_ref.as_slice()), eris_block);
+            trace!("Block insertion for sequence {} complete", sequence_id.hash);
         }
+    }
+
+    /// Run an async task that attempts to re-assemble messages from a
+    /// Manifest, and spawns a long-running version of itself if some
+    /// blocks are still missing.
+    pub(crate) async fn run_message_assembler(self: Arc<Self>) {
+        let notifier = self.manifest_notifier.1.clone();
+
+        while let Ok(message_notifier) = notifier.recv().await {
+            let message_id = message_notifier.header.get_seq_id().unwrap().hash;
+
+            match self.decode_message(&message_notifier).await {
+                Ok(message) => {
+                    self.incoming.0.send(message).await;
+                }
+                Err(_) => {
+                    let this = Arc::clone(&self);
+
+                    warn!(
+                        "Can't assemble {}, blocks missing!  Trying again later...",
+                        message_id
+                    );
+                    async_std::task::spawn(async move {
+                        let mut ctr = 0;
+
+                        loop {
+                            let secs = (1 + (ctr * 2)).clamp(0, 32);
+                            debug!(
+                                "Waiting {}s for attempt #{} to assemble message {}",
+                                secs, ctr, message_id,
+                            );
+                            async_std::task::sleep(Duration::from_secs(secs)).await;
+                            match this.decode_message(&message_notifier).await {
+                                Ok(msg) => {
+                                    this.incoming.0.send(msg).await;
+                                    break;
+                                }
+                                Err(e) => {
+                                    error!("failed to re-assemble message because of {}", e)
+                                }
+                            }
+
+                            ctr += 1;
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    /// Decode a single message from a manifest/ read_capability
+    ///
+    /// Spawn a task that calls this function again if it failed.
+    async fn decode_message(
+        self: &Arc<Self>,
+        MessageNotifier {
+            ref read_cap,
+            ref header,
+        }: &MessageNotifier,
+    ) -> Result<Message> {
+        let block_reader = self.blocks.read().await;
+
+        let mut payload_buffer = vec![];
+        async_eris::decode(&mut payload_buffer, read_cap, &*block_reader)
+            .await
+            .map_err(|e| RatmanError::Block(BlockError::from(e)))?;
+
+        // Release the block lock as quickly as possible
+        drop(block_reader);
+
+        // todo: this is a terrible api and it needs to change.  But
+        // also this type might be completely useless??
+        let mut time = TimePair::sending();
+        time.receive();
+
+        debug!("Decoding message was successful!");
+        Ok(Message {
+            id: header.get_seq_id().unwrap().hash,
+            sender: header.get_sender(),
+            recipient: header.get_recipient().unwrap().into(),
+            time,
+            payload: payload_buffer,
+            signature: vec![],
+        })
     }
 
     /// Block and yield the next completed message from the queue
     pub(crate) async fn next_message(&self) -> Option<Message> {
-        match self.manifest_notifier.1.recv().await {
-            Ok(MessageNotifier { read_cap, header }) => {
-                let mut decoded = vec![];
-                let block_store = self.blocks.read().await;
-                if let Err(e) = async_eris::decode(&mut decoded, &read_cap, &*block_store).await {
-                    error!("failed to decode ERIS block stream: {}", e);
-                }
-                drop(block_store);
+        match self.incoming.1.recv().await.ok() {
+            Some(msg) => {
+                info!(
+                    "Received new message '(id {})' from {}!",
+                    msg.id, msg.sender
+                );
 
-                let mut time = TimePair::sending();
-                time.receive();
-
-                Some(Message {
-                    id: header.get_seq_id().unwrap().hash,
-                    sender: header.get_sender(),
-                    recipient: match header.get_recipient() {
-                        Some(Recipient::Target(trgt)) => ApiRecipient::Standard(vec![trgt]),
-                        Some(Recipient::Flood(ns)) => ApiRecipient::Flood(ns),
-                        _ => unreachable!(), // Probably reachable but I don't care right now
-                    },
-                    time,
-                    payload: decoded,
-                    signature: vec![],
-                })
+                Some(msg)
             }
-            _ => None,
+            none => none,
         }
     }
 
@@ -158,7 +276,7 @@ impl Journal {
     pub(crate) async fn frame_queue(&self, env: InMemoryEnvelope) {
         let seq_id = env.header.get_seq_id().unwrap().hash;
         self.frames.write().await.insert(seq_id, env);
-        debug!("Frame {} successfully storedin journal!", seq_id);
+        debug!("Frame {} successfully stored in journal!", seq_id);
     }
 
     /// Provide a block manifest and collect a full message
@@ -179,7 +297,14 @@ impl Journal {
                 )) => ReadCapability {
                     root_reference: BlockReference::from(root_reference.slice()),
                     root_key: BlockKey::from(root_key.slice()),
-                    block_size: block_size as usize,
+                    block_size: match block_size {
+                        1 => 1024,
+                        32 => 32 * 1024,
+                        bs => {
+                            error!("Unsupported block size: {}!", bs);
+                            return;
+                        }
+                    },
                     level: block_level,
                 },
                 Ok((_, Err(e))) => {
@@ -202,14 +327,13 @@ impl Journal {
         });
     }
 
-    /// Save a InMemoryEnvelopeID in the known journal page
-    #[allow(unused)]
-    pub(crate) async fn save(&self, fid: &Id) {
+    /// Save a carrier frame ID in the known frames journal page
+    pub(crate) async fn save_as_known(&self, fid: &Id) {
         self.known.write().await.insert(fid.clone());
     }
 
     /// Checks if a frame ID has not been seen before
-    pub(crate) async fn unknown(&self, fid: &Id) -> bool {
+    pub(crate) async fn is_unknown(&self, fid: &Id) -> bool {
         !self.known.read().await.contains(fid)
     }
 }

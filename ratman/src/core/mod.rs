@@ -76,7 +76,8 @@ impl Core {
 
         // Dispatch the runners
         Arc::clone(&switch).run();
-        async_std::task::spawn(Arc::clone(&journal).run(jrx));
+        async_std::task::spawn(Arc::clone(&journal).run_block_acceptor(jrx));
+        async_std::task::spawn(Arc::clone(&journal).run_message_assembler());
 
         Self {
             collector,
@@ -113,7 +114,15 @@ impl Core {
     }
 
     pub(crate) async fn next(&self) -> Message {
-        self.journal.next_block().await
+        match self.journal.next_message().await {
+            Some(m) => m,
+            // fixme: handle this error a bit more graciously.  we may
+            // be able to restart the journal if it has crashed, and
+            // we should definitely check if the router _should_ even
+            // still be running and if this error is entirely
+            // expected.
+            None => panic!("Message queue ran to its end, but the router is still running ???"),
+        }
     }
 
     /// Insert a new endpoint
