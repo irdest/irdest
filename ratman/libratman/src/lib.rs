@@ -18,6 +18,8 @@
 #[macro_use]
 extern crate tracing;
 
+pub mod microframe;
+
 #[cfg(feature = "client")]
 pub mod client;
 

@@ -201,11 +201,19 @@ async fn diffie_hellman_chacha20() {
     let alice = store.create_address().await;
     let bob = store.create_address().await;
 
-    let message = vec![7, 6, 9, 6, 5, 8, 7, 4, 3, 6, 8, 8, 5, 5, 7, 8, 5, 5, 87];
+    let mut message = vec![7, 6, 9, 6, 5, 8, 7, 4, 3, 6, 8, 8, 5, 5, 7, 8, 5, 5, 87];
+    let check = message.clone();
     let message_len = message.len();
     let alice_to_bob = store.diffie_hellman(alice, bob).await.unwrap();
 
     let nonce = [0; 12];
-    let mut cipher = ChaCha20::new(&(*alice_to_bob.as_bytes()).into(), &nonce.into());
-    cipher.apply_keystream(&mut **self);
+    let mut cipher1 = ChaCha20::new(&(*alice_to_bob.as_bytes()).into(), &nonce.into());
+    cipher1.apply_keystream(message.as_mut_slice());
+
+    eprintln!("Encrypted message reads: {:?}", message);
+
+    let bob_from_alice = store.diffie_hellman(bob, alice).await.unwrap();
+    let mut cipher2 = ChaCha20::new(&(*bob_from_alice.as_bytes()).into(), &nonce.into());
+    cipher2.apply_keystream(message.as_mut_slice());
+    assert_eq!(message, check);
 }

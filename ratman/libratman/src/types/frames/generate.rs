@@ -1,5 +1,7 @@
 //! Generator utilities
 
+use std::ffi::CString;
+
 use crate::{
     types::{error::EncodingError, Address, Id, SequenceIdV1},
     RatmanError, Result,
@@ -22,6 +24,12 @@ fn u16_to_big_endian(val: u16) -> [u8; 2] {
     v
 }
 
+fn u32_to_big_endian(val: u32) -> [u8; 4] {
+    let mut v = [0; 4];
+    BigEndian::write_u32(&mut v, val);
+    v
+}
+
 #[test]
 fn test_u16_to_big_endian() {
     let val: u16 = 1312;
@@ -29,9 +37,23 @@ fn test_u16_to_big_endian() {
     assert_eq!([5, 32], slice);
 }
 
+impl FrameGenerator for u8 {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        buf.push(self);
+        Ok(())
+    }
+}
+
 impl FrameGenerator for u16 {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         let slice = u16_to_big_endian(self);
+        slice.generate(buf)
+    }
+}
+
+impl FrameGenerator for u32 {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        let slice = u32_to_big_endian(self);
         slice.generate(buf)
     }
 }
@@ -152,4 +174,9 @@ fn vector_encode_decode() {
 
     assert_eq!(buf.len(), v.len() + 2);
     assert_eq!(buf[0..=1], u16_to_big_endian(v.len() as u16));
+}
+
+/// Read any `repr(C)` type as binary data for serialisation
+pub unsafe fn any_as_u8_slice<T: Sized>(p: &T) -> &[u8] {
+    core::slice::from_raw_parts((p as *const T) as *const u8, core::mem::size_of_val(p))
 }

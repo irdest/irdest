@@ -21,18 +21,20 @@ pub type Result<T> = std::result::Result<T, RatmanError>;
 /// meaningful way.
 // TODO(design): how to differentiate between errors that are fatal
 // and those that are not?
+#[repr(C)]
 #[derive(Debug, thiserror::Error)]
 pub enum RatmanError {
     #[error("a non-fatal error {0}")]
     Nonfatal(#[from] self::NonfatalError),
     #[error("an i/o error: {0}")]
     Io(#[from] io::Error),
-    // TODO: rename to Protobuf
     #[cfg(feature = "proto")]
     #[error("a base encoding error: {0}")]
     Proto(#[from] protobuf::ProtobufError),
     #[error("a frame parsing error: {0}")]
     Encoding(#[from] self::EncodingError),
+    #[error("microframe failed to decode: {0}")]
+    Microframe(#[from] crate::microframe::MicroframeError),
     #[error("a json encoding error: {0}")]
     Json(#[from] serde_json::error::Error),
     #[cfg(feature = "client")]
