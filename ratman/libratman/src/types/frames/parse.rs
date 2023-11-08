@@ -6,11 +6,13 @@ use crate::{
 use byteorder::{BigEndian, ByteOrder};
 use chrono::{DateTime, Utc};
 use core::mem::size_of;
+use std::ffi::CString;
 
 // Re-export the most common nom combinators and make sure we use the
 // same ones everewhere
 pub use nom::{bytes::complete::take, IResult};
 use nom::{
+    bytes::complete::{take_till, take_while1},
     combinator::{opt, peek},
     Parser,
 };

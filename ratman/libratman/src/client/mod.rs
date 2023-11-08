@@ -29,6 +29,7 @@
 
 mod error;
 mod socket;
+pub(crate) mod socket_v2;
 
 #[cfg(test)]
 mod tests;
