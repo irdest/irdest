@@ -6,6 +6,7 @@ pub mod parse;
 
 pub mod types;
 pub use error::Error as MicroframeError;
+use tokio::io::AsyncRead;
 
 use crate::{
     types::{
@@ -74,6 +75,13 @@ pub struct MicroframeHeader {
     modes: u16,
     metadata: Option<Id>,
     payload_size: u32,
+}
+
+impl MicroframeHeader {
+    pub async fn parse_with_reader(mut r: &mut (impl AsyncRead + Unpin)) -> Result<Self> {
+        
+        todo!()
+    }
 }
 
 // impl FrameParser for MicroframeHeader {

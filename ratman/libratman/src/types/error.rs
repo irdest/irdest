@@ -27,7 +27,9 @@ pub enum RatmanError {
     #[error("a non-fatal error {0}")]
     Nonfatal(#[from] self::NonfatalError),
     #[error("an i/o error: {0}")]
-    Io(#[from] io::Error),
+    Io(io::Error),
+    #[error("an i/o error: {0}")]
+    TokioIo(#[from] tokio::io::Error),
     #[cfg(feature = "proto")]
     #[error("a base encoding error: {0}")]
     Proto(#[from] protobuf::ProtobufError),

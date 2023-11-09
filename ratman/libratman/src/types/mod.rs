@@ -15,6 +15,7 @@ pub mod api;
 // Export all the frame formats in their own module
 pub mod frames;
 
+mod chunk;
 mod error;
 mod identifiers;
 mod message;
@@ -23,6 +24,7 @@ mod sequence_id;
 mod timepair;
 
 pub use crate::client::ClientError;
+pub use chunk::*;
 pub use error::{BlockError, EncodingError, NonfatalError, RatmanError, Result};
 pub use identifiers::{address::Address, id::Id, ID_LEN};
 pub use message::{ApiRecipient, Message};
