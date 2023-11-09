@@ -1,4 +1,9 @@
 //! Shared sync & async runtime utilities
+//!
+//! ## A WORD OF WARNING!
+//!
+//! tokio::spawn is FORBIDDEN in this module!  Only ever use
+//! tokio::spawn_local!
 
 use crate::Result;
 use std::{
@@ -12,6 +17,9 @@ use tokio::{
     runtime::{Builder, Runtime},
     task::LocalSet,
 };
+
+pub mod reader;
+pub mod writer;
 
 /// Encapsulates a single threaded async system
 pub struct AsyncSystem {
