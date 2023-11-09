@@ -19,7 +19,7 @@ impl<const L: usize, T: AsyncRead + Unpin> AsyncReader<L, T> {
     /// Read some amount of bytes, then return how many
     pub async fn read(&mut self) -> Result<usize> {
         (&mut self.0).read(&mut self.1).await?;
-        Ok(self.0.1) // I am regretting these tuple structs...
+        Ok(self.0 .1) // I am regretting these tuple structs...
     }
 
     /// Take an AsyncRead type, construct a temporary reader from it,
