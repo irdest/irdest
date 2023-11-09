@@ -111,7 +111,7 @@ fn setup_cli() -> Command {
                                 .action(ArgAction::Set)
                         ])
                 ]),
-            
+
             //// =^-^= Subscription management
             ////
             //// A subscription listens to all incoming messages for a

@@ -30,13 +30,16 @@ impl<const L: usize> Chunk<L> {
         Self([0; L], 0)
     }
 
-    pub async fn read_to_buf(&mut self, mut r: &mut ReadBuf<'_>) -> Result<()> {
-        r.put(self);
+    pub async fn read_to_buf(&mut self, mut readbuf: &mut ReadBuf<'_>) -> Result<()> {
+        readbuf.put(self);
         Ok(())
     }
 
     /// Read some amount of bytes into the chunk, then return how many
-    pub async fn read(&mut self, mut r: &mut (impl AsyncRead + Unpin)) -> Result<usize> {
+    pub async fn read_from_reader(
+        &mut self,
+        mut r: &mut (impl AsyncRead + Unpin),
+    ) -> Result<usize> {
         self.1 = r.read(&mut self.0).await?;
         Ok(self.1)
     }
@@ -45,14 +48,9 @@ impl<const L: usize> Chunk<L> {
     ///
     /// When this function returns successfully you are guaranteed to
     /// have read a full chunk.
-    pub async fn fill_with_reader(&mut self, mut r: &mut (impl AsyncRead + Unpin)) -> Result<()> {
+    pub async fn fill_from_reader(&mut self, mut r: &mut (impl AsyncRead + Unpin)) -> Result<()> {
         self.1 = r.read_exact(&mut self.0).await?;
         Ok(())
-    }
-
-    pub async fn read_with_buf(&mut self, buf: &mut ReadBuf<'_>) {
-        // 1. buf.capacity > chunk ?
-        buf.put_slice(&self.0[0..buf.remaining()]);
     }
 }
 
@@ -76,7 +74,7 @@ impl<const L: usize> AsyncRead for Chunk<L> {
         ctx: &mut Context<'_>,
         buf: &mut ReadBuf<'_>,
     ) -> Poll<io::Result<()>> {
-        let read = self.read_with_buf(buf);
+        let read = self.read_to_buf(buf);
         tokio::pin!(read);
         read.as_mut().as_mut().poll(ctx);
         Poll::Ready(Ok(()))
