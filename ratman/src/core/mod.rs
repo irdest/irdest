@@ -15,21 +15,19 @@ mod journal;
 mod routes;
 mod switch;
 
-pub(crate) use drivers::GenericEndpoint;
-pub(crate) use journal::{Journal, JournalSender};
-
-pub(self) use drivers::DriverMap;
-pub(self) use routes::{EpTargetPair, RouteTable, RouteType};
-pub(self) use switch::Switch;
-
-use crate::dispatch::BlockCollector;
 use async_std::sync::Arc;
 use libratman::{
     netmod::{InMemoryEnvelope, Target},
     types::{Address, Message, RatmanError, Recipient, Result},
 };
 
-use self::dispatch::Dispatch;
+pub(crate) use crate::dispatch::BlockCollector;
+pub(crate) use dispatch::Dispatch;
+pub(crate) use drivers::DriverMap;
+pub(crate) use drivers::GenericEndpoint;
+pub(crate) use journal::{Journal, JournalSender};
+pub(crate) use routes::{EpTargetPair, RouteTable, RouteType};
+pub(crate) use switch::Switch;
 
 /// The Ratman routing core interface
 ///

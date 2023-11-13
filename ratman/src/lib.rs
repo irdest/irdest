@@ -29,6 +29,7 @@ mod context;
 mod core;
 mod crypto;
 mod dispatch;
+mod procedures;
 mod protocol;
 mod runtime;
 mod storage;

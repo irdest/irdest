@@ -15,8 +15,8 @@ You can unpack the bundle with `tar` either on the terminal, or via
 your graphical file browser.
 
 ```
-$ tar xf Downloads/ratman-bundle-x86_64.tar.gz
-$ cd Downloads/ratmand-bundle
+$ tar xf Downloads/irdest-bundle-x86_64-x.x.x.tar.gz
+$ cd Downloads/irdest-bundle-x.x.x/
 $ ls
 bin/  dist/  install*  man/  manual/  README.md
 ```

@@ -9,7 +9,7 @@ bundle-ratman:
     - build-ratman-tools-static
     - build-manual
   script:
-    - mkdir ratman-bundle-x86_64 && cd ratman-bundle-x86_64
+    - mkdir irdest-bundle-x86_64-$CI_COMMIT_TAG && cd irdest-bundle-x86_64-$CI_COMMIT_TAG
     - cp -rv ../dist .
     - cp -rv ../docs/man .
     - cp -rv ../result-ratmand/bin .
@@ -17,10 +17,10 @@ bundle-ratman:
     - cp -rv ../result-installer/bin/* .
     - cp -rv ../result-manual-user manual
     - cd ..
-    - tar cvf ratman-bundle-x86_64.tar.gz ratman-bundle-x86_64/
+    - tar cvf irdest-bundle-x86_64-$CI_COMMIT_TAG.tar.gz irdest-bundle-x86_64-$CI_COMMIT_TAG/
   artifacts:
     paths:
-      - ratman-bundle-x86_64.tar.gz
+      - ratman-bundle-x86_64-$CI_COMMIT_TAG.tar.gz
 
 bundle-ratman-aarch64:
   tags: [ irdest-nix ]

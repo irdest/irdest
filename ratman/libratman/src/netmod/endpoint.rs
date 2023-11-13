@@ -1,6 +1,9 @@
 //! Endpoint abstraction module
 
-use crate::{netmod::Target, Result};
+use crate::{
+    netmod::{CurrentStatus, Target},
+    Result,
+};
 use async_trait::async_trait;
 use std::sync::Arc;
 
@@ -22,6 +25,19 @@ use super::frame::InMemoryEnvelope;
 /// this interface is immutable by default.
 #[async_trait]
 pub trait Endpoint {
+    /// Return a string identifier for this netmodk instance
+    ///
+    /// The identifier logic MUST handle multi-instancing, if it
+    /// supports this.
+    fn identifier(&self) -> String {
+        "<unknown>".into()
+    }
+
+    /// Return a status digest for the current instance
+    fn status(&self) -> CurrentStatus {
+        CurrentStatus::Unknown
+    }
+
     /// Start a peering session with a remote address
     ///
     /// The formatting of this address is specific to the netmod
@@ -45,25 +61,31 @@ pub trait Endpoint {
 
     /// Return a maximum frame size in bytes
     ///
-    /// Despite the function name, **this is not a hint** and your
-    /// netmod driver should select the actual
+    /// Despite the function name, *this is not a hint* and your
+    /// netmod MAY reject frame envelopes that exceed the maximum
+    /// transfer size of the respective link.
+    ///
+    /// If your communication channel supports external slicing
+    /// mechanisms an implementation MAY also return 0, which will
+    /// disable block-sub-slicing, meaning that full 1K or 32K payload
+    /// frames will be dispatched directly.
     fn size_hint(&self) -> usize;
 
-    /// Dispatch a `Frame` across this link
+    /// Send a frame envelope to a target over this link
     ///
     /// Sending characteristics are entirely up to the implementation.
     /// As mentioned in the `size_hint()` documentation, this function
-    /// **must not** panic on a `Frame` for size reasons, instead it
-    /// should return `Error::FrameTooLarge`.
+    /// **must not** panic on a frame envelope for size reasons,
+    /// instead it should return `Error::FrameTooLarge`.
     ///
     /// The target ID is a way to instruct a netmod where to send a
     /// frame in a one-to-many mapping.  When implementing a
     /// one-to-one endpoint this ID can be ignored (set to 0).
     ///
     /// Optionally an exclusion target can be provided.  This is used
-    /// to prevent endless replication of flood messages.  When
-    /// implementing a one-to-one endpoint, the frame MUST be dropped
-    /// when exclude contains any value!
+    /// to prevent sending flood messages back to their original
+    /// recipients.  *When implementing a one-to-one endpoint*, the
+    /// frame MUST be dropped when exclude contains any value!
     async fn send(
         &self,
         envelope: InMemoryEnvelope,
@@ -73,9 +95,15 @@ pub trait Endpoint {
 
     /// Poll for the next available Frame from this interface
     ///
-    /// It's recommended to return transmission errors, even if there
-    /// are no ways to correct the situation from the router's POV,
-    /// simply to feed packet drop metrics.
+    /// The errors returned by this netmod can currently not be
+    /// returned to the sending application, but they can be logged
+    /// for statistics purposes.
+    ///
+    /// **Note**: the implementation of this future MUST be
+    /// cancellation safe!  Please consult the `tokio::select`
+    /// documentation on what exactly that means for your Netmod
+    /// implementation!  *Serious data loss* can occur if special care
+    /// is not taken!
     async fn next(&self) -> Result<(InMemoryEnvelope, Target)>;
 }
 
