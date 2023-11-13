@@ -106,7 +106,7 @@ impl<'r, T: 'r + AsyncRead + Unpin> AsyncVecReader<'r, T> {
 pub struct LengthReader<'r, const L: usize, T: 'r + AsyncRead + Unpin>(AsyncReader<'r, L, T>);
 
 impl<'r, const L: usize, T: 'r + AsyncRead + Unpin> LengthReader<'r, L, T> {
-    pub fn new(r: &mut T) -> Self {
+    pub fn new(r: &'r mut T) -> Self {
         Self(AsyncReader(Chunk::alloc(), r))
     }
 

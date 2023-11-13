@@ -37,3 +37,7 @@ pub use {
     netmod::NetmodError,
     types::{BlockError, EncodingError, NonfatalError, RatmanError, Result},
 };
+
+// Re-export tokio and futures crates to share async abstractions
+pub use futures;
+pub use tokio;

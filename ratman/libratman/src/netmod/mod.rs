@@ -36,7 +36,9 @@
 mod endpoint;
 mod error;
 mod frame;
+mod status;
 
 pub use endpoint::Endpoint;
 pub use error::NetmodError;
 pub use frame::{InMemoryEnvelope, Target};
+pub use status::CurrentStatus;
