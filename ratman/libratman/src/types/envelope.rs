@@ -1,48 +1,8 @@
-//! Networking frames
-
-use crate::types::{
-    frames::{AnnounceFrame, CarrierFrameHeader, FrameGenerator, FrameParser, OriginDataV1},
-    Address, EncodingError, Result,
+use crate::{
+    frame::carrier::{CarrierFrameHeader, FrameGenerator, FrameParser},
+    types::Address,
+    EncodingError, Result,
 };
-use std::fmt::{self, Display};
-
-/// Describes an endpoint's send target
-///
-/// This is different from a Recipient in that it doesn't encode
-/// information about a user on the global network.  It's values are
-/// used by one-to-many Endpoint implementors to disambiguate their
-/// own routing tables to Ratman without needing to share actual
-/// connection information.
-///
-/// If your endpoint doesn't implement a one-to-many link (i.e. if
-/// it's always one-to-one), just let this value to `Single(0)`
-/// (or `Target::default()`)
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Target {
-    /// Send message to all reachable endpoints
-    Flood,
-    /// Encodes a specific target ID
-    Single(u16),
-}
-
-impl Display for Target {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::Flood => format!("Flood"),
-                Self::Single(t) => format!("Peer({})", t),
-            }
-        )
-    }
-}
-
-impl Default for Target {
-    fn default() -> Self {
-        Self::Single(0)
-    }
-}
 
 /// Container for carrier frame metadata and a full message buffer
 #[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]

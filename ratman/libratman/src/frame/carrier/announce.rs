@@ -3,9 +3,8 @@ use super::{
     parse::{self, FrameParser, IResult},
 };
 use crate::{
-    client::TimePair,
-    types::{error::EncodingError, Address, Id, NonfatalError},
-    RatmanError, Result,
+    types::{Address, Id, TimePair},
+    EncodingError, NonfatalError, RatmanError, Result,
 };
 use byteorder::{BigEndian, ByteOrder};
 use chrono::{DateTime, Utc};

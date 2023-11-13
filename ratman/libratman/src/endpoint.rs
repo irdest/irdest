@@ -1,13 +1,11 @@
 //! Endpoint abstraction module
 
 use crate::{
-    netmod::{CurrentStatus, Target},
+    types::{CurrentStatus, EpTarget, InMemoryEnvelope},
     Result,
 };
 use async_trait::async_trait;
 use std::sync::Arc;
-
-use super::frame::InMemoryEnvelope;
 
 /// The main trait describing a Ratman networking interface
 ///
@@ -48,8 +46,8 @@ pub trait Endpoint {
     /// cryptographic IDs of nearby gateways.
     ///
     /// The identifier returned must be a unique peer identifier,
-    /// similar to the `Target` abstraction that is used by `send` and
-    /// `next`.  Currently this API doesn't consider stopping a
+    /// similar to the `EpTarget` abstraction that is used by `send`
+    /// and `next`.  Currently this API doesn't consider stopping a
     /// peering intent (i.e. even if a connection drops, the netmod
     /// should always attempt to re-establish the connection).  The
     /// returned peer identifier can be used in the future to
@@ -89,7 +87,7 @@ pub trait Endpoint {
     async fn send(
         &self,
         envelope: InMemoryEnvelope,
-        target: Target,
+        target: EpTarget,
         exclude: Option<u16>,
     ) -> Result<()>;
 
@@ -104,7 +102,7 @@ pub trait Endpoint {
     /// documentation on what exactly that means for your Netmod
     /// implementation!  *Serious data loss* can occur if special care
     /// is not taken!
-    async fn next(&self) -> Result<(InMemoryEnvelope, Target)>;
+    async fn next(&self) -> Result<(InMemoryEnvelope, EpTarget)>;
 }
 
 #[async_trait]
@@ -116,13 +114,13 @@ impl<T: Endpoint + Send + Sync> Endpoint for Arc<T> {
     async fn send(
         &self,
         envelope: InMemoryEnvelope,
-        target: Target,
+        target: EpTarget,
         exclude: Option<u16>,
     ) -> Result<()> {
         T::send(self, envelope, target, exclude).await
     }
 
-    async fn next(&self) -> Result<(InMemoryEnvelope, Target)> {
+    async fn next(&self) -> Result<(InMemoryEnvelope, EpTarget)> {
         T::next(self).await
     }
 }

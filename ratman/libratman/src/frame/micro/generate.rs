@@ -1,4 +1,4 @@
-use crate::{types::frames::generate::any_as_u8_slice, Result};
+use crate::{frame::carrier::generate::any_as_u8_slice, Result};
 use async_trait::async_trait;
 use nom::IResult;
 use tokio::io::AsyncRead;

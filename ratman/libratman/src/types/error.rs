@@ -4,24 +4,24 @@
 
 use crate::types::Address;
 use async_eris::BlockReference;
-use async_std::io;
-use tokio::time::error::Elapsed;
+use std::net::AddrParseError;
+use tokio::{io, time::error::Elapsed};
 
+/// An Irdest-wide Result capable of expressing many different states
 pub type Result<T> = std::result::Result<T, RatmanError>;
 
-/// A central error facade for Ratman
+/// A central error facade for Ratman and tools
 ///
-/// Sub-scopes are handled via their own error types that are then
-/// nested into this one.  Importantly, `Result` always refers to
-/// `Result<T, RatmanError>` to keep the hand-up chain of errors
-/// consistent.
+/// Every error must have a namespace.  When mapping an existing error
+/// type into RatmanError care should be taken to not overload a
+/// particular domain.  For example: having a single I/O error makes
+/// sense, instead of having.  However, consider giving it a secondary
+/// Error, to express the context that a particular "base error"
+/// originated from.
 ///
-/// When adding new category errors, make sure that the error message
-/// follows the same consistent pattern of printing to "a {whatever}
-/// error".  This allows for the error message to be chained in a
-/// meaningful way.
-// TODO(design): how to differentiate between errors that are fatal
-// and those that are not?
+/// The special `Nonfatal` type should be used for errors that don't
+/// impact the runtime of the Router.  These could be taken as
+/// "suboptimal event status messages".
 #[repr(C)]
 #[derive(Debug, thiserror::Error)]
 pub enum RatmanError {
@@ -37,17 +37,17 @@ pub enum RatmanError {
     #[error("a frame parsing error: {0}")]
     Encoding(#[from] self::EncodingError),
     #[error("microframe failed to decode: {0}")]
-    Microframe(#[from] crate::microframe::MicroframeError),
+    Microframe(#[from] self::MicroframeError),
     #[error("a json encoding error: {0}")]
     Json(#[from] serde_json::error::Error),
     #[cfg(feature = "client")]
     #[error("a client API error: {0}")]
-    ClientApi(#[from] crate::ClientError),
+    ClientApi(#[from] self::ClientError),
     #[cfg(feature = "netmod")]
     #[error("a netmod error: {0}")]
-    Netmod(#[from] crate::NetmodError),
+    Netmod(#[from] self::NetmodError),
     #[error("a block error: {0}")]
-    Block(#[from] crate::BlockError),
+    Block(#[from] self::BlockError),
     #[error("a scheduling error: {0}")]
     Schedule(#[from] self::ScheduleError),
     // #[cfg(all(feature = "daemon", target_family = "unix"))]
@@ -126,4 +126,60 @@ pub enum ScheduleError {
     Timeout(#[from] Elapsed),
     #[error("contention around resource {0} is leading to slowdown")]
     Contention(String),
+}
+
+/// Client API errors beetw Ratman and an application
+///
+/// The client API consists of an authentication handshake, message
+/// sending and receiving, and simple state management (for
+/// subscriptions, tokens, etc).
+///
+/// Importantly, more base-type errors (such as I/O and encoding) are
+/// handled by [RatmanError](crate::RatmanError) instead!
+#[derive(Debug, thiserror::Error)]
+pub enum ClientError {
+    #[error("failed to provide correct authentication in handshake")]
+    InvalidAuth,
+    #[error("connection was unexpectedly dropped")]
+    ConnectionLost,
+    #[error("operation not supported")]
+    NotSupported,
+    #[error("requested an unknown address")]
+    NoAddress,
+    #[error("address already exists in routing table")]
+    DuplicateAddress,
+}
+
+/// Any error that can occur when interacting with a netmod driver
+#[derive(Clone, Debug, thiserror::Error)]
+pub enum NetmodError {
+    #[error("the requested operation is not supported by the netmod")]
+    NotSupported,
+    #[error("frame is too large to send through this channel")]
+    FrameTooLarge,
+    #[error("peering connection was suddenly lost mid-transfer")]
+    ConnectionLost,
+    #[error("the provided peer '{}' was invalid!", 0)]
+    InvalidPeer(String),
+    /// An error type for a netmod that tries to bind any resource
+    #[error("failed to setup netmod bind: {}", 0)]
+    InvalidBind(String),
+}
+
+impl From<AddrParseError> for NetmodError {
+    fn from(err: AddrParseError) -> Self {
+        Self::InvalidBind(err.to_string())
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum MicroframeError {
+    #[error("invalid mode: (ns: {0}, op: {1})")]
+    InvalidMode(u8, u8),
+    #[error("failed to read a full microframe: timeout")]
+    ReadTimeout,
+    #[error("failed to read a valid cstring from input")]
+    InvalidString,
+    #[error("failed to parse type because of missing fields: {:?}", 0)]
+    MissingFields(&'static [&'static str]),
 }
