@@ -13,6 +13,7 @@ pub mod fork;
 pub(crate) mod chunk;
 pub(crate) mod pidfile;
 pub(crate) mod runtime_state;
+pub(crate) mod thread;
 pub(crate) mod transform;
 // pub(crate) mod upnp; // FIXME: this currently doesn't work
 

@@ -2,7 +2,6 @@ use std::ffi::CString;
 
 use crate::{
     microframe::{
-        generate::MicroFrameGenerator,
         parse::{cstring, maybe},
         MicroframeError,
     },

@@ -30,6 +30,7 @@ mod core;
 mod crypto;
 mod dispatch;
 mod protocol;
+mod runtime;
 mod storage;
 
 #[cfg(feature = "dashboard")]

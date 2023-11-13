@@ -25,7 +25,7 @@ mod timepair;
 
 pub use crate::client::ClientError;
 pub use chunk::*;
-pub use error::{BlockError, EncodingError, NonfatalError, RatmanError, Result};
+pub use error::*;
 pub use identifiers::{address::Address, id::Id, ID_LEN};
 pub use message::{ApiRecipient, Message};
 pub use recipient::Recipient;

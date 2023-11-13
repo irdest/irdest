@@ -47,6 +47,11 @@ pub fn maybe<const LEN: usize>(input: &[u8]) -> IResult<&[u8], Option<[u8; LEN]>
     }
 }
 
+pub fn take_u32(input: &[u8]) -> IResult<&[u8], u32> {
+    let (input, slice) = take(core::mem::size_of::<u32>())(input)?;
+    Ok((input, BigEndian::read_u32(slice)))
+}
+
 pub fn take_address(input: &[u8]) -> IResult<&[u8], Address> {
     let (input, slice) = take(32 as usize)(input)?;
     Ok((input, Address::from_bytes(slice)))
