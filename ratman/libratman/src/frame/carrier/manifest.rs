@@ -1,12 +1,9 @@
 use crate::{
-    types::{
-        error::EncodingError,
-        frames::{
-            generate::FrameGenerator,
-            parse::{self, FrameParser},
-        },
-        Id,
+    frame::carrier::{
+        generate::FrameGenerator,
+        parse::{self, FrameParser},
     },
+    types::{error::EncodingError, Id},
     Result,
 };
 use async_eris::ReadCapability;

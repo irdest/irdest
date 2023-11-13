@@ -18,24 +18,19 @@
 #[macro_use]
 extern crate tracing;
 
-pub mod microframe;
-
-#[cfg(feature = "client")]
-pub mod client;
-
-#[cfg(feature = "netmod")]
-pub mod netmod;
-
+pub mod api;
+pub mod chunk;
+pub mod endpoint;
+pub mod frame;
 pub mod rt;
 pub mod types;
 
 // Re-export existing errors at the root to make them more convenient
 // to access.  Importantly errors are name-spaced while results are
 // not.  A result MUST always be of type Result<T, RatmanError>.
-pub use {
-    client::ClientError,
-    netmod::NetmodError,
-    types::{BlockError, EncodingError, NonfatalError, RatmanError, Result},
+pub use types::error::{
+    BlockError, ClientError, EncodingError, MicroframeError, NetmodError, NonfatalError,
+    RatmanError, Result, ScheduleError,
 };
 
 // Re-export tokio and futures crates to share async abstractions

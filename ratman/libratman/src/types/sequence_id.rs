@@ -1,6 +1,7 @@
-use crate::types::{
-    frames::{parse, FrameGenerator, FrameParser},
-    Id, Result,
+use crate::{
+    frame::carrier::{parse, FrameGenerator, FrameParser},
+    types::Id,
+    Result,
 };
 use nom::IResult;
 use serde::{Deserialize, Serialize};

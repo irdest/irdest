@@ -1,7 +1,7 @@
 use crate::{
-    client::{Address, Id},
-    types::{error::EncodingError, frames::CarrierFrameHeader, Recipient, SequenceIdV1},
-    RatmanError, Result,
+    frame::carrier::CarrierFrameHeader,
+    types::{Address, Id, Recipient, SequenceIdV1},
+    EncodingError, RatmanError, Result,
 };
 use byteorder::{BigEndian, ByteOrder};
 use chrono::{DateTime, Utc};

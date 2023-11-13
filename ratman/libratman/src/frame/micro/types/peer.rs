@@ -1,6 +1,6 @@
 use crate::{
-    microframe::{parse::*, types::TrustFilter},
-    types::frames::{generate, FrameGenerator, FrameParser},
+    frame::carrier::{generate, FrameGenerator, FrameParser},
+    frame::micro::{parse::*, types::TrustFilter},
     Result,
 };
 use nom::{IResult, Parser};

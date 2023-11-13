@@ -1,14 +1,9 @@
 use crate::{
-    client::Address,
-    types::{
-        frames::{generate, parse, FrameGenerator, FrameParser},
-        Id, Recipient, SequenceIdV1,
-    },
+    frame::carrier::{generate, modes, parse, FrameGenerator, FrameParser},
+    types::{Address, Id, Recipient, SequenceIdV1},
     EncodingError, Result,
 };
 use nom::IResult;
-
-use super::modes;
 
 //////
 ///////////   TOP LEVEL SECTION

@@ -3,8 +3,8 @@
 use std::ffi::CString;
 
 use crate::{
-    types::{error::EncodingError, Address, Id, SequenceIdV1},
-    RatmanError, Result,
+    types::{Address, Id, SequenceIdV1},
+    EncodingError, RatmanError, Result,
 };
 use byteorder::{BigEndian, ByteOrder};
 use chrono::{DateTime, TimeZone, Utc};

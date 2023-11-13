@@ -1,12 +1,11 @@
+use crate::Result;
+use bytes::{buf::BufMut, Buf};
 use std::{
     future::Future,
     io::BufReader,
     pin::Pin,
     task::{Context, Poll},
 };
-
-use crate::Result;
-use bytes::{buf::BufMut, Buf};
 use tokio::io::{self, AsyncRead, AsyncReadExt, ReadBuf};
 
 mod iter;

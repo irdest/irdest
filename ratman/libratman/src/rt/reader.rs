@@ -1,4 +1,4 @@
-use crate::{types::Chunk, Result};
+use crate::{chunk::Chunk, Result};
 use byteorder::{BigEndian, ByteOrder};
 use std::{
     future::Future,

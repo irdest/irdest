@@ -5,14 +5,11 @@ mod generate;
 pub mod parse;
 
 pub mod types;
-pub use error::Error as MicroframeError;
 use tokio::io::AsyncRead;
 
 use crate::{
-    types::{
-        frames::{parse as fparse, FrameGenerator, FrameParser},
-        Id,
-    },
+    frame::carrier::{parse as fparse, FrameGenerator, FrameParser},
+    types::Id,
     Result,
 };
 use nom::IResult;

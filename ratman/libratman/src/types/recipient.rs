@@ -1,8 +1,6 @@
 use crate::{
-    types::{
-        frames::{take_address, FrameGenerator, FrameParser},
-        Address,
-    },
+    frame::carrier::{take_address, FrameGenerator, FrameParser},
+    types::Address,
     Result,
 };
 use nom::{bytes::complete::take, IResult};

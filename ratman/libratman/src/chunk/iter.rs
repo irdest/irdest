@@ -1,4 +1,4 @@
-use crate::{rt::size_commonbuf_t, types::chunk::Chunk, Result};
+use crate::{chunk::Chunk, rt::size_commonbuf_t, Result};
 use std::{
     collections::VecDeque,
     future::Future,

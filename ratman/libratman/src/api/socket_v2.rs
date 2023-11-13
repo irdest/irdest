@@ -1,17 +1,15 @@
 use crate::{
-    microframe::{client_modes::*, MicroframeHeader},
+    chunk::Chunk,
+    frame::carrier::{
+        parse::{self, take_u16_slice, FrameParser},
+        FrameGenerator,
+    },
+    frame::micro::{client_modes::*, MicroframeHeader},
     rt::{
         reader::{AsyncReader, AsyncVecReader, LengthReader},
         writer::AsyncWriter,
     },
-    types::{
-        frames::{
-            parse::{self, take_u16_slice, FrameParser},
-            FrameGenerator,
-        },
-        Chunk, ScheduleError,
-    },
-    EncodingError, RatmanError, Result,
+    EncodingError, RatmanError, Result, ScheduleError,
 };
 use futures::TryFutureExt;
 use std::time::Duration;
