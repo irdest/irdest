@@ -10,8 +10,8 @@
 //! instead the core has been split into several parts.
 
 mod dispatch;
-mod drivers;
 mod journal;
+mod links;
 mod routes;
 mod switch;
 
@@ -23,9 +23,8 @@ use libratman::{
 
 pub(crate) use crate::dispatch::BlockCollector;
 pub(crate) use dispatch::Dispatch;
-pub(crate) use drivers::DriverMap;
-pub(crate) use drivers::GenericEndpoint;
 pub(crate) use journal::{Journal, JournalSender};
+pub(crate) use links::{LinksMap, GenericEndpoint};
 pub(crate) use routes::{EpTargetPair, RouteTable, RouteType};
 pub(crate) use switch::Switch;
 
@@ -41,153 +40,121 @@ pub(crate) use switch::Switch;
 /// efficient access to this in-memory state via the `Core` API
 /// facade.
 pub(crate) struct Core {
-    pub(crate) collector: Arc<BlockCollector>,
-    pub(crate) dispatch: Arc<Dispatch>,
-    pub(crate) drivers: Arc<DriverMap>,
-    pub(crate) journal: Arc<Journal>,
-    pub(crate) routes: Arc<RouteTable>,
     pub(crate) switch: Arc<Switch>,
 }
 
-impl Core {
-    /// Initialises, but doesn't run the routing core
-    pub(crate) fn init() -> Self {
-        let drivers = DriverMap::new();
-        let routes = RouteTable::new();
-        let journal = Journal::new();
+/// Execute the Ratman router core as an async task
+pub fn exec_core_loops() -> (
+    Arc<BlockCollector>,
+    Arc<LinksMap>,
+    Arc<Journal>,
+    Arc<RouteTable>,
+) {
+    let links = LinksMap::new();
+    let routes = RouteTable::new();
+    let journal = Journal::new();
 
-        let (jtx, jrx) = async_std::channel::bounded(16);
-        let collector = BlockCollector::new(jtx);
+    let (jtx, jrx) = async_std::channel::bounded(16);
+    let collector = BlockCollector::new(jtx);
 
-        let dispatch = Dispatch::new(
-            Arc::clone(&routes),
-            Arc::clone(&drivers),
-            Arc::clone(&collector),
-        );
-        let switch = Switch::new(
-            Arc::clone(&routes),
-            Arc::clone(&journal),
-            Arc::clone(&collector),
-            Arc::clone(&drivers),
-            Arc::clone(&dispatch),
-        );
+    // Dispatch the journal
+    async_std::task::spawn(Arc::clone(&journal).run_block_acceptor(jrx));
+    async_std::task::spawn(Arc::clone(&journal).run_message_assembler());
 
-        // Dispatch the runners
-        Arc::clone(&switch).run();
-        async_std::task::spawn(Arc::clone(&journal).run_block_acceptor(jrx));
-        async_std::task::spawn(Arc::clone(&journal).run_message_assembler());
-
-        Self {
-            collector,
-            dispatch,
-            drivers,
-            journal,
-            routes,
-            switch,
-        }
-    }
-
-    /// Register metrics with a Prometheus registry.
-    #[cfg(feature = "dashboard")]
-    pub fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
-        self.routes.register_metrics(registry);
-        self.switch.register_metrics(registry);
-    }
-
-    /// Check if an Id is present in the routing table
-    pub(crate) async fn known(&self, id: Address, local: bool) -> Result<()> {
-        if local {
-            self.routes.local(id).await
-        } else {
-            self.routes
-                .resolve(id)
-                .await
-                .map_or(Err(RatmanError::NoSuchAddress(id)), |_| Ok(()))
-        }
-    }
-
-    /// Returns users that were newly discovered in the network
-    pub(crate) async fn discover(&self) -> Address {
-        self.routes.discover().await
-    }
-
-    pub(crate) async fn next(&self) -> Message {
-        match self.journal.next_message().await {
-            Some(m) => m,
-            // fixme: handle this error a bit more graciously.  we may
-            // be able to restart the journal if it has crashed, and
-            // we should definitely check if the router _should_ even
-            // still be running and if this error is entirely
-            // expected.
-            None => panic!("Message queue ran to its end, but the router is still running ???"),
-        }
-    }
-
-    /// Insert a new endpoint
-    pub(crate) async fn add_ep(&self, name: String, ep: Arc<GenericEndpoint>) -> usize {
-        let id = self.drivers.add(name, ep).await;
-        self.switch.add(id).await;
-        id
-    }
-
-    /// Get an endpoint back from the driver set via it's ID
-    pub(crate) async fn get_ep(&self, id: usize) -> (String, Arc<GenericEndpoint>) {
-        self.drivers.get(id).await
-    }
-
-    /// Remove an endpoint
-    pub(crate) async fn rm_ep(&self, id: usize) {
-        self.drivers.remove(id).await;
-    }
-
-    /// Add a local address to the routing table
-    pub(crate) async fn add_local_address(&self, id: Address) -> Result<()> {
-        self.routes.add_local(id).await
-    }
-
-    /// Remove a local address from the routing table
-    pub(crate) async fn remove_local_address(&self, id: Address) -> Result<()> {
-        self.routes.delete(id).await
-    }
-
-    // fixme: this is basically just moving the hard-coded value somewhere else
-    pub(crate) fn get_route_mtu(&self, _recipient: Option<Recipient>) -> u16 {
-        1200
-    }
-
-    /// Return all known addresses.  Most likely this function is less
-    /// useful than either [`local_addresses`](Self::local_addresses)
-    /// or [`remote_addresses`](Self::remote_addresses).
-    pub(crate) async fn all_known_addresses(&self) -> Vec<(Address, bool)> {
-        self.routes
-            .all()
-            .await
-            .into_iter()
-            .map(|(addr, tt)| (addr, tt == RouteType::Local))
-            .collect()
-    }
-
-    pub(crate) async fn local_addresses(&self) -> Vec<Address> {
-        self.routes
-            .all()
-            .await
-            .into_iter()
-            .filter_map(|(addr, tt)| match tt {
-                RouteType::Local => Some(addr),
-                _ => None,
-            })
-            .collect()
-    }
-
-    pub(crate) async fn remote_addresses(&self) -> Vec<Address> {
-        self.routes
-            .all()
-            .await
-            .into_iter()
-            .filter_map(|(addr, tt)| match tt {
-                RouteType::Remote(_) => Some(addr),
-                _ => None,
-            })
-            .collect()
-    }
+    (collector, links, journal, routes)
 }
+
+// impl Core {
+
+// /// Register metrics with a Prometheus registry.
+// #[cfg(feature = "dashboard")]
+// pub fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {
+//     self.routes.register_metrics(registry);
+//     self.switch.register_metrics(registry);
+// }
+
+// /// Returns users that were newly discovered in the network
+// pub(crate) async fn discover(&self) -> Address {
+//     self.routes.discover().await
+// }
+
+// pub(crate) async fn next(&self) -> Message {
+//     match self.journal.next_message().await {
+//         Some(m) => m,
+//         // fixme: handle this error a bit more graciously.  we may
+//         // be able to restart the journal if it has crashed, and
+//         // we should definitely check if the router _should_ even
+//         // still be running and if this error is entirely
+//         // expected.
+//         None => panic!("Message queue ran to its end, but the router is still running ???"),
+//     }
+// }
+
+// /// Insert a new endpoint
+// pub(crate) async fn add_ep(&self, name: String, ep: Arc<GenericEndpoint>) -> usize {
+//     let id = self.drivers.add(name, ep).await;
+//     self.switch.add(id).await;
+//     id
+// }
+
+// /// Get an endpoint back from the driver set via it's ID
+// pub(crate) async fn get_ep(&self, id: usize) -> (String, Arc<GenericEndpoint>) {
+//     self.drivers.get(id).await
+// }
+
+// /// Remove an endpoint
+// pub(crate) async fn rm_ep(&self, id: usize) {
+//     self.drivers.remove(id).await;
+// }
+
+// /// Add a local address to the routing table
+// pub(crate) async fn add_local_address(&self, id: Address) -> Result<()> {
+//     self.routes.add_local(id).await
+// }
+
+// /// Remove a local address from the routing table
+// pub(crate) async fn remove_local_address(&self, id: Address) -> Result<()> {
+//     self.routes.delete(id).await
+// }
+
+// // fixme: this is basically just moving the hard-coded value somewhere else
+// pub(crate) fn get_route_mtu(&self, _recipient: Option<Recipient>) -> u16 {
+//     1200
+// }
+
+//     /// Return all known addresses.  Most likely this function is less
+//     /// useful than either [`local_addresses`](Self::local_addresses)
+//     /// or [`remote_addresses`](Self::remote_addresses).
+//     pub(crate) async fn all_known_addresses(&self) -> Vec<(Address, bool)> {
+//         self.routes
+//             .all()
+//             .await
+//             .into_iter()
+//             .map(|(addr, tt)| (addr, tt == RouteType::Local))
+//             .collect()
+//     }
+
+//     pub(crate) async fn local_addresses(&self) -> Vec<Address> {
+//         self.routes
+//             .all()
+//             .await
+//             .into_iter()
+//             .filter_map(|(addr, tt)| match tt {
+//                 RouteType::Local => Some(addr),
+//                 _ => None,
+//             })
+//             .collect()
+//     }
+
+//     pub(crate) async fn remote_addresses(&self) -> Vec<Address> {
+//         self.routes
+//             .all()
+//             .await
+//             .into_iter()
+//             .filter_map(|(addr, tt)| match tt {
+//                 RouteType::Remote(_) => Some(addr),
+//                 _ => None,
+//             })
+//             .collect()
+//     }
+// }

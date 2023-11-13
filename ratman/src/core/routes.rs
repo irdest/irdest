@@ -18,22 +18,11 @@ use async_std::{
 };
 use std::collections::BTreeMap;
 
-/// A netmod endpoint ID and an endpoint target ID
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) struct EpTargetPair(pub(crate) u8, pub(crate) Target);
-
-/// Describes the reachability of a route
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) enum RouteType {
-    Remote(EpTargetPair),
-    Local,
-}
-
-/// An ephemeral routing table
+/// Main Ratman routing table
 ///
-/// It only captures the current state of best routes and has no
-/// persistence relationships.  It can update entries for topology
-/// changes, but these are not carried between sessions.
+/// It keeps track of available addresses and their types (i.e. remote
+/// or local, and an address key or a namespace key).  New addresses
+/// can be polled via the `new` announce channel.
 pub(crate) struct RouteTable {
     routes: Arc<Mutex<BTreeMap<Address, RouteType>>>,
     new: IoPair<Address>,
@@ -50,7 +39,44 @@ impl RouteTable {
             metrics: metrics::RouteTableMetrics::default(),
         })
     }
+}
 
+/// Query the routing table on whether it knows a particular address
+pub(crate) async fn query_known(table: &Arc<RouteTable>, addr: Address, local: bool) -> Result<()> {
+    if local {
+        table.local(addr).await
+    } else {
+        table
+            .resolve(addr)
+            .await
+            .map_or(Err(RatmanError::NoSuchAddress(addr)), |_| Ok(()))
+    }
+}
+
+pub(crate) async fn exec_route_table(tabel: &Arc<RouteTable>) {
+    // Do route things ??
+}
+
+/////////////////////////////////// SNIP ///////////////////////////////////
+
+/// A netmod endpoint ID and an endpoint target ID
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) struct EpTargetPair(pub(crate) u8, pub(crate) Target);
+
+/// Describes the reachability of a route
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) enum RouteType {
+    Remote(EpTargetPair),
+    Local,
+}
+
+/// An ephemeral routing table
+///
+/// It only captures the current state of best routes and has no
+/// persistence relationships.  It can update entries for topology
+/// changes, but these are not carried between sessions.
+
+impl RouteTable {
     /// Register metrics with a Prometheus registry.
     #[cfg(feature = "dashboard")]
     pub(crate) fn register_metrics(&self, registry: &mut prometheus_client::registry::Registry) {

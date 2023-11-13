@@ -19,6 +19,8 @@ pub const CHUNK_8M: usize = 1024 * 1024  * 8 /* MB */;
 pub const CHUNK_64M: usize = 1024 * 1024  * 64 /* MB */;
 pub const CHUNK_512M: usize = 1024 * 1024  * 512 /* MB */;
 
+pub use self::iter::ChunkIter;
+
 /// A const sized chunk of data and its "last position" marker
 ///
 /// "Last position" is guaranteed to be less or equal to `L`

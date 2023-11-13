@@ -2,22 +2,18 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use std::net::SocketAddr;
-
+// Project internal imports
 use crate::{
     api::{self, ConnectionManager},
     config::{
         helpers, netmods::initialise_netmods, peers::PeeringBuilder, ConfigTree, CFG_RATMAND,
     },
-    core::Core,
+    core::{Core, Journal, LinksMap, RouteTable},
     crypto::Keystore,
-    dispatch::{BlockSlicer, StreamSlicer},
+    dispatch::{BlockCollector, BlockSlicer, StreamSlicer},
     protocol::Protocol,
     util::{self, codes, runtime_state::RuntimeState, setup_logging, Os, StateDirectoryLock},
 };
-use async_eris::{BlockSize, ReadCapability};
-use async_std::{sync::Arc, task::block_on};
-use atomptr::AtomPtr;
 use libratman::{
     netmod::InMemoryEnvelope,
     types::{
@@ -30,6 +26,12 @@ use libratman::{
     Result,
 };
 
+// External imports
+use async_eris::{BlockSize, ReadCapability};
+use async_std::{sync::Arc, task::block_on};
+use atomptr::AtomPtr;
+use std::net::SocketAddr;
+
 /// Top-level Ratman router state handle
 ///
 /// This type is responsible for starting and owning various types
@@ -39,9 +41,16 @@ use libratman::{
 pub struct RatmanContext {
     /// Keep a version of the launch configuration around
     pub(crate) config: ConfigTree,
-    /// Abstraction over the internal routing logic
-    pub(crate) core: Arc<Core>,
-    /// A protocol state machine
+    /// Responsible for collecting individual frames back into blocks
+    pub(crate) collector: Arc<BlockCollector>,
+    /// Runtime management of connected network drivers
+    pub(crate) links: Arc<LinksMap>,
+    /// Keeps track of undeliverable blocks, frames, incomplete
+    /// messages, message IDs and other network activities.
+    pub(crate) journal: Arc<Journal>,
+    /// Current routing table state and query interface for resolution
+    pub(crate) routes: Arc<RouteTable>,
+    /// Protocol state machines
     pub(crate) protocol: Arc<Protocol>,
     /// Cryptographic store for local address keys
     pub(crate) keys: Arc<Keystore>,
@@ -63,13 +72,16 @@ impl RatmanContext {
     pub(crate) fn new_in_memory(config: ConfigTree) -> Arc<Self> {
         let runtime_state = RuntimeState::start_initialising();
         let protocol = Protocol::new();
-        let core = Arc::new(Core::init());
+        let (collector, links, journal, routes) = crate::core::exec_core_loops();
         let keys = Arc::new(Keystore::new());
         let clients = Arc::new(ConnectionManager::new());
 
         Arc::new(Self {
             config,
-            core,
+            collector,
+            links,
+            journal,
+            routes,
             protocol,
             keys,
             clients,
@@ -144,7 +156,8 @@ impl RatmanContext {
                 // dissolve both and add everything to the routing
                 // core.
                 for (name, ep) in peer_builder.consume() {
-                    let _ep_id = block_on(this.core.add_ep(name, ep));
+                    let _ep_id = block_on(this.links.add(name, ep));
+                    // fixme: integrate this with spawn plans, etc etc
                 }
             }
 
@@ -176,7 +189,7 @@ impl RatmanContext {
                 .unwrap_or_else(|| "localhost:8090".to_owned());
 
             let mut registry = prometheus_client::registry::Registry::default();
-            this.core.register_metrics(&mut registry);
+            // this.core.register_metrics(&mut registry);
             this.protocol.register_metrics(&mut registry);
 
             if let Err(e) = block_on(crate::web::start(this.clone(), registry, dashboard_bind)) {

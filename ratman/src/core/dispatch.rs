@@ -6,7 +6,7 @@
 
 //! Asynchronous Ratman routing core
 
-use crate::core::{BlockCollector, DriverMap, EpTargetPair, RouteTable};
+use crate::core::{BlockCollector, LinksMap, EpTargetPair, RouteTable};
 use async_std::{sync::Arc, task};
 use libratman::{
     netmod::{InMemoryEnvelope, Target},
@@ -16,7 +16,7 @@ use libratman::{
 
 pub(crate) struct Dispatch {
     routes: Arc<RouteTable>,
-    drivers: Arc<DriverMap>,
+    drivers: Arc<LinksMap>,
     #[cfg(feature = "dashboard")]
     metrics: Arc<metrics::Metrics>,
 }
@@ -25,7 +25,7 @@ impl Dispatch {
     /// Create a new frame dispatcher
     pub(crate) fn new(
         routes: Arc<RouteTable>,
-        drivers: Arc<DriverMap>,
+        drivers: Arc<LinksMap>,
         collector: Arc<BlockCollector>,
     ) -> Arc<Self> {
         Arc::new(Self {

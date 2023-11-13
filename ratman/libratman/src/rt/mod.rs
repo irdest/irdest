@@ -21,6 +21,18 @@ use tokio::{
 pub mod reader;
 pub mod writer;
 
+/// An arbitrary buffer scheme size called "commonbuf"
+///
+/// Standardises the size of channel buffers based on a common scheme
+/// of sub-diving chunk/ block sizes.  This provides a unified
+/// mechanism to limit memory size.
+/// 
+/// Completely arbitrarily: 8MB divided by the size of a chunk, so 1M
+/// chunk => 8 garbage chunks.  1K chunk => 8192 garbage chunks.
+pub const fn size_commonbuf_t<const T: usize>() -> usize {
+    (1024 * 1024 * 8) / T
+}
+
 /// Encapsulates a single threaded async system
 pub struct AsyncSystem {
     label: String,

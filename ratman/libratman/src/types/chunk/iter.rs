@@ -1,4 +1,4 @@
-use crate::{types::chunk::Chunk, Result};
+use crate::{rt::size_commonbuf_t, types::chunk::Chunk, Result};
 use std::{
     collections::VecDeque,
     future::Future,
@@ -11,13 +11,7 @@ use tokio::{
     io::{self, AsyncBufReadExt, AsyncRead, AsyncReadExt, BufReader, ReadBuf},
     sync::mpsc::{channel, Receiver, Sender},
 };
-
-/// Completely arbitrarily: 8MB divided by the size of a chunk, so 1M
-/// chunk => 8 garbage chunks.  1K chunk => 8192 garbage chunks.
-// todo: make this value configurable !!
-const fn max_garbage<const L: usize>() -> usize {
-    (1024 * 1024 * 8) / L
-}
+use tokio_util::compat::TokioAsyncReadCompatExt;
 
 /// Reads chunks from a channel and
 pub struct ChunkIter<const L: usize> {
@@ -33,7 +27,7 @@ pub struct ChunkIter<const L: usize> {
 
 impl<const L: usize> ChunkIter<L> {
     pub fn new() -> (Sender<Chunk<L>>, ChunkIter<L>) {
-        let (tx, rx) = channel(32);
+        let (tx, rx) = channel(size_commonbuf_t::<L>());
 
         (
             tx,
@@ -46,7 +40,7 @@ impl<const L: usize> ChunkIter<L> {
         )
     }
 
-    pub async fn next_chunk(&mut self) {
+    async fn next_chunk(&mut self) {
         let current = self.source.recv().await;
         self.current = current;
 
@@ -56,7 +50,7 @@ impl<const L: usize> ChunkIter<L> {
         }
     }
 
-    pub async fn read_current_chunk(&mut self, buf: &mut ReadBuf<'_>) {
+    async fn read_current_chunk(&mut self, buf: &mut ReadBuf<'_>) {
         let current = self.current.as_mut().unwrap();
         current.read_to_buf(buf).await;
     }
@@ -99,7 +93,6 @@ impl<const L: usize> AsyncRead for ChunkIter<L> {
                     // _stream_ there will always be more to read.
                     ctx.waker().wake_by_ref();
                     Poll::Pending
-                    
                 }
                 // If we read to the end of the chunk, we garbage it
                 // to trigger a chunk reload in the next iteration
@@ -119,7 +112,7 @@ impl<const L: usize> AsyncRead for ChunkIter<L> {
                 }
 
                 // Check the allowed garbage based on the chunk size
-                let max_garbage = max_garbage::<L>();
+                let max_garbage = size_commonbuf_t::<L>();
 
                 // Determine the start and end positions that we want
                 // to delete (maybe this is a bit overkill? Also it

@@ -5,7 +5,7 @@
 
 use crate::{
     context::RatmanContext,
-    core::{DriverMap, Journal, RouteTable, RouteType},
+    core::{LinksMap, Journal, RouteTable, RouteType},
     dispatch::BlockCollector,
     util::IoPair,
 };
@@ -32,7 +32,7 @@ pub(crate) struct Switch {
     routes: Arc<RouteTable>,
     journal: Arc<Journal>,
     collector: Arc<BlockCollector>,
-    drivers: Arc<DriverMap>,
+    drivers: Arc<LinksMap>,
     dispatch: Arc<Dispatch>,
 
     /// Control channel to start new endpoints
@@ -48,7 +48,7 @@ impl Switch {
         routes: Arc<RouteTable>,
         journal: Arc<Journal>,
         collector: Arc<BlockCollector>,
-        drivers: Arc<DriverMap>,
+        drivers: Arc<LinksMap>,
         dispatch: Arc<Dispatch>,
     ) -> Arc<Self> {
         Arc::new(Self {

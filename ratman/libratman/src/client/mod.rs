@@ -41,8 +41,8 @@ pub use crate::types::{
 
 pub use error::Error as ClientError;
 
-use async_std::{
-    channel::{unbounded, Receiver},
+use tokio::{
+    sync::mpsc::{unbounded_channel, Receiver},
     task,
 };
 
@@ -90,8 +90,8 @@ impl RatmanIpc {
 
         // TODO: spawn receive daemon here
         let addr = socket.addr;
-        let (tx, recv) = unbounded();
-        let (dtx, disc) = unbounded();
+        let (tx, recv) = unbounded_channel();
+        let (dtx, disc) = unbounded_channel();
         task::spawn(socket::run_receive(socket.clone(), tx, dtx));
 
         Ok(Self {
@@ -107,8 +107,8 @@ impl RatmanIpc {
     pub async fn anonymous(socket_addr: &str) -> Result<Self> {
         let socket = IpcSocket::anonymous(socket_addr).await?;
         let addr = socket.addr;
-        let (_, recv) = unbounded(); // Never used
-        let (_, disc) = unbounded(); // Never used
+        let (_, recv) = unbounded_channel(); // Never used
+        let (_, disc) = unbounded_channel(); // Never used
         Ok(Self {
             socket,
             addr,

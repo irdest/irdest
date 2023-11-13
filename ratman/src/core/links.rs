@@ -25,12 +25,12 @@ type EpVec = Vec<EpWrap>;
 /// possible to have the same endpoint in the map multiple times, with
 /// unique IDs.
 #[derive(Default)]
-pub(crate) struct DriverMap {
+pub(crate) struct LinksMap {
     curr: AtomicUsize,
     map: RwLock<EpVec>,
 }
 
-impl DriverMap {
+impl LinksMap {
     pub(crate) fn new() -> Arc<Self> {
         Arc::new(Self::default())
     }
