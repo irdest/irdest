@@ -1,5 +1,5 @@
 use crate::{
-    core::{Dispatch, DriverMap, GenericEndpoint, Journal, RouteTable, RouteType},
+    core::{Dispatch, LinksMap, GenericEndpoint, Journal, RouteTable, RouteType},
     dispatch::BlockCollector,
     util::IoPair,
 };

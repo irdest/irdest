@@ -39,13 +39,13 @@ impl Keypair {
 ///
 /// Returns the encrypted chunk as well as the selected nonce, which
 /// must be provided for decoding
-pub fn encrypt_chunk(shared_key: &SharedSecret, mut chunk: Vec<u8>) -> (Vec<u8>, [u8; 12]) {
+pub fn encrypt_chunk<const L: usize>(shared_key: &SharedSecret, chunk: &mut [u8; L]) -> [u8; 12] {
     let mut nonce = [0; 12];
     thread_rng().fill_bytes(&mut nonce);
 
     let mut cipher = ChaCha20::new(&(*shared_key.as_bytes()).into(), &nonce.into());
-    cipher.apply_keystream(&mut chunk);
-    (chunk, nonce)
+    cipher.apply_keystream(chunk.as_mut_slice());
+    nonce
 }
 
 /// Decrypt a data chunk with a shared secret and nonce

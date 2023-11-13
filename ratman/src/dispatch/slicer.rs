@@ -45,7 +45,7 @@ impl StreamSlicer {
         // of the SequenceId to make re-association on the other side
         // possible.
         for (block_ref, block_data) in input {
-            let max_payload_size = ctx.core.get_route_mtu(Some(recipient)) - header_size as u16;
+            let max_payload_size = 999; // fixme /o\
             let max_in_sequence = block_data.as_slice().len() / max_payload_size as usize;
             let block_ref = Id::from_bytes(block_ref.as_slice());
 
@@ -98,7 +98,7 @@ pub(crate) struct BlockSlicer;
 
 impl BlockSlicer {
     pub(crate) async fn slice(
-        ctx: &RatmanContext,
+        ctx: &Arc<RatmanContext>,
         msg: &mut Message,
         block_size: BlockSize,
     ) -> Result<(ReadCapability, MemoryStorage)> {

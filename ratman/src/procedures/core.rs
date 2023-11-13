@@ -1,5 +1,5 @@
 use crate::{
-    core::{Dispatch, DriverMap, Journal, RouteTable, Switch},
+    core::{Dispatch, LinksMap, Journal, RouteTable, Switch},
     dispatch::BlockCollector,
 };
 use std::sync::Arc;
@@ -11,13 +11,13 @@ use std::sync::Arc;
 pub(crate) struct Core {
     pub(crate) collector: Arc<BlockCollector>,
     pub(crate) dispatch: Arc<Dispatch>,
-    pub(crate) drivers: Arc<DriverMap>,
+    pub(crate) drivers: Arc<LinksMap>,
     pub(crate) journal: Arc<Journal>,
     pub(crate) routes: Arc<RouteTable>,
 }
 
 pub(crate) async fn start_core() -> Core {
-    let drivers = DriverMap::new();
+    let drivers = LinksMap::new();
     let routes = RouteTable::new();
     let journal = Journal::new();
 
