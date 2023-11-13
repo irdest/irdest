@@ -9,8 +9,6 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 /// A dynamicly allocated, generic driver in memory
 pub(crate) type GenericEndpoint = dyn Endpoint + 'static + Send + Sync;
 
-type EpVec = Vec<EpWrap>;
-
 /// Wrap around endpoints that can be removed
 ///
 /// This way, when remove an interface, the ID's of other interfaces
@@ -19,6 +17,7 @@ enum EpWrap {
     Used(String, Arc<GenericEndpoint>),
     Void,
 }
+type EpVec = Vec<EpWrap>;
 
 /// A map of available endpoint drivers
 ///

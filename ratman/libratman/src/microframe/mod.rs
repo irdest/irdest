@@ -10,7 +10,7 @@ use tokio::io::AsyncRead;
 
 use crate::{
     types::{
-        frames::{FrameGenerator, FrameParser},
+        frames::{parse as fparse, FrameGenerator, FrameParser},
         Id,
     },
     Result,
@@ -72,9 +72,9 @@ pub mod client_modes {
 /// Metadata header for a Microframe
 #[repr(C)]
 pub struct MicroframeHeader {
-    modes: u16,
-    metadata: Option<Id>,
-    payload_size: u32,
+    pub modes: u16,
+    pub metadata: Option<Id>,
+    pub payload_size: u32,
 }
 
 impl MicroframeHeader {
@@ -83,8 +83,30 @@ impl MicroframeHeader {
     }
 }
 
-// impl FrameParser for MicroframeHeader {
-//     type Output = Result<Self>;
+impl FrameGenerator for MicroframeHeader {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        self.modes.generate(buf)?;
+        self.metadata.generate(buf)?;
+        self.payload_size.generate(buf)?;
+        Ok(())
+    }
+}
 
-//     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {}
-// }
+impl FrameParser for MicroframeHeader {
+    type Output = Result<Self>;
+
+    fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
+        let (input, modes) = fparse::take_u16(input)?;
+        let (input, metadata) = fparse::maybe_id(input)?;
+        let (input, payload_size) = fparse::take_u32(input)?;
+
+        Ok((
+            input,
+            Ok(MicroframeHeader {
+                modes,
+                metadata,
+                payload_size,
+            }),
+        ))
+    }
+}

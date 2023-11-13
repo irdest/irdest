@@ -5,6 +5,7 @@
 use crate::types::Address;
 use async_eris::BlockReference;
 use async_std::io;
+use tokio::time::error::Elapsed;
 
 pub type Result<T> = std::result::Result<T, RatmanError>;
 
@@ -47,6 +48,8 @@ pub enum RatmanError {
     Netmod(#[from] crate::NetmodError),
     #[error("a block error: {0}")]
     Block(#[from] crate::BlockError),
+    #[error("a scheduling error: {0}")]
+    Schedule(#[from] self::ScheduleError),
     // #[cfg(all(feature = "daemon", target_family = "unix"))]
     // #[error("a unix system error: {0}")]
     // UnixSystem(#[from] nix::errno::Errno),
@@ -115,4 +118,12 @@ pub enum BlockError {
     },
     #[error("ERIS block decoding failed because {0}")]
     Eris(#[from] async_eris::Error),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum ScheduleError {
+    #[error("a timeout limit was reached after {0}")]
+    Timeout(#[from] Elapsed),
+    #[error("contention around resource {0} is leading to slowdown")]
+    Contention(String),
 }
