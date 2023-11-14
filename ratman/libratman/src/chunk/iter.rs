@@ -1,17 +1,13 @@
-use crate::{chunk::Chunk, rt::size_commonbuf_t, Result};
+use crate::{chunk::Chunk, rt::size_commonbuf_t};
 use std::{
-    collections::VecDeque,
     future::Future,
-    marker::PhantomData,
     pin::Pin,
-    sync::Arc,
     task::{Context, Poll},
 };
 use tokio::{
-    io::{self, AsyncBufReadExt, AsyncRead, AsyncReadExt, BufReader, ReadBuf},
+    io::{self, AsyncRead, ReadBuf},
     sync::mpsc::{channel, Receiver, Sender},
 };
-use tokio_util::compat::TokioAsyncReadCompatExt;
 
 /// Reads chunks from a channel and
 pub struct ChunkIter<const L: usize> {
@@ -52,7 +48,7 @@ impl<const L: usize> ChunkIter<L> {
 
     async fn read_current_chunk(&mut self, buf: &mut ReadBuf<'_>) {
         let current = self.current.as_mut().unwrap();
-        current.read_to_buf(buf).await;
+        let _ = current.read_to_buf(buf).await;
     }
 }
 
@@ -86,11 +82,11 @@ impl<const L: usize> AsyncRead for ChunkIter<L> {
                 if chunk.1 < chunk.0.len() {
                     let chunk_read = self.read_current_chunk(buf);
                     tokio::pin!(chunk_read);
-                    chunk_read.as_mut().as_mut().poll(ctx);
 
                     // Even if this read was successful, unless we try
                     // to read and have reached the end of the chunk
                     // _stream_ there will always be more to read.
+                    let _ = chunk_read.as_mut().as_mut().poll(ctx);
                     ctx.waker().wake_by_ref();
                     Poll::Pending
                 }
@@ -104,9 +100,10 @@ impl<const L: usize> AsyncRead for ChunkIter<L> {
                     Poll::Pending
                 }
             }
-            // If we don't currently have a current chunk we try to
-            // get one from the channel via a local pinned future
+            // If we don't currently have a chunk we try to get one
+            // from the channel via a local pinned future
             None => {
+                // x.x
                 if self._dead {
                     return Poll::Ready(Ok(()));
                 }
@@ -115,8 +112,7 @@ impl<const L: usize> AsyncRead for ChunkIter<L> {
                 let max_garbage = size_commonbuf_t::<L>();
 
                 // Determine the start and end positions that we want
-                // to delete (maybe this is a bit overkill? Also it
-                // has some historisis so uuuh... fixme ?)
+                // to delete (todo: what the fuck?)
                 let (start, end) = match (self._garbage.len(), max_garbage) {
                     (len, max) if max - 32 > 0 => (max - 32, len),
                     (len, max) if max - 16 > 0 => (max - 16, len),
@@ -131,10 +127,12 @@ impl<const L: usize> AsyncRead for ChunkIter<L> {
                     }
                 }
 
-                // Finally we try to get a new chunk!
+                // Finally we try to get a new chunk!  If we reached
+                // the end of the chunk stream next_chunk sets
+                // dead=true, which stops the iterator
                 let source_poll = self.next_chunk();
                 tokio::pin!(source_poll);
-                source_poll.as_mut().as_mut().poll(ctx);
+                let _ = source_poll.as_mut().as_mut().poll(ctx);
 
                 // Signal that we can be read again instantly!
                 ctx.waker().wake_by_ref();

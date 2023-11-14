@@ -1,6 +1,6 @@
 use crate::Result;
-use std::sync::Arc;
-use tokio::io::{AsyncWrite, AsyncWriteExt};
+use byteorder::{BigEndian, ByteOrder};
+use tokio::io::AsyncWriteExt;
 
 pub struct AsyncWriter<'buf, T: 'buf + AsyncWriteExt + Unpin> {
     pub buffer: &'buf [u8],
@@ -12,6 +12,7 @@ impl<'buf, T: 'buf + AsyncWriteExt + Unpin> AsyncWriter<'buf, T> {
         Self { buffer, writer }
     }
 
+    /// Write out the provided buffer to the given writer stream
     pub async fn write_buffer(mut self) -> Result<()> {
         let Self {
             buffer,
@@ -20,4 +21,12 @@ impl<'buf, T: 'buf + AsyncWriteExt + Unpin> AsyncWriter<'buf, T> {
         writer.write_all(&buffer).await?;
         Ok(())
     }
+}
+
+pub async fn write_u32<'r, T: 'r + AsyncWriteExt + Unpin>(w: &'r mut T, len: u32) -> Result<()> {
+    let mut buf = vec![0; 4];
+    BigEndian::write_u32(buf.as_mut_slice(), len);
+
+    let writer = AsyncWriter::new(buf.as_slice(), w);
+    writer.write_buffer().await
 }

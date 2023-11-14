@@ -1,9 +1,5 @@
-use crate::{
-    frame::carrier::{generate, FrameGenerator, FrameParser},
-    frame::micro::{parse::*, types::TrustFilter},
-    Result,
-};
-use nom::{IResult, Parser};
+use crate::{api::types::TrustFilter, frame::micro::parse::*, frame::FrameParser, Result};
+use nom::IResult;
 use std::ffi::CString;
 
 #[repr(C)]

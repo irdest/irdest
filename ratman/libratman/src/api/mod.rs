@@ -28,3 +28,4 @@
 //! behaviour can be disabled via the `RatmanIpc` API.
 
 pub mod socket_v2;
+pub mod types;

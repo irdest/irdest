@@ -1,5 +1,5 @@
 use crate::{
-    frame::carrier::{parse, FrameGenerator, FrameParser},
+    frame::{carrier::parse, FrameGenerator, FrameParser},
     types::Id,
     Result,
 };

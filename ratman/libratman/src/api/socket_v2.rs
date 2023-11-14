@@ -1,42 +1,40 @@
 use crate::{
     chunk::Chunk,
-    frame::carrier::{
-        parse::{self, take_u16_slice, FrameParser},
-        FrameGenerator,
-    },
-    frame::micro::{client_modes::*, MicroframeHeader},
+    frame::{micro::MicroframeHeader, FrameGenerator, FrameParser},
     rt::{
         reader::{AsyncReader, AsyncVecReader, LengthReader},
         writer::AsyncWriter,
     },
-    EncodingError, RatmanError, Result, ScheduleError,
+    EncodingError, Result,
 };
-use futures::TryFutureExt;
-use std::time::Duration;
 use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
-    net::TcpStream,
+    net::{TcpStream, ToSocketAddrs},
     sync::mpsc::Sender,
 };
 
-/// Api and state abstraction for a Ratman Api client
-pub struct RatmanClient {}
+pub struct IpcSocket(RawSocketHandle);
 
-/// Api and state abstraction, but on the side the router runs, with
-/// some utilities the client may need.
-pub struct RatmanSever {}
+impl IpcSocket {
+    pub async fn connect_to(
+        addr: impl ToSocketAddrs,
+        sender: Sender<(MicroframeHeader, Vec<u8>)>,
+    ) -> Result<Self> {
+        let socket = TcpStream::connect(addr).await?;
+        Ok(Self(RawSocketHandle::new(socket, sender)))
+    }
+}
 
 pub struct RawSocketHandle {
     reader: TcpStream,
     read_counter: usize,
-    sender: Sender<()>, // ???
+    _sender: Sender<(MicroframeHeader, Vec<u8>)>,
 }
 
 impl RawSocketHandle {
-    pub fn new(reader: TcpStream, sender: Sender<()>) -> Self {
+    pub fn new(reader: TcpStream, sender: Sender<(MicroframeHeader, Vec<u8>)>) -> Self {
         Self {
             reader,
-            sender,
+            _sender: sender,
             read_counter: 0,
         }
     }
@@ -45,9 +43,12 @@ impl RawSocketHandle {
         self.read_counter
     }
 
+    pub fn reset_counter(&mut self) {
+        self.read_counter = 0;
+    }
+
     pub async fn read_header(&mut self) -> Result<MicroframeHeader> {
-        let lr = LengthReader::<'_, 4, TcpStream>::new(&mut self.reader);
-        let length = lr.read_u32().await?;
+        let length = LengthReader::new(&mut self.reader).read_u32().await?;
         let frame_buffer = AsyncVecReader::new(length as usize, &mut self.reader)
             .read_to_vec()
             .await?;

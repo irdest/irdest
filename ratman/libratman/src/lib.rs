@@ -9,15 +9,17 @@
 //! exclusive, although doing both at the same time would be a bit
 //! weird.  But we won't judge you).
 //!
-//! 1. To write a ratman-client application.  Use the types and
-//! functions exported from the [client](crate::client) module
+//! 1. To write a ratman-client application.  The main types for this
+//! can be found in `api`.
 //!
-//! 2. To write a ratman-netmod driver.  Use the types and functions
-//! exported from the [netmod](crate::netmod) module
-#![allow(warnings)]
+//! 2. To write a ratman-netmod driver.  The main trait type to
+//! implement can be found in `endpoint`.
+
+// We include all tracing macros to make our life easier
 #[macro_use]
 extern crate tracing;
 
+// Include modules publicly
 pub mod api;
 pub mod chunk;
 pub mod endpoint;

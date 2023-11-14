@@ -1,22 +1,13 @@
 //! Generator utilities
 
-use std::ffi::CString;
-
 use crate::{
+    frame::FrameGenerator,
     types::{Address, Id, SequenceIdV1},
     EncodingError, RatmanError, Result,
 };
 use byteorder::{BigEndian, ByteOrder};
 use chrono::{DateTime, TimeZone, Utc};
-
-/// A utility trait that represents a serialisable frame entity
-///
-/// This trait should be implemented for frame sub-types to avoid code
-/// duplication when serialising entities.  Additionally this trait
-/// consumes the given frame to avoid duplication.
-pub trait FrameGenerator {
-    fn generate(self, buf: &mut Vec<u8>) -> Result<()>;
-}
+use std::ffi::CString;
 
 fn u16_to_big_endian(val: u16) -> [u8; 2] {
     let mut v = [0; 2];

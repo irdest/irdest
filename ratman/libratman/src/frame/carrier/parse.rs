@@ -1,5 +1,5 @@
 use crate::{
-    frame::carrier::CarrierFrameHeader,
+    frame::{carrier::CarrierFrameHeader, FrameParser},
     types::{Address, Id, Recipient, SequenceIdV1},
     EncodingError, RatmanError, Result,
 };
@@ -16,16 +16,6 @@ use nom::{
     combinator::{opt, peek},
     Parser,
 };
-
-/// A utility trait that represents a parsable frame entity
-///
-/// This trait is a slim wrapper around the nom parsing
-/// infrastructure, aka a top-level parser still needs to map nom
-/// errors to RatmanErrors.
-pub trait FrameParser {
-    type Output;
-    fn parse(input: &[u8]) -> IResult<&[u8], Self::Output>;
-}
 
 /// Peek one byte to check if the next section exists, if so, read LEN
 /// bytes, otherwise burn the zero byte
