@@ -1,5 +1,6 @@
 use crate::{
-    frame::carrier::{generate, modes, parse, FrameGenerator, FrameParser},
+    frame::carrier::{generate, modes, parse},
+    frame::{FrameGenerator, FrameParser},
     types::{Address, Id, Recipient, SequenceIdV1},
     EncodingError, Result,
 };

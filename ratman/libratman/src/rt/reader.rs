@@ -1,10 +1,5 @@
 use crate::{chunk::Chunk, Result};
 use byteorder::{BigEndian, ByteOrder};
-use std::{
-    future::Future,
-    pin::Pin,
-    task::{Context, Poll},
-};
 use tokio::io::{AsyncRead, AsyncReadExt};
 
 /// A structure capable of reading a certain length of data
@@ -58,7 +53,7 @@ impl<'r, const L: usize, T: 'r + AsyncRead + Unpin> AsyncReader<'r, L, T> {
     /// This function will panic if the cursor overruns the length of
     /// the available data or if the cursor becomes negative
     pub fn consume_with_state<const S: usize>(&mut self, cursor: &mut usize) -> [u8; S] {
-        assert!(*cursor >= 0 && *cursor < L);
+        assert!(*cursor < L);
         let mut buf: [u8; S] = [0; S];
         buf.copy_from_slice(&mut self.0 .0[*cursor..(*cursor + S)]);
         *cursor += S;
@@ -103,16 +98,16 @@ impl<'r, T: 'r + AsyncRead + Unpin> AsyncVecReader<'r, T> {
 }
 
 /// Asynchronously read a length field
-pub struct LengthReader<'r, const L: usize, T: 'r + AsyncRead + Unpin>(AsyncReader<'r, L, T>);
+pub struct LengthReader<'r, T: 'r + AsyncRead + Unpin>(AsyncReader<'r, 4, T>);
 
-impl<'r, const L: usize, T: 'r + AsyncRead + Unpin> LengthReader<'r, L, T> {
+impl<'r, T: 'r + AsyncRead + Unpin> LengthReader<'r, T> {
     pub fn new(r: &'r mut T) -> Self {
         Self(AsyncReader(Chunk::alloc(), r))
     }
 
-    pub async fn read_u32(mut self) -> Result<u32> {
+    pub async fn read_u32(self) -> Result<u32> {
         Ok(BigEndian::read_u32(
-            self.0.fill_inplace().await?.consume::<L>().as_slice(),
+            self.0.fill_inplace().await?.consume::<4>().as_slice(),
         ))
     }
 }

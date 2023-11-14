@@ -1,14 +1,10 @@
 //! A minimalist framing mechanism
 
 mod error;
-mod generate;
 pub mod parse;
 
-pub mod types;
-use tokio::io::AsyncRead;
-
 use crate::{
-    frame::carrier::{parse as fparse, FrameGenerator, FrameParser},
+    frame::{carrier::parse as fparse, FrameGenerator, FrameParser},
     types::Id,
     Result,
 };
@@ -75,9 +71,9 @@ pub struct MicroframeHeader {
 }
 
 impl MicroframeHeader {
-    pub async fn parse_with_reader(mut r: &mut (impl AsyncRead + Unpin)) -> Result<Self> {
-        todo!()
-    }
+    // pub async fn parse_with_reader(mut r: &mut (impl AsyncRead + Unpin)) -> Result<Self> {
+    //     todo!()
+    // }
 }
 
 impl FrameGenerator for MicroframeHeader {

@@ -2,7 +2,6 @@ use crate::Result;
 use bytes::{buf::BufMut, Buf};
 use std::{
     future::Future,
-    io::BufReader,
     pin::Pin,
     task::{Context, Poll},
 };
@@ -77,7 +76,6 @@ impl<const L: usize> AsyncRead for Chunk<L> {
     ) -> Poll<io::Result<()>> {
         let read = self.read_to_buf(buf);
         tokio::pin!(read);
-        read.as_mut().as_mut().poll(ctx);
-        Poll::Ready(Ok(()))
+        read.as_mut().as_mut().poll(ctx).map_err(Into::into)
     }
 }

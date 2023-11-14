@@ -1,10 +1,7 @@
 use crate::{
-    frame::carrier::{
-        generate::FrameGenerator,
-        parse::{self, FrameParser},
-    },
-    types::{error::EncodingError, Id},
-    Result,
+    frame::{carrier::parse, FrameGenerator, FrameParser},
+    types::Id,
+    EncodingError, Result,
 };
 use async_eris::ReadCapability;
 use nom::{AsBytes, IResult};

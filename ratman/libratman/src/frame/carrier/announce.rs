@@ -1,8 +1,6 @@
-use super::{
-    generate::FrameGenerator,
-    parse::{self, FrameParser, IResult},
-};
+use super::parse::{self, IResult};
 use crate::{
+    frame::{FrameGenerator, FrameParser},
     types::{Address, Id, TimePair},
     EncodingError, NonfatalError, RatmanError, Result,
 };

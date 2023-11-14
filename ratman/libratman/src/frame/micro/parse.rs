@@ -1,10 +1,9 @@
-use std::ffi::CString;
-
 use nom::{
     bytes::complete::{take, take_till},
     combinator::peek,
     IResult,
 };
+use std::ffi::CString;
 
 /// Peek a single byte to check if data is present, if so, execute the
 /// child parser

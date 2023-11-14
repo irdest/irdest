@@ -13,8 +13,7 @@ pub use header::*;
 pub use manifest::*;
 
 ////// Expose the generator and parser APIs for other types
-pub use generate::FrameGenerator;
-pub use parse::{take_address, FrameParser, IResult as ParserResult};
+pub use parse::{take_address, IResult as ParserResult};
 
 pub(self) fn random_payload(size: usize) -> Vec<u8> {
     use rand::RngCore;
