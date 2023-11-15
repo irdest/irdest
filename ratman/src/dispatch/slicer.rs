@@ -5,32 +5,22 @@
 
 //! Slices `Message` into a series of Frames
 
-#![allow(unused)]
-
 use std::time::Duration;
 
 use crate::context::RatmanContext;
 use async_eris::{BlockReference, BlockSize, MemoryStorage, ReadCapability};
-use async_std::{
-    io::{BufReader, Cursor},
-    sync::Arc,
-};
 use libratman::{
-    netmod::InMemoryEnvelope,
-    types::{
-        frames::{modes, CarrierFrameHeader},
-        Address, Id, Message, Recipient, Result, SequenceIdV1,
-    },
+    frame::carrier::{modes, CarrierFrameHeader},
+    futures::AsyncRead,
+    types::{Address, Id, InMemoryEnvelope, Letterhead, Recipient, SequenceIdV1},
+    Result,
 };
+use std::sync::Arc;
 
 pub struct StreamSlicer;
 
 impl StreamSlicer {
     /// Take a stream of ERIS blocks and slice them into
-    // TODO: should this function take a Block<BS>, which would
-    // enforce a block size at the type level
-    //
-    // TODO: update this function to be a stream
     pub fn slice<I: Iterator<Item = (BlockReference, Vec<u8>)>>(
         ctx: &Arc<RatmanContext>,
         recipient: Recipient,
@@ -99,23 +89,17 @@ pub(crate) struct BlockSlicer;
 impl BlockSlicer {
     pub(crate) async fn slice(
         ctx: &Arc<RatmanContext>,
-        msg: &mut Message,
+        (lhead, reader): &mut (Letterhead, impl AsyncRead + Unpin),
         block_size: BlockSize,
     ) -> Result<(ReadCapability, MemoryStorage)> {
         let mut blocks = MemoryStorage::new();
         let key = ctx
             .keys
-            .diffie_hellman(
-                msg.sender,
-                msg.recipient
-                    .scope()
-                    .expect("Can't encrypt message to missing recipient"),
-            )
+            .diffie_hellman(lhead.from, lhead.to.inner_address())
             .await
             .expect("failed to perform diffie-hellman");
         let key2 = key.to_bytes();
-        let mut content = core::mem::take(&mut msg.payload);
-        let read_cap = async_eris::encode(&mut &*content, &key2, block_size, &mut blocks)
+        let read_cap = async_eris::encode(&mut reader, &key2, block_size, &mut blocks)
             .await
             .unwrap();
         Ok((read_cap, blocks))

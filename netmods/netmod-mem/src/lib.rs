@@ -16,12 +16,9 @@ use async_std::{
 };
 use async_trait::async_trait;
 use libratman::{
-    netmod::InMemoryEnvelope,
-    types::{RatmanError, Result as NetResult},
-};
-use libratman::{
-    netmod::{Endpoint, Target},
-    NetmodError,
+    endpoint::EndpointExt,
+    types::{InMemoryEnvelope, Neighbour},
+    NetmodError, RatmanError, Result as RatResult,
 };
 
 /// An input/output pair of `mpsc::channel`s.
@@ -85,7 +82,7 @@ impl MemMod {
 }
 
 #[async_trait]
-impl Endpoint for MemMod {
+impl EndpointExt for MemMod {
     /// Provides maximum frame-size information to `RATMAN`
     fn size_hint(&self) -> usize {
         ::std::u32::MAX as usize
@@ -100,9 +97,9 @@ impl Endpoint for MemMod {
     async fn send(
         &self,
         frame: InMemoryEnvelope,
-        _: Target,
+        _: Neighbour,
         exclude: Option<u16>,
-    ) -> NetResult<()> {
+    ) -> RatResult<()> {
         let io = self.io.read().await;
         match *io {
             None => Err(RatmanError::Netmod(NetmodError::NotSupported)),
@@ -111,12 +108,12 @@ impl Endpoint for MemMod {
         }
     }
 
-    async fn next(&self) -> NetResult<(InMemoryEnvelope, Target)> {
+    async fn next(&self) -> RatResult<(InMemoryEnvelope, Neighbour)> {
         let io = self.io.read().await;
         match *io {
             None => Err(RatmanError::Netmod(NetmodError::NotSupported)),
             Some(ref io) => match io.inc.recv().await {
-                Ok(f) => Ok((f, Target::default())),
+                Ok(f) => Ok((f, Neighbour::Single(0))),
                 Err(_) => Err(RatmanError::Netmod(NetmodError::ConnectionLost)),
             },
         }

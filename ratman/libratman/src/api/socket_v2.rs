@@ -8,26 +8,24 @@ use crate::{
     EncodingError, Result,
 };
 use tokio::{
-    net::{TcpStream, ToSocketAddrs},
+    net::{tcp::OwnedReadHalf, TcpStream},
     sync::mpsc::Sender,
 };
-
-pub struct IpcSocket(RawSocketHandle);
-
-impl IpcSocket {
-    pub async fn connect_to(
-        addr: impl ToSocketAddrs,
-        sender: Sender<(MicroframeHeader, Vec<u8>)>,
-    ) -> Result<Self> {
-        let socket = TcpStream::connect(addr).await?;
-        Ok(Self(RawSocketHandle::new(socket, sender)))
-    }
-}
 
 pub struct RawSocketHandle {
     reader: TcpStream,
     read_counter: usize,
     _sender: Sender<(MicroframeHeader, Vec<u8>)>,
+}
+
+pub async fn read_header(mut reader: &mut OwnedReadHalf) -> Result<MicroframeHeader> {
+    let length = LengthReader::new(&mut reader).read_u32().await?;
+    let frame_buffer = AsyncVecReader::new(length as usize, &mut reader)
+        .read_to_vec()
+        .await?;
+    Ok(MicroframeHeader::parse(frame_buffer.as_slice())
+        .map_err(Into::<EncodingError>::into)?
+        .1?)
 }
 
 impl RawSocketHandle {

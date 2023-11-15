@@ -1,14 +1,12 @@
 use crate::{
-    core::{Dispatch, LinksMap, GenericEndpoint, Journal, RouteTable, RouteType},
+    core::{Dispatch, GenericEndpoint, Journal, LinksMap, RouteTable, RouteType},
     dispatch::BlockCollector,
     util::IoPair,
 };
 use libratman::{
-    netmod::{Endpoint, InMemoryEnvelope},
-    types::{
-        frames::modes::{self as fmodes, DATA, MANIFEST},
-        Recipient,
-    },
+    endpoint::EndpointExt,
+    frame::carrier::modes::{self as fmodes, DATA, MANIFEST},
+    types::{InMemoryEnvelope, Recipient},
 };
 use std::sync::Arc;
 
@@ -45,7 +43,7 @@ pub(crate) async fn exec_switching_batch(
             _ => continue,
         };
         trace!(
-            "Received frame ({}) from {}/{}",
+            "Received frame ({}) from {}/{:?}",
             match header.get_seq_id() {
                 Some(seq_id) => format!("{}", seq_id.hash),
                 None => format!("<???>"),
@@ -63,7 +61,7 @@ pub(crate) async fn exec_switching_batch(
                 recp_type: header.get_recipient().as_ref().into(),
                 recp_id: header
                     .get_recipient()
-                    .map(|r| r.address().to_string())
+                    .map(|r| r.inner_address().to_string())
                     .unwrap_or_else(|| "None".to_owned()),
             };
             metrics.frames_total.get_or_create(metric_labels).inc();
@@ -124,7 +122,7 @@ pub(crate) async fn exec_switching_batch(
             }
             //
             // A data frame that is addressed to a particular address
-            (mode, Some(Recipient::Target(address))) => {
+            (mode, Some(Recipient::Address(address))) => {
                 // Check if the target address is "reachable"
                 match routes.reachable(address).await {
                     // A locally addressed data frame is inserted
@@ -171,7 +169,7 @@ pub(crate) async fn exec_switching_batch(
             }
             //
             // A data or manifest frame that is addressed to a network namespace
-            (_, Some(Recipient::Flood(ns))) => {
+            (_, Some(Recipient::Namespace(ns))) => {
                 let announce_id = match header.get_seq_id() {
                     Some(seq) => seq.hash,
                     None => {
@@ -211,7 +209,7 @@ pub(crate) use self::metrics as switch_metrics;
 
 #[cfg(feature = "dashboard")]
 pub(crate) mod metrics {
-    use libratman::types::{Address, ApiRecipient, Recipient};
+    use libratman::types::{Address, Recipient};
     use prometheus_client::{
         encoding::text::Encode,
         metrics::{counter::Counter, family::Family},
@@ -236,18 +234,18 @@ pub(crate) mod metrics {
     impl From<Option<&Recipient>> for IdentityType {
         fn from(v: Option<&Recipient>) -> Self {
             match v {
-                Some(&Recipient::Target(_)) => Self::Standard,
-                Some(&Recipient::Flood(_)) => Self::Flood,
+                Some(&Recipient::Address(_)) => Self::Standard,
+                Some(&Recipient::Namespace(_)) => Self::Flood,
                 None => Self::Empty,
             }
         }
     }
 
-    impl From<&ApiRecipient> for IdentityType {
-        fn from(v: &ApiRecipient) -> Self {
+    impl From<&Recipient> for IdentityType {
+        fn from(v: &Recipient) -> Self {
             match v {
-                &ApiRecipient::Standard(_) => Self::Standard,
-                &ApiRecipient::Flood(_) => Self::Flood,
+                &Recipient::Address(_) => Self::Standard,
+                &Recipient::Namespace(_) => Self::Flood,
             }
         }
     }

@@ -5,7 +5,8 @@ extern crate tracing;
 
 use irdest_firmware_util::{decode_frame, encode_frame};
 use libratman::{
-    netmod::{Endpoint, InMemoryEnvelope, Target},
+    endpoint::EndpointExt,
+    types::{InMemoryEnvelope, Neighbour},
     Result as RatmanResult,
 };
 
@@ -151,7 +152,7 @@ impl LoraEndpoint {
 }
 
 #[async_trait]
-impl Endpoint for LoraEndpoint {
+impl EndpointExt for LoraEndpoint {
     fn size_hint(&self) -> usize {
         PAYLOAD_SIZE
     }
@@ -159,7 +160,7 @@ impl Endpoint for LoraEndpoint {
     async fn send(
         &self,
         frame: InMemoryEnvelope,
-        _target: Target,
+        _target: Neighbour,
         exclude: Option<u16>,
     ) -> RatmanResult<()> {
         if exclude.is_some() {
@@ -201,9 +202,9 @@ impl Endpoint for LoraEndpoint {
         Ok(())
     }
 
-    async fn next(&self) -> RatmanResult<(InMemoryEnvelope, Target)> {
+    async fn next(&self) -> RatmanResult<(InMemoryEnvelope, Neighbour)> {
         let frame = self.rx.recv().await.unwrap();
         trace!("delivering frame to deamon");
-        Ok((frame, Target::Single(0)))
+        Ok((frame, Neighbour::Single(0)))
     }
 }

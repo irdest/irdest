@@ -4,8 +4,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 //! Ratman daemon entrypoint
-#![allow(warnings)]
-use async_std::task::block_on;
 use ratmand::{
     config::ConfigTree,
     start_with_configuration,
@@ -57,9 +55,9 @@ fn main() {
             }
         }
 
-        if let Err(e) = block_on(async { cfg.write_changes(&cfg_path).await }) {
-            eprintln!("failed to write default configuration: {}", e);
-        }
+        // if let Err(e) = block_on(async { cfg.write_changes(&cfg_path).await }) {
+        //     eprintln!("failed to write default configuration: {}", e);
+        // }
 
         std::process::exit(0);
     }
@@ -70,54 +68,56 @@ fn main() {
 
     eprintln!("Loading config from {:?}", cfg_path);
 
-    let mut config = match block_on(ConfigTree::load_path(&cfg_path)) {
-        Ok(cfg) => cfg,
-        Err(_) => {
-            // If the configuration couldn't be loaded we assume that
-            // it just doesn't exist yet and we try to create it.
-            let cfg = ConfigTree::default_in_memory();
-            if let Err(_) = block_on(cfg.write_changes(&cfg_path)) {
-                eprintln!(
-                    "failed to write configuration to path {}",
-                    cfg_path
-                        .as_os_str()
-                        .to_str()
-                        .unwrap_or("<unprintable path>")
-                );
-            }
-            cfg
-        }
-    };
+    // let mut config = match block_on(ConfigTree::load_path(&cfg_path)) {
+    //     Ok(cfg) => cfg,
+    //     Err(_) => {
+    //         // If the configuration couldn't be loaded we assume that
+    //         // it just doesn't exist yet and we try to create it.
+    //         let cfg = ConfigTree::default_in_memory();
+    //         if let Err(_) = block_on(cfg.write_changes(&cfg_path)) {
+    //             eprintln!(
+    //                 "failed to write configuration to path {}",
+    //                 cfg_path
+    //                     .as_os_str()
+    //                     .to_str()
+    //                     .unwrap_or("<unprintable path>")
+    //             );
+    //         }
+    //         cfg
+    //     }
+    // };
 
     // config.pretty_print();
 
-    // Override the ephemeral value
-    if arg_matches.is_present("EPHEMERAL") {
-        config = config.patch("ratmand/ephemeral", true);
-    }
+    // // Override the ephemeral value
+    // if arg_matches.is_present("EPHEMERAL") {
+    //     config = config.patch("ratmand/ephemeral", true);
+    // }
 
-    // Override the config verbosity value with the CLI value if desired
-    if let Some(verbosity) = arg_matches.value_of("VERBOSITY") {
-        config = config.patch("ratmand/verbosity", verbosity);
-    }
+    // // Override the config verbosity value with the CLI value if desired
+    // if let Some(verbosity) = arg_matches.value_of("VERBOSITY") {
+    //     config = config.patch("ratmand/verbosity", verbosity);
+    // }
 
-    let ratmand_tree = match config.get_subtree("ratmand") {
-        Some(t) => t,
-        None => {
-            eprintln!("settings tree 'ratmand' is missing from the provided configuration!");
-            std::process::exit(codes::INVALID_CONFIG as i32);
-        }
-    };
+    // let ratmand_tree = match config.get_subtree("ratmand") {
+    //     Some(t) => t,
+    //     None => {
+    //         eprintln!("settings tree 'ratmand' is missing from the provided configuration!");
+    //         std::process::exit(codes::INVALID_CONFIG as i32);
+    //     }
+    // };
 
-    // If the config says that ratmand should daemonize itself...
-    if ratmand_tree.get_bool_value("daemonize").unwrap_or(false) {
-        if let Err(err) = sysv_daemonize_app(config) {
-            eprintln!("ratmand suffered fatal error: {}", err);
-            std::process::exit(codes::FATAL as i32);
-        }
-    }
-    // Otherwise just normally initialise the Context
-    else {
-        start_with_configuration(config)
-    }
+    // // If the config says that ratmand should daemonize itself...
+    // if ratmand_tree.get_bool_value("daemonize").unwrap_or(false) {
+    //     if let Err(err) = sysv_daemonize_app(config) {
+    //         eprintln!("ratmand suffered fatal error: {}", err);
+    //         std::process::exit(codes::FATAL as i32);
+    //     }
+    // }
+    // // Otherwise just normally initialise the Context
+    // else {
+    //     start_with_configuration(config)
+    // }
+
+    todo!()
 }

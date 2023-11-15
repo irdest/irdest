@@ -9,39 +9,23 @@
 //! component. This has proven to be a hard to maintain approach, so
 //! instead the core has been split into several parts.
 
-mod dispatch;
+pub mod dispatch;
 mod journal;
 mod links;
 mod routes;
-mod switch;
 
-use async_std::sync::Arc;
 use libratman::{
-    netmod::{InMemoryEnvelope, Target},
-    types::{Address, Message, RatmanError, Recipient, Result},
+    tokio::{sync::mpsc, task::spawn_local},
+    types::{Address, Recipient},
+    types::{InMemoryEnvelope, Neighbour},
+    RatmanError, Result,
 };
+use std::sync::Arc;
 
 pub(crate) use crate::dispatch::BlockCollector;
-pub(crate) use dispatch::Dispatch;
 pub(crate) use journal::{Journal, JournalSender};
-pub(crate) use links::{LinksMap, GenericEndpoint};
-pub(crate) use routes::{EpTargetPair, RouteTable, RouteType};
-pub(crate) use switch::Switch;
-
-/// The Ratman routing core interface
-///
-/// The core handles maintaining routing table state, sending message
-/// streams, and re-assembling received frames into valid incoming
-/// message streams.
-///
-/// Importantly, the core must be "booted", i.e. contains no state at
-/// start.  All state handling must occur outside of the core.
-/// Components that wish to have their state persisted must provide
-/// efficient access to this in-memory state via the `Core` API
-/// facade.
-pub(crate) struct Core {
-    pub(crate) switch: Arc<Switch>,
-}
+pub(crate) use links::{GenericEndpoint, LinksMap};
+pub(crate) use routes::{EpNeighbourPair, RouteTable, RouteType};
 
 /// Execute the Ratman router core as an async task
 pub fn exec_core_loops() -> (
@@ -54,12 +38,12 @@ pub fn exec_core_loops() -> (
     let routes = RouteTable::new();
     let journal = Journal::new();
 
-    let (jtx, jrx) = async_std::channel::bounded(16);
+    let (jtx, jrx) = mpsc::channel(16);
     let collector = BlockCollector::new(jtx);
 
     // Dispatch the journal
-    async_std::task::spawn(Arc::clone(&journal).run_block_acceptor(jrx));
-    async_std::task::spawn(Arc::clone(&journal).run_message_assembler());
+    spawn_local(Arc::clone(&journal).run_block_acceptor(jrx));
+    spawn_local(Arc::clone(&journal).run_message_assembler());
 
     (collector, links, journal, routes)
 }

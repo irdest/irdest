@@ -12,6 +12,7 @@ pub struct InMemoryEnvelope {
 }
 
 impl InMemoryEnvelope {
+    #[allow(deprecated)]
     pub fn test_envelope() -> Self {
         let header = CarrierFrameHeader::new_announce_frame(Address::random(), 0);
         let mut buffer = vec![];

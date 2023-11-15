@@ -91,10 +91,11 @@ netmod-lan = { path = "../netmods/netmod-lan", version = "0.2", optional = true 
 netmod-lora = { path = "../netmods/netmod-lora", version = "0.1", optional = true }
 netmod-mem = { path = "../netmods/netmod-mem", version = "0.4", optional = true }
 
-# [dev-dependencies]
-# bincode = "1.2"
-# netmod-inet = { path = "../netmods/netmod-inet", version = "*" }
-# tracing-subscriber = { version = "0.2", features = ["fmt"] }
+[dev-dependencies]
+bincode = "1.2"
+netmod-inet = { path = "../netmods/netmod-inet", version = "*" }
+tracing-subscriber = { version = "0.2", features = ["fmt"] }
 
-# criterion = { version = "0.4", features = ["html_reports"] }
-# rand = "0.7"
+criterion = { version = "0.4", features = ["html_reports"] }
+tempdir = "*"
+rand = "0.7"

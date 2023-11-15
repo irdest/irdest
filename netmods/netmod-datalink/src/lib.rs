@@ -18,8 +18,11 @@ use useful_netmod_bits::framing::Envelope;
 
 use async_std::{future, sync::Arc, task};
 use async_trait::async_trait;
-use libratman::netmod::{Endpoint as EndpointExt, InMemoryEnvelope, Target};
-use libratman::types::{RatmanError, Result};
+use libratman::{
+    endpoint::EndpointExt,
+    types::{InMemoryEnvelope, Neighbour},
+    RatmanError, Result,
+};
 use pnet::util::MacAddr;
 use pnet_datalink::interfaces;
 
@@ -287,7 +290,7 @@ impl EndpointExt for Endpoint {
     async fn send(
         &self,
         InMemoryEnvelope { buffer, .. }: InMemoryEnvelope,
-        target: Target,
+        neighbour: Neighbour,
         exclude: Option<u16>,
     ) -> Result<()> {
         if buffer.len() > 1500 {
@@ -296,13 +299,13 @@ impl EndpointExt for Endpoint {
 
         let env = Envelope::Data(buffer);
 
-        match target {
-            Target::Single(ref id) => {
+        match neighbour {
+            Neighbour::Single(ref id) => {
                 self.socket
                     .send(&env, self.addrs.addr(*id).await.unwrap())
                     .await;
             }
-            Target::Flood => match exclude {
+            Neighbour::Flood => match exclude {
                 Some(u) => {
                     let exc = self
                         .addrs
@@ -321,12 +324,13 @@ impl EndpointExt for Endpoint {
                 }
                 None => self.socket.multicast(&env).await,
             },
+            _ => unimplemented!(),
         }
 
         Ok(())
     }
 
-    async fn next(&self) -> Result<(InMemoryEnvelope, Target)> {
+    async fn next(&self) -> Result<(InMemoryEnvelope, Neighbour)> {
         let fe = self.socket.next().await;
         Ok((fe.0, fe.1))
     }

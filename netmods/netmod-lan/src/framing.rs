@@ -6,12 +6,9 @@
 //! UDP overlay protocol and framing
 
 use libratman::{
-    netmod::{InMemoryEnvelope, Target},
-    types::{
-        frames::{CarrierFrameHeader, FrameGenerator, FrameParser},
-        Address, NonfatalError,
-    },
-    EncodingError, Result,
+    frame::{carrier::CarrierFrameHeader, FrameGenerator, FrameParser},
+    types::{Address, InMemoryEnvelope, Neighbour},
+    EncodingError, NonfatalError, Result,
 };
 use serde::{Deserialize, Serialize};
 
@@ -79,4 +76,4 @@ impl Handshake {
 /// The ID can be resolved via the AddrTable to find out where to send
 /// a payload
 #[derive(Debug, Clone)]
-pub(crate) struct MemoryEnvelopeExt(pub(crate) InMemoryEnvelope, pub(crate) Target);
+pub(crate) struct MemoryEnvelopeExt(pub(crate) InMemoryEnvelope, pub(crate) Neighbour);

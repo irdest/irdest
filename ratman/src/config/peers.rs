@@ -4,7 +4,7 @@
 //! must be configured to `accept_unknown_peers`.
 
 use crate::util::DriverMap;
-use libratman::{netmod::Endpoint, NetmodError, RatmanError};
+use libratman::{endpoint::EndpointExt, NetmodError, RatmanError};
 
 /// A helper that parses, validates, and attaches peer data to drivers
 ///

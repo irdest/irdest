@@ -30,16 +30,13 @@ impl<const L: usize> Chunk<L> {
         Self([0; L], 0)
     }
 
-    pub async fn read_to_buf(&mut self, mut readbuf: &mut ReadBuf<'_>) -> Result<()> {
+    pub async fn read_to_buf(&mut self, readbuf: &mut ReadBuf<'_>) -> Result<()> {
         readbuf.put(self);
         Ok(())
     }
 
     /// Read some amount of bytes into the chunk, then return how many
-    pub async fn read_from_reader(
-        &mut self,
-        mut r: &mut (impl AsyncRead + Unpin),
-    ) -> Result<usize> {
+    pub async fn read_from_reader(&mut self, r: &mut (impl AsyncRead + Unpin)) -> Result<usize> {
         self.1 = r.read(&mut self.0).await?;
         Ok(self.1)
     }
@@ -48,7 +45,7 @@ impl<const L: usize> Chunk<L> {
     ///
     /// When this function returns successfully you are guaranteed to
     /// have read a full chunk.
-    pub async fn fill_from_reader(&mut self, mut r: &mut (impl AsyncRead + Unpin)) -> Result<()> {
+    pub async fn fill_from_reader(&mut self, r: &mut (impl AsyncRead + Unpin)) -> Result<()> {
         self.1 = r.read_exact(&mut self.0).await?;
         Ok(())
     }

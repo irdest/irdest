@@ -1,15 +1,14 @@
 use crate::core::JournalSender;
-use async_std::{
-    channel::{self, Receiver, Sender},
-    sync::{Arc, RwLock, RwLockReadGuard},
-    task,
-};
 use libratman::{
-    netmod::InMemoryEnvelope,
-    types::{Id, Result, SequenceIdV1},
-    RatmanError,
+    tokio::{
+        sync::mpsc::{channel, Receiver, Sender},
+        sync::{RwLock, RwLockReadGuard},
+        task,
+    },
+    types::{Id, InMemoryEnvelope, SequenceIdV1},
+    RatmanError, Result,
 };
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, sync::Arc};
 
 type EnvSender = Sender<(SequenceIdV1, InMemoryEnvelope)>;
 type EnvReceiver = Receiver<(SequenceIdV1, InMemoryEnvelope)>;
@@ -28,7 +27,7 @@ impl BlockCollectorWorker {
     /// Spawn this!
     pub async fn run(mut self, recv: EnvReceiver) {
         let this = &mut self;
-        while let Ok((seq_id, envelope)) = recv.recv().await {
+        while let Some((seq_id, envelope)) = recv.recv().await {
             let insert_at_end = seq_id.num as usize >= this.buffer.len();
             trace!(
                 "Insert chunk in sequence {} to index {}",
@@ -112,13 +111,13 @@ impl BlockCollector {
                 sender.send((sequence_id, env)).await;
             }
             None => {
-                let (tx, rx) = channel::bounded(8);
+                let (tx, rx) = channel(8);
                 let senders = Arc::clone(&self.inner);
                 debug!(
                     "Spawn new frame collector for block_id {}",
                     sequence_id.hash
                 );
-                task::spawn(
+                task::spawn_local(
                     BlockCollectorWorker {
                         sequence_id: sequence_id.hash,
                         max_num: sequence_id.max,

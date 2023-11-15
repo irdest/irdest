@@ -11,7 +11,7 @@ use async_std::{
     sync::{Arc, Mutex, RwLock},
     task::{self, Poll},
 };
-use libratman::netmod::{InMemoryEnvelope, Target};
+use libratman::types::{InMemoryEnvelope, Neighbour};
 use nix::errno::Errno;
 use pnet::{
     packet::ethernet::{EtherType, EthernetPacket, MutableEthernetPacket},
@@ -172,7 +172,7 @@ impl Socket {
                                     if let Some(id) = table.id(peer).await {
                                         // Append to the inbox and wake
                                         let mut inbox = arc.inbox.write().await;
-                                        inbox.push_back(FrameExt(envelope, Target::Single(id)));
+                                        inbox.push_back(FrameExt(envelope, Neighbour::Single(id)));
                                         Notify::wake(&mut inbox);
                                     }
                                 }

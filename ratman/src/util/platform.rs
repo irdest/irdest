@@ -5,9 +5,8 @@
 //! Various platform abstractions
 
 use crate::util::{env_xdg_config, env_xdg_data};
-use async_std::fs::File;
 use directories::ProjectDirs;
-use libratman::{types::NonfatalError, RatmanError, Result};
+use libratman::{tokio::fs::File, NonfatalError, RatmanError, Result};
 use std::{os::fd::AsRawFd, path::PathBuf};
 
 /// OS specific support

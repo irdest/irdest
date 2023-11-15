@@ -3,14 +3,15 @@ use libratman::{types::Id, BlockError, RatmanError, Result};
 
 /// A wrapper type for storing Blocks in various parts of the code
 ///
-/// Provide utilities to handle the const generics of the underlying type, as well as storage, retrieval, and checking integrity
+/// Provide utilities to handle the const generics of the underlying
+/// type, as well as storage, retrieval, and checking integrity
 #[derive(Debug)]
 #[repr(C)]
 pub(crate) enum StorageBlock {
     /// 1K block size
-    _1K(#[repr(transparent)] Block<1024>),
+    _1K(Block<1024>),
     /// 32K block size
-    _32K(#[repr(transparent)] Block<32768>),
+    _32K(Block<32768>),
 }
 
 impl StorageBlock {

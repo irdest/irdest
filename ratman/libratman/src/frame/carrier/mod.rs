@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 mod announce;
 mod header;
 mod manifest;

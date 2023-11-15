@@ -10,18 +10,16 @@ pub mod cli;
 pub mod codes;
 pub mod fork;
 
-pub(crate) mod chunk;
 pub(crate) mod pidfile;
 pub(crate) mod runtime_state;
 pub(crate) mod thread;
-pub(crate) mod transform;
 // pub(crate) mod upnp; // FIXME: this currently doesn't work
 
 use crate::{
     config::{ConfigTree, SubConfig},
     core::GenericEndpoint,
 };
-use async_std::channel::{Receiver, Sender};
+use libratman::tokio::sync::mpsc::{Receiver, Sender};
 use nix::unistd::Uid;
 use std::{collections::BTreeMap, sync::Arc};
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
@@ -73,11 +71,9 @@ pub fn setup_logging(ratmand_config: &SubConfig) {
             "error" => LevelFilter::ERROR.into(),
             _ => unreachable!(),
         })
-        .add_directive("async_io=error".parse().unwrap())
-        .add_directive("async_std=error".parse().unwrap())
+        .add_directive("tokio=error".parse().unwrap())
         .add_directive("mio=error".parse().unwrap())
         .add_directive("polling=error".parse().unwrap())
-        .add_directive("tide=warn".parse().unwrap())
         .add_directive("trust_dns_proto=error".parse().unwrap())
         .add_directive("trust_dns_resolver=warn".parse().unwrap());
 

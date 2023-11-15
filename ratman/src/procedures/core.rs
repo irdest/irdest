@@ -1,7 +1,8 @@
 use crate::{
-    core::{Dispatch, LinksMap, Journal, RouteTable, Switch},
+    core::{Dispatch, Journal, LinksMap, RouteTable},
     dispatch::BlockCollector,
 };
+use libratman::tokio::{sync::mpsc, task::spawn_local};
 use std::sync::Arc;
 
 /// The core is a set of modules that densely depend on each other
@@ -21,7 +22,7 @@ pub(crate) async fn start_core() -> Core {
     let routes = RouteTable::new();
     let journal = Journal::new();
 
-    let (jtx, jrx) = async_std::channel::bounded(16);
+    let (jtx, jrx) = mpsc::channel(16);
     let collector = BlockCollector::new(jtx);
 
     let dispatch = Dispatch::new(
@@ -31,8 +32,8 @@ pub(crate) async fn start_core() -> Core {
     );
 
     // Dispatch the runners
-    async_std::task::spawn(Arc::clone(&journal).run_block_acceptor(jrx));
-    async_std::task::spawn(Arc::clone(&journal).run_message_assembler());
+    spawn_local(Arc::clone(&journal).run_block_acceptor(jrx));
+    spawn_local(Arc::clone(&journal).run_message_assembler());
 
     Core {
         collector,

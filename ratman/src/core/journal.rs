@@ -4,21 +4,24 @@
 
 use crate::storage::block::StorageBlock;
 use async_eris::{Block, BlockKey, BlockReference, BlockStorage, ReadCapability};
-use async_std::{
-    channel::{bounded, unbounded, Receiver, Sender},
-    sync::{Arc, RwLock},
-};
 use async_trait::async_trait;
 use libratman::{
-    netmod::InMemoryEnvelope,
-    types::{
-        frames::{CarrierFrameHeader, FrameParser, ManifestFrame, ManifestFrameV1},
-        ApiRecipient, Id, Message, Recipient, SequenceIdV1, TimePair,
+    frame::{
+        carrier::{CarrierFrameHeader, ManifestFrame, ManifestFrameV1},
+        FrameParser,
     },
+    tokio::{
+        sync::mpsc::{channel, unbounded_channel, Receiver, Sender},
+        sync::RwLock,
+        task::spawn_local,
+        time,
+    },
+    types::{Id, InMemoryEnvelope, Letterhead, Recipient, SequenceIdV1, TimePair},
     BlockError, RatmanError, Result,
 };
 use std::{
     collections::{HashMap, HashSet},
+    sync::Arc,
     time::Duration,
 };
 
@@ -117,7 +120,7 @@ pub(crate) struct Journal {
     /// received from the main block queue
     manifest_notifier: (Sender<MessageNotifier>, Receiver<MessageNotifier>),
     /// A channel which can be polled to wait for new incoming messages
-    incoming: (Sender<Message>, Receiver<Message>),
+    incoming: (Sender<Letterhead>, Receiver<Letterhead>),
 }
 
 impl Journal {
@@ -126,8 +129,8 @@ impl Journal {
             known: Default::default(),
             blocks: Default::default(),
             frames: Default::default(),
-            manifest_notifier: bounded(8),
-            incoming: bounded(8),
+            manifest_notifier: channel(8),
+            incoming: channel(8),
         })
     }
 
@@ -193,7 +196,7 @@ impl Journal {
                         "Can't assemble {}, blocks missing!  Trying again later...",
                         message_id
                     );
-                    async_std::task::spawn(async move {
+                    spawn_local(async move {
                         let mut ctr = 0;
 
                         loop {
@@ -202,7 +205,7 @@ impl Journal {
                                 "Waiting {}ms for attempt #{} to assemble message {}",
                                 millis, ctr, message_id,
                             );
-                            async_std::task::sleep(Duration::from_millis(millis)).await;
+                            time::sleep(Duration::from_millis(millis)).await;
                             match this.decode_message(&message_notifier).await {
                                 Ok(msg) => {
                                     this.incoming.0.send(msg).await;
@@ -230,7 +233,7 @@ impl Journal {
             ref read_cap,
             ref header,
         }: &MessageNotifier,
-    ) -> Result<Message> {
+    ) -> Result<Letterhead> {
         let block_reader = self.blocks.read().await;
 
         let mut payload_buffer = vec![];
@@ -246,19 +249,29 @@ impl Journal {
         let mut time = TimePair::sending();
         time.receive();
 
-        debug!("Decoding message was successful!");
-        Ok(Message {
-            id: header.get_seq_id().unwrap().hash,
-            sender: header.get_sender(),
-            recipient: header.get_recipient().unwrap().into(),
-            time,
-            payload: payload_buffer,
-            signature: vec![],
-        })
+        debug!("Decoding letterhead was successful!");
+        todo!()
+        // Ok(Letterhead {
+        //     from,
+        //     to,
+        //     time,
+        //     stream_id,
+        //     payload_length,
+        //     auxiliary_data,
+        // })
+
+        // Ok(Message {
+        //     id: header.get_seq_id().unwrap().hash,
+        //     sender: header.get_sender(),
+        //     recipient: header.get_recipient().unwrap().into(),
+        //     time,
+        //     payload: payload_buffer,
+        //     signature: vec![],
+        // })
     }
 
     /// Block and yield the next completed message from the queue
-    pub(crate) async fn next_message(&self) -> Option<Message> {
+    pub(crate) async fn next_message(&self) -> Option<()> {
         match self.incoming.1.recv().await.ok() {
             Some(msg) => {
                 info!(
@@ -266,7 +279,8 @@ impl Journal {
                     msg.id, msg.sender
                 );
 
-                Some(msg)
+                // Some(msg)
+                todo!()
             }
             none => none,
         }
@@ -284,7 +298,7 @@ impl Journal {
         let seq_id = envelope.header.get_seq_id().unwrap().hash;
         let manifest_notifier = self.manifest_notifier.0.clone();
 
-        async_std::task::spawn(async move {
+        spawn_local(async move {
             let read_cap = match ManifestFrame::parse(envelope.get_payload_slice()) {
                 Ok((
                     _,

@@ -1,18 +1,22 @@
-use crate::{config::ConfigTree, context::RatmanContext};
-use async_std::{sync::Arc, task};
+use crate::{
+    config::ConfigTree,
+    context::RatmanContext,
+    core::{self, dispatch},
+};
 use bincode::Config;
 use libratman::{
-    netmod::InMemoryEnvelope,
-    types::{
-        frames::{
-            AnnounceFrame, AnnounceFrameV1, CarrierFrameHeader, FrameGenerator, OriginDataV1,
-            RouteDataV1,
-        },
-        Address, Id,
+    frame::{
+        carrier::{AnnounceFrame, AnnounceFrameV1, CarrierFrameHeader, OriginDataV1, RouteDataV1},
+        FrameGenerator,
     },
+    tokio::time,
+    types::{Address, Id, InMemoryEnvelope},
 };
 use std::{
-    sync::atomic::{AtomicBool, Ordering},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
     time::Duration,
 };
 
@@ -64,20 +68,18 @@ impl AddressAnnouncer {
             // Pre-maturely mark this announcement as "known", so that
             // the switch locally will ignore it when it is inevitably
             // sent back to us.
-            ctx.core
-                .journal
+            ctx.journal
                 .save_as_known(&header.get_seq_id().unwrap().hash)
                 .await;
 
             // Send it into the network
-            if let Err(e) = ctx
-                .core
-                .dispatch
-                .flood_frame(
-                    InMemoryEnvelope::from_header_and_payload(header, announce_buffer).unwrap(),
-                    None,
-                )
-                .await
+            if let Err(e) = dispatch::flood_frame(
+                &ctx.routes,
+                &ctx.links,
+                InMemoryEnvelope::from_header_and_payload(header, announce_buffer).unwrap(),
+                None,
+            )
+            .await
             {
                 error!("failed to flood announcement: {}", e)
             }
@@ -85,7 +87,7 @@ impl AddressAnnouncer {
             // debug!("Sent address announcement for {}", self.0);
 
             // Wait some amount of time
-            task::sleep(Duration::from_secs(announce_delay as u64)).await;
+            time::sleep(Duration::from_secs(announce_delay as u64)).await;
         }
     }
 }

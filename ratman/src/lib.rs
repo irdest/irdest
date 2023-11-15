@@ -34,8 +34,8 @@ mod protocol;
 mod runtime;
 mod storage;
 
-#[cfg(feature = "dashboard")]
-mod web;
+// #[cfg(feature = "dashboard")]
+// mod web;
 
 pub mod config;
 pub mod util;

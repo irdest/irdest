@@ -26,7 +26,7 @@ flate2 = "1.0"
 nom = "7.0"
 
 ## Async runtime and utilities
-tokio = { version = "1.0", features = [ "rt", "io-util", "macros", "io-std", "net", "time", "process", "sync", "signal", "parking_lot" ] }
+tokio = { version = "1.0", features = [ "rt", "fs", "io-util", "macros", "io-std", "net", "time", "process", "sync", "signal", "parking_lot" ] }
 tokio-util = { version = "0.7", features=["compat"] }
 futures = "0.3"
 tokio-stream = "0.1"

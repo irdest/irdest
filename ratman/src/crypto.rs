@@ -7,15 +7,13 @@
 //! An address corresponds to the public key of a key pair, where the
 //! private key is not shared outside the router.
 
+// Utility imports
 use crate::storage::addrs::StorageAddress;
-use libratman::types::Address;
+use libratman::{tokio::sync::RwLock, types::Address};
+use rand::{rngs::OsRng, thread_rng, RngCore};
+use std::{collections::BTreeMap, convert::TryInto};
 
-use async_std::sync::RwLock;
-use rand::rngs::OsRng;
-use rand::{thread_rng, RngCore};
-use std::collections::BTreeMap;
-use std::convert::TryInto;
-
+// Cryptography imports
 use chacha20::cipher::{KeyIvInit, StreamCipher};
 use chacha20::ChaCha20;
 use curve25519_dalek::edwards::CompressedEdwardsY;
@@ -137,6 +135,8 @@ impl Keystore {
             X25519Pubkey::from(peer_montgomery.to_bytes())
         };
 
+        // Finally we can perform a diffie hellman exchange between
+        // the private sender and public recipient address keys
         Some(self_x25519_secret.diffie_hellman(&peer_x25519_public))
     }
 
@@ -154,7 +154,7 @@ impl Keystore {
     }
 }
 
-#[async_std::test]
+#[libratman::tokio::test]
 async fn shared_key() {
     let store = Keystore::new();
 
@@ -176,7 +176,7 @@ async fn shared_key() {
     assert_eq!(alice_to_bob.as_bytes(), bob_to_alice.as_bytes());
 }
 
-#[async_std::test]
+#[libratman::tokio::test]
 async fn manifest_signature() {
     let store = Keystore::new();
 
@@ -195,7 +195,7 @@ async fn manifest_signature() {
     )
 }
 
-#[async_std::test]
+#[libratman::tokio::test]
 async fn diffie_hellman_chacha20() {
     let store = Keystore::new();
     let alice = store.create_address().await;

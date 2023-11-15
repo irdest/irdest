@@ -1,9 +1,12 @@
 use crate::core::GenericEndpoint;
-use async_std::stream::StreamExt;
 use libratman::{
-    futures::{self, stream::FuturesUnordered},
-    netmod::{InMemoryEnvelope, Target},
-    tokio, NetmodError, RatmanError, Result,
+    futures::{
+        self,
+        stream::{FuturesUnordered, StreamExt},
+    },
+    tokio,
+    types::{InMemoryEnvelope, Neighbour},
+    NetmodError, RatmanError, Result,
 };
 use std::{collections::BTreeMap, sync::Arc};
 
@@ -27,7 +30,7 @@ impl NetmodState {
     pub async fn send_to(
         &self,
         nmodid: &str,
-        target: Target,
+        target: Neighbour,
         envelope: InMemoryEnvelope,
         exclude: Option<u16>,
     ) -> Result<()> {
@@ -46,8 +49,8 @@ impl NetmodState {
         }
     }
 
-    /// 
-    pub async fn next(&self) -> Result<(InMemoryEnvelope, Target)> {
+    ///
+    pub async fn next(&self) -> Result<(InMemoryEnvelope, Neighbour)> {
         match self {
             Self::Single((_, ep)) => ep.next().await,
             Self::Binary((_, ep1), (_, ep2)) => tokio::select! {

@@ -5,5 +5,7 @@
 /// Length of the identity buffer to align with an ed25519 pubkey
 pub const ID_LEN: usize = 32;
 
+pub mod subnet;
+pub mod target;
 pub mod address;
 pub mod id;

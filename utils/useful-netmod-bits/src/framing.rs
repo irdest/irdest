@@ -5,7 +5,7 @@
 
 //! UDP overlay protocol and framing
 
-use libratman::netmod::{InMemoryEnvelope, Target};
+use libratman::types::{InMemoryEnvelope, Neighbour};
 use serde::{Deserialize, Serialize};
 
 /// A framing device to encapsulate the ethernet overlay protocol
@@ -47,4 +47,4 @@ impl Envelope {
 /// The ID can be resolved via the AddrTable to find out where to send
 /// a payload
 #[derive(Debug, Clone)]
-pub struct FrameExt(pub InMemoryEnvelope, pub Target);
+pub struct FrameExt(pub InMemoryEnvelope, pub Neighbour);
