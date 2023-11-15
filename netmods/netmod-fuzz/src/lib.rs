@@ -4,14 +4,14 @@
 
 use async_std::channel::{unbounded, Receiver, Sender};
 use libratman::{
-    netmod::{self, InMemoryEnvelope},
-    types::frames::{CarrierFrameHeader, FrameParser},
+    endpoint::EndpointExt,
+    types::{InMemoryEnvelope, Neighbour},
     RatmanError,
 };
 
 pub struct FuzzEndpoint {
-    tx: Sender<(InMemoryEnvelope, netmod::Target)>,
-    rx: Receiver<(InMemoryEnvelope, netmod::Target)>,
+    tx: Sender<(InMemoryEnvelope, Neighbour)>,
+    rx: Receiver<(InMemoryEnvelope, Neighbour)>,
 }
 
 impl FuzzEndpoint {
@@ -22,13 +22,13 @@ impl FuzzEndpoint {
 
     pub async fn recv(&self, buf: &[u8]) {
         if let Ok(env) = InMemoryEnvelope::parse_from_buffer(buf.to_vec()) {
-            let _ = self.tx.send((env, netmod::Target::Single(0))).await;
+            let _ = self.tx.send((env, Neighbour::Single(0))).await;
         }
     }
 }
 
 #[async_trait::async_trait]
-impl netmod::Endpoint for FuzzEndpoint {
+impl EndpointExt for FuzzEndpoint {
     fn size_hint(&self) -> usize {
         0
     }
@@ -36,13 +36,13 @@ impl netmod::Endpoint for FuzzEndpoint {
     async fn send(
         &self,
         _: InMemoryEnvelope,
-        _: netmod::Target,
+        _: Neighbour,
         _: Option<u16>,
     ) -> Result<(), RatmanError> {
         Ok(())
     }
 
-    async fn next(&self) -> Result<(InMemoryEnvelope, netmod::Target), RatmanError> {
+    async fn next(&self) -> Result<(InMemoryEnvelope, Neighbour), RatmanError> {
         Ok(self.rx.recv().await.unwrap())
     }
 }

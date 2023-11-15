@@ -9,12 +9,9 @@ use async_std::{
 };
 use byteorder::ByteOrder;
 use libratman::{
-    netmod::InMemoryEnvelope,
-    types::{
-        frames::{CarrierFrameHeader, FrameGenerator, FrameParser},
-        Address, NonfatalError,
-    },
-    EncodingError, RatmanError, Result,
+    frame::{carrier::CarrierFrameHeader, FrameGenerator, FrameParser},
+    types::{Address, InMemoryEnvelope},
+    EncodingError, NonfatalError, RatmanError, Result,
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 

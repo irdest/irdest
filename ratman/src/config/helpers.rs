@@ -1,7 +1,7 @@
 //! A set of helper functions for dealing with configuration data
 
 use kdl::{KdlDocument, KdlEntry, KdlNode, KdlValue};
-use libratman::types::Result;
+use libratman::Result;
 use std::{fs::File, io::Read, path::PathBuf};
 
 /// Take a path (from the configuration) and load a peer file from it

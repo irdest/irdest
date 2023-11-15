@@ -38,3 +38,5 @@ pub use types::error::{
 // Re-export tokio and futures crates to share async abstractions
 pub use futures;
 pub use tokio;
+pub use tokio_stream;
+pub use tokio_util;

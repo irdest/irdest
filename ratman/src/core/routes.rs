@@ -7,16 +7,14 @@
 
 use crate::util::IoPair;
 use libratman::{
-    netmod::Target,
-    types::{Address, RatmanError, Result},
+    tokio::{
+        sync::{mpsc::channel, Mutex},
+        task,
+    },
+    types::{Address, Neighbour},
+    RatmanError, Result,
 };
-
-use async_std::{
-    channel::bounded,
-    sync::{Arc, Mutex},
-    task,
-};
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, sync::Arc};
 
 /// Main Ratman routing table
 ///
@@ -34,7 +32,7 @@ impl RouteTable {
     pub(crate) fn new() -> Arc<Self> {
         Arc::new(Self {
             routes: Default::default(),
-            new: bounded(1),
+            new: channel(1),
             #[cfg(feature = "dashboard")]
             metrics: metrics::RouteTableMetrics::default(),
         })
@@ -61,12 +59,12 @@ pub(crate) async fn exec_route_table(tabel: &Arc<RouteTable>) {
 
 /// A netmod endpoint ID and an endpoint target ID
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) struct EpTargetPair(pub(crate) u8, pub(crate) Target);
+pub(crate) struct EpNeighbourPair(pub(crate) u8, pub(crate) Neighbour);
 
 /// Describes the reachability of a route
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) enum RouteType {
-    Remote(EpTargetPair),
+    Remote(EpNeighbourPair),
     Local,
 }
 
@@ -87,9 +85,9 @@ impl RouteTable {
     ///
     /// If the Id was not previously known to the router, it is queued
     /// to the `new` set which can be polled by calling `discovered().await`.
-    pub(crate) async fn update(self: &Arc<Self>, if_: u8, t: Target, id: Address) {
+    pub(crate) async fn update(self: &Arc<Self>, if_: u8, t: Neighbour, id: Address) {
         let mut tbl = self.routes.lock().await;
-        let route = RouteType::Remote(EpTargetPair(if_, t));
+        let route = RouteType::Remote(EpNeighbourPair(if_, t));
 
         // Only "announce" a new user if it was not known before
         if tbl.insert(id, route).is_none() {
@@ -166,7 +164,7 @@ impl RouteTable {
     /// **Note**: this function may panic if no entry was found, and
     /// returns `None` if the specified ID isn't remote.  To get more
     /// control over how the table is queried, use `reachable` instead
-    pub(crate) async fn resolve(&self, id: Address) -> Option<EpTargetPair> {
+    pub(crate) async fn resolve(&self, id: Address) -> Option<EpNeighbourPair> {
         match self.routes.lock().await.get(&id).cloned()? {
             RouteType::Remote(ep) => Some(ep),
             RouteType::Local => None,

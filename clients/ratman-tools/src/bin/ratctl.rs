@@ -61,7 +61,7 @@ fn setup_cli() -> Command {
                                 .short('f')
                         ]),
                 ]),
-            //// \^-^/ Address management commands
+            //// \^-^/ Contact management commands
             ////
             //// The contact book contains "virtual data", meaning
             //// associations of metadata for network addresses.  To

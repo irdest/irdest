@@ -21,9 +21,9 @@ use {resolve::Resolver, server::Server};
 
 use async_std::{channel::unbounded, io::WriteExt, net::TcpListener, sync::Arc, task};
 use libratman::{
-    netmod::{self, InMemoryEnvelope},
-    types::RatmanError,
-    NetmodError,
+    endpoint::EndpointExt,
+    types::{Neighbour, InMemoryEnvelope},
+    NetmodError, RatmanError, Result,
 };
 use serde::{Deserialize, Serialize};
 
@@ -53,7 +53,7 @@ pub struct InetEndpoint {
 
 impl InetEndpoint {
     /// Start a basic inet endpoint on a particular bind address
-    pub async fn start(bind: &str) -> Result<Arc<Self>, RatmanError> {
+    pub async fn start(bind: &str) -> Result<Arc<Self>> {
         let server = Server::bind(bind).await?;
         let routes = Routes::new();
         let channel = unbounded(); // TODO: constraint the channel?
@@ -82,7 +82,7 @@ impl InetEndpoint {
     /// Each peer will spawn a worker that periodically attempts to
     /// connect to it.  At the moment all connections are "Standard"
     /// connections as outlined in the user manual.
-    async fn add_peer(&self, p: &str) -> Result<u16, RatmanError> {
+    async fn add_peer(&self, p: String) -> Result<u16> {
         if p == "" {
             return Err(RatmanError::Netmod(NetmodError::InvalidPeer(p.into())));
         }
@@ -123,11 +123,7 @@ impl InetEndpoint {
     /// to it, or it is currently being restarted, and we queue
     /// something for it.
     ///
-    pub async fn send(
-        &self,
-        target: Target,
-        envelope: InMemoryEnvelope,
-    ) -> Result<(), RatmanError> {
+    pub async fn send_one(&self, target: Target, envelope: InMemoryEnvelope) -> Result<()> {
         let valid = self.routes.exists(target).await;
         if valid {
             trace!("Target {} exists {}", target, valid);
@@ -150,7 +146,7 @@ impl InetEndpoint {
         &self,
         envelope: InMemoryEnvelope,
         exclude: Option<Target>,
-    ) -> Result<(), RatmanError> {
+    ) -> Result<()> {
         let all = self.routes.get_all_valid().await;
         for (peer, id) in all {
             match exclude {
@@ -175,9 +171,9 @@ impl InetEndpoint {
 }
 
 #[async_trait::async_trait]
-impl netmod::Endpoint for InetEndpoint {
-    async fn start_peering(&self, addr: &str) -> Result<u16, RatmanError> {
-        self.add_peer(addr).await
+impl EndpointExt for InetEndpoint {
+    async fn start_peering(&self, addr: &str) -> Result<u16> {
+        self.add_peer(addr.to_owned()).await
     }
 
     /// Return a desired frame size in bytes
@@ -206,13 +202,14 @@ impl netmod::Endpoint for InetEndpoint {
     async fn send(
         &self,
         envelope: InMemoryEnvelope,
-        target: netmod::Target,
+        target: Neighbour,
         exclude: Option<u16>,
-    ) -> Result<(), RatmanError> {
+    ) -> Result<()> {
         trace!("Sending message to {:?}", target);
         match target {
-            netmod::Target::Single(target) => self.send(target, envelope).await?,
-            netmod::Target::Flood => self.send_all(envelope, exclude).await?,
+            Neighbour::Single(target) => self.send_one(target, envelope).await?,
+            Neighbour::Flood => self.send_all(envelope, exclude).await?,
+            _ => todo!(),
         }
 
         Ok(())
@@ -223,11 +220,11 @@ impl netmod::Endpoint for InetEndpoint {
     /// It's recommended to return transmission errors, even if there
     /// are no ways to correct the situation from the router's POV,
     /// simply to feed packet drop metrics.
-    async fn next(&self) -> Result<(InMemoryEnvelope, netmod::Target), RatmanError> {
+    async fn next(&self) -> Result<(InMemoryEnvelope, Neighbour)> {
         self.next()
             .await
             .ok_or(RatmanError::Netmod(NetmodError::ConnectionLost))
-            .map(|(target, envelope)| (envelope, netmod::Target::Single(target)))
+            .map(|(target, envelope)| (envelope, Neighbour::Single(target)))
     }
 }
 
@@ -258,7 +255,7 @@ async fn simple_transmission() {
     let server = InetEndpoint::start("[::]:12000").await.unwrap();
 
     let client = InetEndpoint::start("[::]:13000").await.unwrap();
-    client.add_peer("[::1]:12000").await.unwrap();
+    client.add_peer("[::1]:12000".into()).await.unwrap();
 
     async_std::task::sleep(std::time::Duration::from_millis(1000)).await;
     info!("Waited for 1000ms, sending some data now");

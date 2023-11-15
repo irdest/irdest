@@ -5,25 +5,18 @@
 //! tokio::spawn is FORBIDDEN in this module!  Only ever use
 //! tokio::spawn_local!
 
-use crate::{
-    rt::writer::{write_u32, AsyncWriter},
-    Result,
-};
-use rand::RngCore;
+use crate::Result;
 use std::{
     future::Future,
     sync::{
         mpsc::{sync_channel, Receiver as SyncReceiver, SyncSender},
         Arc,
     },
-    time::Duration,
 };
 use tokio::{
-    net::TcpStream,
     runtime::{Builder, Runtime},
     sync::mpsc,
-    task::{spawn_local, LocalSet},
-    time::{timeout, Timeout},
+    task::LocalSet,
 };
 
 pub mod reader;
@@ -94,15 +87,11 @@ where
         let label = system.label.clone();
         let _ = system.root_exec(async move {
             match res {
-                Ok(_) => println!("Worker thread {} completed successfully!", label),
+                Ok(_) => info!("Worker thread {} completed successfully!", label),
                 Err(ref e) => println!("Worker thread {} encountered an error: {}", label, e),
             }
 
-            match tx.send(res).await {
-                Ok(_) => println!("Send successful!"),
-                Err(e) => println!("Send failed because {}", e),
-            }
-
+            let _ = tx.send(res).await;
             Ok(())
         });
     });
@@ -117,20 +106,13 @@ fn simple_tcp_transfer() {
 
     // Receiver
     let mut responder_rx = new_async_thread("tcp server", 32, async move {
-        println!("TCP server bind()");
         let l = TcpListener::bind("localhost:5555").await.unwrap();
-        println!("Waiting for accept()");
         let (mut stream, _addr) = l.accept().await.unwrap();
 
-        println!("New connection, accepted!");
         let length = LengthReader::new(&mut stream).read_u32().await.unwrap();
         AsyncVecReader::new(length as usize, &mut stream)
             .read_to_vec()
             .await
-            .map(|t| {
-                println!("Read successful!");
-                t
-            })
     });
 
     let mut input_data = vec![0; 1024 * 8];
@@ -139,14 +121,12 @@ fn simple_tcp_transfer() {
     // Sender
     let to_send = input_data.clone();
     new_async_thread("tcp client", 32, async move {
-        println!("tcp client :: run()");
         let to_send = to_send.clone();
 
         let mut stream = timeout(Duration::from_secs(2), TcpStream::connect("localhost:5555"))
             .await
             .unwrap()
             .unwrap();
-        println!("Connection successful!");
 
         write_u32(&mut stream, to_send.len() as u32).await.unwrap();
         AsyncWriter::new(to_send.as_slice(), &mut stream)
@@ -162,6 +142,5 @@ fn simple_tcp_transfer() {
         .root_exec(async move { responder_rx.recv().await.unwrap() })
         .unwrap();
 
-    println!("DID WE GET DATA?? {:?}", received_data);
     assert_eq!(input_data, received_data);
 }

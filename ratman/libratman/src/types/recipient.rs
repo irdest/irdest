@@ -13,16 +13,16 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Recipient {
     /// Contains a single targeted message
-    Target(Address),
+    Address(Address),
     /// Contains a flood namespace
-    Flood(Address),
+    Namespace(Address),
 }
 
 impl Recipient {
-    pub fn address(&self) -> Address {
+    pub fn inner_address(&self) -> Address {
         match self {
-            Self::Target(addr) => *addr,
-            Self::Flood(addr) => *addr,
+            Self::Address(addr) => *addr,
+            Self::Namespace(addr) => *addr,
         }
     }
 }
@@ -30,11 +30,11 @@ impl Recipient {
 impl FrameGenerator for Option<Recipient> {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         match self {
-            Some(Recipient::Target(addr)) => {
+            Some(Recipient::Address(addr)) => {
                 buf.push(1);
                 addr.generate(buf)?;
             }
-            Some(Recipient::Flood(addr)) => {
+            Some(Recipient::Namespace(addr)) => {
                 buf.push(2);
                 addr.generate(buf)?;
             }
@@ -56,11 +56,11 @@ impl FrameParser for Option<Recipient> {
             0 => Ok((input, None)),
             1 => {
                 let (input, addr) = take_address(input)?;
-                Ok((input, Some(Recipient::Target(addr))))
+                Ok((input, Some(Recipient::Address(addr))))
             }
             2 => {
                 let (input, addr) = take_address(input)?;
-                Ok((input, Some(Recipient::Flood(addr))))
+                Ok((input, Some(Recipient::Namespace(addr))))
             }
             _ => {
                 unreachable!(

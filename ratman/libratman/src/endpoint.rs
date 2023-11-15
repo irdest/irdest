@@ -1,7 +1,7 @@
 //! Endpoint abstraction module
 
 use crate::{
-    types::{CurrentStatus, EpTarget, InMemoryEnvelope},
+    types::{CurrentStatus, Neighbour, InMemoryEnvelope},
     Result,
 };
 use async_trait::async_trait;
@@ -22,7 +22,7 @@ use std::sync::Arc;
 /// and to make it obvious that internal mutability needs to be used,
 /// this interface is immutable by default.
 #[async_trait]
-pub trait Endpoint {
+pub trait EndpointExt {
     /// Return a string identifier for this netmodk instance
     ///
     /// The identifier logic MUST handle multi-instancing, if it
@@ -46,7 +46,7 @@ pub trait Endpoint {
     /// cryptographic IDs of nearby gateways.
     ///
     /// The identifier returned must be a unique peer identifier,
-    /// similar to the `EpTarget` abstraction that is used by `send`
+    /// similar to the `Neighbour` abstraction that is used by `send`
     /// and `next`.  Currently this API doesn't consider stopping a
     /// peering intent (i.e. even if a connection drops, the netmod
     /// should always attempt to re-establish the connection).  The
@@ -87,7 +87,7 @@ pub trait Endpoint {
     async fn send(
         &self,
         envelope: InMemoryEnvelope,
-        target: EpTarget,
+        target: Neighbour,
         exclude: Option<u16>,
     ) -> Result<()>;
 
@@ -102,11 +102,11 @@ pub trait Endpoint {
     /// documentation on what exactly that means for your Netmod
     /// implementation!  *Serious data loss* can occur if special care
     /// is not taken!
-    async fn next(&self) -> Result<(InMemoryEnvelope, EpTarget)>;
+    async fn next(&self) -> Result<(InMemoryEnvelope, Neighbour)>;
 }
 
 #[async_trait]
-impl<T: Endpoint + Send + Sync> Endpoint for Arc<T> {
+impl<T: EndpointExt + Send + Sync> EndpointExt for Arc<T> {
     fn size_hint(&self) -> usize {
         T::size_hint(self)
     }
@@ -114,13 +114,13 @@ impl<T: Endpoint + Send + Sync> Endpoint for Arc<T> {
     async fn send(
         &self,
         envelope: InMemoryEnvelope,
-        target: EpTarget,
+        target: Neighbour,
         exclude: Option<u16>,
     ) -> Result<()> {
         T::send(self, envelope, target, exclude).await
     }
 
-    async fn next(&self) -> Result<(InMemoryEnvelope, EpTarget)> {
+    async fn next(&self) -> Result<(InMemoryEnvelope, Neighbour)> {
         T::next(self).await
     }
 }

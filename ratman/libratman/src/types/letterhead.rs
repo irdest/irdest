@@ -1,6 +1,5 @@
-use std::ffi::CString;
-
 use crate::types::{Address, Id, Recipient, TimePair};
+use std::ffi::CString;
 
 /// Message stream metadata section
 ///

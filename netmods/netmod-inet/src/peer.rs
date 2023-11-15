@@ -12,7 +12,7 @@ use async_std::{
     sync::{Arc, Mutex},
     task,
 };
-use libratman::netmod::InMemoryEnvelope;
+use libratman::types::InMemoryEnvelope;
 use libratman::{EncodingError, RatmanError};
 
 pub(crate) type FrameReceiver = Receiver<(Target, InMemoryEnvelope)>;

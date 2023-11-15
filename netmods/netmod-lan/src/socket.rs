@@ -13,8 +13,8 @@ use async_std::{
     task::{self, Poll},
 };
 use libratman::{
-    netmod::{InMemoryEnvelope, Target},
-    types::frames::{modes, CarrierFrameHeader},
+    frame::carrier::{modes, CarrierFrameHeader},
+    types::{InMemoryEnvelope, Neighbour},
 };
 use std::collections::VecDeque;
 use std::ffi::CString;
@@ -162,7 +162,7 @@ impl Socket {
 
                                 // Append to the inbox and wake
                                 let mut inbox = arc.inbox.write().await;
-                                inbox.push_back(MemoryEnvelopeExt(env, Target::Single(id)));
+                                inbox.push_back(MemoryEnvelopeExt(env, Neighbour::Single(id)));
                                 Notify::wake(&mut inbox);
                             }
                         }

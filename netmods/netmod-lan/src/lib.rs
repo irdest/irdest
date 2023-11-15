@@ -17,8 +17,11 @@ pub(crate) use framing::MemoryEnvelopeExt;
 
 use async_std::{sync::Arc, task};
 use async_trait::async_trait;
-use libratman::netmod::{Endpoint as EndpointExt, InMemoryEnvelope, Target};
-use libratman::types::Result;
+use libratman::{
+    endpoint::EndpointExt,
+    types::{InMemoryEnvelope, Neighbour},
+    Result,
+};
 use pnet_datalink::interfaces;
 
 #[derive(Clone)]
@@ -67,11 +70,11 @@ impl EndpointExt for Endpoint {
     async fn send(
         &self,
         envelope: InMemoryEnvelope,
-        target: Target,
+        target: Neighbour,
         exclude: Option<u16>,
     ) -> Result<()> {
         match target {
-            Target::Single(ref id) => {
+            Neighbour::Single(ref id) => {
                 self.socket
                     // todo: do we need to prefix a length here ???
                     .send(&envelope, self.addrs.ip(*id).await.unwrap())
@@ -83,7 +86,7 @@ impl EndpointExt for Endpoint {
             // is not segmented (i.e. all peers all also know each
             // other) we can just not bother to send the message
             // again (hopefully)
-            Target::Flood if exclude.is_none() => {
+            Neighbour::Flood if exclude.is_none() => {
                 self.socket.multicast(&envelope).await;
             }
             _ => {}
@@ -92,7 +95,7 @@ impl EndpointExt for Endpoint {
         Ok(())
     }
 
-    async fn next(&self) -> Result<(InMemoryEnvelope, Target)> {
+    async fn next(&self) -> Result<(InMemoryEnvelope, Neighbour)> {
         let fe = self.socket.next().await;
         Ok((fe.0, fe.1))
     }

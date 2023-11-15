@@ -2,12 +2,14 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use async_std::sync::{Arc, RwLock};
-use libratman::netmod::Endpoint;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use libratman::{endpoint::EndpointExt, tokio::sync::RwLock};
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Arc,
+};
 
 /// A dynamicly allocated, generic driver in memory
-pub(crate) type GenericEndpoint = dyn Endpoint + 'static + Send + Sync;
+pub(crate) type GenericEndpoint = dyn EndpointExt + 'static + Send + Sync;
 
 /// Wrap around endpoints that can be removed
 ///

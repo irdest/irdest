@@ -5,18 +5,16 @@
 
 use crate::{
     context::RatmanContext,
-    core::{LinksMap, Journal, RouteTable, RouteType},
+    core::{Journal, LinksMap, RouteTable, RouteType},
     dispatch::BlockCollector,
     util::IoPair,
 };
-use async_std::{channel::bounded, sync::Arc, task};
 use libratman::{
-    netmod::InMemoryEnvelope,
-    types::{
-        frames::modes::{self as fmodes, DATA, MANIFEST},
-        Recipient,
-    },
+    frame::carrier::modes::{self as fmodes, DATA, MANIFEST},
+    tokio::{sync::mpsc::channel, task},
+    types::{InMemoryEnvelope, Recipient},
 };
+use std::sync::Arc;
 
 use super::dispatch::Dispatch;
 
@@ -37,9 +35,8 @@ pub(crate) struct Switch {
 
     /// Control channel to start new endpoints
     ctrl: IoPair<usize>,
-
-    #[cfg(feature = "dashboard")]
-    metrics: Arc<metrics::Metrics>,
+    // #[cfg(feature = "dashboard")]
+    // metrics: Arc<metrics::Metrics>,
 }
 
 impl Switch {
@@ -57,9 +54,9 @@ impl Switch {
             collector,
             drivers,
             dispatch,
-            ctrl: bounded(1),
-            #[cfg(feature = "dashboard")]
-            metrics: Arc::new(metrics::Metrics::default()),
+            ctrl: channel(1),
+            // #[cfg(feature = "dashboard")]
+            // metrics: Arc::new(metrics::Metrics::default()),
         })
     }
 
@@ -256,79 +253,79 @@ impl Switch {
     }
 }
 
-#[cfg(feature = "dashboard")]
-mod metrics {
-    use libratman::types::{Address, ApiRecipient, Recipient};
-    use prometheus_client::{
-        encoding::text::Encode,
-        metrics::{counter::Counter, family::Family},
-        registry::{Registry, Unit},
-    };
+// #[cfg(feature = "dashboard")]
+// mod metrics {
+//     use libratman::types::{Address, ApiRecipient, Recipient};
+//     use prometheus_client::{
+//         encoding::text::Encode,
+//         metrics::{counter::Counter, family::Family},
+//         registry::{Registry, Unit},
+//     };
 
-    #[derive(Clone, Hash, PartialEq, Eq, Encode)]
-    pub(super) struct Labels {
-        pub sender_id: Address,
-        pub recp_type: IdentityType,
-        // todo: can we make this an address type again?  Should we?
-        pub recp_id: String,
-    }
+//     #[derive(Clone, Hash, PartialEq, Eq, Encode)]
+//     pub(super) struct Labels {
+//         pub sender_id: Address,
+//         pub recp_type: IdentityType,
+//         // todo: can we make this an address type again?  Should we?
+//         pub recp_id: String,
+//     }
 
-    #[derive(Clone, Hash, PartialEq, Eq)]
-    pub(super) enum IdentityType {
-        Standard,
-        Flood,
-        Empty,
-    }
+//     #[derive(Clone, Hash, PartialEq, Eq)]
+//     pub(super) enum IdentityType {
+//         Standard,
+//         Flood,
+//         Empty,
+//     }
 
-    impl From<Option<&Recipient>> for IdentityType {
-        fn from(v: Option<&Recipient>) -> Self {
-            match v {
-                Some(&Recipient::Target(_)) => Self::Standard,
-                Some(&Recipient::Flood(_)) => Self::Flood,
-                None => Self::Empty,
-            }
-        }
-    }
+//     impl From<Option<&Recipient>> for IdentityType {
+//         fn from(v: Option<&Recipient>) -> Self {
+//             match v {
+//                 Some(&Recipient::Target(_)) => Self::Standard,
+//                 Some(&Recipient::Flood(_)) => Self::Flood,
+//                 None => Self::Empty,
+//             }
+//         }
+//     }
 
-    impl From<&ApiRecipient> for IdentityType {
-        fn from(v: &ApiRecipient) -> Self {
-            match v {
-                &ApiRecipient::Standard(_) => Self::Standard,
-                &ApiRecipient::Flood(_) => Self::Flood,
-            }
-        }
-    }
+//     impl From<&ApiRecipient> for IdentityType {
+//         fn from(v: &ApiRecipient) -> Self {
+//             match v {
+//                 &ApiRecipient::Standard(_) => Self::Standard,
+//                 &ApiRecipient::Flood(_) => Self::Flood,
+//             }
+//         }
+//     }
 
-    // Manually implement Encode to produce eg. `recp_type=standard` rather than `recp_type=Standard`.
-    impl Encode for IdentityType {
-        fn encode(&self, w: &mut dyn std::io::Write) -> std::io::Result<()> {
-            match self {
-                Self::Standard => write!(w, "standard"),
-                Self::Flood => write!(w, "flood"),
-                Self::Empty => write!(w, "none"),
-            }
-        }
-    }
+//     // Manually implement Encode to produce eg. `recp_type=standard` rather than `recp_type=Standard`.
+//     impl Encode for IdentityType {
+//         fn encode(&self, w: &mut dyn std::io::Write) -> std::io::Result<()> {
+//             match self {
+//                 Self::Standard => write!(w, "standard"),
+//                 Self::Flood => write!(w, "flood"),
+//                 Self::Empty => write!(w, "none"),
+//             }
+//         }
+//     }
 
-    #[derive(Default)]
-    pub(super) struct Metrics {
-        pub frames_total: Family<Labels, Counter>,
-        pub bytes_total: Family<Labels, Counter>,
-    }
+//     #[derive(Default)]
+//     pub(super) struct Metrics {
+//         pub frames_total: Family<Labels, Counter>,
+//         pub bytes_total: Family<Labels, Counter>,
+//     }
 
-    impl Metrics {
-        pub fn register(&self, registry: &mut Registry) {
-            registry.register(
-                "ratman_switch_received_frames",
-                "Total number of received frames",
-                Box::new(self.frames_total.clone()),
-            );
-            registry.register_with_unit(
-                "ratman_switch_received",
-                "Total size of received frames",
-                Unit::Bytes,
-                Box::new(self.bytes_total.clone()),
-            );
-        }
-    }
-}
+//     impl Metrics {
+//         pub fn register(&self, registry: &mut Registry) {
+//             registry.register(
+//                 "ratman_switch_received_frames",
+//                 "Total number of received frames",
+//                 Box::new(self.frames_total.clone()),
+//             );
+//             registry.register_with_unit(
+//                 "ratman_switch_received",
+//                 "Total size of received frames",
+//                 Unit::Bytes,
+//                 Box::new(self.bytes_total.clone()),
+//             );
+//         }
+//     }
+// }

@@ -2,10 +2,7 @@
 // #[cfg(not(feature = "std"))] // <-- this doesn't seem to work?
 // #![no_std]
 #![allow(warnings)]
-use libratman::{
-    netmod::InMemoryEnvelope,
-    types::{Address, ApiRecipient},
-};
+use libratman::types::{Address, InMemoryEnvelope, Recipient};
 use std::io::{Read, Write};
 
 /// Encode a frame for basic wire formats
@@ -62,8 +59,8 @@ pub fn decode_frame<T: Read>(stream: &mut T) -> Result<InMemoryEnvelope, std::io
     let recipient_match = read_exactly(1, stream)?;
     let recipient_buf = read_exactly(32, stream)?;
     let recipient = match recipient_match[0] {
-        0x13 => ApiRecipient::Standard(vec![Address::from_bytes(&recipient_buf)]),
-        0x12 => ApiRecipient::Flood(Address::from_bytes(&recipient_buf)),
+        0x13 => Recipient::Address(Address::from_bytes(&recipient_buf)),
+        0x12 => Recipient::Namespace(Address::from_bytes(&recipient_buf)),
         code => panic!("Invalid recipient code: {}", code), // TODO: don't panic here
     };
 

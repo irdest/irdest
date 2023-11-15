@@ -12,7 +12,7 @@ use async_std::{
     sync::Arc,
     task,
 };
-use libratman::{netmod::InMemoryEnvelope, RatmanError};
+use libratman::{types::InMemoryEnvelope, RatmanError};
 use std::{io, time::Duration};
 
 /// The number of attempts a session maskes to a peer before giving up

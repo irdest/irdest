@@ -27,5 +27,32 @@
 //! `ratmand` that does not match the libraries version number.  This
 //! behaviour can be disabled via the `RatmanIpc` API.
 
+mod _trait;
 pub mod socket_v2;
 pub mod types;
+
+pub use _trait::RatmanIpcExtV1;
+
+/// Represent a Ratman IPC socket and interfaces
+pub struct RatmanIpc {}
+
+impl RatmanIpc {}
+
+// pub struct IpcSocket(RawSocketHandle, Receiver<(Letterhead, Vec<u8>)>);
+
+// impl IpcSocket {
+//     async fn connect_to(
+//         addr: impl ToSocketAddrs,
+//         sender: Sender<(MicroframeHeader, Vec<u8>)>,
+//     ) -> Result<Self> {
+//         let socket = TcpStream::connect(addr).await?;
+//         Ok(Self(RawSocketHandle::new(socket, sender)))
+//     }
+
+//     pub async fn default_address() -> Result<IpcSocket> {
+//         let (send, recv) = channel(4);
+//         let inner = Self::connect_to("localhost:5862", send).await?;
+
+//         todo!()
+//     }
+// }

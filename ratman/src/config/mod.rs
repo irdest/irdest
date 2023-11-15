@@ -17,13 +17,15 @@
 //! ratmand`), which doesn't contain a child block.
 //! -
 
-use async_std::{
-    fs::{File, OpenOptions},
-    io::{ReadExt, WriteExt},
-    path::PathBuf,
-};
 use kdl::{KdlDocument, KdlNode, KdlValue};
-use libratman::types::Result;
+use libratman::{
+    tokio::{
+        fs::{File, OpenOptions},
+        io::{AsyncReadExt, AsyncWriteExt},
+    },
+    Result,
+};
+use std::path::PathBuf;
 
 mod default;
 pub mod helpers;

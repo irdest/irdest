@@ -15,22 +15,18 @@
 
 mod announce;
 
-use crate::{
-    config::ConfigTree, context::RatmanContext, core::Core, protocol::announce::AddressAnnouncer,
-};
-use libratman::types::{
-    frames::{self, CarrierFrameHeader},
-    Address, RatmanError, Result,
-};
-
-use async_std::{
-    sync::{Arc, Mutex},
-    task,
+use crate::{config::ConfigTree, context::RatmanContext, protocol::announce::AddressAnnouncer};
+use libratman::{
+    frame::carrier::{modes as fmodes, CarrierFrameHeader},
+    tokio::{sync::Mutex, task},
+    types::Address,
+    RatmanError, Result,
 };
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
     sync::atomic::{AtomicBool, Ordering},
+    sync::Arc,
     time::Duration,
 };
 
@@ -130,9 +126,9 @@ impl Protocol {
 /// Match the carrier modes bitfield to decide what kind of frame
 pub fn parse(carrier_meta: CarrierFrameHeader, bin_envelope: Vec<u8>) {
     match carrier_meta.get_modes() {
-        frames::modes::ANNOUNCE => {}
-        frames::modes::DATA => {}
-        frames::modes::MANIFEST => {}
+        fmodes::ANNOUNCE => {}
+        fmodes::DATA => {}
+        fmodes::MANIFEST => {}
         _ => {
             warn!("received frame with malformed metadata: {:?}", carrier_meta);
         }
