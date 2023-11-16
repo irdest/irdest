@@ -9,7 +9,12 @@
 mod collector;
 mod slicer;
 
-use crate::{config::ConfigTree, context::RatmanContext, crypto, storage::block::StorageBlock};
+use crate::{
+    config::ConfigTree,
+    context::RatmanContext,
+    crypto,
+    storage::{block::StorageBlock, JournalStorage},
+};
 use async_eris::{BlockReference, MemoryStorage, ReadCapability};
 use curve25519_dalek::traits::VartimePrecomputedMultiscalarMul;
 use libratman::{
@@ -18,7 +23,7 @@ use libratman::{
     frame::micro::MicroframeHeader,
     rt::size_commonbuf_t,
     tokio::{net::TcpStream, sync::mpsc, task::spawn_local},
-    tokio_util::compat::TokioAsyncReadCompatExt,
+    tokio_util::compat::{Compat, TokioAsyncReadCompatExt},
     types::{Address, Recipient},
     Result,
 };
@@ -79,7 +84,7 @@ pub(crate) async fn exec_sender_system<const L: usize>(
     context: &Arc<RatmanContext>,
     reader: TcpStream,
     // todo: replace with sled integration
-    storage: &mut HashMap<BlockReference, Vec<u8>>,
+    storage: JournalStorage,
     LetterManifest {
         from,
         to,
@@ -126,13 +131,17 @@ pub(crate) async fn exec_sender_system<const L: usize>(
 /// Setup the task reading from the chunk iter and producing ERIS
 /// blocks from the content
 async fn block_slicer_task<const L: usize>(
-    storage: &mut MemoryStorage,
+    mut storage: JournalStorage,
     mut iter: ChunkIter<L>,
 ) -> Result<ReadCapability> {
     debug!("Starting block slicer on ChunkIter<{}>", L);
-    async_eris::encode_const::<_, ChunkIter<L>, L>(&mut *iter.compat(), &[0; 32], storage)
-        .await
-        .map_err(Into::into)
+    async_eris::encode_const::<_, Compat<ChunkIter<L>>, L>(
+        &mut (iter.compat()),
+        &[0; 32],
+        &mut storage,
+    )
+    .await
+    .map_err(Into::into)
 }
 
 // /// Verify that a set of blocks can be turned into stream data

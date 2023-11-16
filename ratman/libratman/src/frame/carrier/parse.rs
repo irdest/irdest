@@ -1,21 +1,15 @@
 use crate::{
-    frame::{carrier::CarrierFrameHeader, FrameParser},
-    types::{Address, Id, Recipient, SequenceIdV1},
-    EncodingError, RatmanError, Result,
+    types::{Address, Id},
+    EncodingError, Result,
 };
 use byteorder::{BigEndian, ByteOrder};
 use chrono::{DateTime, Utc};
 use core::mem::size_of;
-use std::ffi::CString;
 
 // Re-export the most common nom combinators and make sure we use the
 // same ones everewhere
+use nom::combinator::peek;
 pub use nom::{bytes::complete::take, IResult};
-use nom::{
-    bytes::complete::{take_till, take_while1},
-    combinator::{opt, peek},
-    Parser,
-};
 
 /// Peek one byte to check if the next section exists, if so, read LEN
 /// bytes, otherwise burn the zero byte

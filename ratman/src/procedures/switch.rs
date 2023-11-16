@@ -1,5 +1,6 @@
 use crate::{
-    core::{Dispatch, GenericEndpoint, Journal, LinksMap, RouteTable, RouteType},
+    context,
+    core::{dispatch, GenericEndpoint, Journal, LinksMap, RouteTable, RouteType},
     dispatch::BlockCollector,
     util::IoPair,
 };
@@ -20,6 +21,11 @@ pub(crate) async fn exec_switching_batch(
     batch_size: usize,
     // Routes container to update tables based on announcements
     routes: &Arc<RouteTable>,
+    // Even though this switch only runs for a single endpoint, we
+    // still need access to the other links when flooding messages.
+    // This way we don't have to make different switches explicitly
+    // synchronise.
+    links: &Arc<LinksMap>,
     // The switch needs access to the central state manager for blocks
     // and frames
     journal: &Arc<Journal>,
@@ -28,8 +34,6 @@ pub(crate) async fn exec_switching_batch(
     collector: &Arc<BlockCollector>,
     // The netmod driver endpoint to switch messages for
     (ep_name, ep): (&String, &Arc<GenericEndpoint>),
-    // Access to dispatch state to forward non-local frames
-    dispatch: &Arc<Dispatch>,
     // Control flow endpoint to send signals to this switch between
     // batches
     ctrl: IoPair<usize>,
@@ -112,12 +116,13 @@ pub(crate) async fn exec_switching_batch(
 
                     // Update the routing table and re-flood the announcement
                     routes.update(id as u8, t, header.get_sender()).await;
-                    dispatch
-                        .flood_frame(
-                            InMemoryEnvelope { header, buffer },
-                            Some((ep_name.clone(), t)),
-                        )
-                        .await;
+                    dispatch::flood_frame(
+                        &routes,
+                        &links,
+                        InMemoryEnvelope { header, buffer },
+                        Some((ep_name.clone(), t)),
+                    )
+                    .await;
                 }
             }
             //
@@ -153,9 +158,12 @@ pub(crate) async fn exec_switching_batch(
                     }
                     // Any frame for a reachable remote address will be forwarded
                     Some(RouteType::Remote(_)) => {
-                        dispatch
-                            .dispatch_frame(InMemoryEnvelope { header, buffer })
-                            .await;
+                        dispatch::dispatch_frame(
+                            routes,
+                            links,
+                            InMemoryEnvelope { header, buffer },
+                        )
+                        .await;
                     }
                     // A frame for an unreachable address (either
                     // local or remote) will be queued in the
@@ -186,8 +194,7 @@ pub(crate) async fn exec_switching_batch(
                 // network.
                 if journal.is_unknown(&announce_id).await {
                     journal.save_as_known(&announce_id).await;
-                    dispatch
-                        .flood_frame(InMemoryEnvelope { header, buffer }, None)
+                    dispatch::flood_frame(routes, links, InMemoryEnvelope { header, buffer }, None)
                         .await;
                 }
             }

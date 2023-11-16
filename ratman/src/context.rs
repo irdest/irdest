@@ -19,7 +19,9 @@ use libratman::{
         carrier::{CarrierFrameHeader, CarrierFrameHeaderV1, ManifestFrame, ManifestFrameV1},
         FrameGenerator,
     },
-    types::{Address, InMemoryEnvelope, Recipient, SequenceIdV1},
+    rt::AsyncSystem,
+    tokio::sync::mpsc::Receiver,
+    types::{Address, InMemoryEnvelope, Letterhead, Recipient, SequenceIdV1},
     Result,
 };
 
@@ -65,30 +67,33 @@ pub struct RatmanContext {
 
 impl RatmanContext {
     /// Create the in-memory Context, without any initialisation
-    pub(crate) fn new_in_memory(config: ConfigTree) -> Arc<Self> {
+    pub(crate) fn new_in_memory(config: ConfigTree) -> (Arc<Self>, Receiver<Letterhead>) {
         let runtime_state = RuntimeState::start_initialising();
         let protocol = Protocol::new();
-        let (collector, links, journal, routes) = crate::core::exec_core_loops();
+        let (collector, links, journal, routes, lh_notify_recv) = crate::core::exec_core_loops();
         let keys = Arc::new(Keystore::new());
         let clients = Arc::new(ConnectionManager {});
 
-        Arc::new(Self {
-            config,
-            collector,
-            links,
-            journal,
-            routes,
-            protocol,
-            keys,
-            clients,
-            runtime_state,
-            _statedir_lock: Arc::new(AtomPtr::new(None)),
-        })
+        (
+            Arc::new(Self {
+                config,
+                collector,
+                links,
+                journal,
+                routes,
+                protocol,
+                keys,
+                clients,
+                runtime_state,
+                _statedir_lock: Arc::new(AtomPtr::new(None)),
+            }),
+            lh_notify_recv,
+        )
     }
 
     /// Create and start a new Ratman router context with a config
-    pub fn start(cfg: ConfigTree) -> Arc<Self> {
-        let this = Self::new_in_memory(cfg);
+    pub async fn start(cfg: ConfigTree) -> Arc<Self> {
+        let (this, lh_notify_recv) = Self::new_in_memory(cfg);
 
         // Parse the ratmand config tree
         let ratmand_config = this
@@ -99,180 +104,182 @@ impl RatmanContext {
         // Before we do anything else, make sure we see logs
         setup_logging(&ratmand_config);
 
-        // // If ratmand isn't set up to run ephemerally (for tests) try
-        // // to lock the state directory here and crash if we can't.
-        // if ratmand_config.get_bool_value("ephemeral").unwrap_or(false) {
-        //     warn!("ratmand is running in ephemeral mode: no data will be persisted to disk");
-        //     warn!("State directory locking is unimplemented");
-        //     warn!("Take care that peering hardware is not used from multiple drivers!");
-        // } else {
-        //     match block_on(Os::lock_state_directory(None)) {
-        //         Ok(Some(lock)) => {
-        //             this._statedir_lock.swap(Some(lock));
-        //         }
-        //         Ok(None) => {}
-        //         Err(_) => {
-        //             util::elog(
-        //                 "failed to acquire state directory lock!  terminating...",
-        //                 codes::FATAL,
-        //             );
-        //         }
-        //     }
-        // }
+        // If ratmand isn't set up to run ephemerally (for tests) try
+        // to lock the state directory here and crash if we can't.
+        if ratmand_config.get_bool_value("ephemeral").unwrap_or(false) {
+            warn!("ratmand is running in ephemeral mode: no data will be persisted to disk");
+            warn!("State directory locking is unimplemented");
+            warn!("Take care that peering hardware is not used from multiple drivers!");
+        } else {
+            match Os::lock_state_directory(None).await {
+                Ok(Some(lock)) => {
+                    this._statedir_lock.swap(Some(lock));
+                }
+                Ok(None) => {}
+                Err(_) => {
+                    util::elog(
+                        "failed to acquire state directory lock!  terminating...",
+                        codes::FATAL,
+                    );
+                }
+            }
+        }
 
-        // // Load existing client/address relations
-        // block_on(this.clients.load_users(&this));
+        // Load existing client/address relations
+        // this.clients.load_users(&this).await;
 
-        // // This never fails, we will have a map of netmods here, even if it is empty
-        // let driver_map = block_on(initialise_netmods(&this.config));
+        // This never fails, we will have a map of netmods here, even if it is empty
+        let driver_map = initialise_netmods(&this.config).await;
 
-        // // Get the initial set of peers from the configuration.
-        // // Either this is done via the `peer_file` field, which is
-        // // then read and parsed, or via the `peers` list block.  In
-        // // either way we have to check for encoding problems.
-        // //
-        // // FIXME: At this point the peer syntax also hasn't been
-        // // validated yet!
-        // match ratmand_config
-        //     .get_string_value("peer_file")
-        //     .and_then(|path| helpers::load_peers_file(path).ok())
-        //     .or(ratmand_config.get_string_list_block("peers"))
-        // {
-        //     // If peers exist, add them to the drivers
-        //     Some(peers) => {
-        //         let mut peer_builder = PeeringBuilder::new(driver_map);
-        //         for peer in peers {
-        //             if let Err(e) = block_on(peer_builder.attach(peer.as_str())) {
-        //                 error!("failed to add peer: {}", e);
-        //             }
-        //         }
+        // Get the initial set of peers from the configuration.
+        // Either this is done via the `peer_file` field, which is
+        // then read and parsed, or via the `peers` list block.  In
+        // either way we have to check for encoding problems.
+        //
+        // FIXME: At this point the peer syntax also hasn't been
+        // validated yet!
+        match ratmand_config
+            .get_string_value("peer_file")
+            .and_then(|path| helpers::load_peers_file(path).ok())
+            .or(ratmand_config.get_string_list_block("peers"))
+        {
+            // If peers exist, add them to the drivers
+            Some(peers) => {
+                let mut peer_builder = PeeringBuilder::new(driver_map);
+                for peer in peers {
+                    if let Err(e) = peer_builder.attach(peer.as_str()).await {
+                        error!("failed to add peer: {}", e);
+                    }
+                }
 
-        //         // If we made it to this point we don't need the
-        //         // peering builder or driver map anymore, so we
-        //         // dissolve both and add everything to the routing
-        //         // core.
-        //         for (name, ep) in peer_builder.consume() {
-        //             let _ep_id = block_on(this.links.add(name, ep));
-        //             // fixme: integrate this with spawn plans, etc etc
-        //         }
-        //     }
+                // If we made it to this point we don't need the
+                // peering builder or driver map anymore, so we
+                // dissolve both and add everything to the routing
+                // core.
+                for (name, ep) in peer_builder.consume() {
+                    let _ep_id = this.links.add(name, ep).await;
+                    // fixme: integrate this with spawn plans, etc etc
+                }
+            }
 
-        //     // If no peers exist, check if there are alternative
-        //     // peering mechanisms (currently either
-        //     // 'accept_uknown_peers' or having 'lan' discovery
-        //     // enabled).  We print a warning otherwise
-        //     None if !ratmand_config
-        //         .get_bool_value("accept_unknown_peers")
-        //         .unwrap_or(false)
-        //         & /* and */ this
-        //             .config
-        //             .get_subtree("lan")
-        //             .and_then(|tree| tree.get_bool_value("enable"))
-        //             .unwrap_or(false) =>
-        //     {
-        //         warn!("No peers were provided, but no alternative peering mechanism was detected!  You won't be able to talk to anyone.")
-        //     }
+            // If no peers exist, check if there are alternative
+            // peering mechanisms (currently either
+            // 'accept_uknown_peers' or having 'lan' discovery
+            // enabled).  We print a warning otherwise
+            None if !ratmand_config
+                .get_bool_value("accept_unknown_peers")
+                .unwrap_or(false)
+                & /* and */ this
+                    .config
+                    .get_subtree("lan")
+                    .and_then(|tree| tree.get_bool_value("enable"))
+                    .unwrap_or(false) =>
+            {
+                warn!("No peers were provided, but no alternative peering mechanism was detected!  You won't be able to talk to anyone.")
+            }
 
-        //     // If no peers exist, but other peering mechanisms exist
-        //     _ => {}
-        // };
+            // If no peers exist, but other peering mechanisms exist
+            _ => {}
+        };
 
-        // // If the dashboard feature and configuration is enabled
-        // #[cfg(feature = "dashboard")]
-        // if let Some(true) = ratmand_config.get_bool_value("enable_dashboard") {
-        //     let dashboard_bind = ratmand_config
-        //         .get_string_value("dashboard_bind")
-        //         .unwrap_or_else(|| "localhost:8090".to_owned());
+        // If the dashboard feature and configuration is enabled
+        #[cfg(feature = "dashboard")]
+        if let Some(true) = ratmand_config.get_bool_value("enable_dashboard") {
+            let dashboard_bind = ratmand_config
+                .get_string_value("dashboard_bind")
+                .unwrap_or_else(|| "localhost:8090".to_owned());
 
-        //     let mut registry = prometheus_client::registry::Registry::default();
-        //     // this.core.register_metrics(&mut registry);
-        //     this.protocol.register_metrics(&mut registry);
+            let mut registry = prometheus_client::registry::Registry::default();
+            // this.core.register_metrics(&mut registry);
+            this.protocol.register_metrics(&mut registry);
 
-        //     if let Err(e) = block_on(crate::web::start(this.clone(), registry, dashboard_bind)) {
-        //         error!("failed to start web dashboard server: {}", e);
-        //     }
-        // }
+            // if let Err(e) = crate::web::start(this.clone(), registry, dashboard_bind) {
+            //     error!("failed to start web dashboard server: {}", e);
+            // }
+        }
 
-        // // At this point we can mark the router as having finished initialising
-        // this.runtime_state.finished_initialising();
+        // At this point we can mark the router as having finished initialising
+        this.runtime_state.finished_initialising();
 
-        // // Finally, we start the machinery that accepts new client
-        // // connections.  We hand it a complete (atomic reference) copy
-        // // of the router state context.
-        // let api_bind = ratmand_config
-        //     .get_string_value("api_bind")
-        //     .unwrap_or_else(|| format!("localhost:9020"))
-        //     // FIXME: there must be a better way to do this lol
-        //     .replace("localhost", "127.0.0.1");
+        // Finally, we start the machinery that accepts new client
+        // connections.  We hand it a complete (atomic reference) copy
+        // of the router state context.
+        let api_bind = ratmand_config
+            .get_string_value("api_bind")
+            .unwrap_or_else(|| format!("localhost:9020"))
+            // FIXME: there must be a better way to do this lol
+            .replace("localhost", "127.0.0.1");
 
-        // let api_bind_addr: SocketAddr = match api_bind.parse() {
-        //     Ok(bind) => bind,
-        //     Err(e) => {
-        //         util::elog(
-        //             format!("failed to parse API bind address '{}': {}", api_bind, e),
-        //             util::codes::INVALID_PARAM,
-        //         );
-        //     }
-        // };
+        let api_bind_addr: SocketAddr = match api_bind.parse() {
+            Ok(bind) => bind,
+            Err(e) => {
+                util::elog(
+                    format!("failed to parse API bind address '{}': {}", api_bind, e),
+                    util::codes::INVALID_PARAM,
+                );
+            }
+        };
 
-        // // We block execution on running the API module
-        // if let Err(e) = block_on(api::run(Arc::clone(&this), api_bind_addr)) {
+        // We block execution on running the API module
+        // if let Err(e) = api::run(Arc::clone(&this), api_bind_addr) {
         //     // If we returned an error, the API module has crashed
         //     error!("API connector crashed with error: {}", e);
         //     this.runtime_state.kill();
         // }
 
-        // // If we reach this point the router is shutting down
-        // // (allegedly?)
-        // this.runtime_state.terminate();
+        libratman::tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+
+        // If we reach this point the router is shutting down
+        // (allegedly?)
+        this.runtime_state.terminate();
 
         this
     }
 
-    /// Create a new address
-    ///
-    /// This function creates a new keypair, inserts the address part
-    /// into the local routing table, and starts announcing it to the
-    /// rest of the network.
-    pub async fn create_new_address(self: &Arc<Self>) -> Result<Address> {
-        let addr = self.keys.create_address().await;
-        self.core.add_local_address(addr).await?;
-        self.online(addr).await?;
-        Ok(addr)
-    }
+    // /// Create a new address
+    // ///
+    // /// This function creates a new keypair, inserts the address part
+    // /// into the local routing table, and starts announcing it to the
+    // /// rest of the network.
+    // pub async fn create_new_address(self: &Arc<Self>) -> Result<Address> {
+    //     let addr = self.keys.create_address().await;
+    //     self.core.add_local_address(addr).await?;
+    //     self.online(addr).await?;
+    //     Ok(addr)
+    // }
 
-    // TODO: this function must handle address key decryption
-    pub async fn load_existing_address(
-        self: &Arc<Self>,
-        addr: Address,
-        key_data: &[u8],
-    ) -> Result<()> {
-        self.keys.add_address(addr, key_data).await;
-        self.core.add_local_address(addr).await?;
-        self.online(addr).await?;
-        Ok(())
-    }
+    // // TODO: this function must handle address key decryption
+    // pub async fn load_existing_address(
+    //     self: &Arc<Self>,
+    //     addr: Address,
+    //     key_data: &[u8],
+    // ) -> Result<()> {
+    //     self.keys.add_address(addr, key_data).await;
+    //     self.core.add_local_address(addr).await?;
+    //     self.online(addr).await?;
+    //     Ok(())
+    // }
 
-    async fn online(self: &Arc<Self>, addr: Address) -> Result<()> {
-        // This checks whether the address actually exists first
-        self.core.known(addr, true).await?;
+    // async fn online(self: &Arc<Self>, addr: Address) -> Result<()> {
+    //     // This checks whether the address actually exists first
+    //     self.core.known(addr, true).await?;
 
-        // Then start a new protocol handler task for the address
-        Arc::clone(&self.protocol)
-            .online(addr, Arc::clone(self))
-            .await
-    }
+    //     // Then start a new protocol handler task for the address
+    //     Arc::clone(&self.protocol)
+    //         .online(addr, Arc::clone(self))
+    //         .await
+    // }
 
     /// Test whether Ratman is capable of writing anything to disk
     pub fn ephemeral(&self) -> bool {
         self._statedir_lock.get_ref().is_none()
     }
 
-    // TODO: should this require some kind of cryptographic challenge maybe ??
-    pub async fn set_address_offline(&self, addr: Address) -> Result<()> {
-        self.core.known(addr, true).await?;
-        self.protocol.offline(addr).await
-    }
+    // // TODO: should this require some kind of cryptographic challenge maybe ??
+    // pub async fn set_address_offline(&self, addr: Address) -> Result<()> {
+    //     self.core.known(addr, true).await?;
+    //     self.protocol.offline(addr).await
+    // }
 
     // /// Dispatch a high-level message
     // // todo: this function should do a few more things around the

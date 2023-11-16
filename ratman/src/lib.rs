@@ -20,12 +20,13 @@
 //! See the Irdest repository README for additional permissions
 //! granted by the authors for this code.
 
+use libratman::rt::AsyncSystem;
+
 #[macro_use]
 extern crate tracing;
 
 mod api;
 mod clock;
-mod context;
 mod core;
 mod crypto;
 mod dispatch;
@@ -38,6 +39,7 @@ mod storage;
 // mod web;
 
 pub mod config;
+pub mod context;
 pub mod util;
 
 /// Start a new Ratman router instance with a launch configuration
@@ -51,5 +53,7 @@ pub fn start_with_configuration(cfg: config::ConfigTree) {
     // TODO: this function currently doesn't return at all.  Instead,
     // what we want to do is listen to various signals here and
     // respond to them.
-    let _ctx = context::RatmanContext::start(cfg);
+
+    let system = AsyncSystem::new("ratmand-core".to_owned(), 8);
+    let _ctx = system.exec(context::RatmanContext::start(cfg));
 }

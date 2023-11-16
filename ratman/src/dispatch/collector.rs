@@ -25,7 +25,7 @@ pub struct BlockCollectorWorker {
 
 impl BlockCollectorWorker {
     /// Spawn this!
-    pub async fn run(mut self, recv: EnvReceiver) {
+    pub async fn run(mut self, mut recv: EnvReceiver) {
         let this = &mut self;
         while let Some((seq_id, envelope)) = recv.recv().await {
             let insert_at_end = seq_id.num as usize >= this.buffer.len();
