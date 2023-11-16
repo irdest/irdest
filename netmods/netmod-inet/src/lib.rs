@@ -22,7 +22,7 @@ use {resolve::Resolver, server::Server};
 use async_std::{channel::unbounded, io::WriteExt, net::TcpListener, sync::Arc, task};
 use libratman::{
     endpoint::EndpointExt,
-    types::{Neighbour, InMemoryEnvelope},
+    types::{InMemoryEnvelope, Neighbour},
     NetmodError, RatmanError, Result,
 };
 use serde::{Deserialize, Serialize};

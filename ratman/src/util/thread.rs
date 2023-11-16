@@ -1,9 +1,5 @@
-
-/// 
+///
 pub struct NetmodThreadPair;
-
-
-
 
 /// A thread meant to run a Netmod reiceve state system.
 ///
@@ -22,9 +18,7 @@ pub struct ReceiverThread {}
 
 impl ReceiverThread {
     pub fn new_complete() -> Self {
-        std::thread::spawn(|| {
-            
-        });
+        std::thread::spawn(|| {});
         todo!()
     }
 

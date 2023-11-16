@@ -1,7 +1,7 @@
 //! Endpoint abstraction module
 
 use crate::{
-    types::{CurrentStatus, Neighbour, InMemoryEnvelope},
+    types::{CurrentStatus, InMemoryEnvelope, Neighbour},
     Result,
 };
 use async_trait::async_trait;

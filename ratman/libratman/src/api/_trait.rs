@@ -1,5 +1,5 @@
 use crate::{
-    types::{Address, ClientAuth, Id, Recipient, Modify},
+    types::{Address, ClientAuth, Id, Modify, Recipient},
     Result,
 };
 use async_trait::async_trait;
@@ -57,10 +57,9 @@ pub trait RatmanIpcExtV1 {
 
         // Modification section
         note_modify: Modify<String>,
-        tags_modify: Modify<(String, String)>
-        
+        tags_modify: Modify<(String, String)>,
     ) -> Result<Id>;
-    
+
     /// Delete existing contact entries via filters
     async fn contact_delete(
         self: &Arc<Self>,
