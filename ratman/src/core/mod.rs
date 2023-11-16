@@ -15,37 +15,47 @@ mod links;
 mod routes;
 
 use libratman::{
-    tokio::{sync::mpsc, task::spawn_local},
+    futures::channel::oneshot::channel,
+    tokio::{
+        sync::mpsc::{self, Receiver},
+        task::spawn_local,
+    },
     types::{Address, Recipient},
-    types::{InMemoryEnvelope, Neighbour},
+    types::{InMemoryEnvelope, Letterhead, Neighbour},
     RatmanError, Result,
 };
 use std::sync::Arc;
 
 pub(crate) use crate::dispatch::BlockCollector;
-pub(crate) use journal::{Journal, JournalSender};
+pub(crate) use journal::{run_message_assembler, Journal, JournalSender};
 pub(crate) use links::{GenericEndpoint, LinksMap};
 pub(crate) use routes::{EpNeighbourPair, RouteTable, RouteType};
 
 /// Execute the Ratman router core as an async task
-pub fn exec_core_loops() -> (
+pub(crate) fn exec_core_loops() -> (
     Arc<BlockCollector>,
     Arc<LinksMap>,
     Arc<Journal>,
     Arc<RouteTable>,
+    Receiver<Letterhead>,
 ) {
     let links = LinksMap::new();
     let routes = RouteTable::new();
-    let journal = Journal::new();
+    let (journal, m_notify_recv) = Journal::new();
 
     let (jtx, jrx) = mpsc::channel(16);
     let collector = BlockCollector::new(jtx);
 
     // Dispatch the journal
+    let (lh_notify_send, lh_notify_recv) = mpsc::channel(16);
     spawn_local(Arc::clone(&journal).run_block_acceptor(jrx));
-    spawn_local(Arc::clone(&journal).run_message_assembler());
+    spawn_local(run_message_assembler(
+        Arc::clone(&journal),
+        m_notify_recv,
+        lh_notify_send,
+    ));
 
-    (collector, links, journal, routes)
+    (collector, links, journal, routes, lh_notify_recv)
 }
 
 // impl Core {

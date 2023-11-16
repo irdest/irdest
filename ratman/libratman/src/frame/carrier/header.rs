@@ -1,9 +1,10 @@
 use crate::{
-    frame::carrier::{generate, modes, parse},
+    frame::carrier::{modes, parse},
     frame::{FrameGenerator, FrameParser},
     types::{Address, Id, Recipient, SequenceIdV1},
     EncodingError, Result,
 };
+use chrono::{DateTime, Utc};
 use nom::IResult;
 
 //////
@@ -28,6 +29,7 @@ impl CarrierFrameHeader {
             sender: router_addr,
             seq_id: None,
             auxiliary_data: None,
+            signature_data: None,
             payload_length,
         })
     }
@@ -45,6 +47,7 @@ impl CarrierFrameHeader {
             sender,
             seq_id: Some(seq_id),
             auxiliary_data: None,
+            signature_data: None,
             payload_length,
         })
     }
@@ -62,6 +65,7 @@ impl CarrierFrameHeader {
             sender,
             seq_id: Some(seq_id),
             auxiliary_data: None,
+            signature_data: None,
             payload_length,
         })
     }
@@ -78,6 +82,7 @@ impl CarrierFrameHeader {
                 max: 0,
             }),
             auxiliary_data: None,
+            signature_data: None,
             payload_length,
         })
     }
@@ -118,13 +123,13 @@ impl CarrierFrameHeader {
                     None => 1,
                 };
 
-                (1 // Include 1 byte for the version field itself
+                1 // Include 1 byte for the version field itself
                     + modes_size
                     + sender_size
                     + recipient_size
                     + seq_id_size
                     + aux_data_size
-                    + payload_len_size)
+                    + payload_len_size
             }
         }
     }
@@ -172,6 +177,7 @@ impl FrameParser for CarrierFrameHeader {
                 let (input, recipient) = Option::<Recipient>::parse(input)?;
                 let (input, seq_id) = SequenceIdV1::parse(input)?;
                 let (input, auxiliary_data) = parse::maybe::<64>(input)?;
+                let (input, signature_data) = parse::maybe::<64>(input)?;
                 let (input, payload_length) = parse::take_u16(input)?;
 
                 Ok((
@@ -182,6 +188,7 @@ impl FrameParser for CarrierFrameHeader {
                         recipient,
                         seq_id,
                         auxiliary_data,
+                        signature_data,
                         payload_length,
                     })),
                 ))
@@ -204,6 +211,7 @@ impl FrameGenerator for CarrierFrameHeader {
                 inner.recipient.generate(buf)?;
                 inner.seq_id.generate(buf)?;
                 inner.auxiliary_data.generate(buf)?;
+                inner.signature_data.generate(buf)?;
                 inner.payload_length.generate(buf)?;
             }
         }
@@ -260,11 +268,31 @@ pub struct CarrierFrameHeaderV1 {
     /// payload encoding MUST be verified to ensure data integrity.
     seq_id: Option<SequenceIdV1>,
     /// Optional auxiliary data field
-    ///
-    /// Some message types may use this field for signatures, others
-    /// for additional connection metadata.  MAY be left blank with a
-    /// single zero-byte.
     auxiliary_data: Option<[u8; 64]>,
+    /// Optional signature field.  A header signature must include
+    /// `modes`, `sender`, `recipient`, `seq_id`, `auxiliary_data`
+    signature_data: Option<[u8; 64]>,
     /// Length of the trailing payload section
     payload_length: u16,
+}
+
+// todo: this needs more design.  Do we actually need a nonce?  Is
+// there a reason to have more than one piece of data?  Two slots
+// could be easily implemented.
+
+/// A variable length auxiliary data section
+///
+/// *Auxiliary data* is an optional chunk of metadata that may be used
+/// by various protocols to exchange side-channel information.  Most
+/// frames don't need to include any auxiliary data.
+///
+///
+#[repr(C)]
+pub enum AuxiliaryData {
+    /// Encryption Nonce
+    Nonce([u8; 12]),
+    /// ed25519-dalek signature
+    Signature([u8; 64]),
+    ///
+    Sent(DateTime<Utc>),
 }

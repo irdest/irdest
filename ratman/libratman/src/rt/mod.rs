@@ -16,7 +16,7 @@ use std::{
 use tokio::{
     runtime::{Builder, Runtime},
     sync::mpsc,
-    task::LocalSet,
+    task::{spawn_local, LocalSet},
 };
 
 pub mod reader;
@@ -44,7 +44,7 @@ pub struct AsyncSystem {
 }
 
 impl AsyncSystem {
-    fn new(label: String, stack_mb: usize) -> Arc<Self> {
+    pub fn new(label: String, stack_mb: usize) -> Arc<Self> {
         Arc::new(Self {
             rt: Builder::new_current_thread()
                 .thread_name(&label)
@@ -59,15 +59,17 @@ impl AsyncSystem {
         })
     }
 
+    #[inline]
+    pub fn block_on<O>(&self, f: impl Future<Output = O>) -> O {
+        self.rt.block_on(f)
+    }
+
     pub fn async_interrupt(self: &Arc<Self>) {
         let _ = self.irq.0.send(());
     }
 
-    fn root_exec<O: Sized + Send + 'static>(
-        &self,
-        f: impl Future<Output = Result<O>> + Send + 'static,
-    ) -> Result<O> {
-        self.rt.block_on(f)
+    pub fn exec<O>(&self, f: impl Future<Output = O>) -> O {
+        self.rt.block_on(async { self.set.run_until(f).await })
     }
 }
 
@@ -83,16 +85,15 @@ where
 
     std::thread::spawn(move || {
         let system = AsyncSystem::new(label, stack_mb);
-        let res = system.root_exec(f);
+        let res = system.exec(f);
         let label = system.label.clone();
-        let _ = system.root_exec(async move {
+        system.exec(async move {
             match res {
                 Ok(_) => info!("Worker thread {} completed successfully!", label),
                 Err(ref e) => println!("Worker thread {} encountered an error: {}", label, e),
             }
 
             let _ = tx.send(res).await;
-            Ok(())
         });
     });
 
@@ -101,8 +102,16 @@ where
 
 #[test]
 fn simple_tcp_transfer() {
-    use crate::rt::reader::{AsyncVecReader, LengthReader};
-    use tokio::net::TcpListener;
+    use crate::rt::{
+        reader::{AsyncVecReader, LengthReader},
+        writer::{write_u32, AsyncWriter},
+    };
+    use rand::RngCore;
+    use std::time::Duration;
+    use tokio::{
+        net::{TcpListener, TcpStream},
+        time::timeout,
+    };
 
     // Receiver
     let mut responder_rx = new_async_thread("tcp server", 32, async move {
@@ -139,8 +148,51 @@ fn simple_tcp_transfer() {
 
     let main = AsyncSystem::new("main".into(), 1);
     let received_data = main
-        .root_exec(async move { responder_rx.recv().await.unwrap() })
+        .exec(async move { responder_rx.recv().await.unwrap() })
         .unwrap();
 
+    println!("We got {} datas", received_data.len());
+
     assert_eq!(input_data, received_data);
+}
+
+#[test]
+fn block_on() {
+    let system = AsyncSystem::new("block_on".to_string(), 1);
+    system.block_on(async {
+        println!("Simple block on");
+    });
+}
+
+#[test]
+#[should_panic]
+fn nested_block_on() {
+    let system = AsyncSystem::new("nested_block_on".to_string(), 1);
+    system.clone().block_on(async move {
+        system.clone().block_on(async move {
+            println!("Nested block on");
+        });
+    });
+}
+
+#[test]
+fn test_spawn_local() {
+    use tokio::time;
+
+    async fn wait_n_print(n: u64) {
+        time::sleep(std::time::Duration::from_secs(n)).await;
+        println!("Waited {} and then printed!", n);
+    }
+
+    async fn root_job() {
+        spawn_local(wait_n_print(1));
+        spawn_local(wait_n_print(2));
+        spawn_local(wait_n_print(3));
+
+        wait_n_print(4).await;
+    }
+
+    let system = AsyncSystem::new("test-run".to_owned(), 1);
+
+    system.exec(root_job());
 }

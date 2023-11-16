@@ -89,7 +89,7 @@ pub(crate) struct BlockSlicer;
 impl BlockSlicer {
     pub(crate) async fn slice(
         ctx: &Arc<RatmanContext>,
-        (lhead, reader): &mut (Letterhead, impl AsyncRead + Unpin),
+        (lhead, reader): (Letterhead, &mut (impl AsyncRead + Unpin)),
         block_size: BlockSize,
     ) -> Result<(ReadCapability, MemoryStorage)> {
         let mut blocks = MemoryStorage::new();
@@ -99,7 +99,7 @@ impl BlockSlicer {
             .await
             .expect("failed to perform diffie-hellman");
         let key2 = key.to_bytes();
-        let read_cap = async_eris::encode(&mut reader, &key2, block_size, &mut blocks)
+        let read_cap = async_eris::encode(reader, &key2, block_size, &mut blocks)
             .await
             .unwrap();
         Ok((read_cap, blocks))

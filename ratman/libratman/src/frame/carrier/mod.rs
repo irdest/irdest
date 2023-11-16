@@ -13,6 +13,7 @@ pub use manifest::*;
 ////// Expose the generator and parser APIs for other types
 pub use parse::{take_address, IResult as ParserResult};
 
+#[cfg(test)]
 pub(self) fn random_payload(size: usize) -> Vec<u8> {
     use rand::RngCore;
     let mut buf = vec![0; size];
@@ -26,7 +27,7 @@ pub mod modes {
             ANNOUNCE => "announce frame",
             DATA => "ERIS block data frame",
             MANIFEST => "ERIS root manifest frame",
-            val => "[UNKNOWN]",
+            _ => "[UNKNOWN]",
         }
     }
 

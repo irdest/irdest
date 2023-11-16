@@ -105,7 +105,7 @@ impl RouteTable {
     }
 
     /// Poll the set of newly discovered users
-    pub(crate) async fn discover(&self) -> Address {
+    pub(crate) async fn discover(&mut self) -> Address {
         self.new.1.recv().await.unwrap()
     }
 

@@ -10,6 +10,8 @@ use libratman::{
 };
 use std::{collections::BTreeMap, sync::Arc};
 
+pub mod manager_task;
+
 /// A full runtime system thread handling netmod traffic
 ///
 /// This type can be initialised either for a single netmod, two, or

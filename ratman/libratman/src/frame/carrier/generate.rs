@@ -3,11 +3,10 @@
 use crate::{
     frame::FrameGenerator,
     types::{Address, Id, SequenceIdV1},
-    EncodingError, RatmanError, Result,
+    EncodingError, Result,
 };
 use byteorder::{BigEndian, ByteOrder};
-use chrono::{DateTime, TimeZone, Utc};
-use std::ffi::CString;
+use chrono::{DateTime, TimeZone};
 
 fn u16_to_big_endian(val: u16) -> [u8; 2] {
     let mut v = [0; 2];
@@ -53,7 +52,7 @@ impl FrameGenerator for u32 {
 fn test_slice_generate() {
     let val: u16 = 1312;
     let mut buf = vec![];
-    val.generate(&mut buf);
+    let _ = val.generate(&mut buf);
     assert_eq!(buf.as_slice(), [5, 32]);
 }
 
@@ -161,7 +160,7 @@ fn test_datetime_generate() {
 fn vector_encode_decode() {
     let v = super::random_payload(32);
     let mut buf = vec![];
-    v.clone().generate(&mut buf);
+    let _ = v.clone().generate(&mut buf);
 
     assert_eq!(buf.len(), v.len() + 2);
     assert_eq!(buf[0..=1], u16_to_big_endian(v.len() as u16));

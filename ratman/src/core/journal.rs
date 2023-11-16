@@ -58,7 +58,22 @@ impl<const BS: usize> BlockStorage<BS> for JournalBlockStore {
     }
 }
 
-struct MessageNotifier {
+/// Block and yield the next completed message from the queue
+pub(crate) async fn pop_from_receiver(receiver: &mut Receiver<Letterhead>) -> Option<Letterhead> {
+    match receiver.recv().await {
+        Some(letterhead) => {
+            info!(
+                "[{:?}] Received new message '(id {})' from {}!",
+                letterhead.to, letterhead.stream_id, letterhead.from,
+            );
+
+            Some(letterhead)
+        }
+        _ => None,
+    }
+}
+
+pub(crate) struct MessageNotifier {
     read_cap: ReadCapability,
     header: CarrierFrameHeader,
 }
@@ -118,27 +133,31 @@ pub(crate) struct Journal {
     ///
     /// The channel only contains the block ID, which can then be
     /// received from the main block queue
-    manifest_notifier: (Sender<MessageNotifier>, Receiver<MessageNotifier>),
+    m_notify_send: Sender<MessageNotifier>,
     /// A channel which can be polled to wait for new incoming messages
     incoming: (Sender<Letterhead>, Receiver<Letterhead>),
 }
 
 impl Journal {
-    pub(crate) fn new() -> Arc<Self> {
-        Arc::new(Self {
-            known: Default::default(),
-            blocks: Default::default(),
-            frames: Default::default(),
-            manifest_notifier: channel(8),
-            incoming: channel(8),
-        })
+    pub(crate) fn new() -> (Arc<Self>, Receiver<MessageNotifier>) {
+        let (m_notify_send, m_notify_recv) = channel(8);
+        (
+            Arc::new(Self {
+                known: Default::default(),
+                blocks: Default::default(),
+                frames: Default::default(),
+                m_notify_send,
+                incoming: channel(8),
+            }),
+            m_notify_recv,
+        )
     }
 
     /// Run an async task that accepts completed blocks from the
     /// collector, checks their integrity and then inserts them into
     /// the block journal.
-    pub(crate) async fn run_block_acceptor(self: Arc<Self>, block_output: JournalReceiver) {
-        while let Ok((block_buf, sequence_id)) = block_output.recv().await {
+    pub(crate) async fn run_block_acceptor(self: Arc<Self>, mut block_output: JournalReceiver) {
+        while let Some((block_buf, sequence_id)) = block_output.recv().await {
             debug!(
                 "Attempting to re-construct block({} bytes)for sequence {}",
                 block_buf.len(),
@@ -176,116 +195,6 @@ impl Journal {
         }
     }
 
-    /// Run an async task that attempts to re-assemble messages from a
-    /// Manifest, and spawns a long-running version of itself if some
-    /// blocks are still missing.
-    pub(crate) async fn run_message_assembler(self: Arc<Self>) {
-        let notifier = self.manifest_notifier.1.clone();
-
-        while let Ok(message_notifier) = notifier.recv().await {
-            let message_id = message_notifier.header.get_seq_id().unwrap().hash;
-
-            match self.decode_message(&message_notifier).await {
-                Ok(message) => {
-                    self.incoming.0.send(message).await;
-                }
-                Err(_) => {
-                    let this = Arc::clone(&self);
-
-                    warn!(
-                        "Can't assemble {}, blocks missing!  Trying again later...",
-                        message_id
-                    );
-                    spawn_local(async move {
-                        let mut ctr = 0;
-
-                        loop {
-                            let millis = (100 + (ctr * 20)).clamp(0, 32);
-                            debug!(
-                                "Waiting {}ms for attempt #{} to assemble message {}",
-                                millis, ctr, message_id,
-                            );
-                            time::sleep(Duration::from_millis(millis)).await;
-                            match this.decode_message(&message_notifier).await {
-                                Ok(msg) => {
-                                    this.incoming.0.send(msg).await;
-                                    break;
-                                }
-                                Err(e) => {
-                                    error!("failed to re-assemble message because of {}", e)
-                                }
-                            }
-
-                            ctr += 1;
-                        }
-                    });
-                }
-            }
-        }
-    }
-
-    /// Decode a single message from a manifest/ read_capability
-    ///
-    /// Spawn a task that calls this function again if it failed.
-    async fn decode_message(
-        self: &Arc<Self>,
-        MessageNotifier {
-            ref read_cap,
-            ref header,
-        }: &MessageNotifier,
-    ) -> Result<Letterhead> {
-        let block_reader = self.blocks.read().await;
-
-        let mut payload_buffer = vec![];
-        async_eris::decode(&mut payload_buffer, read_cap, &*block_reader)
-            .await
-            .map_err(|e| RatmanError::Block(BlockError::from(e)))?;
-
-        // Release the block lock as quickly as possible
-        drop(block_reader);
-
-        // todo: this is a terrible api and it needs to change.  But
-        // also this type might be completely useless??
-        let mut time = TimePair::sending();
-        time.receive();
-
-        debug!("Decoding letterhead was successful!");
-        todo!()
-        // Ok(Letterhead {
-        //     from,
-        //     to,
-        //     time,
-        //     stream_id,
-        //     payload_length,
-        //     auxiliary_data,
-        // })
-
-        // Ok(Message {
-        //     id: header.get_seq_id().unwrap().hash,
-        //     sender: header.get_sender(),
-        //     recipient: header.get_recipient().unwrap().into(),
-        //     time,
-        //     payload: payload_buffer,
-        //     signature: vec![],
-        // })
-    }
-
-    /// Block and yield the next completed message from the queue
-    pub(crate) async fn next_message(&self) -> Option<()> {
-        match self.incoming.1.recv().await.ok() {
-            Some(msg) => {
-                info!(
-                    "Received new message '(id {})' from {}!",
-                    msg.id, msg.sender
-                );
-
-                // Some(msg)
-                todo!()
-            }
-            none => none,
-        }
-    }
-
     /// Add a new frame to the known set
     pub(crate) async fn frame_queue(&self, env: InMemoryEnvelope) {
         let seq_id = env.header.get_seq_id().unwrap().hash;
@@ -296,7 +205,7 @@ impl Journal {
     /// Provide a block manifest and collect a full message
     pub(crate) async fn queue_manifest(&self, envelope: InMemoryEnvelope) {
         let seq_id = envelope.header.get_seq_id().unwrap().hash;
-        let manifest_notifier = self.manifest_notifier.0.clone();
+        let m_notify_send = self.m_notify_send.clone();
 
         spawn_local(async move {
             let read_cap = match ManifestFrame::parse(envelope.get_payload_slice()) {
@@ -332,7 +241,7 @@ impl Journal {
             };
 
             // Send the ReadCapability through the notifier channel
-            manifest_notifier
+            m_notify_send
                 .send(MessageNotifier {
                     read_cap,
                     header: envelope.header,
@@ -349,5 +258,92 @@ impl Journal {
     /// Checks if a frame ID has not been seen before
     pub(crate) async fn is_unknown(&self, fid: &Id) -> bool {
         !self.known.read().await.contains(fid)
+    }
+}
+
+/// Decode a single message from a manifest/ read_capability
+///
+/// Spawn a task that calls this function again if it failed.
+async fn decode_message(
+    blocks: &RwLock<JournalBlockStore>,
+    MessageNotifier {
+        ref read_cap,
+        ref header,
+    }: &MessageNotifier,
+) -> Result<Letterhead> {
+    let block_reader = blocks.read().await;
+
+    let mut payload_buffer = vec![];
+    async_eris::decode(&mut payload_buffer, read_cap, &*block_reader)
+        .await
+        .map_err(|e| RatmanError::Block(BlockError::from(e)))?;
+
+    // Release the block lock as quickly as possible
+    drop(block_reader);
+
+    // todo: this is a terrible api and it needs to change.  But
+    // also this type might be completely useless??
+    let mut time = TimePair::sending();
+    time.receive();
+
+    debug!("Decoding letterhead was successful!");
+    Ok(Letterhead {
+        from: header.get_sender(),
+        to: header.get_recipient().unwrap(),
+        time,
+        stream_id: header.get_seq_id().unwrap().hash,
+        payload_length: header.get_payload_length(),
+        auxiliary_data: vec![],
+    })
+}
+
+/// Run an async task that attempts to re-assemble messages from a
+/// Manifest, and spawns a long-running version of itself if some
+/// blocks are still missing.
+pub(crate) async fn run_message_assembler(
+    journal: Arc<Journal>,
+    mut notifier: Receiver<MessageNotifier>,
+    sender: Sender<Letterhead>,
+) {
+    while let Some(message_notifier) = notifier.recv().await {
+        let message_id = message_notifier.header.get_seq_id().unwrap().hash;
+        let sender = sender.clone();
+
+        match decode_message(&journal.blocks, &message_notifier).await {
+            Ok(message) => {
+                sender.send(message).await;
+            }
+            Err(_) => {
+                let journal = Arc::clone(&journal);
+
+                warn!(
+                    "Can't assemble {}, blocks missing!  Trying again later...",
+                    message_id
+                );
+                spawn_local(async move {
+                    let mut ctr = 0;
+
+                    loop {
+                        let millis = (100 + (ctr * 20)).clamp(0, 32);
+                        debug!(
+                            "Waiting {}ms for attempt #{} to assemble message {}",
+                            millis, ctr, message_id,
+                        );
+                        time::sleep(Duration::from_millis(millis)).await;
+                        match decode_message(&journal.blocks, &message_notifier).await {
+                            Ok(msg) => {
+                                sender.send(msg).await;
+                                break;
+                            }
+                            Err(e) => {
+                                error!("failed to re-assemble message because of {}", e)
+                            }
+                        }
+
+                        ctr += 1;
+                    }
+                });
+            }
+        }
     }
 }
