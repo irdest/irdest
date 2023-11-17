@@ -77,7 +77,7 @@ async fn scan_wireless_for_ssid<'a>(
 
             task::block_on(async {
                 future::timeout(Duration::from_secs(30), async {
-                    while time > wireless.last_scan().await.unwrap() {
+                    while i64::from(time) > wireless.last_scan().await.unwrap() {
                         task::sleep(Duration::from_secs(1)).await;
                     }
                 })
