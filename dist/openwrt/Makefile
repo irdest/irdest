@@ -7,18 +7,17 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=ratmand
 PKG_VERSION:=0.5.0
 PKG_RELEASE:=1
-
-PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://git.irde.st/we/irdest.git
-PKG_REV:=d6c030386c73ad22e75dfba0330c5c064ad1f234
+PKG_REV:=8c8c87fb62a4f4476b18c14f2d22fe164d097383
 PKG_LICENSE:=AGPL-3.0
+PKG_SOURCE_URL:=https://git.irde.st/we/irdest.git
+PKG_SOURCE_PROTO:=git
 
-# Source settings (i.e. where to find the source codes)
-# This is a custom variable, used below
-SOURCE_DIR:=/home/aj/proj/irdest/irdest
+PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_SOURCE_SUBDIR)
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)
+# https://git.irde.st/we/irdest/-/archive/release/ratmand-0.5.0/irdest-release-ratmand-0.5.0.tar.gz
 
 include $(INCLUDE_DIR)/package.mk
-
 
 # Package definition; instructs on how and where our
 # package will appear in the overall configuration menu
@@ -27,8 +26,12 @@ define Package/ratmand
 	URL:=https://irde.st/
 	SECTION:=net
 	CATEGORY:=Network
+	SUBMENU:=Routing and Redirection
+	DEPENDS:=+libpthread +kmod-tun
 	TITLE:=RATMAN Research project for decentralised communication
 endef
+
+#block-mount e2fsprogs kmod-fs-ext4 kmod-usb-storage kmod-usb2 kmod-usb3
 
 # Package description; a more verbose description on
 # what our package does
