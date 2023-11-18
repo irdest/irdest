@@ -5,7 +5,7 @@
 //! tokio::spawn is FORBIDDEN in this module!  Only ever use
 //! tokio::spawn_local!
 //!
-//! Most likely you will want to simply call `spawn_async_thread(...)`
+//! Most likely you will want to simply call `new_async_thread(...)`
 
 use crate::Result;
 use std::{
@@ -148,13 +148,11 @@ fn simple_tcp_transfer() {
         Ok(())
     });
 
-    let main = AsyncSystem::new("main".into(), 1);
-    let received_data = main
+    let received_data = AsyncSystem::new("main".into(), 1)
         .exec(async move { responder_rx.recv().await.unwrap() })
         .unwrap();
 
     println!("We got {} datas", received_data.len());
-
     assert_eq!(input_data, received_data);
 }
 
@@ -179,25 +177,35 @@ fn nested_block_on() {
 
 #[test]
 fn test_spawn_local() {
-    use tokio::time;
+    use tokio::{sync::mpsc, time};
 
-    async fn wait_n_print(n: u64) {
+    async fn wait_n_send(s: mpsc::Sender<String>, n: u64) {
         time::sleep(std::time::Duration::from_secs(n)).await;
-        println!("Waited {} and meowed!", n);
+        s.send("Waited {n} and meowed".to_string()).await.unwrap();
+    }
+
+    async fn recv_and_print(mut r: mpsc::Receiver<String>) {
+        let mut ctr = 0;
+        while let Some(msg) = r.recv().await {
+            println!("Msg: {msg}");
+            ctr += 1;
+        }
+
+        // Enforce that we did indeed receive three messages
+        assert_eq!(ctr, 3);
     }
 
     async fn root_job() {
         use tokio::task::spawn_local;
-        spawn_local(wait_n_print(1));
-        spawn_local(wait_n_print(2));
-        spawn_local(wait_n_print(3));
+        let (tx, rx) = mpsc::channel(8);
+        spawn_local(wait_n_send(tx.clone(), 1));
+        spawn_local(wait_n_send(tx.clone(), 2));
+        spawn_local(wait_n_send(tx, 3));
 
-        wait_n_print(4).await;
+        recv_and_print(rx).await;
     }
 
-    let system = AsyncSystem::new("test-run".to_owned(), 1);
-
-    system.exec(root_job());
+    AsyncSystem::new("test_spawn_local".to_owned(), 1).exec(root_job());
 }
 
 #[test]
