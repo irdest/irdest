@@ -2932,6 +2932,7 @@ dependencies = [
  "tempdir",
  "thiserror",
  "tide",
+ "tokio",
  "tracing",
  "tracing-futures",
  "tracing-subscriber",
