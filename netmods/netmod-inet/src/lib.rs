@@ -262,10 +262,13 @@ async fn simple_transmission() {
 
     let data = InMemoryEnvelope::test_envelope();
     info!("============= SENDING =============");
-    client.send(0, data.clone()).await.unwrap();
+    client
+        .send(data.clone(), Neighbour::Single(0), None)
+        .await
+        .unwrap();
     info!("Data sent");
 
-    let (_, received_data) = server.next().await.unwrap();
+    let (received_data, _) = server.next().await.unwrap();
     info!("Data received!");
 
     assert_eq!(data, received_data);
