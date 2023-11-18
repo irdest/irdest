@@ -4,6 +4,8 @@
 //!
 //! tokio::spawn is FORBIDDEN in this module!  Only ever use
 //! tokio::spawn_local!
+//!
+//! Most likely you will want to simply call `spawn_async_thread(...)`
 
 use crate::Result;
 use std::{
@@ -16,7 +18,7 @@ use std::{
 use tokio::{
     runtime::{Builder, Runtime},
     sync::mpsc,
-    task::{spawn_local, LocalSet},
+    task::LocalSet,
 };
 
 pub mod reader;
@@ -181,10 +183,11 @@ fn test_spawn_local() {
 
     async fn wait_n_print(n: u64) {
         time::sleep(std::time::Duration::from_secs(n)).await;
-        println!("Waited {} and then printed!", n);
+        println!("Waited {} and meowed!", n);
     }
 
     async fn root_job() {
+        use tokio::task::spawn_local;
         spawn_local(wait_n_print(1));
         spawn_local(wait_n_print(2));
         spawn_local(wait_n_print(3));
@@ -195,4 +198,21 @@ fn test_spawn_local() {
     let system = AsyncSystem::new("test-run".to_owned(), 1);
 
     system.exec(root_job());
+}
+
+#[test]
+fn send_between_systems() {
+    let (tx, mut rx) = tokio::sync::mpsc::channel(1);
+
+    new_async_thread("receiver-system", 1, async move {
+        let msg = rx.recv().await;
+        println!("Received {:?} from across the (memory) pond :3", msg);
+        assert!(msg.is_some());
+        Ok(())
+    });
+
+    new_async_thread("sender-system", 1, async move {
+        tx.send("Bonk! ^w^".to_owned()).await.unwrap();
+        Ok(())
+    });
 }
