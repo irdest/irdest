@@ -6,14 +6,17 @@ use crate::{
     routes::{Routes, Target},
     PeerType,
 };
-use async_std::{
-    channel::{unbounded, Receiver, Sender},
-    net::{SocketAddr, TcpStream},
-    sync::Arc,
-    task,
+use libratman::{
+    tokio::{
+        net::TcpStream,
+        sync::mpsc::{channel, Receiver, Sender},
+        task::spawn_local,
+        time,
+    },
+    types::InMemoryEnvelope,
+    RatmanError,
 };
-use libratman::{types::InMemoryEnvelope, RatmanError};
-use std::{io, time::Duration};
+use std::{io, net::SocketAddr, sync::Arc, time::Duration};
 
 /// The number of attempts a session maskes to a peer before giving up
 pub const SESSION_TIMEOUT: u16 = 6;
@@ -40,11 +43,11 @@ pub(crate) async fn start_connection(
     routes: Arc<Routes>,
     sender: FrameSender,
 ) -> Result<Receiver<SessionData>, SessionError> {
-    let (tx, rx) = unbounded();
+    let (tx, rx) = channel(8);
 
     let routes2 = Arc::clone(&routes);
     let sender2 = sender.clone();
-    task::spawn(async move {
+    spawn_local(async move {
         let tcp_stream = match connect(&session_data).await {
             Ok(tcp) => tcp,
             Err(e) => {
@@ -63,7 +66,7 @@ pub(crate) async fn start_connection(
             }
         };
 
-        task::spawn(Arc::clone(&peer).run());
+        spawn_local(Arc::clone(&peer).run());
         routes2.add_peer(peer.id(), Arc::clone(&peer)).await;
     });
 
@@ -71,7 +74,7 @@ pub(crate) async fn start_connection(
 }
 
 pub(crate) async fn setup_cleanuptask(
-    rx: Receiver<SessionData>,
+    mut rx: Receiver<SessionData>,
     sender: FrameSender,
     routes: &Arc<Routes>,
 ) {
@@ -83,10 +86,10 @@ pub(crate) async fn setup_cleanuptask(
     // For peers of incoming connections this sender is None, and
     // thus this code will never be run on a server.  Woops :)
     let routes = Arc::clone(&routes);
-    task::spawn(async move {
+    spawn_local(async move {
         debug!("setup_cleanuptask spawned");
         match rx.recv().await {
-            Ok(session_data) => {
+            Some(session_data) => {
                 debug!("Restart hook notified!");
 
                 if let Err(e) = cleanup_connection(session_data, &routes, sender).await {
@@ -141,7 +144,7 @@ pub(crate) async fn connect(
             }
             Err(_) => {
                 error!("Failed connecting to {} [attempt {}]", addr, ctr);
-                task::sleep(Duration::from_secs(holdoff)).await;
+                time::sleep(Duration::from_secs(holdoff)).await;
                 ctr += 1;
             }
         }
@@ -184,7 +187,7 @@ async fn handshake(
     data: &SessionData,
     sender: FrameSender,
     restart: Sender<SessionData>,
-    mut stream: TcpStream,
+    stream: TcpStream,
 ) -> Result<Arc<Peer>, SessionError> {
     let hello = Handshake::Hello {
         tt: data.tt,
@@ -193,12 +196,15 @@ async fn handshake(
     .to_carrier()
     .unwrap();
 
-    proto::write(&mut stream, &hello)
+    let peer_addr = stream.peer_addr().expect("todo: fix this error type");
+    let (mut read_stream, mut write_stream) = stream.into_split();
+
+    proto::write(&mut write_stream, &hello)
         .await
         .map_err(|e| SessionError::Handshake(*data, e.to_string()))
         .unwrap();
 
-    let ack_env: InMemoryEnvelope = proto::read_blocking(&mut stream)
+    let ack_env: InMemoryEnvelope = proto::read_blocking(&mut read_stream)
         .await
         .map_err(|e| SessionError::Handshake(*data, e.to_string()))
         .unwrap();
@@ -206,7 +212,7 @@ async fn handshake(
     let ack = match Handshake::from_carrier(&ack_env) {
         Err(RatmanError::Nonfatal(nf)) => {
             warn!("Expected to receive a Handshake::Ack but received something different!");
-            unreachable!();
+            unimplemented!()
         }
         Ok(ack) => ack,
         Err(e) => return Err(SessionError::Handshake(*data, e.to_string())),
@@ -215,14 +221,20 @@ async fn handshake(
     // ??? what does this match block actually do
     match (data.tt, ack) {
         (outgoing, Handshake::Ack { tt }) if outgoing == tt => {
-            debug!("Handshake with {:?} was successful!", stream.peer_addr());
+            debug!("Handshake with {:?} was successful!", peer_addr);
         }
         _ => {
-            error!("Handshake with {:?} was unsuccessful", stream.peer_addr());
-            drop(stream);
+            error!("Handshake with {:?} was unsuccessful", peer_addr);
+            drop((write_stream, read_stream));
             return Err(SessionError::Dropped(data.addr));
         }
     }
 
-    Ok(Peer::standard(*data, sender, Some(restart), stream))
+    Ok(Peer::standard(
+        *data,
+        sender,
+        Some(restart),
+        write_stream,
+        read_stream,
+    ))
 }

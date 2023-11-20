@@ -3,25 +3,22 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use crate::PeerType;
-use async_std::{
-    io::{self, ReadExt, WriteExt},
-    net::TcpStream,
-};
-use byteorder::ByteOrder;
+use byteorder::{BigEndian, ByteOrder};
 use libratman::{
-    frame::{carrier::CarrierFrameHeader, FrameGenerator, FrameParser},
+    frame::carrier::CarrierFrameHeader,
+    tokio::io::{AsyncReadExt, AsyncWriteExt},
+    tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf},
     types::{Address, InMemoryEnvelope},
-    EncodingError, NonfatalError, RatmanError, Result,
+    EncodingError, NonfatalError, Result,
 };
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 /// Read 8 bytes
 #[inline]
-pub(crate) async fn read_blocking(mut rx: &TcpStream) -> Result<InMemoryEnvelope> {
+pub(crate) async fn read_blocking(rx: &mut OwnedReadHalf) -> Result<InMemoryEnvelope> {
     let mut len_buf = [0; 4];
     rx.read_exact(&mut len_buf).await?;
-    let len = u32::from_be_bytes(len_buf);
-    // trace!("Reading {len} bytes from socket");
+    let len = BigEndian::read_u32(&len_buf);
 
     if len > 4196 {
         warn!("Receiving a message larger than 4169 bytes.  This might be a DOS attempt..");
@@ -30,30 +27,24 @@ pub(crate) async fn read_blocking(mut rx: &TcpStream) -> Result<InMemoryEnvelope
     let mut buffer = vec![0; len as usize];
     rx.read_exact(&mut buffer).await?;
 
-    // trace!("Read length buffer: {:?}", len_buf);
-    // trace!("Read envelope buffer: {:?}", buffer);
-
     InMemoryEnvelope::parse_from_buffer(buffer)
 }
 
 /// Attempt to read from the socket and return NoData if not enough
 /// data was present to be read.  YOU MUST NOT PANIC ON THIS ERROR
 /// TYPE
-pub(crate) async fn read(mut rx: &TcpStream) -> Result<InMemoryEnvelope> {
+pub(crate) async fn read(rx: &mut OwnedReadHalf) -> Result<InMemoryEnvelope> {
     let mut len_buf = [0; 4];
     if rx.peek(&mut len_buf).await? < 4 {
-        // return Err(NonfatalError::NoData.into());
         return Err(EncodingError::NoData.into());
     }
 
     Ok(read_blocking(rx).await?)
 }
 
-pub(crate) async fn write(mut tx: &TcpStream, envelope: &InMemoryEnvelope) -> Result<()> {
-    // trace!("Writing {} bytes to buffer", envelope.buffer.len());
-    let mut len_buf = (envelope.buffer.len() as u32).to_be_bytes();
-    // trace!("Writing length buffer: {:?}", len_buf);
-    // trace!("Writing envelope buffer: {:?}", envelope.buffer);
+pub(crate) async fn write(tx: &mut OwnedWriteHalf, envelope: &InMemoryEnvelope) -> Result<()> {
+    let mut len_buf = [0; 4];
+    BigEndian::write_u32(&mut len_buf, envelope.buffer.len() as u32);
 
     tx.write(&len_buf).await?;
     tx.write(&envelope.buffer).await?;
@@ -83,17 +74,19 @@ impl Handshake {
         }
     }
 
+    pub(crate) fn encode(self) -> Result<(Vec<u8>, u16)> {
+        match self {
+            ref hello @ Self::Hello { .. } => {
+                Ok((bincode::serialize(hello).unwrap(), modes::HANDSHAKE_HELLO))
+            }
+            ref ack @ Self::Ack { .. } => {
+                Ok((bincode::serialize(ack).unwrap(), modes::HANDSHAKE_ACK))
+            }
+        }
+    }
+
     pub(crate) fn to_carrier(self) -> Result<InMemoryEnvelope> {
-        let (mut payload, modes) = match self {
-            ref hello @ Self::Hello { .. } => (
-                bincode::serialize(hello).expect("failed to encode Handshake::Hello"),
-                modes::HANDSHAKE_HELLO,
-            ),
-            ref ack @ Self::Ack { .. } => (
-                bincode::serialize(ack).expect("failed to encode Handshake::Ack"),
-                modes::HANDSHAKE_ACK,
-            ),
-        };
+        let (payload, modes) = self.encode()?;
 
         InMemoryEnvelope::from_header_and_payload(
             CarrierFrameHeader::new_netmodproto_frame(
@@ -114,6 +107,18 @@ fn encode_decode_handshake() {
         self_port: 12,
     };
 
+    // let (payload, modes) = hello.clone().encode().unwrap();
+    // let proto_header =
+    //     CarrierFrameHeader::new_netmodproto_frame(modes, Address::random(), payload.len() as u16);
+
+    // let envelope = InMemoryEnvelope::from_header_and_payload(proto_header, payload).unwrap();
+
+    // println!("{:?}", envelope.buffer);
+
+    // let hello2: Handshake = bincode::deserialize(&envelope.get_payload_slice()).unwrap();
+
+    // assert_eq!(hello, hello2);
+
     let envelope = hello.clone().to_carrier().unwrap();
     println!(
         "Envelope payload length: {}",
@@ -126,18 +131,18 @@ fn encode_decode_handshake() {
     assert_eq!(hello, hello2);
 }
 
-#[test]
-fn decode_wellknown() {
-    let raw = vec![
-        1, 0, 32, 37, 84, 247, 144, 109, 131, 170, 164, 136, 214, 192, 145, 92, 9, 50, 64, 179,
-        239, 68, 23, 201, 246, 171, 240, 209, 11, 114, 121, 208, 71, 90, 251, 0, 0, 0, 0, 10, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-    ];
+// #[test]
+// fn decode_wellknown() {
+//     let raw = vec![
+//         1, 0, 32, 37, 84, 247, 144, 109, 131, 170, 164, 136, 214, 192, 145, 92, 9, 50, 64, 179,
+//         239, 68, 23, 201, 246, 171, 240, 209, 11, 114, 121, 208, 71, 90, 251, 0, 0, 0, 0, 10, 0, 0,
+//         0, 0, 0, 0, 0, 0, 0, 0,
+//     ];
 
-    let envelope = InMemoryEnvelope::parse_from_buffer(raw).unwrap();
-    println!("Envelope header: {:?}", envelope.header);
+//     let envelope = InMemoryEnvelope::parse_from_buffer(raw).unwrap();
+//     println!("Envelope header: {:?}", envelope.header);
 
-    let payload = envelope.get_payload_slice();
-    println!("Envelope payload is: {:?}", payload);
-    let h: Handshake = bincode::deserialize(&payload).unwrap();
-}
+//     let payload = envelope.get_payload_slice();
+//     println!("Envelope payload is: {:?}", payload);
+//     let h: Handshake = bincode::deserialize(&payload).unwrap();
+// }

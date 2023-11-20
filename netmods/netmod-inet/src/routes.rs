@@ -3,13 +3,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use crate::peer::Peer;
-use async_std::{
-    channel::Sender,
-    sync::{Arc, RwLock},
-};
+use libratman::tokio::sync::RwLock;
 use std::{
     collections::BTreeMap,
-    sync::atomic::{AtomicU16, Ordering},
+    sync::{
+        atomic::{AtomicU16, Ordering},
+        Arc,
+    },
 };
 
 pub(crate) type Target = u16;
