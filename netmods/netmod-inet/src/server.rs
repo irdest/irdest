@@ -7,16 +7,19 @@ use crate::{
     proto::{self, Handshake},
     routes::Routes,
     session::SessionData,
-    PeerType,
 };
-use async_std::{
-    net::{SocketAddr, TcpListener, TcpStream},
-    stream::StreamExt,
+use libratman::{
+    tokio::{
+        net::{TcpListener, TcpStream},
+        task::spawn_local,
+    },
+    NetmodError, RatmanError,
+};
+use std::{
+    io,
+    net::{AddrParseError, SocketAddr},
     sync::Arc,
-    task,
 };
-use libratman::{NetmodError, RatmanError};
-use std::{io, net::AddrParseError};
 
 #[derive(Debug, thiserror::Error)]
 pub enum ServerError {
@@ -67,23 +70,14 @@ impl Server {
 
     /// Run in a loop to accept incoming connections
     pub(crate) async fn run(self, sender: FrameSender, r: Arc<Routes>) {
-        let mut inc = self.ipv6_listen.incoming();
-
         loop {
-            let stream = inc.next().await;
-            debug!("New incoming connection!");
-
-            match stream {
-                Some(Ok(s)) => {
+            match self.ipv6_listen.accept().await {
+                Ok((stream, _)) => {
                     let r = Arc::clone(&r);
-                    task::spawn(handle_stream(s, sender.clone(), r));
+                    spawn_local(handle_stream(stream, sender.clone(), r));
                 }
-                Some(Err(e)) => {
+                Err(e) => {
                     warn!("Invalid incoming stream: {}", e);
-                    continue;
-                }
-                None => {
-                    warn!("Incoming stream is 'None'");
                     continue;
                 }
             }
@@ -106,29 +100,28 @@ async fn handle_stream(s: TcpStream, sender: FrameSender, r: Arc<Routes>) {
 
     // Spawn a task to listen for packets for this peer
     let this_peer = Arc::clone(&peer);
-    task::spawn(async move {
-        this_peer.run().await;
-    });
+    spawn_local(async move { this_peer.run().await });
 
     // Also add the peer to the routing table
     r.add_peer(peer.id(), peer).await;
 }
 
 async fn accept_connection(
-    mut s: TcpStream,
+    s: TcpStream,
     sender: FrameSender,
     r: &Arc<Routes>,
 ) -> Result<Arc<Peer>, io::Error> {
     let addr = s.peer_addr()?;
+    let (mut read_stream, mut write_stream) = s.into_split();
 
     // First we read the handshake structure from the socket
-    let frame = proto::read_blocking(&mut s).await.unwrap();
+    let frame = proto::read_blocking(&mut read_stream).await.unwrap();
     let handshake = Handshake::from_carrier(&frame).unwrap();
 
     let tt = match handshake {
         Handshake::Hello { tt, .. } => tt,
         Handshake::Ack { .. } => {
-            drop(s);
+            drop((read_stream, write_stream));
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "invalid handshake data",
@@ -139,7 +132,7 @@ async fn accept_connection(
     // Send back an ACK to the client so it can chill out a bit
     let ack = Handshake::Ack { tt };
     let envelope = ack.to_carrier().unwrap();
-    proto::write(&mut s, &envelope).await.unwrap();
+    proto::write(&mut write_stream, &envelope).await.unwrap();
 
     let target = r.next_target();
     let data = SessionData {
@@ -151,8 +144,13 @@ async fn accept_connection(
 
     info!(
         "Successfully connected with new peer #{} ({:?}) :)",
-        target,
-        s.peer_addr()
+        target, addr,
     );
-    Ok(Peer::standard(data, sender, None, s))
+    Ok(Peer::standard(
+        data,
+        sender,
+        None,
+        write_stream,
+        read_stream,
+    ))
 }

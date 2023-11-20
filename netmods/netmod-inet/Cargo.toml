@@ -11,8 +11,6 @@ license = "AGPL-3.0-or-later"
 
 [dependencies]
 libratman = { version = "0.5", path = "../../ratman/libratman", features = ["netmod"] }
-
-async-std = { version = "1.0", features = ["attributes", "unstable"] }
 async-trait = "0.1"
 bincode = "1.0"
 byteorder = "1.0"
@@ -22,3 +20,4 @@ tracing = "0.1"
 
 [dev-dependencies]
 tracing-subscriber = { version = "0.2", features = ["fmt"] }
+tokio = { version = "1.0", features = [ "macros" ] }

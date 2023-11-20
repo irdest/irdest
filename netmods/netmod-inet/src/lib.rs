@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
-#![allow(warnings)]
 //! A tcp overlay netmod to connect router across the internet
 
 #[macro_use]
@@ -14,14 +13,21 @@ mod routes;
 mod server;
 mod session;
 
+use std::sync::Arc;
+
 use peer::{FrameReceiver, FrameSender};
 use routes::{Routes, Target};
 use session::{setup_cleanuptask, start_connection, SessionData};
 use {resolve::Resolver, server::Server};
 
-use async_std::{channel::unbounded, io::WriteExt, net::TcpListener, sync::Arc, task};
+// use async_std::{channel::unbounded, io::WriteExt, net::TcpListener, sync::Arc, task};
 use libratman::{
     endpoint::EndpointExt,
+    rt::AsyncSystem,
+    tokio::{
+        sync::{mpsc::channel, Mutex},
+        task::spawn_local,
+    },
     types::{InMemoryEnvelope, Neighbour},
     NetmodError, RatmanError, Result,
 };
@@ -48,7 +54,7 @@ pub(crate) enum Direction {
 pub struct InetEndpoint {
     port: u16,
     routes: Arc<Routes>,
-    channel: (FrameSender, FrameReceiver),
+    channel: (FrameSender, Mutex<FrameReceiver>),
 }
 
 impl InetEndpoint {
@@ -56,19 +62,19 @@ impl InetEndpoint {
     pub async fn start(bind: &str) -> Result<Arc<Self>> {
         let server = Server::bind(bind).await?;
         let routes = Routes::new();
-        let channel = unbounded(); // TODO: constraint the channel?
+        let channel = channel(64); // TODO: constraint the channel?
         let port = server.port(); // we don't store the server
 
         // Accept connections and spawn associated peers
         {
             let sender = channel.0.clone();
-            task::spawn(server.run(sender, Arc::clone(&routes)));
+            spawn_local(server.run(sender, Arc::clone(&routes)));
         }
 
         Ok(Arc::new(Self {
             port,
             routes,
-            channel,
+            channel: (channel.0, Mutex::new(channel.1)),
         }))
     }
 
@@ -87,7 +93,7 @@ impl InetEndpoint {
             return Err(RatmanError::Netmod(NetmodError::InvalidPeer(p.into())));
         }
 
-        let peer = match Resolver::resolve(&p).await {
+        let peer = match Resolver::resolve(&p) {
             Some(p) => p,
             None => {
                 warn!("Failed to parse peer: '{}'... skipping", p);
@@ -166,7 +172,8 @@ impl InetEndpoint {
     /// Get the next (Target, Frame) tuple from this endpoint
     // TODO: properly map error here
     pub async fn next(&self) -> Option<(Target, InMemoryEnvelope)> {
-        self.channel.1.recv().await.ok()
+        let mut r = self.channel.1.lock().await;
+        r.recv().await
     }
 }
 
@@ -228,8 +235,14 @@ impl EndpointExt for InetEndpoint {
     }
 }
 
-#[async_std::test]
-async fn simple_transmission() {
+#[test]
+fn test_simple_transmission() {
+    let system = AsyncSystem::new("simple-transmission".into(), 2);
+    system.exec(simple_transmission()).unwrap()
+}
+
+#[cfg(test)]
+async fn simple_transmission() -> Result<()> {
     ///////// "SERVER" SIDE
 
     pub fn setup_logging() {
@@ -257,7 +270,7 @@ async fn simple_transmission() {
     let client = InetEndpoint::start("[::]:13000").await.unwrap();
     client.add_peer("[::1]:12000".into()).await.unwrap();
 
-    async_std::task::sleep(std::time::Duration::from_millis(1000)).await;
+    libratman::tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
     info!("Waited for 1000ms, sending some data now");
 
     let data = InMemoryEnvelope::test_envelope();
@@ -272,4 +285,5 @@ async fn simple_transmission() {
     info!("Data received!");
 
     assert_eq!(data, received_data);
+    Ok(())
 }

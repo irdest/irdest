@@ -2,18 +2,18 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
+use std::sync::Arc;
+
 use crate::session::{SessionData, SessionError};
 use crate::{proto, routes::Target};
-use async_std::channel;
-use async_std::task::JoinHandle;
-use async_std::{
-    channel::{Receiver, Sender},
-    net::{SocketAddr, TcpStream},
-    sync::{Arc, Mutex},
-    task,
+use libratman::tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
+use libratman::tokio::sync::Mutex;
+use libratman::tokio::task::yield_now;
+use libratman::{
+    tokio::sync::mpsc::{Receiver, Sender},
+    types::InMemoryEnvelope,
+    EncodingError, RatmanError,
 };
-use libratman::types::InMemoryEnvelope;
-use libratman::{EncodingError, RatmanError};
 
 pub(crate) type FrameReceiver = Receiver<(Target, InMemoryEnvelope)>;
 pub(crate) type FrameSender = Sender<(Target, InMemoryEnvelope)>;
@@ -50,8 +50,8 @@ pub(crate) type FrameSender = Sender<(Target, InMemoryEnvelope)>;
 /// The two inverse scenarios exist on the "server" side.
 pub struct Peer {
     pub(crate) session: SessionData,
-    tx: Mutex<Option<TcpStream>>,
-    rx: Mutex<Option<TcpStream>>,
+    tx: Mutex<Option<OwnedWriteHalf>>,
+    rx: Mutex<Option<OwnedReadHalf>>,
     receiver: FrameSender,
     restart: Option<Sender<SessionData>>,
 }
@@ -62,12 +62,13 @@ impl Peer {
         session: SessionData,
         receiver: FrameSender,
         restart: Option<Sender<SessionData>>,
-        stream: TcpStream,
+        tx: OwnedWriteHalf,
+        rx: OwnedReadHalf,
     ) -> Arc<Self> {
         Arc::new(Self {
             session,
-            tx: Mutex::new(Some(stream.clone())),
-            rx: Mutex::new(Some(stream)),
+            tx: Mutex::new(Some(tx)),
+            rx: Mutex::new(Some(rx)),
             receiver,
             restart,
         })
@@ -147,7 +148,7 @@ impl Peer {
                     if no_data_ctr > 128 {
                         break;
                     } else {
-                        task::yield_now();
+                        yield_now();
                         continue;
                     }
                 }

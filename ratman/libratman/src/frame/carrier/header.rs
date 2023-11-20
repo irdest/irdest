@@ -25,8 +25,8 @@ impl CarrierFrameHeader {
     pub fn new_netmodproto_frame(modes: u16, router_addr: Address, payload_length: u16) -> Self {
         Self::V1(CarrierFrameHeaderV1 {
             modes,
-            recipient: None,
             sender: router_addr,
+            recipient: None,
             seq_id: None,
             auxiliary_data: None,
             signature_data: None,
@@ -43,8 +43,8 @@ impl CarrierFrameHeader {
     ) -> Self {
         Self::V1(CarrierFrameHeaderV1 {
             modes: modes::DATA,
-            recipient: Some(recipient),
             sender,
+            recipient: Some(recipient),
             seq_id: Some(seq_id),
             auxiliary_data: None,
             signature_data: None,
@@ -61,8 +61,8 @@ impl CarrierFrameHeader {
     ) -> Self {
         Self::V1(CarrierFrameHeaderV1 {
             modes: modes::MANIFEST,
-            recipient: Some(recipient),
             sender,
+            recipient: Some(recipient),
             seq_id: Some(seq_id),
             auxiliary_data: None,
             signature_data: None,
@@ -74,8 +74,8 @@ impl CarrierFrameHeader {
     pub fn new_announce_frame(sender: Address, payload_length: u16) -> Self {
         Self::V1(CarrierFrameHeaderV1 {
             modes: modes::ANNOUNCE,
-            recipient: None,
             sender,
+            recipient: None,
             seq_id: Some(SequenceIdV1 {
                 hash: Id::random(),
                 num: 0,
@@ -122,13 +122,17 @@ impl CarrierFrameHeader {
                     Some(_) => 32,
                     None => 1,
                 };
-
+                let sign_data_size = match header.auxiliary_data {
+                    Some(_) => 32,
+                    None => 1,
+                };
                 1 // Include 1 byte for the version field itself
                     + modes_size
                     + sender_size
                     + recipient_size
                     + seq_id_size
                     + aux_data_size
+                    + sign_data_size
                     + payload_len_size
             }
         }
