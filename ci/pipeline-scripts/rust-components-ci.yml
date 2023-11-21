@@ -46,7 +46,7 @@ build-ratmand-static-aarch64:
 build-ratmand-static-armv7l-musl:
   tags: [ irdest-nix ]
   stage: build
-  needs: [ build-ratmand-dashboard ]
+  needs: [ build-ratman-dashboard ]
   script:
     - nix-env -iA cachix -f https://cachix.org/api/v1/install
     - cachix use irdest -O ~/.config/nix
