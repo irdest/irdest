@@ -52,3 +52,16 @@ bundle-ratman-armv71-musl:
     - build-ratmand-static-armv71-musl
     - build-ratman-tools-static-armv71-musl
     - build-manual
+  script:
+    - mkdir ratman-bundle-armv71-musl  && cd ratman-bundle-armv71-musl
+    - cp -rv ../dist .
+    - cp -rv ../docs/man .
+    - cp -rv ../result-ratmand/bin .
+    - cp -rv ../result-ratman-tools/bin/* bin/
+    - cp -rv ../result-installer/bin/* .
+    - cp -rv ../result-manual-user manual
+    - cd ..
+    - tar cvf ratman-bundle-armv71-musl.tar.gz ratman-bundle-armv71-musl/
+  artifacts:
+    paths:
+      - ratman-bundle-armv71-musl.tar.gz
