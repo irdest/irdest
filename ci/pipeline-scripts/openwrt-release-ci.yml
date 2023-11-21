@@ -3,7 +3,7 @@
 bundle-ratman-openwrt-ipk:
   tags: [ irdest-nix ]
   stage: bundle
-  depedencies:
+  dependencies:
     - build-ratmand-static-armv7l-musl
   script:
     - mkdir ratman-openwrt-arm_cortex-a7_neon-vfpv4 && cd ratman-openwrt-arm_cortex-a7_neon-vfpv4
