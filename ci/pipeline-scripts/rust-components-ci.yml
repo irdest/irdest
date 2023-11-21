@@ -43,6 +43,17 @@ build-ratmand-static-aarch64:
     paths:
       - result-ratmand/*
 
+build-ratmand-static-armv71-musl:
+  tags: [ irdest-nix ]
+  stage: build
+  needs: [ build-ratmand-dashboard ]
+  script:
+    - nix-env -iA cachix -f https://cachix.org/api/v1/install
+    - cachix use irdest -O ~/.config/nix
+    - echo "trusted-public-keys = $CACHE_PUBKEYS" >> ~/.config/nix/nix.conf
+    - nix-build nix -A pkgsCross.armv7l-hf-multiplatform.pkgsStatic.stdenv -A pkgsCross.armv7l-hf-multiplatform.pkgsStatic.buildPackages.rustc.all -A pkgsCross.armv7l-hf-multiplatform.pkgsStatic.buildPackages.cargo -o toolchain
+    - cachix push irdest ./toolchain* || echo "couldn't push"
+    - nix-build nix -A pkgsCross.armv7l-hf-multiplatform.pkgsStatic.ratmand -o result-ratmand
 
 ####################### RATMAN TOOLING BINARIES
 
@@ -74,6 +85,19 @@ build-ratman-tools-static-aarch64:
     paths:
       - result-ratman-tools/*
 
+build-ratman-tools-static-armv71-musl:
+  tags: [ irdest-nix ]
+  stage: build
+  script:
+    - nix-env -iA cachix -f https://cachix.org/api/v1/install
+    - cachix use irdest -O ~/.config/nix
+    - echo "trusted-public-keys = $CACHE_PUBKEYS" >> ~/.config/nix/nix.conf
+    - nix-build nix -A pkgsCross.armv7l-hf-multiplatform.pkgsStatic.stdenv -A pkgsCross.armv7l-hf-multiplatform.pkgsStatic.buildPackages.rustc.all -A pkgsCross.armv7l-hf-multiplatform.pkgsStatic.buildPackages.cargo -o toolchain
+    - cachix push irdest ./toolchain* || echo "couldn't push"
+    - nix-build nix -A pkgsCross.armv7l-hf-multiplatform.pkgsStatic.ratman-tools -o result-ratman-tools
+  artifacts:
+    paths:
+      - result-ratman-tools/*
 
 ####################### IRDEST PROXY
 
@@ -101,6 +125,20 @@ build-irdest-proxy-static-aarch64:
     - nix-build nix -A pkgsCross.aarch64-multiplatform.pkgsStatic.stdenv -A pkgsCross.aarch64-multiplatform.pkgsStatic.buildPackages.rustc -A pkgsCross.aarch64-multiplatform.pkgsStatic.buildPackages.cargo -o toolchain
     - cachix push irdest ./toolchain* || echo "couldn't push"
     - nix-build nix -A pkgsCross.aarch64-multiplatform.pkgsStatic.irdest-proxy -o result-irdest-proxy
+  artifacts:
+    paths:
+      - result-irdest-proxy/*
+
+build-irdest-proxy-static-armv71-musl:
+  tags: [ irdest-nix ]
+  stage: build
+  script:
+    - nix-env -iA cachix -f https://cachix.org/api/v1/install
+    - cachix use irdest -O ~/.config/nix
+    - echo "trusted-public-keys = $CACHE_PUBKEYS" >> ~/.config/nix/nix.conf
+    - nix-build nix -A pkgsCross.armv7l-hf-multiplatform.pkgsStatic.stdenv -A pkgsCross.armv7l-hf-multiplatform.pkgsStatic.buildPackages.rustc -A pkgsCross.armv7l-hf-multiplatform.pkgsStatic.buildPackages.cargo -o toolchain
+    - cachix push irdest ./toolchain* || echo "couldn't push"
+    - nix-build nix -A pkgsCross.armv7l-hf-multiplatform.pkgsStatic.irdest-proxy -o result-irdest-proxy
   artifacts:
     paths:
       - result-irdest-proxy/*
@@ -139,6 +177,20 @@ build-installer-static-aarch64:
     - nix-build nix -A pkgsCross.aarch64-multiplatform.pkgsStatic.stdenv -A pkgsCross.aarch64-multiplatform.pkgsStatic.buildPackages.rustc.all -A pkgsCross.aarch64-multiplatform.pkgsStatic.buildPackages.cargo -o toolchain
     - cachix push irdest ./toolchain* || echo "couldn't push"
     - nix-build nix -A pkgsCross.aarch64-multiplatform.pkgsStatic.irdest-installer -o result-installer
+  artifacts:
+    paths:
+      - result-installer/*
+
+build-installer-static-armv71-musl:
+  tags: [ irdest-nix ]
+  stage: build
+  script:
+    - nix-env -iA cachix -f https://cachix.org/api/v1/install
+    - cachix use irdest -O ~/.config/nix
+    - echo "trusted-public-keys = $CACHE_PUBKEYS" >> ~/.config/nix/nix.conf
+    - nix-build nix -A pkgsCross.armv7l-hf-multiplatform.pkgsStatic.stdenv -A pkgsCross.armv7l-hf-multiplatform.pkgsStatic.buildPackages.rustc.all -A pkgsCross.armv7l-hf-multiplatform.pkgsStatic.buildPackages.cargo -o toolchain
+    - cachix push irdest ./toolchain* || echo "couldn't push"
+    - nix-build nix -A pkgsCross.armv7l-hf-multiplatform.pkgsStatic.irdest-installer -o result-installer
   artifacts:
     paths:
       - result-installer/*

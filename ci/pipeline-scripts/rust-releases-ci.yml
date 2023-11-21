@@ -43,3 +43,12 @@ bundle-ratman-aarch64:
   artifacts:
     paths:
       - ratman-bundle-aarch64.tar.gz
+
+bundle-ratman-armv71-musl:
+  tags: [ irdest-nix ]
+  stage: bundle
+  dependencies:
+    - build-installer-static-armv71-musl
+    - build-ratmand-static-armv71-musl
+    - build-ratman-tools-static-armv71-musl
+    - build-manual
