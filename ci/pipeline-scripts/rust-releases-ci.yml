@@ -44,16 +44,16 @@ bundle-ratman-aarch64:
     paths:
       - ratman-bundle-aarch64.tar.gz
 
-bundle-ratman-armv71-musl:
+bundle-ratman-armv7l-musl:
   tags: [ irdest-nix ]
   stage: bundle
   dependencies:
-    - build-installer-static-armv71-musl
-    - build-ratmand-static-armv71-musl
-    - build-ratman-tools-static-armv71-musl
+    - build-installer-static-armv7l-musl
+    - build-ratmand-static-armv7l-musl
+    - build-ratman-tools-static-armv7l-musl
     - build-manual
   script:
-    - mkdir ratman-bundle-armv71-musl  && cd ratman-bundle-armv71-musl
+    - mkdir ratman-bundle-armv7l-musl  && cd ratman-bundle-armv7l-musl
     - cp -rv ../dist .
     - cp -rv ../docs/man .
     - cp -rv ../result-ratmand/bin .
@@ -61,7 +61,7 @@ bundle-ratman-armv71-musl:
     - cp -rv ../result-installer/bin/* .
     - cp -rv ../result-manual-user manual
     - cd ..
-    - tar cvf ratman-bundle-armv71-musl.tar.gz ratman-bundle-armv71-musl/
+    - tar cvf ratman-bundle-armv7l-musl.tar.gz ratman-bundle-armv7l-musl/
   artifacts:
     paths:
-      - ratman-bundle-armv71-musl.tar.gz
+      - ratman-bundle-armv7l-musl.tar.gz

@@ -43,7 +43,7 @@ build-ratmand-static-aarch64:
     paths:
       - result-ratmand/*
 
-build-ratmand-static-armv71-musl:
+build-ratmand-static-armv7l-musl:
   tags: [ irdest-nix ]
   stage: build
   needs: [ build-ratmand-dashboard ]
@@ -85,7 +85,7 @@ build-ratman-tools-static-aarch64:
     paths:
       - result-ratman-tools/*
 
-build-ratman-tools-static-armv71-musl:
+build-ratman-tools-static-armv7l-musl:
   tags: [ irdest-nix ]
   stage: build
   script:
@@ -129,7 +129,7 @@ build-irdest-proxy-static-aarch64:
     paths:
       - result-irdest-proxy/*
 
-build-irdest-proxy-static-armv71-musl:
+build-irdest-proxy-static-armv7l-musl:
   tags: [ irdest-nix ]
   stage: build
   script:
@@ -181,7 +181,7 @@ build-installer-static-aarch64:
     paths:
       - result-installer/*
 
-build-installer-static-armv71-musl:
+build-installer-static-armv7l-musl:
   tags: [ irdest-nix ]
   stage: build
   script:
