@@ -7,12 +7,13 @@ bundle-ratman-openwrt-ipk:
     - build-ratmand-static-armv7l-musl
   script:
     - mkdir ratman-openwrt-arm_cortex-a7_neon-vfpv4 && cd ratman-openwrt-arm_cortex-a7_neon-vfpv4
-    - cp -rv ../dist/openwrt/ratmand .
+    - cp -rv ../dist/openwrt/ratmand/debian-binary .
+    - cp -rv ../dist/openwrt/ratmand/control/* .
     - mkdir -p usr
     - cp -rv ../result-ratmand/bin usr/
     - tar czvf data.tar.gz usr
-    - tar czvf control.tar.gz ratmand/control/*
-    - tar czvf ratman-openwrt-arm_cortex-a7_neon-vfpv4.ipk data.tar.gz control.tar.gz ratmand/debian-binary
+    - tar czvf control.tar.gz control postinst prerm
+    - tar czvf ratman-openwrt-arm_cortex-a7_neon-vfpv4.ipk data.tar.gz control.tar.gz debian-binary
     - cd ..
     - mv ratman-openwrt-arm_cortex-a7_neon-vfpv4/ratman-openwrt-arm_cortex-a7_neon-vfpv4.ipk .
   artifacts:
