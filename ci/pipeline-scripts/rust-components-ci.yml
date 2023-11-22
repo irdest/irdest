@@ -54,7 +54,6 @@ build-ratmand-static-armv7l-musl:
     - nix-build nix -A pkgsCross.armv7l-hf-multiplatform.pkgsStatic.stdenv -A pkgsCross.armv7l-hf-multiplatform.pkgsStatic.buildPackages.rustc.all -A pkgsCross.armv7l-hf-multiplatform.pkgsStatic.buildPackages.cargo -o toolchain
     - cachix push irdest ./toolchain* || echo "couldn't push"
     - nix-build nix -A pkgsCross.armv7l-hf-multiplatform.pkgsStatic.ratmand -o result-ratmand
-    - file result-ratmand/ratmand
   artifacts:
     paths:
       - result-ratmand/*
