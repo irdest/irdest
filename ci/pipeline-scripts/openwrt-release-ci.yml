@@ -11,6 +11,8 @@ bundle-ratman-openwrt-ipk:
     - cp -rv ../dist/openwrt/ratmand/control .
     - mkdir -p usr
     - cp -rv ../result-ratmand/bin usr/
+    - chmod 755 usr/bin/ratmand
+    - chmod -R 644 control/*
     - tar czvf data.tar.gz usr
     - tar czvf control.tar.gz control
     - tar czvf ratman-openwrt-0.5.0-1_arm_cortex-a9_vfpv3.ipk data.tar.gz control.tar.gz debian-binary
