@@ -13,6 +13,11 @@ change in the project at the moment.  If no up-to-date package is
 available, you can use the Irdest stand-alone installer, detailed in
 the next section.
 
-If the installer doesn't support your platform (currently only
-`x86_64-linux`, `aarch64-linux`, `armv7` for OpenWrt), you can
-alternatively install Irdest from source.
+If the installer doesn't support your platform you can alternatively
+install Irdest from source.
+
+## Supported platforms
+
+- `x86_64-linux`
+- `aarch64-linux`
+- `armv7` (for OpenWrt)

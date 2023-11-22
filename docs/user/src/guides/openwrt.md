@@ -1,4 +1,4 @@
-# [OpenWrt](https://openwrt.org/) installation
+# [OpenWrt](https://openwrt.org/) setup
 
 The OpenWrt Project is a Linux operating system targeting embedded devices.
 Irdest Ratman is available as a package for OpenWrt via our CI for some architectures.
@@ -69,3 +69,4 @@ The complete set of instructions may look like this.
     - [Packages repository on GitHub](https://github.com/openwrt/packages).
     - [Routing packages repository on GitHub](https://github.com/openwrt/routing) which is where Ratman is likely to be.
 - Test this and create this package for other more common architectures for routers.
+- Release other Irdest Ratman tools and binaries for the 

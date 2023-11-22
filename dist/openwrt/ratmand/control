@@ -6,4 +6,4 @@ Section: net
 Maintainer: Amanjeev Sethi
 Architecture: arm_cortex-a9_vfpv3-d16
 Installed-Size: 19489084
-Description:  Irdest RATMAN
+Description: A modular, peer-to-peer packet router
