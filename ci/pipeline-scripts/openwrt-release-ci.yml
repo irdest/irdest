@@ -7,13 +7,12 @@ bundle-ratman-openwrt-ipk:
     - build-ratmand-static-armv7l-musl
   script:
     - mkdir ratman-openwrt-0.5.0-1_arm_cortex-a9_vfpv3 && cd ratman-openwrt-0.5.0-1_arm_cortex-a9_vfpv3
-    - cp -rv ../dist/openwrt/ratmand/debian-binary .
-    - cp -rv ../dist/openwrt/ratmand/control .
+    - cp -rv ../dist/openwrt/ratmand/* .
     - mkdir -p usr
     - cp -rv ../result-ratmand/bin usr/
     - chmod 755 usr/bin/ratmand
-    - chmod -R 644 control/*
     - tar czvf data.tar.gz usr
+    - chmod -R 644 control debian-binary
     - tar czvf control.tar.gz control
     - tar czvf ratman-openwrt-0.5.0-1_arm_cortex-a9_vfpv3.ipk data.tar.gz control.tar.gz debian-binary
     - cd ..
