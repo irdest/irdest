@@ -11,6 +11,7 @@ bundle-ratman-openwrt-ipk:
     - cp -rv ../dist/openwrt/ratmand/control/* .
     - mkdir -p usr
     - cp -rv ../result-ratmand/bin usr/
+    - file usr/bin/ratmand
     - tar czvf data.tar.gz usr
     - tar czvf control.tar.gz control postinst prerm
     - tar czvf ratman-openwrt-arm_cortex-a7_neon-vfpv4.ipk data.tar.gz control.tar.gz debian-binary
