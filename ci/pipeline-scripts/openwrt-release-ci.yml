@@ -8,11 +8,11 @@ bundle-ratman-openwrt-ipk:
   script:
     - mkdir ratman-openwrt-0.5.0-1_arm_cortex-a9_vfpv3 && cd ratman-openwrt-0.5.0-1_arm_cortex-a9_vfpv3
     - cp -rv ../dist/openwrt/ratmand/debian-binary .
-    - cp -rv ../dist/openwrt/ratmand/control/* .
+    - cp -rv ../dist/openwrt/ratmand/control .
     - mkdir -p usr
     - cp -rv ../result-ratmand/bin usr/
     - tar czvf data.tar.gz usr
-    - tar czvf control.tar.gz control postinst prerm
+    - tar czvf control.tar.gz control
     - tar czvf ratman-openwrt-0.5.0-1_arm_cortex-a9_vfpv3.ipk data.tar.gz control.tar.gz debian-binary
     - cd ..
     - mv ratman-openwrt-0.5.0-1_arm_cortex-a9_vfpv3/ratman-openwrt-0.5.0-1_arm_cortex-a9_vfpv3.ipk .
