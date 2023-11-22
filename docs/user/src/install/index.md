@@ -14,5 +14,5 @@ available, you can use the Irdest stand-alone installer, detailed in
 the next section.
 
 If the installer doesn't support your platform (currently only
-`x86_64-linux` and `aarch64-linux`), you can alternatively install
-Irdest from source.
+`x86_64-linux`, `aarch64-linux`, `armv7` for OpenWrt), you can
+alternatively install Irdest from source.

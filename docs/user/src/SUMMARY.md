@@ -6,6 +6,7 @@
 - [Installation](./install/index.md)
   - [Stand-alone installer](./install/stand-alone.md)
   - [Build from source](./install/build.md)
+  - [OpenWrt installation](./install/openwrt.md)
 - [Setup Guides](./guides/index.md)
   - [Basic setup](./guides/01_basic.md)
 - [How to](./how-to/index.md)
