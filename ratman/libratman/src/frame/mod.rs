@@ -7,6 +7,9 @@
 pub mod carrier;
 pub mod micro;
 
+pub mod generate;
+pub mod parse;
+
 use crate::Result;
 use nom::IResult;
 

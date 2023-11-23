@@ -1,5 +1,5 @@
 use crate::{
-    frame::{carrier::parse::take_address, FrameGenerator, FrameParser},
+    frame::{parse::take_address, FrameGenerator, FrameParser},
     types::Address,
     Result,
 };

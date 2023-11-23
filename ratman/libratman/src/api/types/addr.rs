@@ -1,18 +1,26 @@
 use crate::{
     frame::{
-        carrier::parse,
         micro::parse::{cstring, maybe},
-        FrameParser,
+        parse, FrameGenerator, FrameParser,
     },
-    types::{Address, Id},
+    types::Address,
     MicroframeError, RatmanError, Result,
 };
-use nom::{branch::alt, IResult, Parser};
+use nom::IResult;
 use std::ffi::CString;
 
-#[repr(C)]
 pub struct AddrCreate {
-    name: Option<CString>,
+    pub name: Option<CString>,
+}
+
+impl FrameGenerator for AddrCreate {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        match self.name {
+            Some(n) => buf.extend_from_slice(n.as_bytes()),
+            None => buf.push(0),
+        };
+        Ok(())
+    }
 }
 
 impl FrameParser for AddrCreate {
@@ -34,23 +42,31 @@ impl FrameParser for AddrCreate {
     }
 }
 
-#[repr(C)]
-pub struct AddrDestroy {
-    addr: Address,
-    token: Id,
+pub struct AddrDelete {
+    pub addr: Address,
+    pub force: bool,
 }
 
-impl FrameParser for AddrDestroy {
+impl FrameGenerator for AddrDelete {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        self.addr.generate(buf)?;
+        match self.force {
+            true => buf.push(1),
+            false => buf.push(0),
+        }
+        Ok(())
+    }
+}
+
+impl FrameParser for AddrDelete {
     type Output = Result<Self>;
     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
         let (input, addr) = maybe(parse::take_address, input)?;
-        let (input, token) = maybe(parse::take_id, input)?;
+        let (input, _) = maybe(parse::take(1 as u8), input)?;
 
-        let res = match (addr, token) {
-            (Some(addr), Some(token)) => Ok(Self { addr, token }),
-            (None, Some(_)) => Err(MicroframeError::MissingFields(&["addr"])),
-            (Some(_), None) => Err(MicroframeError::MissingFields(&["token"])),
-            (None, None) => Err(MicroframeError::MissingFields(&["addr", "token"])),
+        let res = match addr {
+            Some(addr) => Ok(Self { addr, force: false }),
+            None => Err(MicroframeError::MissingFields(&["addr"])),
         }
         .map_err(|e| RatmanError::Microframe(e));
 
@@ -58,23 +74,25 @@ impl FrameParser for AddrDestroy {
     }
 }
 
-#[repr(C)]
 pub struct AddrUp {
-    addr: Address,
-    token: Id,
+    pub addr: Address,
+}
+
+impl FrameGenerator for AddrUp {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        self.addr.generate(buf)?;
+        Ok(())
+    }
 }
 
 impl FrameParser for AddrUp {
     type Output = Result<Self>;
     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
         let (input, addr) = maybe(parse::take_address, input)?;
-        let (input, token) = maybe(parse::take_id, input)?;
 
-        let res = match (addr, token) {
-            (Some(addr), Some(token)) => Ok(Self { addr, token }),
-            (None, Some(_)) => Err(MicroframeError::MissingFields(&["addr"])),
-            (Some(_), None) => Err(MicroframeError::MissingFields(&["token"])),
-            (None, None) => Err(MicroframeError::MissingFields(&["addr", "token"])),
+        let res = match addr {
+            Some(addr) => Ok(Self { addr }),
+            None => Err(MicroframeError::MissingFields(&["addr"])),
         }
         .map_err(|e| RatmanError::Microframe(e));
 
@@ -82,46 +100,28 @@ impl FrameParser for AddrUp {
     }
 }
 
-#[repr(C)]
 pub struct AddrDown {
-    addr: Address,
-    token: Id,
+    pub addr: Address,
+}
+
+impl FrameGenerator for AddrDown {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        self.addr.generate(buf)?;
+        Ok(())
+    }
 }
 
 impl FrameParser for AddrDown {
     type Output = Result<Self>;
     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
         let (input, addr) = maybe(parse::take_address, input)?;
-        let (input, token) = maybe(parse::take_id, input)?;
 
-        let res = match (addr, token) {
-            (Some(addr), Some(token)) => Ok(Self { addr, token }),
-            (None, Some(_)) => Err(MicroframeError::MissingFields(&["addr"])),
-            (Some(_), None) => Err(MicroframeError::MissingFields(&["token"])),
-            (None, None) => Err(MicroframeError::MissingFields(&["addr", "token"])),
+        let res = match addr {
+            Some(addr) => Ok(Self { addr }),
+            None => Err(MicroframeError::MissingFields(&["addr"])),
         }
         .map_err(|e| RatmanError::Microframe(e));
 
         Ok((input, res))
-    }
-}
-
-#[repr(C)]
-pub enum AddrCommand {
-    Create(AddrCreate),
-    Destroy(AddrDestroy),
-    Up(AddrUp),
-    Down(AddrDown),
-}
-
-impl FrameParser for AddrCommand {
-    type Output = Result<Self>;
-    fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
-        alt((
-            AddrCreate::parse.map(|x| x.map(|inner| Self::Create(inner))),
-            AddrDestroy::parse.map(|x| x.map(|inner| Self::Destroy(inner))),
-            AddrUp::parse.map(|x| x.map(|inner| Self::Up(inner))),
-            AddrDown::parse.map(|x| x.map(|inner| Self::Down(inner))),
-        ))(input)
     }
 }

@@ -5,11 +5,14 @@ use crate::{
 use byteorder::{BigEndian, ByteOrder};
 use chrono::{DateTime, Utc};
 use core::mem::size_of;
+use std::ffi::CString;
 
 // Re-export the most common nom combinators and make sure we use the
 // same ones everewhere
-use nom::combinator::peek;
 pub use nom::{bytes::complete::take, IResult};
+use nom::{bytes::complete::take_while1, combinator::peek, multi::many0, AsBytes};
+
+use super::{generate::generate_cstring, micro::parse::vec_of};
 
 /// Peek one byte to check if the next section exists, if so, read LEN
 /// bytes, otherwise burn the zero byte
@@ -39,6 +42,51 @@ pub fn take_u32(input: &[u8]) -> IResult<&[u8], u32> {
 pub fn take_address(input: &[u8]) -> IResult<&[u8], Address> {
     let (input, slice) = take(32 as usize)(input)?;
     Ok((input, Address::from_bytes(slice)))
+}
+
+pub fn take_cstring(input: &[u8]) -> IResult<&[u8], Result<CString>> {
+    let (input, bytes) = take_while1(|c| c as char != '\n')(input)?;
+    Ok((
+        input,
+        CString::new(bytes).map_err(|c| EncodingError::Parsing(format!("{:?}", c)).into()),
+    ))
+}
+
+pub fn maybe_cstring(input: &[u8]) -> IResult<&[u8], Result<Option<CString>>> {
+    let (input, first) = peek(take(1 as usize))(input)?;
+    if first == &[0] {
+        let (input, cstr) = take_cstring(input)?;
+        Ok((input, cstr.map(|c| Some(c))))
+    } else {
+        let (input, _) = take(1 as usize)(input)?;
+        Ok((input, Ok(None)))
+    }
+}
+
+pub fn take_cstring_vec(input: &[u8]) -> IResult<&[u8], Result<Vec<CString>>> {
+    let (mut input, num) = take_u16(input)?;
+
+    let mut cstr;
+    let mut buf = vec![];
+    for i in 0..num {
+        (input, cstr) = maybe_cstring(input)?;
+        match cstr {
+            Ok(Some(c)) => buf.push(c),
+            Ok(None) => {
+                return Ok((
+                    input,
+                    Err(EncodingError::Parsing(format!(
+                        "Tried to read {} strings, but only {} were provided",
+                        num, i
+                    ))
+                    .into()),
+                ));
+            }
+            Err(e) => return Ok((input, Err(e.into()))),
+        }
+    }
+
+    Ok((input, Ok(buf)))
 }
 
 /// Read a single byte to check for existence of a payload, then maybe
@@ -114,4 +162,28 @@ pub fn maybe_signature(input: &[u8]) -> IResult<&[u8], Option<[u8; 64]>> {
         let (input, _) = take(1 as usize)(input)?;
         Ok((input, None))
     }
+}
+
+////// Test that CStrings can be encoded correctly
+
+#[test]
+fn test_cstring() {
+    let data = "Hello to the world!";
+    let c = CString::new(data.as_bytes()).unwrap();
+
+    let mut cbuf = vec![];
+    generate_cstring(c, &mut cbuf).unwrap();
+
+    assert_eq!(cbuf.as_bytes(), format!("{}\0", data).as_bytes());
+}
+
+#[test]
+fn test_cstring_vec() {
+    let data = "Hello to the world!";
+    let c = CString::new(data.as_bytes()).unwrap();
+
+    let mut cbuf = vec![];
+    generate_cstring(c, &mut cbuf).unwrap();
+
+    assert_eq!(cbuf.as_bytes(), format!("{}\0", data).as_bytes());
 }
