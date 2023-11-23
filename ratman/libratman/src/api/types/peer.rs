@@ -1,4 +1,4 @@
-use crate::{api::types::TrustFilter, frame::micro::parse::*, frame::FrameParser, Result};
+use crate::{frame::micro::parse::*, frame::FrameParser, types::TrustFilter, Result};
 use nom::IResult;
 use std::ffi::CString;
 

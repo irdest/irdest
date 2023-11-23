@@ -1,11 +1,61 @@
-use std::collections::BTreeMap;
+use nom::IResult;
 
-use crate::types::Id;
+use crate::{
+    frame::{parse as fparse, FrameGenerator, FrameParser},
+    types::Id,
+    Result,
+};
+use std::{collections::BTreeMap, ffi::CString};
+
+pub fn to_cstring(s: &String) -> CString {
+    CString::new(s.as_bytes()).expect("String could not be turned into CString")
+}
 
 /// A simple authentication object
 pub struct ClientAuth {
     pub client_id: Id,
     pub token: Id,
+}
+
+impl FrameGenerator for ClientAuth {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        self.client_id.generate(buf)?;
+        self.token.generate(buf)?;
+        Ok(())
+    }
+}
+
+impl FrameGenerator for Option<ClientAuth> {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        match self {
+            Some(auth) => auth.generate(buf)?,
+            None => buf.push(0),
+        }
+        Ok(())
+    }
+}
+
+impl FrameParser for ClientAuth {
+    type Output = Option<Self>;
+    fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
+        let (input, client_id) = fparse::maybe_id(input)?;
+        let (input, token) = fparse::maybe_id(input)?;
+
+        match (client_id, token) {
+            (Some(client_id), Some(token)) => Ok((input, Some(Self { client_id, token }))),
+            (None, None) => Ok((input, None)),
+            _ => unreachable!(
+                "Probably reachable, but probably we should return a Result<Option<T>> here"
+            ),
+            // let res = match (addr, token) {
+            //     (Some(addr), Some(token)) => Ok(Self { addr, token }),
+            //     (None, Some(_)) => Err(MicroframeError::MissingFields(&["addr"])),
+            //     (Some(_), None) => Err(MicroframeError::MissingFields(&["token"])),
+            //     (None, None) => Err(MicroframeError::MissingFields(&["addr", "token"])),
+            // }
+            // .map_err(|e| RatmanError::Microframe(e));
+        }
+    }
 }
 
 /// Apply a tri-state modification to an existing Option<T>
@@ -45,4 +95,10 @@ pub fn apply_map_modify<T: Ord>(base: &mut BTreeMap<T, T>, mobj: Modify<T>) {
             warn!("Function `apply_map_modify` called with a non-Map base operand");
         }
     };
+}
+
+/// Apply a simple filter for trust relationships
+pub enum TrustFilter {
+    GreatEq(u8),
+    Less(u8),
 }

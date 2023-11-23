@@ -29,14 +29,148 @@
 
 mod _trait;
 pub mod socket_v2;
+
 pub mod types;
+use types as ty;
 
 pub use _trait::RatmanIpcExtV1;
+
+use crate::{
+    frame::micro::{client_modes as cm, create_micro_frame},
+    types::ClientAuth,
+    Result,
+};
+use async_trait::async_trait;
+use std::{collections::BTreeMap, ffi::CString, sync::Arc, time::Duration};
 
 /// Represent a Ratman IPC socket and interfaces
 pub struct RatmanIpc {}
 
-impl RatmanIpc {}
+#[async_trait]
+impl RatmanIpcExtV1 for RatmanIpc {
+    async fn start(&mut self) {
+        todo!()
+    }
+
+    async fn register_client(self: &Arc<Self>) -> Result<ClientAuth> {
+        todo!()
+    }
+
+    async fn addr_create(
+        self: &Arc<Self>,
+        auth: ClientAuth,
+        name: Option<String>,
+    ) -> crate::Result<crate::types::Address> {
+        let msg = create_micro_frame(
+            cm::make(cm::ADDR, cm::CREATE),
+            Some(auth),
+            Some(ty::AddrCreate {
+                name: name.map(|n| {
+                    CString::new(n.as_bytes()).expect("Failed to encode String to CString")
+                }),
+            }),
+        )?;
+
+        todo!()
+    }
+
+    async fn addr_destroy(
+        self: &Arc<Self>,
+        auth: crate::types::ClientAuth,
+        addr: crate::types::Address,
+        force: bool,
+    ) -> crate::Result<()> {
+        let msg = create_micro_frame(
+            cm::make(cm::ADDR, cm::DELETE),
+            Some(auth),
+            Some(ty::AddrDelete { addr, force }),
+        )?;
+
+        todo!()
+    }
+
+    async fn addr_up(
+        self: &Arc<Self>,
+        auth: crate::types::ClientAuth,
+        addr: crate::types::Address,
+    ) -> crate::Result<()> {
+        let msg = create_micro_frame(
+            cm::make(cm::ADDR, cm::UP),
+            Some(auth),
+            Some(ty::AddrUp { addr }),
+        )?;
+
+        todo!()
+    }
+
+    async fn addr_down(
+        self: &Arc<Self>,
+        auth: crate::types::ClientAuth,
+        addr: crate::types::Address,
+    ) -> crate::Result<()> {
+        let msg = create_micro_frame(
+            cm::make(cm::ADDR, cm::DOWN),
+            Some(auth),
+            Some(ty::AddrUp { addr }),
+        )?;
+
+        todo!()
+    }
+
+    async fn contact_add(
+        self: &Arc<Self>,
+        auth: crate::types::ClientAuth,
+        addr: crate::types::Address,
+        note: Option<String>,
+        tags: BTreeMap<String, String>,
+        trust: u8,
+    ) -> crate::Result<crate::types::Id> {
+        let msg = create_micro_frame(
+            cm::make(cm::CONTACT, cm::ADD),
+            Some(auth),
+            Some(ty::ContactAdd::new(addr, note, tags.into_iter(), trust)),
+        )?;
+
+        todo!()
+    }
+
+    async fn contact_modify(
+        self: &Arc<Self>,
+        auth: crate::types::ClientAuth,
+
+        // Selection filter section
+        addr_filter: Vec<crate::types::Address>,
+        note_filter: Option<String>,
+        tags_filter: BTreeMap<String, String>,
+
+        // Modification section
+        note_modify: crate::types::Modify<String>,
+        tags_modify: crate::types::Modify<(String, String)>,
+    ) -> crate::Result<Vec<crate::types::Id>> {
+        let modes = cm::make(cm::CONTACT, cm::MODIFY);
+        todo!()
+    }
+
+    async fn contact_delete(
+        self: &Arc<Self>,
+        auth: crate::types::ClientAuth,
+        addr: crate::types::Address,
+    ) -> crate::Result<()> {
+        let modes = cm::make(cm::CONTACT, cm::DELETE);
+        todo!()
+    }
+
+    async fn subs_add(
+        self: &Arc<Self>,
+        auth: crate::types::ClientAuth,
+        subscription_recipient: crate::types::Recipient,
+        synced: bool,
+        timeout: Option<Duration>,
+    ) -> crate::Result<crate::types::Id> {
+        let modes = cm::make(cm::SUB, cm::ADD);
+        todo!()
+    }
+}
 
 // pub struct IpcSocket(RawSocketHandle, Receiver<(Letterhead, Vec<u8>)>);
 

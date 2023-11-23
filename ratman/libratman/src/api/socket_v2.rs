@@ -58,6 +58,11 @@ impl RawSocketHandle {
     pub async fn write_header(&mut self, frame: MicroframeHeader) -> Result<()> {
         let mut buf = vec![];
         frame.generate(&mut buf)?;
+        self.write_buffer(buf).await?;
+        Ok(())
+    }
+
+    pub async fn write_buffer(&mut self, buf: Vec<u8>) -> Result<()> {
         AsyncWriter::new(buf.as_slice(), &mut self.reader)
             .write_buffer()
             .await?;

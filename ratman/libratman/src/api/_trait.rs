@@ -14,17 +14,31 @@ pub trait RatmanIpcExtV1 {
     // (@^_^@) Address commands
     //
 
-    /// Create a new address for some token
-    async fn addr_create(self: &Arc<Self>, auth: ClientAuth) -> Result<Address>;
+    /// Register a new client and return a ClientAuth object
+    async fn register_client(self: &Arc<Self>) -> Result<ClientAuth>;
+
+    /// Create a new address for an existing client token
+    ///
+    /// Optionally you may give this address a name.  It won't be
+    /// shared with any other network participant or client and purely
+    /// serves as a human identifier.
+    async fn addr_create(
+        self: &Arc<Self>,
+        auth: ClientAuth,
+        name: Option<String>,
+    ) -> Result<Address>;
+
     /// Delete an address, optionally including all its linked data
-    async fn addr_delete(
+    async fn addr_destroy(
         self: &Arc<Self>,
         auth: ClientAuth,
         addr: Address,
         force: bool,
     ) -> Result<()>;
+
     /// Mark a particular address as "up"
     async fn addr_up(self: &Arc<Self>, auth: ClientAuth, addr: Address) -> Result<()>;
+
     /// Mark a particular address as "down"
     async fn addr_down(self: &Arc<Self>, auth: ClientAuth, addr: Address) -> Result<()>;
 
@@ -58,16 +72,10 @@ pub trait RatmanIpcExtV1 {
         // Modification section
         note_modify: Modify<String>,
         tags_modify: Modify<(String, String)>,
-    ) -> Result<Id>;
+    ) -> Result<Vec<Id>>;
 
     /// Delete existing contact entries via filters
-    async fn contact_delete(
-        self: &Arc<Self>,
-        auth: ClientAuth,
-        addr_filter: Vec<Address>,
-        note_filter: Option<String>,
-        tags_filter: BTreeMap<String, String>,
-    ) -> Result<()>;
+    async fn contact_delete(self: &Arc<Self>, auth: ClientAuth, addr: Address) -> Result<()>;
 
     //
     // (@^_^@) Subscription commands
