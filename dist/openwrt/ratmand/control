@@ -1,0 +1,9 @@
+Package: ratmand
+Version: 0.5.0-1
+Depends: libc
+License: AGPL-3.0-or-later
+Section: net
+Maintainer: Amanjeev Sethi
+Architecture: arm_cortex-a9_vfpv3-d16
+Installed-Size: 19489084
+Description: A modular, peer-to-peer packet router

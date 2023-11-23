@@ -39,3 +39,4 @@ installer, and a copy of the user manual.
 
 - Linux [x86_64 bundle](https://git.irde.st/we/irdest/-/jobs/artifacts/release/0.5.0/raw/ratman-bundle-x86_64.tar.gz?job=bundle-ratman)!
 - Linux [aarch64 bundle](https://git.irde.st/we/irdest/-/jobs/artifacts/release/0.5.0/raw/ratman-bundle-aarch64.tar.gz?job=bundle-ratman-aarch64)
+- OpenWrt (Linux) [armv7 bundle](https://git.irde.st/we/irdest/-/jobs/53163/artifacts/download?file_type=archive)
