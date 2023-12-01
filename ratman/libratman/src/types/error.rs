@@ -138,6 +138,8 @@ pub enum ScheduleError {
 /// handled by [RatmanError](crate::RatmanError) instead!
 #[derive(Debug, thiserror::Error)]
 pub enum ClientError {
+    #[error("ratman-client and router have incompatible versions: {0}")]
+    IncompatibleVersion(String),
     #[error("failed to provide correct authentication in handshake")]
     InvalidAuth,
     #[error("connection was unexpectedly dropped")]

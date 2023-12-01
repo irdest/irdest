@@ -92,8 +92,8 @@ pub(crate) async fn exec_sender_system<const L: usize>(
         total_message_size,
     }: LetterManifest,
 ) -> Result<()> {
-    let (tx, rx) = mpsc::channel(size_commonbuf_t::<L>());
-    let mut socket = RawSocketHandle::new(reader, tx);
+    // let (tx, rx) = mpsc::channel(size_commonbuf_t::<L>());
+    let mut socket = RawSocketHandle::new(reader);
 
     // Setup the block slicer
     let (iter_tx, chunk_iter) = ChunkIter::<L>::new();

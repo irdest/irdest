@@ -36,20 +36,75 @@ use types as ty;
 pub use _trait::RatmanIpcExtV1;
 
 use crate::{
-    frame::micro::{client_modes as cm, create_micro_frame},
+    api::socket_v2::RawSocketHandle,
+    frame::micro::{client_modes as cm, encode_micro_frame, MicroframeHeader},
     types::ClientAuth,
-    Result,
+    ClientError, Result,
 };
 use async_trait::async_trait;
 use std::{collections::BTreeMap, ffi::CString, sync::Arc, time::Duration};
 
+use self::types::Handshake;
+
+/// Indicate the current version of this library.
+///
+/// If the router and client run different versions, they MUST
+/// disconnect if the versions are incompatible.  Versions follow
+/// semantic versioning.
+pub const VERSION: [u8; 2] = [
+    0, // current major version
+    1, //current minor version
+];
+
+// TODO: replace this with a real semver library ??
+pub fn versions_compatible(this: [u8; 2], other: [u8; 2]) -> bool {
+    match (this, other) {
+        // For versions > 1.0 all minor versions are compatible
+        ([t_major, _], [o_major, _]) if t_major == o_major && t_major != 0 => true,
+        // For versions 0.x only the same minor is compatible
+        ([0, t_minor], [0, o_minor]) if t_minor == o_minor => true,
+        _ => false,
+    }
+}
+
 /// Represent a Ratman IPC socket and interfaces
-pub struct RatmanIpc {}
+pub struct RatmanIpc {
+    socket: RawSocketHandle,
+}
 
 #[async_trait]
 impl RatmanIpcExtV1 for RatmanIpc {
-    async fn start(&mut self) {
-        todo!()
+    async fn start(&mut self) -> Result<()> {
+        let router_version = self.socket.read_buffer_const::<2>().await?;
+
+        self.socket
+            .write_microframe(
+                MicroframeHeader {
+                    modes: cm::make(cm::INTRINSIC, cm::UP),
+                    auth: None,
+                    payload_size: 0,
+                },
+                Handshake::new(),
+            )
+            .await?;
+
+        if !versions_compatible(VERSION, router_version) {
+            if let Err(e) = self.socket.shutdown().await {
+                error!("failed to close router connection cleanly: {:?}", e);
+            }
+
+            // Indicate to the user that the handshake failed and why
+            return Err(ClientError::IncompatibleVersion(format!(
+                "client: {}.{}, router: {}.{}",
+                VERSION[0], VERSION[1], router_version[0], router_version[1]
+            ))
+            .into());
+        }
+
+        // If we made it this far we can send a handshake structure
+        let hs = Handshake::new();
+
+        Ok(())
     }
 
     async fn register_client(self: &Arc<Self>) -> Result<ClientAuth> {
@@ -61,7 +116,7 @@ impl RatmanIpcExtV1 for RatmanIpc {
         auth: ClientAuth,
         name: Option<String>,
     ) -> crate::Result<crate::types::Address> {
-        let msg = create_micro_frame(
+        let msg = encode_micro_frame(
             cm::make(cm::ADDR, cm::CREATE),
             Some(auth),
             Some(ty::AddrCreate {
@@ -80,7 +135,7 @@ impl RatmanIpcExtV1 for RatmanIpc {
         addr: crate::types::Address,
         force: bool,
     ) -> crate::Result<()> {
-        let msg = create_micro_frame(
+        let msg = encode_micro_frame(
             cm::make(cm::ADDR, cm::DELETE),
             Some(auth),
             Some(ty::AddrDelete { addr, force }),
@@ -94,7 +149,7 @@ impl RatmanIpcExtV1 for RatmanIpc {
         auth: crate::types::ClientAuth,
         addr: crate::types::Address,
     ) -> crate::Result<()> {
-        let msg = create_micro_frame(
+        let msg = encode_micro_frame(
             cm::make(cm::ADDR, cm::UP),
             Some(auth),
             Some(ty::AddrUp { addr }),
@@ -108,7 +163,7 @@ impl RatmanIpcExtV1 for RatmanIpc {
         auth: crate::types::ClientAuth,
         addr: crate::types::Address,
     ) -> crate::Result<()> {
-        let msg = create_micro_frame(
+        let msg = encode_micro_frame(
             cm::make(cm::ADDR, cm::DOWN),
             Some(auth),
             Some(ty::AddrUp { addr }),
@@ -125,7 +180,7 @@ impl RatmanIpcExtV1 for RatmanIpc {
         tags: BTreeMap<String, String>,
         trust: u8,
     ) -> crate::Result<crate::types::Id> {
-        let msg = create_micro_frame(
+        let msg = encode_micro_frame(
             cm::make(cm::CONTACT, cm::ADD),
             Some(auth),
             Some(ty::ContactAdd::new(addr, note, tags.into_iter(), trust)),

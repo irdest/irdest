@@ -69,6 +69,7 @@ pub mod client_modes {
 
 /// Metadata header for a Microframe
 #[repr(C)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct MicroframeHeader {
     pub modes: u16,
     pub auth: Option<ClientAuth>,
@@ -108,7 +109,7 @@ impl FrameParser for MicroframeHeader {
 /// - message modes
 /// - an optional client auth token
 /// - an optional inner message payload
-pub fn create_micro_frame<T: FrameGenerator>(
+pub fn encode_micro_frame<T: FrameGenerator>(
     modes: u16,
     auth: Option<ClientAuth>,
     payload: Option<T>,
