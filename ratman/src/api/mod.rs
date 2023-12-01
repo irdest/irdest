@@ -3,7 +3,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use crate::{config::ConfigTree, context::RatmanContext};
-use libratman::{tokio::net::unix::SocketAddr, types::Address, Result};
+use libratman::{
+    api::socket_v2::RawSocketHandle,
+    rt::{new_async_thread, writer::AsyncWriter},
+    tokio::{
+        net::{unix::SocketAddr, TcpStream},
+        sync::mpsc::{channel, Sender},
+    },
+    types::{Address, Id},
+    Result,
+};
 use std::sync::Arc;
 
 pub(crate) struct ConnectionManager {}
@@ -15,6 +24,31 @@ pub fn start_message_acceptor(
     config: &ConfigTree,
 ) -> Result<()> {
     Ok(())
+}
+
+/// Initiate a new client connection
+async fn handshake(context: Arc<RatmanContext>, stream: TcpStream) -> Result<Sender<Id>> {
+    // Create a notifier channel for Subscription updates
+    let (cl_notify_t, cl_notify_r) = channel(8);
+
+    // Wrap the TcpStream to bring its API into scope
+    let mut raw_socket = RawSocketHandle::new(stream);
+
+    // Send the router protocol version
+    raw_socket
+        .write_buffer(libratman::api::VERSION.to_vec())
+        .await;
+
+    // Wait for the Handshake reply from the client
+    let hs_header = raw_socket.read_header().await?;
+    
+    // 1  Server sends with version
+    // 2. Client responds handshake with version
+    // 3. EITHER: Client disconnects OR
+    // a) Server sends Ping
+    // b) Client respond with Command or Pong::None
+
+    Ok(cl_notify_t)
 }
 
 // async fn run_relay(context: Arc<RatmanContext>) {

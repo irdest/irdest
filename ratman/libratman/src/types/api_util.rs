@@ -5,16 +5,27 @@ use crate::{
     types::Id,
     Result,
 };
-use std::{collections::BTreeMap, ffi::CString};
+use std::{
+    collections::BTreeMap,
+    ffi::CString,
+    fmt::{self, Debug, Formatter},
+};
 
 pub fn to_cstring(s: &String) -> CString {
     CString::new(s.as_bytes()).expect("String could not be turned into CString")
 }
 
 /// A simple authentication object
+#[derive(Clone, PartialEq, Eq)]
 pub struct ClientAuth {
     pub client_id: Id,
     pub token: Id,
+}
+
+impl Debug for ClientAuth {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "ClientAuth {{ id: {}, token: _ }}", self.client_id)
+    }
 }
 
 impl FrameGenerator for ClientAuth {

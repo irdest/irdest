@@ -8,7 +8,7 @@ use std::{collections::BTreeMap, sync::Arc, time::Duration};
 #[async_trait]
 pub trait RatmanIpcExtV1 {
     /// A shared initialiser function.  This should spawn local tasks!
-    async fn start(&mut self);
+    async fn start(&mut self) -> Result<()>;
 
     //
     // (@^_^@) Address commands
