@@ -21,6 +21,7 @@ members = [
     "utils/zbus-nm",
 
     # Available netmod drivers
+    "netmods/netmod-ble",
     "netmods/netmod-datalink",
     "netmods/netmod-inet",
     "netmods/netmod-lan",
