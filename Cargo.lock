@@ -2316,6 +2316,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "netmod-ble"
+version = "0.1.0"
+
+[[package]]
 name = "netmod-datalink"
 version = "0.2.0"
 dependencies = [
