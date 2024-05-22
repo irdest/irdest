@@ -1,9 +1,6 @@
 # Bibliography
 
-Irdest is not built from scratch and relies on a lot of existing work
-done over the last few decades of networking research.  This section
-is _very work in progress_ while we re-compile papers, articles, and
-design documentation from other networking projects.
+Irdest is not built from scratch and relies on a lot of existing work done over the last few decades of networking research.   This section is _very work in progress_ while we re-compile papers, articles, and design documentation from other networking projects.
 
 - [Serval mesh datagram protocol](https://github.com/servalproject/serval-dna/blob/development/doc/Mesh-Datagram-Protocol.md)
 - [Serval rhyzome bundle specification](http://developer.servalproject.org/dokuwiki/doku.php?id=content:tech:rhizome_bundle)

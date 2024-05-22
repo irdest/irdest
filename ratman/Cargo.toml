@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
+    # SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
 # SPDX-FileCopyrightText: 2022 embr <git@liclac.eu>
 #
 # SPDX-License-Identifier: CC0-1.0
@@ -35,7 +35,6 @@ lora = [ "netmod-lora" ]
 ## Core dependencies.  If you're not sure where to add something, put
 ## it here first.  Large clusters can then always be expanded later.
 async-eris = { version = "0.1", path = "../utils/eris-rs" }
-# async-std = { version = "1.0", features = ["std", "unstable", "attributes"] }
 async-trait = "0.1"
 atomptr = "1.0"
 bincode = "1.0"
@@ -56,7 +55,7 @@ rand = "0.7"
 ## Storage & Configuration
 deadpool-sqlite = { version = "0.5", features = ["rt_async-std_1"], default-features = false }
 kdl = "4.6"
-sled = "0.34"
+fjall = "1.0"
 
 ## Logging and logging accessories
 tracing = "0.1"
@@ -102,4 +101,3 @@ tokio = { version = "1.0", features = [ "macros" ] }
 criterion = { version = "0.4", features = ["html_reports"] }
 tempdir = "*"
 rand = "0.7"
-

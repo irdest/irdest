@@ -1,7 +1,6 @@
 # Irdest Echo
 
-This is a very simple application built on top of Ratman.  In fact, it
-is so simple we can include it in its entirety in this manual:
+This is a very simple application built on top of Ratman.  In fact, it is so simple we can include it in its entirety in this manual:
 
 ```rust
 use ratman_client::{Identity, RatmanIpc, Receive_Type};

@@ -62,5 +62,5 @@ serde_json = "1.0"
 [build-dependencies]
 protoc-rust = { version = "2.19", optional = true }
 
-[package.metadata.docs.rs]
-no-default-features = true
+# [package.metadata.docs.rs]
+# no-default-features = true

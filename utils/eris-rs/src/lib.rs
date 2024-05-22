@@ -24,6 +24,7 @@ use blake2::{digest::consts::U32, Blake2b, Digest};
 use chacha20::cipher::{KeyIvInit, StreamCipher};
 use chacha20::ChaCha20;
 use derive_more::{DebugCustom, Deref, DerefMut, Display, From};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 fn display_base32(bytes: &[u8]) -> String {
@@ -49,7 +50,7 @@ fn decode_base32<const BS: usize>(s: &str) -> Result<[u8; BS]> {
 }
 
 /// A 32 byte block reference identifier
-#[derive(Clone, PartialEq, Eq, Hash, Deref, From, Display, DebugCustom)]
+#[derive(Clone, PartialEq, Eq, Hash, Deref, From, Display, DebugCustom, Serialize, Deserialize)]
 #[display(fmt = "{}", "display_base32(&self.0)")]
 #[debug(fmt = "{}", "self")]
 pub struct BlockReference([u8; 32]);
@@ -98,6 +99,10 @@ pub type RKPair = (BlockReference, BlockKey);
 pub struct Block<const BS: usize>([u8; BS]);
 
 impl<const BS: usize> Block<BS> {
+    pub fn as_slice(&self) -> &[u8; BS] {
+        &self.0
+    }
+
     /// Take a `Vec<u8>` and move its contents into an array
     pub fn copy_from_vec(vec: Vec<u8>) -> Self {
         let mut buf = [0; BS];

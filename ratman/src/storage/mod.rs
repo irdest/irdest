@@ -62,4 +62,6 @@ impl<const L: usize> BlockStorage<L> for JournalStorage {
 }
 
 #[test]
-fn setup_block_store() {}
+fn setup_block_store() {
+    todo!()
+}

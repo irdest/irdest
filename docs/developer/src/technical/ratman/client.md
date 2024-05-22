@@ -1,7 +1,6 @@
 # Ratman client lib
 
-This is the client library used to write applications for Ratman.
-Currently only a [Rust](https://rust-lang.org) implementation exists.
+This is the client library used to write applications for Ratman.  Currently only a [Rust](https://rust-lang.org) implementation exists.
 
 You can find `ratman-client` on
 [crates.io](https://crates.io/crates/ratman-client) and its documentation on
