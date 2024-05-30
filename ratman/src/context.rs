@@ -118,7 +118,7 @@ impl RatmanContext {
                 Ok(None) => {}
                 Err(_) => {
                     util::elog(
-                        "failed to acquire state directory lock!  terminating...",
+                        "failed to acquire state directory lock!  Is another ratmand instance running?",
                         codes::FATAL,
                     );
                 }
