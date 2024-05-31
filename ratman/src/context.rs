@@ -221,13 +221,13 @@ impl RatmanContext {
         };
 
         // We block execution on running the API module
-        // if let Err(e) = api::run(Arc::clone(&this), api_bind_addr) {
-        //     // If we returned an error, the API module has crashed
-        //     error!("API connector crashed with error: {}", e);
-        //     this.runtime_state.kill();
-        // }
+        if let Err(e) = api::run(Arc::clone(&this), api_bind_addr) {
+            // If we returned an error, the API module has crashed
+            error!("API connector crashed with error: {}", e);
+            this.runtime_state.kill();
+        }
 
-        libratman::tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+        // libratman::tokio::time::sleep(std::time::Duration::from_secs(2)).await;
 
         // If we reach this point the router is shutting down
         // (allegedly?)

@@ -1,4 +1,12 @@
 //! A minimalist framing mechanism
+//!
+//! Each frame is split into two parts: the header and the body.  The
+//! header consists of a 16-bit mode field, an optional 32-byte
+//! authentication key (or 1 zero byte) and a 32-bit unsigned integer
+//! payload size.
+//!
+//! When reading a Microframe from a socket first read a complete
+//! header, then read the rest of the frame payload.
 
 mod error;
 pub mod parse;
@@ -25,12 +33,11 @@ pub mod client_modes {
     pub const SUB: u8       = 0x8;
     pub const CLIENT: u8    = 0x9;
     
-    //// Creating new data on the network, or destroying it properly
+    //// Creating new data or destroying it permanently
     pub const CREATE: u8    = 0x1;
     pub const DESTROY: u8   = 0x2;
 
-    //// Transitioning a component from inactive to active, or from
-    //// active to inactive.
+    //// Changing the uptime state of a component
     pub const UP: u8        = 0x3;
     pub const DOWN: u8      = 0x4;
 
@@ -59,6 +66,8 @@ pub mod client_modes {
         ((ns as u16) << 8) as u16 | op as u16
     }
 
+    // todo: add a better test here
+    
     #[test]
     fn test_addr_create() {
         let mode = make(ADDR, CREATE);

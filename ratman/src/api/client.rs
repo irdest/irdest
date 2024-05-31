@@ -6,35 +6,35 @@ use crate::storage::{addrs::StorageAddress, client::StorageClient};
 // use libratman::types::{Address, Id};
 // use std::{collections::BTreeMap, sync::Arc};
 
-// /// Represent an API client (application)'s base state
-// ///
-// /// In this state Ratman knows about its set of registered addresses
-// /// and a secret token that must be provided on future handshakes, but
-// /// doesn't assume any ongoing connection details.
-// #[derive(Clone)]
-// pub struct BaseClient {
-//     /// Anonymous clients MUST be filtered when saving known clients
-//     pub(crate) anonymous: bool,
+/// Represent an API client (application)'s base state
+///
+/// In this state Ratman knows about its set of registered addresses
+/// and a secret token that must be provided on future handshakes, but
+/// doesn't assume any ongoing connection details.
+#[derive(Clone)]
+pub struct BaseClient {
+    /// Anonymous clients MUST be filtered when saving known clients
+    pub(crate) anonymous: bool,
 
-//     /// A secret (ish) token that must be provided by this client on
-//     /// every future connection handshake
-//     // TODO: make it so that this doesn't have to be accessible from
-//     // everywhere in the daemon
-//     pub(crate) token: Id,
-//     /// A list of addresses
-//     ///
-//     /// The first address in the list is considered the "default"
-//     /// address for this client.
-//     pub(crate) addrs: Vec<StorageAddress>,
-//     /// Last connection timestamp
-//     ///
-//     /// If the client is currently connected this time refers to the
-//     /// connection handshake timestamp (i.e. how long has the client
-//     /// been connected).  If the client is not currently connected it
-//     /// refers to the connection close/ drop timestamp (i.e. since
-//     /// when has the client been disconnected).
-//     pub(crate) last_connection: AtomPtr<DateTime<Utc>>,
-// }
+    /// A secret (ish) token that must be provided by this client on
+    /// every future connection handshake
+    // TODO: make it so that this doesn't have to be accessible from
+    // everywhere in the daemon
+    pub(crate) token: Id,
+    /// A list of addresses
+    ///
+    /// The first address in the list is considered the "default"
+    /// address for this client.
+    pub(crate) addrs: Vec<StorageAddress>,
+    /// Last connection timestamp
+    ///
+    /// If the client is currently connected this time refers to the
+    /// connection handshake timestamp (i.e. how long has the client
+    /// been connected).  If the client is not currently connected it
+    /// refers to the connection close/ drop timestamp (i.e. since
+    /// when has the client been disconnected).
+    pub(crate) last_connection: AtomPtr<DateTime<Utc>>,
+}
 
 // impl BaseClient {
 //     #[inline]

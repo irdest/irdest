@@ -1,3 +1,4 @@
+use crate::crypto::Keypair;
 use libratman::types::Address;
 use serde::{Deserialize, Serialize};
 
@@ -11,7 +12,7 @@ pub struct StorageAddress {
 }
 
 impl StorageAddress {
-    pub fn new(id: Address, bare_key: &[u8]) -> Self {
+    pub fn new(id: Address, bare_key: &KeyPair) -> Self {
         Self {
             id,
             key: EncryptedKey::new(bare_key),
@@ -26,7 +27,9 @@ pub struct EncryptedKey {
 }
 
 impl EncryptedKey {
-    fn new(encrypted_data: &[u8]) -> Self {
+    fn new(bare_key: &KeyPair) -> Self {
+
+        
         Self {
             inner: encrypted_data.into(),
         }

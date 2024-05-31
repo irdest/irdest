@@ -1125,7 +1125,7 @@ version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "092966b41edc516079bdf31ec78a2e0588d1d0c08f78b91d8307215928642b2b"
 dependencies = [
- "async-std",
+ "tokio",
 ]
 
 [[package]]
@@ -3117,7 +3117,6 @@ dependencies = [
  "openapi_type",
  "pnet 0.34.0",
  "prometheus-client",
- "protobuf",
  "rand 0.7.3",
  "rust-embed",
  "serde",

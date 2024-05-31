@@ -53,7 +53,7 @@ use self::types::Handshake;
 /// semantic versioning.
 pub const VERSION: [u8; 2] = [
     0, // current major version
-    1, //current minor version
+    1, // current minor version
 ];
 
 // TODO: replace this with a real semver library ??

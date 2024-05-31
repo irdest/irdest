@@ -40,7 +40,6 @@ atomptr = "1.0"
 bincode = "1.0"
 byteorder = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
-protobuf = "2.19"
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "1.0"
 tripwire = "0.1.0-alpha.0"
@@ -54,7 +53,7 @@ chacha20 = "0.9"
 rand = "0.7"
 
 ## Storage & Configuration
-deadpool-sqlite = { version = "0.5", features = ["rt_async-std_1"], default-features = false }
+deadpool-sqlite = { version = "0.5", features = ["rt_tokio_1"], default-features = false }
 kdl = "4.6"
 fjall = "1.0"
 
