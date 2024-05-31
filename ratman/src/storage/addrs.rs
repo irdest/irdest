@@ -12,7 +12,7 @@ pub struct StorageAddress {
 }
 
 impl StorageAddress {
-    pub fn new(id: Address, bare_key: &KeyPair) -> Self {
+    pub fn new(id: Address, bare_key: &Keypair) -> Self {
         Self {
             id,
             key: EncryptedKey::new(bare_key),
@@ -27,11 +27,9 @@ pub struct EncryptedKey {
 }
 
 impl EncryptedKey {
-    fn new(bare_key: &KeyPair) -> Self {
-
-        
+    fn new(bare_key: &Keypair) -> Self {
         Self {
-            inner: encrypted_data.into(),
+            inner: vec![], // bare_key.into(),
         }
     }
 

@@ -31,9 +31,6 @@ pub enum RatmanError {
     Io(io::Error),
     #[error("an i/o error: {0}")]
     TokioIo(#[from] tokio::io::Error),
-    #[cfg(feature = "proto")]
-    #[error("a base encoding error: {0}")]
-    Proto(#[from] protobuf::ProtobufError),
     #[error("a frame parsing error: {0}")]
     Encoding(#[from] self::EncodingError),
     #[error("microframe failed to decode: {0}")]
@@ -50,6 +47,8 @@ pub enum RatmanError {
     Block(#[from] self::BlockError),
     #[error("a scheduling error: {0}")]
     Schedule(#[from] self::ScheduleError),
+    #[error("a storage error: {0}")]
+    Storage(#[from] fjall::Error),
     // #[cfg(all(feature = "daemon", target_family = "unix"))]
     // #[error("a unix system error: {0}")]
     // UnixSystem(#[from] nix::errno::Errno),
@@ -92,6 +91,8 @@ pub enum EncodingError {
     InvalidVersion(u8),
     #[error("incoming stream could not be parsed because {0}")]
     Parsing(String),
+    #[error("internal encoding/decoding failed because {0}")]
+    Internal(String),
     #[error(
         "provided frame is too large to fit into the {} size envelope: {0}",
         core::u16::MAX
@@ -101,9 +102,16 @@ pub enum EncodingError {
     NoData,
 }
 
+// fixme? shouldn't this be implemented for RatmanError
 impl<T: std::fmt::Debug> From<nom::Err<T>> for EncodingError {
     fn from(nom: nom::Err<T>) -> Self {
         Self::Parsing(format!("{}", nom))
+    }
+}
+
+impl From<bincode::Error> for RatmanError {
+    fn from(bc: bincode::Error) -> Self {
+        Self::Encoding(EncodingError::Internal(bc.to_string()))
     }
 }
 

@@ -13,7 +13,7 @@ use crate::{
     config::ConfigTree,
     context::RatmanContext,
     crypto,
-    storage::{block::StorageBlock, JournalStorage},
+    storage::{block::StorageBlock},
 };
 use async_eris::{BlockReference, MemoryStorage, ReadCapability};
 use curve25519_dalek::traits::VartimePrecomputedMultiscalarMul;

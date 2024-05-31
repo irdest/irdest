@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use crate::storage::block::StorageBlock;
+use crate::storage::{block::StorageBlock, JournalPage};
 use async_eris::{Block, BlockKey, BlockReference, BlockStorage, ReadCapability};
 use async_trait::async_trait;
 use libratman::{
@@ -115,14 +115,14 @@ pub(crate) struct MessageNotifier {
 /// network forever... *makes haunting noises*.
 pub(crate) struct Journal {
     /// Keeps track of known frames to do reflood
-    known: RwLock<HashSet<Id>>,
+    known: JournalPage<Id>,
     /// In-memory block queue
     ///
     /// These are blocks that were fullly re-assembled, but either are
     /// addressed to a flood namespace and haven't been marked as
     /// "seen", or are directly addressed to a recipient which is
     /// offline.
-    blocks: RwLock<JournalBlockStore>,
+    blocks: JournalPage<StorageBlock>,
     /// In-memory frame queue
     ///
     /// This queue is used for individual frames which could not be

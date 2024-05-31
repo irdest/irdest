@@ -70,7 +70,7 @@ If you are interested in writing an application for Irdest, or porting another a
 
 If you want to get started hacking on Irdest, check out the "Hacking" section.  In either case you may also want to read "Ratman internals"!
 
-- [Ratman SDK](./ratman/client.html)
-- [Ratman internals](./ratman/index.html)
+- [Ratman SDK](./client.html)
+- [Ratman internals](./internals/index.html)
 - [Hacking on Irdest](./hacking.html)
 - [Bibliography](./bib.html)

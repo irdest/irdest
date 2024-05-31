@@ -12,6 +12,7 @@ use crate::{
     crypto::Keystore,
     dispatch::{BlockCollector, BlockSlicer, StreamSlicer},
     protocol::Protocol,
+    storage::JournalCore,
     util::{self, codes, runtime_state::RuntimeState, setup_logging, Os, StateDirectoryLock},
 };
 use libratman::{
@@ -125,11 +126,12 @@ impl RatmanContext {
             }
         }
 
-        // Load existing client/address relations
-        // this.clients.load_users(&this).await;
-
         // This never fails, we will have a map of netmods here, even if it is empty
         let driver_map = initialise_netmods(&this.config).await;
+
+        // Initialise storage journals
+        let data_dir = Os::match_os().data_path();
+        let jc = JournalCore::load(&data_dir)?;
 
         // Get the initial set of peers from the configuration.
         // Either this is done via the `peer_file` field, which is

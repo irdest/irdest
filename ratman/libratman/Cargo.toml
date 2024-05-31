@@ -13,8 +13,7 @@ license = "GPL-3.0-or-later"
 ## TODO: figure out if it makes sense to disable one or both of these features by default
 default = [ "client", "netmod" ]
 netmod = [ ]
-client = [ "proto" ]
-proto = [ "protobuf", "protoc-rust" ]
+client = [ ]
 metrics = [ "prometheus-client" ]
 daemon = [ "nix" ]
 
@@ -33,15 +32,13 @@ tokio-stream = "0.1"
 
 async-eris = { version = "0.1", path = "../../utils/eris-rs" }
 async-trait = "0.1"
-# deprecated:
-# async-std = { version = "1.0", features = ["attributes"] }
 byteorder = "1.0"
 bytes = "1.5"
 cfg-if = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
-protobuf = { version = "2.19", optional = true }
 thiserror = "1.0"
 static_assertions = "1.0"
+fjall = "1.0" # only needed for error handling
 
 tracing = "0.1"
 tracing-subscriber = "0.2"
@@ -58,9 +55,6 @@ nix = { version = "0.23", optional = true }
 
 [dev-dependencies]
 serde_json = "1.0"
-
-[build-dependencies]
-protoc-rust = { version = "2.19", optional = true }
 
 # [package.metadata.docs.rs]
 # no-default-features = true

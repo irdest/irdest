@@ -1,17 +1,17 @@
-use crate::storage::{addrs::StorageAddress, client::StorageClient};
+use std::{collections::BTreeMap, sync::Arc};
 
-// use super::io::Io;
-// use atomptr::AtomPtr;
-// use chrono::{DateTime, Utc};
-// use libratman::types::{Address, Id};
-// use std::{collections::BTreeMap, sync::Arc};
+use crate::{crypto::Keypair, storage::{addrs::StorageAddress, client::StorageClient}, util::IoPair};
+use atomptr::AtomPtr;
+use chrono::{DateTime, Utc};
+use libratman::types::{Address, Id};
+use serde::{Deserialize, Serialize};
 
 /// Represent an API client (application)'s base state
 ///
 /// In this state Ratman knows about its set of registered addresses
 /// and a secret token that must be provided on future handshakes, but
 /// doesn't assume any ongoing connection details.
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct BaseClient {
     /// Anonymous clients MUST be filtered when saving known clients
     pub(crate) anonymous: bool,
@@ -33,75 +33,73 @@ pub struct BaseClient {
     /// been connected).  If the client is not currently connected it
     /// refers to the connection close/ drop timestamp (i.e. since
     /// when has the client been disconnected).
-    pub(crate) last_connection: AtomPtr<DateTime<Utc>>,
+    pub(crate) last_connection: DateTime<Utc>,
 }
 
-// impl BaseClient {
-//     #[inline]
-//     fn new(addrs: Vec<StorageAddress>, anonymous: bool) -> Arc<Self> {
-//         Arc::new(Self {
-//             anonymous,
-//             addrs,
-//             token: Id::random(),
-//             last_connection: AtomPtr::new(Utc::now()),
-//         })
-//     }
+/// Represents an application connected to the Ratman API
+pub struct OnlineClient {
+    /// An online client consists of a corresponding base client
+    pub(crate) base: Arc<BaseClient>,
+    // Hold the current connection socket
+    // pub(crate) io: Io,
+}
 
-//     /// Load an existing client (StorageClient)
-//     // TODO: make this function zero-copy ?
-//     pub(crate) fn existing(
-//         StorageClient {
-//             id: _,
-//             token,
-//             addrs,
-//             last_connection,
-//         }: &StorageClient,
-//     ) -> Arc<Self> {
-//         Arc::new(Self {
-//             anonymous: false,
-//             addrs: addrs.clone(),
-//             token: *token,
-//             last_connection: AtomPtr::new(*last_connection),
-//         })
-//     }
+impl BaseClient {
+    #[inline]
+    fn new(addrs: Vec<StorageAddress>, anonymous: bool) -> Arc<Self> {
+        Arc::new(Self {
+            anonymous,
+            addrs,
+            token: Id::random(),
+            last_connection: Utc::now(),
+        })
+    }
 
-//     /// Register a new BaseClient with its first known address and the
-//     /// current time for the connection timestamp.
-//     pub(crate) fn register(first_addr: Address) -> Arc<Self> {
-//         Self::new(vec![StorageAddress::new(first_addr, &[])], false)
-//     }
+    /// Load an existing client (StorageClient)
+    // TODO: make this function zero-copy ?
+    pub(crate) fn existing(
+        StorageClient {
+            id: _,
+            token,
+            addrs,
+            last_connection,
+        }: &StorageClient,
+    ) -> Arc<Self> {
+        Arc::new(Self {
+            anonymous: false,
+            addrs: addrs.clone(),
+            token: *token,
+            last_connection: *last_connection,
+        })
+    }
 
-//     /// Create a new anonymous base client
-//     pub(crate) fn anonymous() -> Arc<Self> {
-//         Self::new(vec![], true)
-//     }
+    /// Register a new BaseClient with its first known address and the
+    /// current time for the connection timestamp.
+    pub(crate) fn register(id: Address, first_addr: Keypair) -> Arc<Self> {
+        Self::new(vec![StorageAddress::new(id, &first_addr)], false)
+    }
 
-//     /// Gets the primary address for a given client
-//     pub(crate) fn primary_address(&self) -> Address {
-//         self.addrs
-//             .get(0)
-//             .expect("BaseClient had no primary address")
-//             .id
-//     }
+    /// Create a new anonymous base client
+    pub(crate) fn anonymous() -> Arc<Self> {
+        Self::new(vec![], true)
+    }
 
-//     /// Take an existing BaseClient and augment it with an I/O socket
-//     pub(crate) fn connect(self: &Arc<Self>, io: Io) -> OnlineClient {
-//         OnlineClient {
-//             base: Arc::clone(self),
-//             io,
-//         }
-//     }
-// }
+    /// Gets the primary address for a given client
+    pub(crate) fn primary_address(&self) -> Address {
+        self.addrs
+            .get(0)
+            .expect("BaseClient had no primary address")
+            .id
+    }
 
-// /// Represents an application connected to the Ratman API
-// pub struct OnlineClient {
-//     /// An online client consists of a corresponding base client
-//     pub(crate) base: Arc<BaseClient>,
-//     /// Hold the current connection socket
-//     pub(crate) io: Io,
-// }
+    /// Take an existing BaseClient and augment it with an I/O socket
+    pub(crate) fn connect(self: &Arc<Self>, io: ()) -> OnlineClient {
+        OnlineClient {
+            base: Arc::clone(self),
+            // io,
+        }
+    }
+}
 
-// impl OnlineClient {}
-
-// pub type BaseClientMap = BTreeMap<Id, Arc<BaseClient>>;
-// pub type OnlineClientMap = BTreeMap<Id, OnlineClient>;
+pub type BaseClientMap = BTreeMap<Id, Arc<BaseClient>>;
+pub type OnlineClientMap = BTreeMap<Id, OnlineClient>;

@@ -106,7 +106,7 @@ impl Keystore {
             .read()
             .await
             .iter()
-            .map(|(id, Keypair { .. })| StorageAddress::new(*id, &vec![]))
+            .map(|(id, kp)| StorageAddress::new(*id, &kp))
             .collect()
     }
 

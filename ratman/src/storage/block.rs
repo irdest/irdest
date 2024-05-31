@@ -1,11 +1,12 @@
 use async_eris::{Block, BlockReference, BlockSize};
 use libratman::{types::Id, BlockError, RatmanError, Result};
+use serde::{Deserialize, Serialize};
 
 /// A wrapper type for storing Blocks in various parts of the code
 ///
 /// Provide utilities to handle the const generics of the underlying
 /// type, as well as storage, retrieval, and checking integrity
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 #[repr(C)]
 pub(crate) enum StorageBlock {
     /// 1K block size
@@ -35,7 +36,7 @@ impl StorageBlock {
     }
 
     /// Dissolve this type, yielding the block Id and underlying data
-    pub fn dissolve(self) -> (BlockReference, Vec<u8>) {
+    pub fn dissolve<const L: usize>(self) -> (BlockReference, Vec<u8>) {
         let block_ref = self.reference();
         (
             block_ref,

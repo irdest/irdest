@@ -3,10 +3,12 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-mod enc;
-pub use enc::{encode, encode_const, BlockSize, Encoder};
 mod dec;
+mod enc;
+mod serde_util;
+
 pub use dec::{decode, decode_const, Error, Result};
+pub use enc::{encode, encode_const, BlockSize, Encoder};
 
 #[cfg(test)]
 mod tests;
@@ -93,10 +95,10 @@ impl TryFrom<&String> for BlockKey {
 pub type RKPair = (BlockReference, BlockKey);
 
 /// An encoded data block of size `BLOCKSIZE`
-#[derive(Clone, Deref, DerefMut, From, Display, DebugCustom)]
+#[derive(Clone, Deref, DerefMut, From, Display, DebugCustom, Serialize, Deserialize)]
 #[display(fmt = "{}", "display_base32(&self.0)")]
 #[debug(fmt = "{}", "self")]
-pub struct Block<const BS: usize>([u8; BS]);
+pub struct Block<const BS: usize>(#[serde(with = "crate::serde_util")] [u8; BS]);
 
 impl<const BS: usize> Block<BS> {
     pub fn as_slice(&self) -> &[u8; BS] {

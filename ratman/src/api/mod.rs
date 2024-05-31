@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
+mod client;
+
 use crate::{config::ConfigTree, context::RatmanContext};
 use libratman::{
     api::socket_v2::RawSocketHandle,
