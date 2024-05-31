@@ -98,7 +98,7 @@ pub type RKPair = (BlockReference, BlockKey);
 #[derive(Clone, Deref, DerefMut, From, Display, DebugCustom, Serialize, Deserialize)]
 #[display(fmt = "{}", "display_base32(&self.0)")]
 #[debug(fmt = "{}", "self")]
-pub struct Block<const BS: usize>(#[serde(with = "crate::serde_util")] [u8; BS]);
+pub struct Block<const BS: usize>(#[serde(with = "serde_util")] [u8; BS]);
 
 impl<const BS: usize> Block<BS> {
     pub fn as_slice(&self) -> &[u8; BS] {

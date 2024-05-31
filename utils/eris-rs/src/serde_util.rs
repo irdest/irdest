@@ -1,19 +1,20 @@
-use std::{convert::TryInto, marker::PhantomData};
-
 use serde::{
     de::{SeqAccess, Visitor},
     ser::SerializeTuple,
     Deserialize, Deserializer, Serialize, Serializer,
 };
+use std::{convert::TryInto, marker::PhantomData};
+
 pub fn serialize<S: Serializer, T: Serialize, const N: usize>(
     data: &[T; N],
     ser: S,
 ) -> Result<S::Ok, S::Error> {
-    let mut s = ser.serialize_tuple(N)?;
-    for item in data {
-        s.serialize_element(item)?;
-    }
-    s.end()
+    // let mut s = ser.serialize_tuple(N)?;
+    // for item in data {
+    //     s.serialize_element(item)?;
+    // }
+    // s.end()
+    todo!()
 }
 
 struct ArrayVisitor<T, const N: usize>(PhantomData<T>);
@@ -33,7 +34,6 @@ where
     where
         A: SeqAccess<'de>,
     {
-        // can be optimized using MaybeUninit
         let mut data = Vec::with_capacity(N);
         for _ in 0..N {
             match (seq.next_element())? {

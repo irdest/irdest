@@ -10,16 +10,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-blake2 = "0.10"
-chacha20 = "0.9"
-thiserror = "1.0"
 async-trait = "0.1"
 base32 = "0.4"
-futures-lite = "1.12"
+blake2 = "0.10"
+chacha20 = "0.9"
 derive_more = "0.99"
+futures-lite = "1.12"
 serde = { version = "1.0", features = ["derive"] }
+thiserror = "1.0"
 
 [dev-dependencies]
-async-std = { version = "1.10", features = [ "attributes" ] }
-serde_json = "1.0"
 rand = "0.7"
+serde_json = "1.0"
+tokio = { version = "1.10", features = [ "full" ] }

@@ -5,7 +5,7 @@
 use async_eris as eris;
 use eris::{BlockSize, MemoryStorage};
 
-#[async_std::main]
+#[tokio::main]
 async fn main() {
     let examples = vec![b"Hello world!".as_slice(), [0; 4096].as_slice()];
 

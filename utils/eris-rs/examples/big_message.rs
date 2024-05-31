@@ -6,9 +6,9 @@ use async_eris as eris;
 use eris::{BlockSize, MemoryStorage};
 use rand::{rngs::OsRng, RngCore};
 
-#[async_std::main]
+#[tokio::main]
 async fn main() {
-    let mut content = vec![0; 1024 * 32];
+    let mut content = vec![0; 1024 * 64]; // 64k
     OsRng {}.fill_bytes(&mut content);
 
     println!("Taking {} bytes of content...", content.len());

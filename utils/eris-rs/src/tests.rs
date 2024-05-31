@@ -8,6 +8,7 @@ use crate::{
 use serde::{Deserialize, Serialize};
 
 use std::collections::BTreeMap;
+use std::sync::atomic::AtomicU64;
 use std::{fs::File, io::Read, path::Path};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -132,7 +133,7 @@ async fn verify_input_content(harness: &TestHarness) -> bool {
     harness.blocks == new_store && harness.read_cap.root_reference == new_read_cap.root_reference
 }
 
-async fn run_test_for_vector(path: &Path, tx: async_std::channel::Sender<()>) {
+async fn run_test_for_vector(path: &Path, tx: tokio::sync::mpsc::Sender<()>) {
     let harness = match TestHarness::load(path).await {
         Some(h) => Box::new(h),
         _ => {
@@ -159,7 +160,7 @@ async fn run_test_for_vector(path: &Path, tx: async_std::channel::Sender<()>) {
     tx.send(()).await.unwrap();
 }
 
-#[async_std::test]
+#[tokio::test]
 async fn run_vectors() {
     let mut test_vectors = std::fs::read_dir("./res/eris-test-vectors")
         .unwrap()
@@ -176,8 +177,8 @@ async fn run_vectors() {
         // We do this little dance here because otherwise it's very
         // easy to get stack overflow errors in this test scenario!
         let path = res.path();
-        let (tx, rx) = async_std::channel::bounded(1);
-        async_std::task::spawn(async move {
+        let (tx, mut rx) = tokio::sync::mpsc::channel(1);
+        tokio::spawn(async move {
             run_test_for_vector(path.as_path(), tx).await;
         });
 
@@ -185,7 +186,7 @@ async fn run_vectors() {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 async fn big_message() {
     use crate as eris;
     use eris::{BlockSize, MemoryStorage};
@@ -224,4 +225,60 @@ async fn big_message() {
 
     assert_eq!(decoded, content);
     println!("Input == Output");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+#[tokio::test]
+async fn serde_enc_dec() {
+    use crate::{Block, BlockSize, BlockStorage, MemoryStorage};
+    use rand::{rngs::OsRng, RngCore};
+
+    let mut content = vec![0; 1024 * 32];
+    OsRng {}.fill_bytes(&mut content);
+
+    println!("Taking {} bytes of content...", content.len());
+
+    let mut blocks = MemoryStorage::new();
+    // Randomly chosen key :)
+    let key = [
+        84, 85, 108, 86, 0, 90, 58, 6, 112, 22, 4, 93, 72, 136, 16, 3, 194, 107, 102, 20, 11, 42,
+        105, 193, 208, 47, 23, 135, 76, 154, 63, 41,
+    ];
+
+    let read_capability = crate::encode(&mut &*content, &key, BlockSize::_1K, &mut blocks)
+        .await
+        .unwrap();
+
+    println!("{}", read_capability.urn());
+    println!("{:?}", read_capability);
+
+    /////// THE ACTUAL TEST ///////
+
+    let bincode_serde = blocks
+        .iter()
+        .map(|(_ref, block)| serde_json::to_string(&block).unwrap())
+        .collect::<Vec<_>>();
+
+    drop(blocks);
+
+    println!(
+        "Encoded {} blocks as json with serde \\o/",
+        bincode_serde.len()
+    );
+
+    let mut blocks2 = MemoryStorage::new();
+
+    for json_block in bincode_serde.into_iter() {
+        let block: Block<1024> = serde_json::from_str(&json_block).unwrap();
+        blocks2.store(&block).await.unwrap();
+    }
+
+    let mut decoded = vec![];
+    crate::decode(&mut decoded, &read_capability, &blocks2)
+        .await
+        .unwrap();
+
+    assert_eq!(decoded, content);
+    println!("Input(with_serde) == Output(with_serde)");
 }
