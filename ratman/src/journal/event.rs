@@ -1,6 +1,6 @@
 use async_eris::{Block, BlockReference};
 use libratman::{
-    frame::carrier::{CarrierFrameHeader, ManifestFrame},
+    frame::carrier::{CarrierFrameHeader, ManifestFrame, PeerDataV1},
     types::{Address, Id, SequenceIdV1},
 };
 use serde::{Deserialize, Serialize};
@@ -46,15 +46,15 @@ pub enum FrameEvent {
 /// Events applied to the manifest partition
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ManifestEvent {
-    Add {
+    Insert {
         sender: Address,
         recipient: Address,
         manifest: SerdeFrameType<ManifestFrame>,
     },
-    Remove {
+    Delete {
         root_ref: Id,
     },
-    CreateLink(LinkMeta),
+    Link(LinkMeta),
 }
 
 /// Events applied to the manifest link partition
@@ -71,7 +71,7 @@ pub enum LinkMeta {
     /// The underlying manifest and block data will remain unchanged; however in
     /// case of storage quota limits the data may be deleted in favour of
     /// keeping higher priority messages around.
-    Destroy { root_ref: Id },
+    Delete { root_ref: Id },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -82,5 +82,14 @@ pub enum RouteEvent {
         route_id: Id,
         route: RouteEntry,
     },
-    Remove(RouteId),
+    Delete(Id),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum LinkEvent {
+    Insert {
+        link_id: Id,
+        neighbour_data: SerdeFrameType<PeerDataV1>,
+    },
+    Delete(Id),
 }

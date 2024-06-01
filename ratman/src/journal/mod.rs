@@ -32,17 +32,24 @@
 //! can be tagged with additional information for importance to prevent them
 //! from being cleaned from the journal in case of storage quota limits.
 
+use libratman::types::SequenceIdV1;
+
 use crate::routes::RouteEntry;
 
-use self::{event::{BlockEvent, FrameEvent, ManifestEvent}, page::JournalPage};
+use self::{
+    event::{BlockEvent, FrameEvent, LinkEvent, ManifestEvent, RouteEvent},
+    page::{JournalPage, SerdeFrameType},
+};
 
 mod event;
 mod page;
-
 
 pub struct Journal {
     frames: JournalPage<FrameEvent>,
     blocks: JournalPage<BlockEvent>,
     manifests: JournalPage<ManifestEvent>,
     routes: JournalPage<RouteEvent>,
+    // todo: this doesn't make any sense lol
+    seen_frames: JournalPage<SerdeFrameType<SequenceIdV1>>,
+    links: JournalPage<LinkEvent>,
 }
