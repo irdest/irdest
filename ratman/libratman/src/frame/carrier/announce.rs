@@ -5,7 +5,7 @@ use crate::{
 use chrono::{DateTime, Utc};
 use nom::IResult;
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub enum AnnounceFrame {
     V1(AnnounceFrameV1),
 }
@@ -40,7 +40,7 @@ impl FrameGenerator for AnnounceFrame {
     }
 }
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct AnnounceFrameV1 {
     /// Mandatory origin announce data
     ///
@@ -95,7 +95,7 @@ impl FrameGenerator for AnnounceFrameV1 {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct OriginDataV1 {
     timestamp: DateTime<Utc>,
 }
@@ -125,13 +125,13 @@ impl FrameGenerator for OriginDataV1 {
     }
 }
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct PeerDataV1 {
     // Struct left blank as for the current version of the
     // specification
 }
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct RouteDataV1 {
     /// Currently lowest MTU encountered by this announcement
     pub mtu: u16,

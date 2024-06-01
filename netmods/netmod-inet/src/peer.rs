@@ -148,7 +148,7 @@ impl Peer {
                     if no_data_ctr > 128 {
                         break;
                     } else {
-                        yield_now();
+                        yield_now().await;
                         continue;
                     }
                 }
@@ -161,7 +161,7 @@ impl Peer {
 
                     // If we were the outgoing peer we signal to re-connect
                     if let Some(ref tx) = self.restart {
-                        tx.send(self.session).await;
+                        tx.send(self.session).await.unwrap();
                     }
 
                     break;
@@ -170,7 +170,10 @@ impl Peer {
             };
 
             // If we received a correct frame we forward it to the receiver
-            self.receiver.send((self.session.id, envelope)).await;
+            self.receiver
+                .send((self.session.id, envelope))
+                .await
+                .unwrap();
         }
 
         trace!("Exit receive loop for peer {}", self.id());

@@ -6,6 +6,7 @@ use crate::{
 use async_eris::ReadCapability;
 use nom::{AsBytes, IResult};
 
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub enum ManifestFrame {
     V1(ManifestFrameV1),
 }
@@ -44,6 +45,7 @@ impl FrameGenerator for ManifestFrame {
 /// This format follows the ERIS binary format specification [1]
 ///
 /// [1]: https://eris.codeberg.page/spec/#name-binary-encoding-of-read-cap
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct ManifestFrameV1 {
     /// Block size for this manifest set
     pub block_size: u8,
@@ -90,6 +92,7 @@ impl From<ReadCapability> for ManifestFrameV1 {
     fn from(rc: ReadCapability) -> Self {
         Self {
             block_size: match rc.block_size {
+                // todo: support small non-standard frame sizes
                 1024 => 1,
                 32768 => 32,
                 _ => unreachable!(),

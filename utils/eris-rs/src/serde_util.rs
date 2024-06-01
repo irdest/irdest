@@ -9,12 +9,11 @@ pub fn serialize<S: Serializer, T: Serialize, const N: usize>(
     data: &[T; N],
     ser: S,
 ) -> Result<S::Ok, S::Error> {
-    // let mut s = ser.serialize_tuple(N)?;
-    // for item in data {
-    //     s.serialize_element(item)?;
-    // }
-    // s.end()
-    todo!()
+    let mut s = ser.serialize_tuple(N)?;
+    for item in data {
+        s.serialize_element(item)?;
+    }
+    s.end()
 }
 
 struct ArrayVisitor<T, const N: usize>(PhantomData<T>);

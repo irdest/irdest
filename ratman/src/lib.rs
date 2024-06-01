@@ -30,8 +30,10 @@ mod clock;
 mod core;
 mod crypto;
 mod dispatch;
+mod journal;
 mod procedures;
 mod protocol;
+mod routes;
 mod runtime;
 mod storage;
 

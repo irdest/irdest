@@ -10,7 +10,6 @@
 //! instead the core has been split into several parts.
 
 pub mod dispatch;
-mod journal;
 mod links;
 mod routes;
 
@@ -27,7 +26,7 @@ use libratman::{
 use std::sync::Arc;
 
 pub(crate) use crate::dispatch::BlockCollector;
-pub(crate) use journal::{run_message_assembler, Journal, JournalSender};
+// pub(crate) use journal::{run_message_assembler, Journal, JournalSender};
 pub(crate) use links::{GenericEndpoint, LinksMap};
 pub(crate) use routes::{EpNeighbourPair, RouteTable, RouteType};
 
