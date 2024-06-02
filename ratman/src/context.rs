@@ -8,13 +8,14 @@ use crate::{
     config::{
         helpers, netmods::initialise_netmods, peers::PeeringBuilder, ConfigTree, CFG_RATMAND,
     },
-    core::{Journal, LinksMap, RouteTable},
+    core::{LinksMap, RouteTable},
     crypto::Keystore,
     dispatch::{BlockCollector, BlockSlicer, StreamSlicer},
+    journal::Journal,
     protocol::Protocol,
-    storage::JournalCore,
     util::{self, codes, runtime_state::RuntimeState, setup_logging, Os, StateDirectoryLock},
 };
+use fjall::Config;
 use libratman::{
     frame::{
         carrier::{CarrierFrameHeader, CarrierFrameHeaderV1, ManifestFrame, ManifestFrameV1},
@@ -30,6 +31,7 @@ use libratman::{
 use async_eris::{BlockSize, ReadCapability};
 use atomptr::AtomPtr;
 use std::{net::SocketAddr, sync::Arc};
+use tracing_subscriber::fmt::format;
 
 /// Top-level Ratman router state handle
 ///
@@ -68,33 +70,39 @@ pub struct RatmanContext {
 
 impl RatmanContext {
     /// Create the in-memory Context, without any initialisation
-    pub(crate) fn new_in_memory(config: ConfigTree) -> (Arc<Self>, Receiver<Letterhead>) {
+    // todo: return errors here to allow the journal init to fail gracefully
+    pub(crate) fn new(config: ConfigTree) -> Result<Arc<Self>> {
         let runtime_state = RuntimeState::start_initialising();
         let protocol = Protocol::new();
-        let (collector, links, journal, routes, lh_notify_recv) = crate::core::exec_core_loops();
+
+        // Initialise storage journal
+        let fjall_db = Config::new(Os::match_os().data_path().join("journal.fjall")).open()?;
+        let journal = Journal::new(fjall_db)?;
+
+        let (collector, links, routes) = crate::core::exec_core_loops();
         let keys = Arc::new(Keystore::new());
         let clients = Arc::new(ConnectionManager {});
 
-        (
-            Arc::new(Self {
-                config,
-                collector,
-                links,
-                journal,
-                routes,
-                protocol,
-                keys,
-                clients,
-                runtime_state,
-                _statedir_lock: Arc::new(AtomPtr::new(None)),
-            }),
-            lh_notify_recv,
-        )
+        Arc::new(Self {
+            config,
+            collector,
+            links,
+            journal,
+            routes,
+            protocol,
+            keys,
+            clients,
+            runtime_state,
+            _statedir_lock: Arc::new(AtomPtr::new(None)),
+        })
     }
 
     /// Create and start a new Ratman router context with a config
     pub async fn start(cfg: ConfigTree) -> Arc<Self> {
-        let (this, lh_notify_recv) = Self::new_in_memory(cfg);
+        let this = match Self::new(cfg) {
+            Ok(t) => t,
+            Err(e) => util::elog(format!("failed to initalise journal: {e:?}"), codes::FATAL),
+        };
 
         // Parse the ratmand config tree
         let ratmand_config = this
@@ -128,10 +136,6 @@ impl RatmanContext {
 
         // This never fails, we will have a map of netmods here, even if it is empty
         let driver_map = initialise_netmods(&this.config).await;
-
-        // Initialise storage journals
-        let data_dir = Os::match_os().data_path();
-        let jc = JournalCore::load(&data_dir)?;
 
         // Get the initial set of peers from the configuration.
         // Either this is done via the `peer_file` field, which is
@@ -223,11 +227,11 @@ impl RatmanContext {
         };
 
         // We block execution on running the API module
-        if let Err(e) = api::run(Arc::clone(&this), api_bind_addr) {
-            // If we returned an error, the API module has crashed
-            error!("API connector crashed with error: {}", e);
-            this.runtime_state.kill();
-        }
+        // if let Err(e) = api::run(Arc::clone(&this), api_bind_addr) {
+        //     // If we returned an error, the API module has crashed
+        //     error!("API connector crashed with error: {}", e);
+        //     this.runtime_state.kill();
+        // }
 
         // libratman::tokio::time::sleep(std::time::Duration::from_secs(2)).await;
 

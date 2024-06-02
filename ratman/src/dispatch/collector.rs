@@ -1,4 +1,7 @@
-use crate::core::JournalSender;
+use crate::{
+    journal::{self, Journal},
+    storage::block::StorageBlock,
+};
 use libratman::{
     tokio::{
         sync::mpsc::{channel, Receiver, Sender},
@@ -20,7 +23,7 @@ pub struct BlockCollectorWorker {
     max_num: u8,
     buffer: Vec<InMemoryEnvelope>,
     senders: SenderStore,
-    output: JournalSender,
+    journal: Arc<Journal>,
 }
 
 impl BlockCollectorWorker {
@@ -64,7 +67,17 @@ impl BlockCollectorWorker {
                     .for_each(|mut chunk| block.extend_from_slice(chunk.get_payload_slice()));
 
                 // Then offer the finished block up to the block god
-                this.output.send((block, seq_id)).await;
+                match StorageBlock::reconstruct(block) {
+                    Ok(block) => self
+                        .journal
+                        .blocks
+                        .insert(block.reference().to_string(), &block.into())
+                        .expect("failed to insert block into journal!"),
+                    Err(e) => error!("failed to reconstruct block: {e:?}"),
+                }
+
+                // self.journal.blocks.insert(format!("{seq_id:?}"), block);
+                // this.output.send((block, seq_id)).await;
 
                 // Finally shut down this block collection worker
                 self.senders.write().await.remove(&seq_id.hash);
@@ -76,14 +89,14 @@ impl BlockCollectorWorker {
 
 pub struct BlockCollector {
     inner: SenderStore,
-    output: JournalSender,
+    journal: Arc<Journal>,
 }
 
 impl BlockCollector {
-    pub fn new(output: JournalSender) -> Arc<Self> {
+    pub fn new(journal: Arc<Journal>) -> Arc<Self> {
         Arc::new(Self {
             inner: Default::default(),
-            output,
+            journal,
         })
     }
 
@@ -123,7 +136,7 @@ impl BlockCollector {
                         max_num: sequence_id.max,
                         buffer: vec![],
                         senders,
-                        output: self.output.clone(),
+                        journal: self.journal.clone(),
                     }
                     .run(rx),
                 );

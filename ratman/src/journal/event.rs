@@ -30,6 +30,14 @@ pub enum BlockEvent {
     // Link(LinkMeta),
 }
 
+// Implement a utility to turn a StorageBlock into an insert event, since this
+// is the most common operation on the block journal
+impl From<StorageBlock> for BlockEvent {
+    fn from(sb: StorageBlock) -> Self {
+        Self::Insert(sb)
+    }
+}
+
 /// Events applied to the frame partition
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum FrameEvent {

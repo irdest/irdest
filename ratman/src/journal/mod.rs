@@ -32,7 +32,10 @@
 //! can be tagged with additional information for importance to prevent them
 //! from being cleaned from the journal in case of storage quota limits.
 
-use libratman::types::SequenceIdV1;
+use std::marker::PhantomData;
+
+use fjall::{Keyspace, PartitionCreateOptions};
+use libratman::{types::SequenceIdV1, Result};
 
 use crate::routes::RouteEntry;
 
@@ -44,12 +47,83 @@ use self::{
 mod event;
 mod page;
 
+/// Combined frame and block journal
+///
+/// This component has three main parts to it
+///
+/// ## Frame Journal
+///
+/// Frames that can't be delivered, either because the local address
+/// is offline, or because the remote address isn't reachable via the
+/// currently available connections are given to the frame journal.
+///
+/// When an address comes online, the contents of this journal (for
+/// that particular address) are then either given to the dispatcher,
+/// or the collector.
+///
+///
+/// ## Block Journal
+///
+/// The collector assembles frames into completed blocks that are
+/// inserted into the block journal.  It is shared amongst all
+/// addresses, meaning that if two users/ applications on the same
+/// machine received the same message twice (for example via a flood
+/// namespace), it is only kept in storage once.
+///
+/// When a manifest is received an assembler task is spawned which
+/// checks the block journal for the required block hashes, then
+/// assembles a complete message stream and hands it to the client API
+/// handler.
+///
+/// ## Known frames page
+///
+/// To avoid endless replication of messages the journal keeps track
+/// of frame IDs that it has seen before, even when the contents
+/// aren't being saved.  This is an important mechanism in the case of
+/// announcements, which will otherwise keep echoing through the
+/// network forever... *makes haunting noises*.
+
 pub struct Journal {
-    frames: JournalPage<FrameEvent>,
-    blocks: JournalPage<BlockEvent>,
-    manifests: JournalPage<ManifestEvent>,
-    routes: JournalPage<RouteEvent>,
+    db: Keyspace,
+    pub frames: JournalPage<FrameEvent>,
+    pub blocks: JournalPage<BlockEvent>,
+    pub manifests: JournalPage<ManifestEvent>,
+    pub routes: JournalPage<RouteEvent>,
     // todo: this doesn't make any sense lol
-    seen_frames: JournalPage<SerdeFrameType<SequenceIdV1>>,
-    links: JournalPage<LinkEvent>,
+    pub seen_frames: JournalPage<SerdeFrameType<SequenceIdV1>>,
+    pub links: JournalPage<LinkEvent>,
+}
+
+impl Journal {
+    pub fn new(db: Keyspace) -> Result<Self> {
+        let frames = JournalPage(
+            ks.open_partition("journal.frames", PartitionCreateOptions::default())?,
+            PhantomData,
+        );
+        let blocks = JournalPage(
+            ks.open_partition("journal.blocks", PartitionCreateOptions::default())?,
+            PhantomData,
+        );
+        let manifests = JournalPage(
+            ks.open_partition("journal.manifests", PartitionCreateOptions::default())?,
+            PhantomData,
+        );
+        let seen_frames = JournalPage(
+            ks.open_partition("journal.seen_frames", PartitionCreateOptions::default())?,
+            PhantomData,
+        );
+        let links = JournalPage(
+            ks.open_partition("journal.links", PartitionCreateOptions::default())?,
+            PhantomData,
+        );
+
+        Ok(Self {
+            db,
+            frames,
+            blocks,
+            manifests,
+            seen_frames,
+            links,
+        })
+    }
 }

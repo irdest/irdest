@@ -16,6 +16,18 @@ pub(crate) enum StorageBlock {
 }
 
 impl StorageBlock {
+    pub fn from_block<const L: usize>(block: Block<L>) -> Self {
+        match L {
+            1024 => Self::_1K(block),
+            32768 => Self::_32K(block),
+        }
+    }
+
+    pub fn to_block<const L: usize>(&self) -> Block<L> {
+        let (_ref, block_data) = self.dissolve();
+        Block::<L>::copy_from_vec(&block_data)
+    }
+
     pub fn reference(&self) -> BlockReference {
         match self {
             Self::_1K(b) => b.reference(),

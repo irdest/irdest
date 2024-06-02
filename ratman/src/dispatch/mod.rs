@@ -10,10 +10,7 @@ mod collector;
 mod slicer;
 
 use crate::{
-    config::ConfigTree,
-    context::RatmanContext,
-    crypto,
-    storage::{block::StorageBlock},
+    config::ConfigTree, context::RatmanContext, crypto, journal::Journal, storage::block::StorageBlock
 };
 use async_eris::{BlockReference, MemoryStorage, ReadCapability};
 use curve25519_dalek::traits::VartimePrecomputedMultiscalarMul;
@@ -84,7 +81,7 @@ pub(crate) async fn exec_sender_system<const L: usize>(
     context: &Arc<RatmanContext>,
     reader: TcpStream,
     // todo: replace with sled integration
-    storage: JournalStorage,
+    journal: Journal,
     LetterManifest {
         from,
         to,
@@ -97,7 +94,7 @@ pub(crate) async fn exec_sender_system<const L: usize>(
 
     // Setup the block slicer
     let (iter_tx, chunk_iter) = ChunkIter::<L>::new();
-    let read_cap_f = spawn_local(block_slicer_task(storage, chunk_iter));
+    let read_cap_f = spawn_local(block_slicer_task(journal, chunk_iter));
 
     // Read from the socket until we have reached the upper message
     // limit
@@ -131,14 +128,14 @@ pub(crate) async fn exec_sender_system<const L: usize>(
 /// Setup the task reading from the chunk iter and producing ERIS
 /// blocks from the content
 async fn block_slicer_task<const L: usize>(
-    mut storage: JournalStorage,
+    mut journal: Journal,
     mut iter: ChunkIter<L>,
 ) -> Result<ReadCapability> {
     debug!("Starting block slicer on ChunkIter<{}>", L);
     async_eris::encode_const::<_, Compat<ChunkIter<L>>, L>(
         &mut (iter.compat()),
         &[0; 32],
-        &mut storage,
+        &mut journal.blocks,
     )
     .await
     .map_err(Into::into)

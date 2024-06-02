@@ -7,18 +7,23 @@ use libratman::{
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{
+    io::Result as IoResult,
     marker::PhantomData,
     ops::Deref,
     path::{Path, PathBuf},
     sync::Arc,
 };
 
+use crate::storage::block::StorageBlock;
+
+use super::event::BlockEvent;
+
 /// Represent a single logical page in the storage journal
 ///
 /// A journal page has an associated Rust type which it will serialize and
 /// deserialize for storage. Each page can be configured with a custom block
 /// size if that is desired.
-pub struct JournalPage<T: Serialize + DeserializeOwned>(PartitionHandle, PhantomData<T>);
+pub struct JournalPage<T: Serialize + DeserializeOwned>(pub PartitionHandle, pub PhantomData<T>);
 
 impl<T: Serialize + DeserializeOwned> JournalPage<T> {
     pub fn new(keyspace: &Keyspace, name: &str, block_size: Option<u32>) -> Result<Self> {
@@ -45,16 +50,19 @@ impl<T: Serialize + DeserializeOwned> JournalPage<T> {
 }
 
 #[async_trait]
-impl<const L: usize> BlockStorage<L> for JournalPage<Block<L>> {
-    async fn store(&mut self, block: &Block<L>) -> std::io::Result<()> {
-        self.insert(block.reference().to_string(), block)?;
+impl<const L: usize> BlockStorage<L> for JournalPage<BlockEvent> {
+    async fn store(&mut self, block: &Block<L>) -> IoResult<()> {
+        self.insert(
+            block.reference().to_string(),
+            &BlockEvent::Insert(StorageBlock::from_block(block)),
+        )?;
         Ok(())
     }
 
-    async fn fetch(&self, reference: &BlockReference) -> std::io::Result<Option<Block<L>>> {
+    async fn fetch(&self, reference: &BlockReference) -> IoResult<Option<Block<L>>> {
         match self.get(&reference.to_string()) {
             Err(RatmanError::Io(io)) => Err(io),
-            Ok(data) => Ok(Some(data)),
+            Ok(BlockEvent::Insert(storage_block)) => Ok(Some(storage_block.to_block())),
             _ => Ok(None),
         }
     }
