@@ -1,7 +1,8 @@
 use crate::{
     context,
-    core::{dispatch, GenericEndpoint, Journal, LinksMap, RouteTable, RouteType},
+    core::{dispatch, GenericEndpoint, LinksMap, RouteTable, RouteType},
     dispatch::BlockCollector,
+    journal::Journal,
     util::IoPair,
 };
 use libratman::{
@@ -110,8 +111,8 @@ pub(crate) async fn exec_switching_batch(
                 // Check that we haven't seen this frame/ message
                 // ID before.  This prevents infinite replication
                 // of any flooded frame.
-                if journal.is_unknown(&announce_id).await {
-                    journal.save_as_known(&announce_id).await;
+                if journal.is_unknown(&announce_id).is_ok() {
+                    journal.save_as_known(&announce_id).unwrap();
                     // debug!("Received announcement for {}", header.get_sender());
 
                     // Update the routing table and re-flood the announcement
@@ -147,9 +148,10 @@ pub(crate) async fn exec_switching_batch(
                     // A locally addressed manifest is given to
                     // the journal to collect
                     Some(RouteType::Local) if mode == MANIFEST => {
-                        journal
-                            .queue_manifest(InMemoryEnvelope { header, buffer })
-                            .await;
+                        todo!()
+                        // journal
+                        //     .queue_manifest(InMemoryEnvelope { header, buffer })
+                        //     .await;
                     }
                     // Any other frame types are currently ignored
                     Some(RouteType::Local) => {
@@ -169,9 +171,10 @@ pub(crate) async fn exec_switching_batch(
                     // local or remote) will be queued in the
                     // journal
                     None => {
-                        journal
-                            .frame_queue(InMemoryEnvelope { header, buffer })
-                            .await;
+                        todo!()
+                        // journal
+                        //     .frame_queue(InMemoryEnvelope { header, buffer })
+                        //     .await;
                     }
                 }
             }
@@ -192,8 +195,8 @@ pub(crate) async fn exec_switching_batch(
                 // If we haven seen this frame before, we keep
                 // track of it and then re-flood it into the
                 // network.
-                if journal.is_unknown(&announce_id).await {
-                    journal.save_as_known(&announce_id).await;
+                if journal.is_unknown(&announce_id).unwrap() {
+                    journal.save_as_known(&announce_id).unwrap();
                     dispatch::flood_frame(routes, links, InMemoryEnvelope { header, buffer }, None)
                         .await;
                 }

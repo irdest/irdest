@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// Provide utilities to handle the const generics of the underlying
 /// type, as well as storage, retrieval, and checking integrity
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[repr(C)]
 pub(crate) enum StorageBlock {
     /// 1K block size
@@ -16,16 +16,9 @@ pub(crate) enum StorageBlock {
 }
 
 impl StorageBlock {
-    pub fn from_block<const L: usize>(block: Block<L>) -> Self {
-        match L {
-            1024 => Self::_1K(block),
-            32768 => Self::_32K(block),
-        }
-    }
-
     pub fn to_block<const L: usize>(&self) -> Block<L> {
-        let (_ref, block_data) = self.dissolve();
-        Block::<L>::copy_from_vec(&block_data)
+        let (_ref, block_data) = self.clone().dissolve::<L>();
+        Block::<L>::copy_from_vec(block_data)
     }
 
     pub fn reference(&self) -> BlockReference {
@@ -39,7 +32,11 @@ impl StorageBlock {
     ///
     /// Optionally a sequence ID can be provided, which is used to
     /// yield more useful errors in case block lengths didn't align.
-    pub fn reconstruct(block_buf: Vec<u8>) -> Result<Self> {
+    pub fn reconstruct(block_buf: &[u8]) -> Result<Self> {
+        Self::reconstruct_from_vec(block_buf.to_vec())
+    }
+
+    pub fn reconstruct_from_vec(block_buf: Vec<u8>) -> Result<Self> {
         match block_buf.len() {
             1024 => Ok(StorageBlock::_1K(Block::<1024>::copy_from_vec(block_buf))),
             32768 => Ok(StorageBlock::_32K(Block::<32768>::copy_from_vec(block_buf))),

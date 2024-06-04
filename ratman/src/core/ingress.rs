@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use crate::{
-    journal::Journal,
-    storage::{block::StorageBlock, JournalPage},
-};
+use crate::{journal::Journal, storage::block::StorageBlock};
 use async_eris::{Block, BlockKey, BlockReference, BlockStorage, ReadCapability};
 use async_trait::async_trait;
 use libratman::{
@@ -55,21 +52,16 @@ pub(crate) struct MessageNotifier {
 ///
 /// Spawn a task that calls this function again if it failed.
 async fn decode_message(
-    blocks: &RwLock<JournalBlockStore>,
+    journal: &Arc<Journal>,
     MessageNotifier {
         ref read_cap,
         ref header,
     }: &MessageNotifier,
 ) -> Result<Letterhead> {
-    let block_reader = blocks.read().await;
-
     let mut payload_buffer = vec![];
-    async_eris::decode(&mut payload_buffer, read_cap, &*block_reader)
+    async_eris::decode(&mut payload_buffer, read_cap, &journal.blocks)
         .await
         .map_err(|e| RatmanError::Block(BlockError::from(e)))?;
-
-    // Release the block lock as quickly as possible
-    drop(block_reader);
 
     // todo: this is a terrible api and it needs to change.  But
     // also this type might be completely useless??
@@ -101,7 +93,7 @@ pub(crate) async fn run_message_assembler(
         let message_id = message_notifier.header.get_seq_id().unwrap().hash;
         let sender = sender.clone();
 
-        match decode_message(&journal.blocks, &message_notifier).await {
+        match decode_message(&journal, &message_notifier).await {
             Ok(message) => {
                 sender.send(message).await;
             }
@@ -122,7 +114,7 @@ pub(crate) async fn run_message_assembler(
                             millis, ctr, message_id,
                         );
                         time::sleep(Duration::from_millis(millis)).await;
-                        match decode_message(&journal.blocks, &message_notifier).await {
+                        match decode_message(&journal, &message_notifier).await {
                             Ok(msg) => {
                                 sender.send(msg).await;
                                 break;

@@ -32,88 +32,64 @@
 //! can be tagged with additional information for importance to prevent them
 //! from being cleaned from the journal in case of storage quota limits.
 
-use std::marker::PhantomData;
-
-use fjall::{Keyspace, PartitionCreateOptions};
-use libratman::{types::SequenceIdV1, Result};
-
-use crate::routes::RouteEntry;
-
 use self::{
     event::{BlockEvent, FrameEvent, LinkEvent, ManifestEvent, RouteEvent},
-    page::{JournalPage, SerdeFrameType},
+    page::{JournalCache, JournalPage, SerdeFrameType},
 };
+use crate::routes::RouteEntry;
+use fjall::{Keyspace, PartitionCreateOptions};
+use libratman::{types::Id, Result};
+use std::marker::PhantomData;
 
 mod event;
 mod page;
 
-/// Combined frame and block journal
-///
-/// This component has three main parts to it
-///
-/// ## Frame Journal
-///
-/// Frames that can't be delivered, either because the local address
-/// is offline, or because the remote address isn't reachable via the
-/// currently available connections are given to the frame journal.
-///
-/// When an address comes online, the contents of this journal (for
-/// that particular address) are then either given to the dispatcher,
-/// or the collector.
-///
-///
-/// ## Block Journal
-///
-/// The collector assembles frames into completed blocks that are
-/// inserted into the block journal.  It is shared amongst all
-/// addresses, meaning that if two users/ applications on the same
-/// machine received the same message twice (for example via a flood
-/// namespace), it is only kept in storage once.
-///
-/// When a manifest is received an assembler task is spawned which
-/// checks the block journal for the required block hashes, then
-/// assembles a complete message stream and hands it to the client API
-/// handler.
-///
-/// ## Known frames page
-///
-/// To avoid endless replication of messages the journal keeps track
-/// of frame IDs that it has seen before, even when the contents
-/// aren't being saved.  This is an important mechanism in the case of
-/// announcements, which will otherwise keep echoing through the
-/// network forever... *makes haunting noises*.
-
+/// Fully integrated storage journal
 pub struct Journal {
     db: Keyspace,
+    /// Single cached frames that haven't yet been delivired
     pub frames: JournalPage<FrameEvent>,
+    /// Fully cached blocks that may already have been delivered
     pub blocks: JournalPage<BlockEvent>,
+    /// Fully cached manifests for existing block streams
     pub manifests: JournalPage<ManifestEvent>,
+    /// A simple lookup set for known frame IDs
+    pub seen_frames: JournalCache<Id>,
+    /// Route metadata table
     pub routes: JournalPage<RouteEvent>,
-    // todo: this doesn't make any sense lol
-    pub seen_frames: JournalPage<SerdeFrameType<SequenceIdV1>>,
+    /// Message stream metadata table
     pub links: JournalPage<LinkEvent>,
 }
 
 impl Journal {
     pub fn new(db: Keyspace) -> Result<Self> {
         let frames = JournalPage(
-            ks.open_partition("journal.frames", PartitionCreateOptions::default())?,
+            db.open_partition("journal.frames", PartitionCreateOptions::default())?,
             PhantomData,
         );
+
         let blocks = JournalPage(
-            ks.open_partition("journal.blocks", PartitionCreateOptions::default())?,
+            db.open_partition("journal.blocks", PartitionCreateOptions::default())?,
             PhantomData,
         );
+
         let manifests = JournalPage(
-            ks.open_partition("journal.manifests", PartitionCreateOptions::default())?,
+            db.open_partition("journal.manifests", PartitionCreateOptions::default())?,
             PhantomData,
         );
-        let seen_frames = JournalPage(
-            ks.open_partition("journal.seen_frames", PartitionCreateOptions::default())?,
+
+        let seen_frames = JournalCache(
+            db.open_partition("journal.seen_frames", PartitionCreateOptions::default())?,
             PhantomData,
         );
+
+        let routes = JournalPage(
+            db.open_partition("meta.routes", PartitionCreateOptions::default())?,
+            PhantomData,
+        );
+
         let links = JournalPage(
-            ks.open_partition("journal.links", PartitionCreateOptions::default())?,
+            db.open_partition("meta.links", PartitionCreateOptions::default())?,
             PhantomData,
         );
 
@@ -123,7 +99,16 @@ impl Journal {
             blocks,
             manifests,
             seen_frames,
+            routes,
             links,
         })
+    }
+
+    pub fn is_unknown(&self, frame_id: &Id) -> Result<bool> {
+        self.seen_frames.get(frame_id)
+    }
+
+    pub fn save_as_known(&self, frame_id: &Id) -> Result<()> {
+        self.seen_frames.insert(frame_id)
     }
 }

@@ -77,13 +77,13 @@ impl RatmanContext {
 
         // Initialise storage journal
         let fjall_db = Config::new(Os::match_os().data_path().join("journal.fjall")).open()?;
-        let journal = Journal::new(fjall_db)?;
+        let journal = Arc::new(Journal::new(fjall_db)?);
 
-        let (collector, links, routes) = crate::core::exec_core_loops();
+        let (collector, links, routes) = crate::core::exec_core_loops(Arc::clone(&journal));
         let keys = Arc::new(Keystore::new());
         let clients = Arc::new(ConnectionManager {});
 
-        Arc::new(Self {
+        Ok(Arc::new(Self {
             config,
             collector,
             links,
@@ -94,7 +94,7 @@ impl RatmanContext {
             clients,
             runtime_state,
             _statedir_lock: Arc::new(AtomPtr::new(None)),
-        })
+        }))
     }
 
     /// Create and start a new Ratman router context with a config

@@ -54,7 +54,7 @@ impl<const L: usize> BlockStorage<L> for JournalPage<BlockEvent> {
     async fn store(&mut self, block: &Block<L>) -> IoResult<()> {
         self.insert(
             block.reference().to_string(),
-            &BlockEvent::Insert(StorageBlock::from_block(block)),
+            &BlockEvent::Insert(StorageBlock::reconstruct(block.as_slice()).unwrap()),
         )?;
         Ok(())
     }
@@ -89,11 +89,36 @@ impl<T: FrameGenerator> From<T> for SerdeFrameType<T> {
     }
 }
 
-impl<T: FrameParser> SerdeFrameType<T> {
+impl<T: FrameParser<Output = T>> SerdeFrameType<T> {
     pub fn to_frametype(&self) -> Result<T> {
         match T::parse(&self.0) {
-            Ok(t) => Ok(t),
-            Err(e) => RatmanError::Encoding(EncodingError::from(e)),
+            Ok((_, t)) => Ok(t),
+            Err(e) => Err(RatmanError::Encoding(EncodingError::from(e))),
         }
+    }
+}
+
+/// A simple cache page which keeps track of the existence of values
+pub struct JournalCache<T: AsRef<[u8]>>(pub PartitionHandle, pub PhantomData<T>);
+
+impl<T: AsRef<[u8]>> JournalCache<T> {
+    pub fn new(keyspace: &Keyspace, name: &str, block_size: Option<u32>) -> Result<Self> {
+        let inner = keyspace.open_partition(
+            name,
+            match block_size {
+                Some(bs) => PartitionCreateOptions::default().block_size(bs),
+                None => PartitionCreateOptions::default(),
+            },
+        )?;
+        Ok(Self(inner, PhantomData))
+    }
+
+    pub fn insert(&self, value: &T) -> Result<()> {
+        self.0.insert(value, &[true as u8]);
+        Ok(())
+    }
+
+    pub fn get(&self, key: &T) -> Result<bool> {
+        Ok(self.0.get(key)?.is_some())
     }
 }

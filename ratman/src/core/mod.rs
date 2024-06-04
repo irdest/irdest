@@ -35,7 +35,9 @@ pub(crate) use routes::{EpNeighbourPair, RouteTable, RouteType};
 // use self::ingress::run_message_assembler;
 
 /// Execute the Ratman router core as an async task
-pub(crate) fn exec_core_loops() -> (
+pub(crate) fn exec_core_loops(
+    journal: Arc<Journal>,
+) -> (
     Arc<BlockCollector>,
     Arc<LinksMap>,
     // Arc<Journal>,
@@ -44,16 +46,7 @@ pub(crate) fn exec_core_loops() -> (
 ) {
     let links = LinksMap::new();
     let routes = RouteTable::new();
-    let (jtx, jrx) = mpsc::channel(16);
-    let collector = BlockCollector::new(jtx);
-
-    // Dispatch the journal
-    // let (_lh_notify_send, lh_notify_recv) = mpsc::channel(16);
-    // spawn_local(Arc::clone(&journal).run_block_acceptor(jrx));
-    // spawn_local(run_message_assembler(
-    //     Arc::clone(&journal),
-    //     lh_notify_send,
-    // ));
+    let collector = BlockCollector::new(journal);
 
     (collector, links, routes)
 }

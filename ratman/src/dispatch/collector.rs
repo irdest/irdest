@@ -67,7 +67,7 @@ impl BlockCollectorWorker {
                     .for_each(|mut chunk| block.extend_from_slice(chunk.get_payload_slice()));
 
                 // Then offer the finished block up to the block god
-                match StorageBlock::reconstruct(block) {
+                match StorageBlock::reconstruct_from_vec(block) {
                     Ok(block) => self
                         .journal
                         .blocks

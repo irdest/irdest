@@ -1,6 +1,7 @@
 use crate::{
-    core::{run_message_assembler, Journal, LinksMap, RouteTable},
+    core::{LinksMap, RouteTable},
     dispatch::BlockCollector,
+    journal::Journal,
 };
 use libratman::{
     tokio::{sync::mpsc, task::spawn_local},
@@ -19,23 +20,22 @@ pub(crate) struct Core {
     pub(crate) routes: Arc<RouteTable>,
 }
 
-pub(crate) async fn start_core() -> (Core, mpsc::Receiver<Letterhead>) {
+pub(crate) async fn start_core(journal: Arc<Journal>) -> (Core, mpsc::Receiver<Letterhead>) {
     let drivers = LinksMap::new();
     let routes = RouteTable::new();
-    let (journal, m_notify_r) = Journal::new();
 
-    let (jtx, jrx) = mpsc::channel(16);
+    // let (jtx, jrx) = mpsc::channel(16);
     let (lh_notify_t, lh_notify_r) = mpsc::channel(16);
 
-    let collector = BlockCollector::new(jtx);
+    let collector = BlockCollector::new(Arc::clone(&journal));
 
     // Dispatch the runners
-    spawn_local(Arc::clone(&journal).run_block_acceptor(jrx));
-    spawn_local(run_message_assembler(
-        Arc::clone(&journal),
-        m_notify_r,
-        lh_notify_t,
-    ));
+    // spawn_local(Arc::clone(&journal).run_block_acceptor(jrx));
+    // spawn_local(run_message_assembler(
+    //     Arc::clone(&journal),
+    //     m_notify_r,
+    //     lh_notify_t,
+    // ));
 
     (
         Core {

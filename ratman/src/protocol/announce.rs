@@ -70,7 +70,7 @@ impl AddressAnnouncer {
             // sent back to us.
             ctx.journal
                 .save_as_known(&header.get_seq_id().unwrap().hash)
-                .await;
+                .unwrap();
 
             // Send it into the network
             if let Err(e) = dispatch::flood_frame(
