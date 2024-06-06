@@ -36,17 +36,30 @@ use self::{
     event::{BlockEvent, FrameEvent, LinkEvent, ManifestEvent, RouteEvent},
     page::{JournalCache, JournalPage, SerdeFrameType},
 };
-use crate::routes::RouteEntry;
+use crate::{core::dispatch, routes::RouteEntry};
 use fjall::{Keyspace, PartitionCreateOptions};
-use libratman::{types::Id, Result};
+use libratman::tokio::sync::mpsc::{channel, Receiver, Sender};
+use libratman::{
+    types::{Id, InMemoryEnvelope},
+    RatmanError, Result,
+};
 use std::marker::PhantomData;
 
 mod event;
 mod page;
 
 /// Fully integrated storage journal
+///
+/// For latency critical insertions it is recommended to use the dispatch queue
+/// (`queue_x` functions) instead of directly accessing the database.  For
+/// non-latency critical insertions and all reads use the database access
+/// functions directly.
+///
+/// Warning: if a later read depends on the immediate availability of a previous
+/// insert it is highly recommended not to use the dispatch queue.
 pub struct Journal {
     db: Keyspace,
+    // dispatch: JournalDispatch,
     /// Single cached frames that haven't yet been delivired
     pub frames: JournalPage<FrameEvent>,
     /// Fully cached blocks that may already have been delivered
@@ -95,6 +108,7 @@ impl Journal {
 
         Ok(Self {
             db,
+            // dispatch,
             frames,
             blocks,
             manifests,
@@ -111,4 +125,28 @@ impl Journal {
     pub fn save_as_known(&self, frame_id: &Id) -> Result<()> {
         self.seen_frames.insert(frame_id)
     }
+
+    pub fn queue_frame(&self, InMemoryEnvelope { header, buffer }: InMemoryEnvelope) -> Result<()> {
+        let seq_id = header.get_seq_id().unwrap();
+
+        self.frames.insert(
+            seq_id.hash.to_string(),
+            &FrameEvent::Insert {
+                seq: seq_id,
+                header: SerdeFrameType::from(header),
+                payload: buffer,
+            },
+        )
+    }
 }
+
+// pub struct JournalDispatch {
+//     frames: Sender<InMemoryEnvelope>,
+// }
+
+// impl JournalDispatch {
+//     pub fn new() -> (Self, Receiver<InMemoryEnvelope>) {
+//         let (tx_f, rx_f) = channel(8);
+//         (Self { frames: tx_f }, rx_f)
+//     }
+// }

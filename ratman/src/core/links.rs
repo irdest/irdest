@@ -3,9 +3,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use libratman::{endpoint::EndpointExt, tokio::sync::RwLock};
-use std::sync::{
-    atomic::{AtomicUsize, Ordering},
-    Arc,
+use std::{
+    collections::BTreeMap,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
 };
 
 /// A dynamicly allocated, generic driver in memory
@@ -40,8 +43,8 @@ impl LinksMap {
     /// Insert a new endpoint to the set of known endpoints
     pub(crate) async fn add(&self, name: String, ep: Arc<GenericEndpoint>) -> usize {
         let mut map = self.map.write().await;
-        let curr = self.curr.fetch_add(1, Ordering::Relaxed);
-        map.push(EpWrap::Used(name, ep));
+        let curr = self.curr.fetch_add(1, Ordering::SeqCst);
+        map.push(EpWrap::Used(name.clone(), ep));
         curr
     }
 
@@ -58,6 +61,17 @@ impl LinksMap {
             EpWrap::Used(ref name, ref ep) => (name.clone(), Arc::clone(ep)),
             EpWrap::Void => panic!("Trying to use a removed endpoint!"),
         }
+    }
+
+    /// Search through the driver list and get the first one with a given name
+    pub(crate) async fn get_by_name(&self, name: &str) -> Option<Arc<GenericEndpoint>> {
+        let map = self.map.read().await;
+        map.iter()
+            .filter_map(|entry| match entry {
+                EpWrap::Used(ep_name, ep) if ep_name == name => Some(Arc::clone(&ep)),
+                _ => None,
+            })
+            .next()
     }
 
     /// Get access to all endpoints wrapped in Arc

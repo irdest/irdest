@@ -40,7 +40,6 @@ pub(crate) fn exec_core_loops(
 ) -> (
     Arc<BlockCollector>,
     Arc<LinksMap>,
-    // Arc<Journal>,
     Arc<RouteTable>,
     // Receiver<Letterhead>,
 ) {

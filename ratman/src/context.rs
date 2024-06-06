@@ -12,8 +12,11 @@ use crate::{
     crypto::Keystore,
     dispatch::{BlockCollector, BlockSlicer, StreamSlicer},
     journal::Journal,
+    procedures,
     protocol::Protocol,
-    util::{self, codes, runtime_state::RuntimeState, setup_logging, Os, StateDirectoryLock},
+    util::{
+        self, codes, runtime_state::RuntimeState, setup_logging, IoPair, Os, StateDirectoryLock,
+    },
 };
 use fjall::Config;
 use libratman::{
@@ -21,8 +24,8 @@ use libratman::{
         carrier::{CarrierFrameHeader, CarrierFrameHeaderV1, ManifestFrame, ManifestFrameV1},
         FrameGenerator,
     },
-    rt::AsyncSystem,
-    tokio::sync::mpsc::Receiver,
+    rt::{new_async_thread, AsyncSystem},
+    tokio::sync::mpsc::{channel, Receiver},
     types::{Address, InMemoryEnvelope, Letterhead, Recipient, SequenceIdV1},
     Result,
 };
@@ -77,6 +80,7 @@ impl RatmanContext {
 
         // Initialise storage journal
         let fjall_db = Config::new(Os::match_os().data_path().join("journal.fjall")).open()?;
+        // let (dispatch, frame_rx) = JournalDispatch::new();
         let journal = Arc::new(Journal::new(fjall_db)?);
 
         let (collector, links, routes) = crate::core::exec_core_loops(Arc::clone(&journal));
@@ -135,7 +139,7 @@ impl RatmanContext {
         }
 
         // This never fails, we will have a map of netmods here, even if it is empty
-        let driver_map = initialise_netmods(&this.config).await;
+        initialise_netmods(&this.config, &this.links).await;
 
         // Get the initial set of peers from the configuration.
         // Either this is done via the `peer_file` field, which is
@@ -151,7 +155,7 @@ impl RatmanContext {
         {
             // If peers exist, add them to the drivers
             Some(peers) => {
-                let mut peer_builder = PeeringBuilder::new(driver_map);
+                let mut peer_builder = PeeringBuilder::new(Arc::clone(&this.links));
                 for peer in peers {
                     if let Err(e) = peer_builder.attach(peer.as_str()).await {
                         error!("failed to add peer: {}", e);
@@ -162,10 +166,8 @@ impl RatmanContext {
                 // peering builder or driver map anymore, so we
                 // dissolve both and add everything to the routing
                 // core.
-                for (name, ep) in peer_builder.consume() {
-                    let _ep_id = this.links.add(name, ep).await;
-                    // fixme: integrate this with spawn plans, etc etc
-                }
+                // fixme: integrate this with spawn plans, etc etc
+                info!("Driver initialisation complete!");
             }
 
             // If no peers exist, check if there are alternative
@@ -232,6 +234,35 @@ impl RatmanContext {
         //     error!("API connector crashed with error: {}", e);
         //     this.runtime_state.kill();
         // }
+
+        // Start the switch and off we go
+        {
+            let links = Arc::clone(&this.links);
+            let batch_size = 32; // todo make this configurable
+            for (name, ep, id) in links.get_with_ids().await {
+                let this = Arc::clone(&this);
+                
+                new_async_thread::<String, _, ()>(
+                    format!("ratmand-switch-{name}"),
+                    1024,
+                    async move {
+                        procedures::exec_switching_batch(
+                            id,
+                            batch_size,
+                            &this.routes,
+                            &this.links,
+                            &this.journal,
+                            &this.collector,
+                            (&name, &ep),
+                            channel(1),
+                            #[cfg(feature = "dashboard")]
+                            todo!(),
+                        )
+                        .await;
+                    },
+                );
+            }
+        }
 
         // libratman::tokio::time::sleep(std::time::Duration::from_secs(2)).await;
 

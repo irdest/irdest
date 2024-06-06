@@ -100,11 +100,13 @@ impl Peer {
         match proto::write(&mut *tx, env).await {
             Ok(()) => Ok(()),
             Err(e) => {
-                warn!("Failed to send data for peer {}", self.session.id);
+                warn!("Failed to send data for peer {}: {e:?}", self.session.id);
 
                 // If we are the outgoing side we signal to be restarted
                 if let Some(ref tx) = self.restart {
-                    tx.send(self.session).await;
+                    if let Err(e) = tx.send(self.session).await {
+                        error!("failed to forward peer restart signal: {e:?}");
+                    }
                     debug!("Notify restart hook");
                     Ok(())
                 }

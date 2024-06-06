@@ -6,7 +6,8 @@
 //!
 //!
 
-use crate::{config::ConfigTree, util::DriverMap};
+use crate::{config::ConfigTree, core::LinksMap};
+use std::sync::Arc;
 
 #[cfg(feature = "datalink")]
 use netmod_datalink::Endpoint as DatalinkEndpoint;
@@ -25,9 +26,7 @@ use netmod_lora::LoraEndpoint;
 /// upwards ?  For now, errors and warnings are logged to the user, so
 /// even if every netmod fails to initialise, the router will come up,
 /// which allows the web dashboard to also display the same errors.
-pub(crate) async fn initialise_netmods(cfg: &ConfigTree) -> DriverMap {
-    let mut map = DriverMap::new();
-
+pub(crate) async fn initialise_netmods(cfg: &ConfigTree, links: &Arc<LinksMap>) {
     //// If the 'inet' config tree exists...
     #[cfg(feature = "inet")]
     if let Some(tree) = cfg.get_subtree("inet") {
@@ -43,8 +42,8 @@ pub(crate) async fn initialise_netmods(cfg: &ConfigTree) -> DriverMap {
             // If enable is true and a bind address was provided
             (Some(true), Some(bind)) => match InetEndpoint::start(bind.as_str()).await {
                 Ok(inet) => {
-                    map.insert("inet".into(), inet);
-                    info!("Initialised inet driver");
+                    let id = links.add("inet".into(), inet).await;
+                    info!("Initialised inet driver as id:{id}");
                 }
                 Err(e) => {
                     error!(
@@ -74,7 +73,8 @@ pub(crate) async fn initialise_netmods(cfg: &ConfigTree) -> DriverMap {
             // If enable is true and a port was provided (in principle)
             (Some(true), Some(port)) => match LanEndpoint::spawn(iface, port as u16) {
                 Ok(lan) => {
-                    map.insert("lan".into(), lan);
+                    let id = links.add("lan".into(), lan).await;
+                    info!("Initialised lan driver as id:{id}");
                 }
                 Err(e) => {
                     error!("Netmod 'lan' failed to initialise: {}. skipping...", e);
@@ -99,7 +99,8 @@ pub(crate) async fn initialise_netmods(cfg: &ConfigTree) -> DriverMap {
         match (enable, port, baud) {
             (Some(true), Some(port), Some(baud)) => {
                 let lora = LoraEndpoint::spawn(&port, baud as u32);
-                map.insert("lora".into(), lora);
+                let id = links.add("lora".into(), lora).await;
+                info!("Initialised lora driver as id:{id}");
             }
             (Some(true), None, _) => {
                 warn!("Netmod 'lora' requires configuration field 'port' to start!");
@@ -120,15 +121,16 @@ pub(crate) async fn initialise_netmods(cfg: &ConfigTree) -> DriverMap {
         match (enable, interface, ssid) {
             // If enable is true, we don't care about whether interface or ssid are missing
             (Some(true), iface, ssid) => {
-                map.insert(
-                    "datalink".into(),
-                    DatalinkEndpoint::spawn(iface.as_deref(), ssid.as_deref()),
-                );
+                let id = links
+                    .add(
+                        "datalink".into(),
+                        DatalinkEndpoint::spawn(iface.as_deref(), ssid.as_deref()),
+                    )
+                    .await;
+                info!("Initialised datalink driver as id:{id}");
             }
             // If enable is false, we do nothing
             _ => {}
         }
     }
-
-    map
 }

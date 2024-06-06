@@ -5,12 +5,17 @@ use crate::{
     journal::Journal,
     util::IoPair,
 };
+use libratman::tokio::task::spawn_local;
 use libratman::{
     endpoint::EndpointExt,
     frame::carrier::modes::{self as fmodes, DATA, MANIFEST},
     types::{InMemoryEnvelope, Recipient},
 };
 use std::sync::Arc;
+
+pub(crate) async fn setup_switches() {
+    
+}
 
 /// Run a batch of receive jobs for a given endpoint and state context
 pub(crate) async fn exec_switching_batch(
@@ -113,7 +118,7 @@ pub(crate) async fn exec_switching_batch(
                 // of any flooded frame.
                 if journal.is_unknown(&announce_id).is_ok() {
                     journal.save_as_known(&announce_id).unwrap();
-                    // debug!("Received announcement for {}", header.get_sender());
+                    debug!("Received announcement for {}", header.get_sender());
 
                     // Update the routing table and re-flood the announcement
                     routes.update(id as u8, t, header.get_sender()).await;
@@ -171,10 +176,10 @@ pub(crate) async fn exec_switching_batch(
                     // local or remote) will be queued in the
                     // journal
                     None => {
-                        todo!()
-                        // journal
-                        //     .frame_queue(InMemoryEnvelope { header, buffer })
-                        //     .await;
+                        let journal = Arc::clone(&journal);
+                        spawn_local(async move {
+                            journal.queue_frame(InMemoryEnvelope { header, buffer });
+                        });
                     }
                 }
             }
@@ -205,7 +210,7 @@ pub(crate) async fn exec_switching_batch(
             // Unknown/ Invalid frame types get logged
             (_ftype, recipient) => {
                 warn!(
-                    "Received unknown/invalid frame type {} (recipient: {:?})",
+                    "Ignoring unknown/invalid frame type {} (recipient: {:?})",
                     _ftype, recipient
                 );
                 continue;

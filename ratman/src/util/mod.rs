@@ -27,11 +27,6 @@ use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
 /// A convevient Sender/Receiver pair for a type
 pub(crate) type IoPair<T> = (Sender<T>, Receiver<T>);
 
-/// A string-mapped list of drivers
-// TODO: this is easily confused with core::drivers::DriverMap so
-// maybe rename this or get rid of the inner structure.
-pub(crate) type DriverMap = BTreeMap<String, Arc<GenericEndpoint>>;
-
 /// Print a log message and exit
 // TODO: turn into macro
 pub fn elog<S: Into<String>>(msg: S, code: u16) -> ! {

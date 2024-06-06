@@ -37,6 +37,7 @@ lora = [ "netmod-lora" ]
 async-eris = { version = "0.1", path = "../utils/eris-rs" }
 async-trait = "0.1"
 atomptr = "1.0"
+backoff = "0.4"
 bincode = "1.0"
 byteorder = "1.0"
 chrono = { version = "0.4", features = ["serde"] }

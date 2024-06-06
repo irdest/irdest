@@ -3,7 +3,9 @@
 //! Ratman can either be launched with a known set of peers, or it
 //! must be configured to `accept_unknown_peers`.
 
-use crate::util::DriverMap;
+use std::sync::Arc;
+
+use crate::core::LinksMap;
 use libratman::{endpoint::EndpointExt, NetmodError, RatmanError};
 
 /// A helper that parses, validates, and attaches peer data to drivers
@@ -11,7 +13,7 @@ use libratman::{endpoint::EndpointExt, NetmodError, RatmanError};
 /// The netmod endpoints themselves must already be allocated and
 /// ready to use before this process can happen.
 pub struct PeeringBuilder {
-    drivers: DriverMap,
+    links: Arc<LinksMap>,
 }
 
 impl PeeringBuilder {
@@ -19,8 +21,8 @@ impl PeeringBuilder {
     ///
     /// The strings used for identification are used as prefixes in
     /// the peer syntax.
-    pub fn new(drivers: DriverMap) -> Self {
-        Self { drivers }
+    pub fn new(links: Arc<LinksMap>) -> Self {
+        Self { links }
     }
 
     /// Attach a peer to one of the existing drivers
@@ -36,7 +38,7 @@ impl PeeringBuilder {
             }
         };
 
-        match self.drivers.get(driver_id) {
+        match self.links.get_by_name(driver_id).await {
             Some(endpoint) => {
                 // Ignore the peer_id for now
                 let _peer_id = endpoint.start_peering(address_str).await;
@@ -50,10 +52,5 @@ impl PeeringBuilder {
                 Err(RatmanError::Netmod(NetmodError::InvalidPeer(peer.into())))
             }
         }
-    }
-
-    /// Dissolve this type and take the inner driver map
-    pub fn consume(self) -> DriverMap {
-        self.drivers
     }
 }
