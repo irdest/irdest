@@ -13,10 +13,6 @@ use libratman::{
 };
 use std::sync::Arc;
 
-pub(crate) async fn setup_switches() {
-    
-}
-
 /// Run a batch of receive jobs for a given endpoint and state context
 pub(crate) async fn exec_switching_batch(
     // Current netmod ID us
@@ -52,6 +48,7 @@ pub(crate) async fn exec_switching_batch(
             Ok(f) => f,
             _ => continue,
         };
+
         trace!(
             "Received frame ({}) from {}/{:?}",
             match header.get_seq_id() {
@@ -153,10 +150,16 @@ pub(crate) async fn exec_switching_batch(
                     // A locally addressed manifest is given to
                     // the journal to collect
                     Some(RouteType::Local) if mode == MANIFEST => {
-                        todo!()
-                        // journal
-                        //     .queue_manifest(InMemoryEnvelope { header, buffer })
-                        //     .await;
+                        let journal = Arc::clone(&journal);
+                        spawn_local(async move {
+                            if let Err(e) =
+                                journal.queue_manifest(InMemoryEnvelope { header, buffer })
+                            {
+                                error!("failed to queue Manifest: {e:?}.  This will result in unrecoverable blocks");
+                            }
+
+                            // todo: setup consolidation task
+                        });
                     }
                     // Any other frame types are currently ignored
                     Some(RouteType::Local) => {

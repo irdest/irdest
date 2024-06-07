@@ -38,7 +38,10 @@ use self::{
 };
 use crate::{core::dispatch, routes::RouteEntry};
 use fjall::{Keyspace, PartitionCreateOptions};
-use libratman::tokio::sync::mpsc::{channel, Receiver, Sender};
+use libratman::{
+    frame::{carrier::ManifestFrame, FrameParser},
+    tokio::sync::mpsc::{channel, Receiver, Sender},
+};
 use libratman::{
     types::{Id, InMemoryEnvelope},
     RatmanError, Result,
@@ -47,6 +50,9 @@ use std::marker::PhantomData;
 
 mod event;
 mod page;
+
+#[cfg(test)]
+mod test;
 
 /// Fully integrated storage journal
 ///
@@ -77,32 +83,32 @@ pub struct Journal {
 impl Journal {
     pub fn new(db: Keyspace) -> Result<Self> {
         let frames = JournalPage(
-            db.open_partition("journal.frames", PartitionCreateOptions::default())?,
+            db.open_partition("journal_rames", PartitionCreateOptions::default())?,
             PhantomData,
         );
 
         let blocks = JournalPage(
-            db.open_partition("journal.blocks", PartitionCreateOptions::default())?,
+            db.open_partition("journal_blocks", PartitionCreateOptions::default())?,
             PhantomData,
         );
 
         let manifests = JournalPage(
-            db.open_partition("journal.manifests", PartitionCreateOptions::default())?,
+            db.open_partition("journal_manifests", PartitionCreateOptions::default())?,
             PhantomData,
         );
 
         let seen_frames = JournalCache(
-            db.open_partition("journal.seen_frames", PartitionCreateOptions::default())?,
+            db.open_partition("journal_seen_frames", PartitionCreateOptions::default())?,
             PhantomData,
         );
 
         let routes = JournalPage(
-            db.open_partition("meta.routes", PartitionCreateOptions::default())?,
+            db.open_partition("meta_routes", PartitionCreateOptions::default())?,
             PhantomData,
         );
 
         let links = JournalPage(
-            db.open_partition("meta.links", PartitionCreateOptions::default())?,
+            db.open_partition("meta_links", PartitionCreateOptions::default())?,
             PhantomData,
         );
 
@@ -137,6 +143,22 @@ impl Journal {
                 payload: buffer,
             },
         )
+    }
+
+    pub fn queue_manifest(&self, env: InMemoryEnvelope) -> Result<()> {
+        let (_, manifest) = ManifestFrame::parse(env.get_payload_slice())?;
+        let seq_id = env.header.get_seq_id().unwrap();
+
+        self.manifests.insert(
+            seq_id.hash.to_string(),
+            &ManifestEvent::Insert {
+                sender: env.header.get_sender(),
+                recipient: env.header.get_recipient().unwrap(),
+                manifest: SerdeFrameType::from(manifest?),
+            },
+        );
+
+        Ok(())
     }
 }
 

@@ -1,7 +1,7 @@
 use async_eris::{Block, BlockReference};
 use libratman::{
     frame::carrier::{CarrierFrameHeader, ManifestFrame, PeerDataV1},
-    types::{Address, Id, SequenceIdV1},
+    types::{Address, Id, Recipient, SequenceIdV1},
 };
 use serde::{Deserialize, Serialize};
 
@@ -39,7 +39,7 @@ impl From<StorageBlock> for BlockEvent {
 }
 
 /// Events applied to the frame partition
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum FrameEvent {
     /// Add a new frame to the persistent frame journal
     Insert {
@@ -56,7 +56,7 @@ pub enum FrameEvent {
 pub enum ManifestEvent {
     Insert {
         sender: Address,
-        recipient: Address,
+        recipient: Recipient,
         manifest: SerdeFrameType<ManifestFrame>,
     },
     Delete {

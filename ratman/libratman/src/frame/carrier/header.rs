@@ -279,6 +279,28 @@ pub struct CarrierFrameHeaderV1 {
     payload_length: u16,
 }
 
+impl CarrierFrameHeaderV1 {
+    pub fn new(
+        modes: u16,
+        sender: Address,
+        recipient: Option<Recipient>,
+        seq_id: Option<SequenceIdV1>,
+        auxiliary_data: Option<[u8; 64]>,
+        signature_data: Option<[u8; 64]>,
+        payload_length: u16,
+    ) -> Self {
+        Self {
+            modes,
+            sender,
+            recipient,
+            seq_id,
+            auxiliary_data,
+            signature_data,
+            payload_length,
+        }
+    }
+}
+
 // todo: this needs more design.  Do we actually need a nonce?  Is
 // there a reason to have more than one piece of data?  Two slots
 // could be easily implemented.

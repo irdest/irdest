@@ -77,7 +77,7 @@ impl<const L: usize> BlockStorage<L> for JournalPage<BlockEvent> {
 /// A SerdeFrameType can be constructed via `From<FrameGenerator>` and
 /// deserialised via `to_frametype()` which invokes `FrameParser` (both from
 /// libratman).
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SerdeFrameType<T>(Vec<u8>, PhantomData<T>);
 
 impl<T: FrameGenerator> From<T> for SerdeFrameType<T> {

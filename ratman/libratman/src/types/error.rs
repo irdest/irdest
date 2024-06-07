@@ -109,6 +109,12 @@ impl<T: std::fmt::Debug> From<nom::Err<T>> for EncodingError {
     }
 }
 
+impl<T: std::fmt::Debug> From<nom::Err<T>> for RatmanError {
+    fn from(nom: nom::Err<T>) -> Self {
+        Self::Encoding(EncodingError::from(nom))
+    }
+}
+
 impl From<bincode::Error> for RatmanError {
     fn from(bc: bincode::Error) -> Self {
         Self::Encoding(EncodingError::Internal(bc.to_string()))
