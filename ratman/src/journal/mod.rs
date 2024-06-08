@@ -65,7 +65,6 @@ mod test;
 /// insert it is highly recommended not to use the dispatch queue.
 pub struct Journal {
     db: Keyspace,
-    // dispatch: JournalDispatch,
     /// Single cached frames that haven't yet been delivired
     pub frames: JournalPage<FrameData>,
     /// Fully cached blocks that may already have been delivered
@@ -83,22 +82,22 @@ pub struct Journal {
 impl Journal {
     pub fn new(db: Keyspace) -> Result<Self> {
         let frames = JournalPage(
-            db.open_partition("journal_rames", PartitionCreateOptions::default())?,
+            db.open_partition("frames_data", PartitionCreateOptions::default())?,
             PhantomData,
         );
 
         let blocks = JournalPage(
-            db.open_partition("journal_blocks", PartitionCreateOptions::default())?,
+            db.open_partition("blocks_data", PartitionCreateOptions::default())?,
             PhantomData,
         );
 
         let manifests = JournalPage(
-            db.open_partition("journal_manifests", PartitionCreateOptions::default())?,
+            db.open_partition("blocks_manifests", PartitionCreateOptions::default())?,
             PhantomData,
         );
 
         let seen_frames = JournalCache(
-            db.open_partition("journal_seen_frames", PartitionCreateOptions::default())?,
+            db.open_partition("frames_seen", PartitionCreateOptions::default())?,
             PhantomData,
         );
 
@@ -114,7 +113,6 @@ impl Journal {
 
         Ok(Self {
             db,
-            // dispatch,
             frames,
             blocks,
             manifests,
@@ -165,14 +163,3 @@ impl Journal {
         Ok(())
     }
 }
-
-// pub struct JournalDispatch {
-//     frames: Sender<InMemoryEnvelope>,
-// }
-
-// impl JournalDispatch {
-//     pub fn new() -> (Self, Receiver<InMemoryEnvelope>) {
-//         let (tx_f, rx_f) = channel(8);
-//         (Self { frames: tx_f }, rx_f)
-//     }
-// }

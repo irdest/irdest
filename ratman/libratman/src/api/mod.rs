@@ -56,7 +56,7 @@ pub const VERSION: [u8; 2] = [
     1, // current minor version
 ];
 
-// TODO: replace this with a real semver library ??
+// TODO: replace this with a real semver library?
 pub fn versions_compatible(this: [u8; 2], other: [u8; 2]) -> bool {
     match (this, other) {
         // For versions > 1.0 all minor versions are compatible
@@ -65,6 +65,10 @@ pub fn versions_compatible(this: [u8; 2], other: [u8; 2]) -> bool {
         ([0, t_minor], [0, o_minor]) if t_minor == o_minor => true,
         _ => false,
     }
+}
+
+pub fn version_str(v: &[u8; 2]) -> String {
+    format!("{}.{}", v[0], v[1])
 }
 
 /// Represent a Ratman IPC socket and interfaces
@@ -88,7 +92,7 @@ impl RatmanIpcExtV1 for RatmanIpc {
             )
             .await?;
 
-        if !versions_compatible(VERSION, router_version) {
+        if !versions_compatible(VERSION, router_version.as_slice()) {
             if let Err(e) = self.socket.shutdown().await {
                 error!("failed to close router connection cleanly: {:?}", e);
             }

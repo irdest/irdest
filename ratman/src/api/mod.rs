@@ -6,14 +6,14 @@ mod client;
 
 use crate::{config::ConfigTree, context::RatmanContext};
 use libratman::{
-    api::socket_v2::RawSocketHandle,
+    api::{socket_v2::RawSocketHandle, version_str, versions_compatible},
     rt::{new_async_thread, writer::AsyncWriter},
     tokio::{
         net::{unix::SocketAddr, TcpStream},
         sync::mpsc::{channel, Sender},
     },
     types::{Address, Id},
-    Result,
+    ClientError, Result,
 };
 use std::sync::Arc;
 
@@ -36,20 +36,33 @@ async fn handshake(context: Arc<RatmanContext>, stream: TcpStream) -> Result<Sen
     // Wrap the TcpStream to bring its API into scope
     let mut raw_socket = RawSocketHandle::new(stream);
 
-    // Send the router protocol version
-    raw_socket
-        .write_buffer(libratman::api::VERSION.to_vec())
-        .await;
+    // Read the client API version to determine whether we are compatible
+    let client_version = [0; 2];
+    raw_socket.read_into(&mut client_version).await?;
+    let compatible = versions_compatible(libratman::api::VERSION, client_version);
 
-    // Wait for the Handshake reply from the client
-    let hs_header = raw_socket.read_header().await?;
-    
-    // 1  Server sends with version
-    // 2. Client responds handshake with version
-    // 3. EITHER: Client disconnects OR
+    // Reject connection and disconnect
+    if !compatible {
+        raw_socket
+            .write_buffer(libratman::api::VERSION.to_vec())
+            .await?;
+
+        return Err(ClientError::IncompatibleVersion(format!(
+            "self:{},client:{}",
+            version_str(&libratman::api::VERSION),
+            version_str(&client_version)
+        ))
+        .into());
+    }
+
     // a) Server sends Ping
     // b) Client respond with Command or Pong::None
 
+    // Wait for the Handshake reply from the client
+    let hs_header = raw_socket.read_header().await?;
+
+    
+    
     Ok(cl_notify_t)
 }
 

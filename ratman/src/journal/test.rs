@@ -5,7 +5,7 @@ use libratman::{
 };
 use tempdir::TempDir;
 
-use super::{event::FrameEvent, page::SerdeFrameType, Journal};
+use super::{types::FrameEvent, page::SerdeFrameType, Journal};
 
 fn setup_db() -> Keyspace {
     Keyspace::open(Config::new(

@@ -8,7 +8,7 @@ use crate::{
     EncodingError, Result,
 };
 use tokio::{
-    io::AsyncWriteExt,
+    io::{AsyncReadExt, AsyncWriteExt},
     net::{tcp::OwnedReadHalf, TcpStream},
 };
 
@@ -83,6 +83,12 @@ impl RawSocketHandle {
         AsyncVecReader::new(len, &mut self.stream)
             .read_to_vec()
             .await
+    }
+
+    /// Read to fill a pre-allocated array
+    pub async fn read_into<const L: usize>(&mut self, buf: &mut [u8; L]) -> Result<()> {
+        self.stream.read(buf).await?;
+        Ok(())
     }
 
     /// Read a const size chunk payload

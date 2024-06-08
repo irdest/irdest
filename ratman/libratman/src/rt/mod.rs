@@ -166,8 +166,8 @@ fn block_on() {
 
 #[test]
 #[should_panic]
-fn nested_block_on() {
-    let system = AsyncSystem::new("nested_block_on".to_string(), 1);
+fn nested_block_on_panics() {
+    let system = AsyncSystem::new("nested_block_on_panics".to_string(), 1);
     system.clone().block_on(async move {
         system.clone().block_on(async move {
             println!("Nested block on");
