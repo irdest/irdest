@@ -4,6 +4,7 @@ use crate::{
 };
 use chrono::{DateTime, Utc};
 use nom::IResult;
+use serde::{Deserialize, Serialize};
 
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub enum AnnounceFrame {
@@ -131,7 +132,7 @@ pub struct PeerDataV1 {
     // specification
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash, Serialize, Deserialize)]
 pub struct RouteDataV1 {
     /// Currently lowest MTU encountered by this announcement
     pub mtu: u16,

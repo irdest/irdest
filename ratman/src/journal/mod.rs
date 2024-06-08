@@ -33,8 +33,8 @@
 //! from being cleaned from the journal in case of storage quota limits.
 
 use self::{
-    event::{BlockEvent, FrameEvent, LinkEvent, ManifestEvent, RouteEvent},
     page::{JournalCache, JournalPage, SerdeFrameType},
+    types::{BlockData, FrameData, LinkData, ManifestData, RouteData},
 };
 use crate::{core::dispatch, routes::RouteEntry};
 use fjall::{Keyspace, PartitionCreateOptions};
@@ -48,8 +48,8 @@ use libratman::{
 };
 use std::marker::PhantomData;
 
-mod event;
 mod page;
+pub mod types;
 
 #[cfg(test)]
 mod test;
@@ -67,17 +67,17 @@ pub struct Journal {
     db: Keyspace,
     // dispatch: JournalDispatch,
     /// Single cached frames that haven't yet been delivired
-    pub frames: JournalPage<FrameEvent>,
+    pub frames: JournalPage<FrameData>,
     /// Fully cached blocks that may already have been delivered
-    pub blocks: JournalPage<BlockEvent>,
+    pub blocks: JournalPage<BlockData>,
     /// Fully cached manifests for existing block streams
-    pub manifests: JournalPage<ManifestEvent>,
+    pub manifests: JournalPage<ManifestData>,
     /// A simple lookup set for known frame IDs
     pub seen_frames: JournalCache<Id>,
     /// Route metadata table
-    pub routes: JournalPage<RouteEvent>,
+    pub routes: JournalPage<RouteData>,
     /// Message stream metadata table
-    pub links: JournalPage<LinkEvent>,
+    pub links: JournalPage<LinkData>,
 }
 
 impl Journal {
@@ -137,12 +137,16 @@ impl Journal {
 
         self.frames.insert(
             seq_id.hash.to_string(),
-            &FrameEvent::Insert {
-                seq: seq_id,
+            &FrameData {
                 header: SerdeFrameType::from(header),
                 payload: buffer,
             },
         )
+    }
+
+    pub fn remove_frame(&self, frame_id: &Id) -> Result<()> {
+        self.frames.remove(frame_id.to_string())?;
+        Ok(())
     }
 
     pub fn queue_manifest(&self, env: InMemoryEnvelope) -> Result<()> {
@@ -151,7 +155,7 @@ impl Journal {
 
         self.manifests.insert(
             seq_id.hash.to_string(),
-            &ManifestEvent::Insert {
+            &ManifestData {
                 sender: env.header.get_sender(),
                 recipient: env.header.get_recipient().unwrap(),
                 manifest: SerdeFrameType::from(manifest?),

@@ -1,3 +1,4 @@
+use crate::{journal::types::BlockData, storage::block::StorageBlock};
 use async_eris::{Block, BlockReference, BlockStorage};
 use async_trait::async_trait;
 use fjall::{Config, Keyspace, PartitionCreateOptions, PartitionHandle};
@@ -13,10 +14,6 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
-
-use crate::storage::block::StorageBlock;
-
-use super::event::BlockEvent;
 
 /// Represent a single logical page in the storage journal
 ///
@@ -39,7 +36,12 @@ impl<T: Serialize + DeserializeOwned> JournalPage<T> {
 
     pub fn insert(&self, key: String, value: &T) -> Result<()> {
         let bin = bincode::serialize(value)?;
-        self.0.insert(key, bin);
+        self.0.insert(key, bin)?;
+        Ok(())
+    }
+
+    pub fn remove(&self, key: String) -> Result<()> {
+        self.0.remove(key)?;
         Ok(())
     }
 
@@ -50,11 +52,16 @@ impl<T: Serialize + DeserializeOwned> JournalPage<T> {
 }
 
 #[async_trait]
-impl<const L: usize> BlockStorage<L> for JournalPage<BlockEvent> {
+impl<const L: usize> BlockStorage<L> for JournalPage<BlockData> {
     async fn store(&mut self, block: &Block<L>) -> IoResult<()> {
         self.insert(
             block.reference().to_string(),
-            &BlockEvent::Insert(StorageBlock::reconstruct(block.as_slice()).unwrap()),
+            &BlockData {
+                // We can unwrap here because the blocks were previously
+                // verified to be valid
+                data: StorageBlock::reconstruct(block.as_slice()).unwrap(),
+                valid: true,
+            },
         )?;
         Ok(())
     }
@@ -62,7 +69,7 @@ impl<const L: usize> BlockStorage<L> for JournalPage<BlockEvent> {
     async fn fetch(&self, reference: &BlockReference) -> IoResult<Option<Block<L>>> {
         match self.get(&reference.to_string()) {
             Err(RatmanError::Io(io)) => Err(io),
-            Ok(BlockEvent::Insert(storage_block)) => Ok(Some(storage_block.to_block())),
+            Ok(BlockData { data, valid }) if valid => Ok(Some(data.to_block())),
             _ => Ok(None),
         }
     }

@@ -1,5 +1,5 @@
 use crate::{
-    journal::{self, Journal},
+    journal::{types::BlockData, Journal},
     storage::block::StorageBlock,
 };
 use libratman::{
@@ -71,7 +71,13 @@ impl BlockCollectorWorker {
                     Ok(block) => self
                         .journal
                         .blocks
-                        .insert(block.reference().to_string(), &block.into())
+                        .insert(
+                            block.reference().to_string(),
+                            &BlockData {
+                                data: block.into(),
+                                valid: true,
+                            },
+                        )
                         .expect("failed to insert block into journal!"),
                     Err(e) => error!("failed to reconstruct block: {e:?}"),
                 }
