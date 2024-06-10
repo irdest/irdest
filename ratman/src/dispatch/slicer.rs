@@ -12,7 +12,7 @@ use async_eris::{BlockReference, BlockSize, MemoryStorage, ReadCapability};
 use libratman::{
     frame::carrier::{modes, CarrierFrameHeader},
     futures::AsyncRead,
-    types::{Address, Id, InMemoryEnvelope, Letterhead, Recipient, SequenceIdV1},
+    types::{Address, ClientAuth, Id, InMemoryEnvelope, Letterhead, Recipient, SequenceIdV1},
     Result,
 };
 use std::sync::Arc;
@@ -89,19 +89,25 @@ pub(crate) struct BlockSlicer;
 impl BlockSlicer {
     pub(crate) async fn slice(
         ctx: &Arc<RatmanContext>,
+        // auth: ClientAuth,
         (lhead, reader): (Letterhead, &mut (impl AsyncRead + Unpin)),
         block_size: BlockSize,
     ) -> Result<(ReadCapability, MemoryStorage)> {
         let mut blocks = MemoryStorage::new();
-        let key = ctx
-            .keys
-            .diffie_hellman(lhead.from, lhead.to.inner_address())
-            .await
-            .expect("failed to perform diffie-hellman");
-        let key2 = key.to_bytes();
-        let read_cap = async_eris::encode(reader, &key2, block_size, &mut blocks)
-            .await
-            .unwrap();
-        Ok((read_cap, blocks))
+        // ctx.meta_db
+        //     .start_stream(lhead.from, lhead.to.inner_address(), auth)?;
+
+        // let key = ctx
+        //     .keys
+        //     .diffie_hellman(lhead.from, lhead.to.inner_address())
+        //     .await
+        //     .expect("failed to perform diffie-hellman");
+        // let key2 = key.to_bytes();
+        // let read_cap = async_eris::encode(reader, &key2, block_size, &mut blocks)
+        //     .await
+        //     .unwrap();
+        // Ok((read_cap, blocks))
+
+        todo!()
     }
 }

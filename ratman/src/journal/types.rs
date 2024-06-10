@@ -5,7 +5,10 @@ use libratman::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{journal::page::SerdeFrameType, routes::RouteEntry, storage::block::StorageBlock};
+use crate::{
+    journal::page::SerdeFrameType,
+    storage::{block::StorageBlock, route::RouteEntry},
+};
 
 /// Events applied to the block partition
 #[derive(Clone, Debug, Serialize, Deserialize)]

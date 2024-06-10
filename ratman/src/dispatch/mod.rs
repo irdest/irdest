@@ -10,7 +10,8 @@ mod collector;
 mod slicer;
 
 use crate::{
-    config::ConfigTree, context::RatmanContext, crypto, journal::Journal, storage::block::StorageBlock
+    config::ConfigTree, context::RatmanContext, crypto, journal::Journal,
+    storage::block::StorageBlock,
 };
 use async_eris::{BlockReference, MemoryStorage, ReadCapability};
 use curve25519_dalek::traits::VartimePrecomputedMultiscalarMul;
@@ -102,20 +103,21 @@ pub(crate) async fn exec_sender_system<const L: usize>(
         // We read a chunk from disk and handle content encryption
         // first, then write out the encrypted chunk and resulting
         // nonce into the outer block to handle.
-        let (encrypted_chunk, chunk_nonce) = {
-            let mut raw_data = socket.read_chunk::<L>().await?;
-            if raw_data.1 < L {
-                debug!("Reached the last chunk in the data stream");
-            }
+        // let (encrypted_chunk, chunk_nonce) = {
+        //     let mut raw_data = socket.read_chunk::<L>().await?;
+        //     if raw_data.1 < L {
+        //         debug!("Reached the last chunk in the data stream");
+        //     }
 
-            // Encrypt the data before doing anything else!
-            let shared_key = context.keys.diffie_hellman(from, to).await.expect(&format!(
-                "Diffie-Hellman key-exchange failed between {} and {}",
-                from, to,
-            ));
-            let nonce = crypto::encrypt_chunk(&shared_key, &mut raw_data.0);
-            (raw_data, nonce) // data no longer raw!
-        };
+        // // Encrypt the data before doing anything else!
+        // let shared_key = context.keys.diffie_hellman(from, to).await.expect(&format!(
+        //     "Diffie-Hellman key-exchange failed between {} and {}",
+        //     from, to,
+        // ));
+        // let nonce = crypto::encrypt_chunk(&shared_key, &mut raw_data.0);
+        // (raw_data, nonce) // data no longer raw!
+        // };
+        todo!()
     }
 
     let read_cap = read_cap_f

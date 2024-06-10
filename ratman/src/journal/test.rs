@@ -5,7 +5,7 @@ use libratman::{
 };
 use tempdir::TempDir;
 
-use super::{types::FrameEvent, page::SerdeFrameType, Journal};
+use super::{page::SerdeFrameType, types::FrameData, Journal};
 
 fn setup_db() -> Keyspace {
     Keyspace::open(Config::new(
@@ -37,16 +37,15 @@ fn insert_get_frames() {
     ));
 
     let frame_id = header.get_seq_id().unwrap().hash;
-    let frame_event = FrameEvent::Insert {
-        seq: header.get_seq_id().unwrap(),
+    let frame_data = FrameData {
         header: header.into(),
         payload: vec![],
     };
 
-    journal.frames.insert(frame_id.to_string(), &frame_event);
+    journal.frames.insert(frame_id.to_string(), &frame_data);
     journal.seen_frames.insert(&frame_id);
 
     let recovered_event = journal.frames.get(&frame_id.to_string()).unwrap();
 
-    assert_eq!(frame_event, recovered_event);
+    assert_eq!(frame_data, recovered_event);
 }

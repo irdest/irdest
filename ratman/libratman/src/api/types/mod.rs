@@ -8,6 +8,8 @@ mod link;
 mod peer;
 mod recv;
 
+use std::ffi::CString;
+
 pub use addr::*;
 pub use contact::*;
 pub use link::*;
@@ -17,12 +19,13 @@ pub use recv::*;
 
 use crate::{
     frame::{
+        generate::generate_cstring,
         micro::parse::vec_of,
-        parse::{self, take_id},
+        parse::{self, take_cstring, take_id},
         FrameGenerator, FrameParser,
     },
     types::Id,
-    EncodingError, Result,
+    EncodingError, RatmanError, Result,
 };
 
 /// Sent from the router to the client when a client connects
@@ -73,9 +76,10 @@ pub enum ServerPing {
     ///
     /// A client can then decide to pull a particular subscription Id
     /// to get the next message stream for that subscription
-    Update {
-        available_subscriptions: Vec<Id>,
-    },
+    Update { available_subscriptions: Vec<Id> },
+    /// Communicate some kind of API error to the calling client
+    Error(CString),
+    /// Connection timed out
     Timeout,
 }
 
@@ -88,8 +92,12 @@ impl FrameGenerator for ServerPing {
                 buf.push(1);
                 available_subscriptions.generate(buf)?;
             }
-            Self::Timeout => {
+            Self::Error(error) => {
                 buf.push(2);
+                generate_cstring(error, buf)?;
+            }
+            Self::Timeout => {
+                buf.push(3);
             }
         }
 
@@ -110,7 +118,12 @@ impl FrameParser for ServerPing {
                     available_subscriptions,
                 })
             }
-            2 => Ok(Self::Timeout),
+            2 => {
+                let (_input, err_str) = take_cstring(input)?;
+                input = _input;
+                Ok(Self::Error(err_str.expect("failed to decode error string")))
+            }
+            3 => Ok(Self::Timeout),
             _ => Err(EncodingError::Parsing(format!("Invalid ServerPing type={}", tt)).into()),
         };
 

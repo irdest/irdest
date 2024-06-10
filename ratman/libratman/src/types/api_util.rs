@@ -1,4 +1,5 @@
 use nom::IResult;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     frame::{parse as fparse, FrameGenerator, FrameParser},
@@ -16,10 +17,19 @@ pub fn to_cstring(s: &String) -> CString {
 }
 
 /// A simple authentication object
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClientAuth {
     pub client_id: Id,
     pub token: Id,
+}
+
+impl ClientAuth {
+    pub fn new(client_id: Id) -> Self {
+        Self {
+            client_id,
+            token: Id::random(),
+        }
+    }
 }
 
 impl Debug for ClientAuth {

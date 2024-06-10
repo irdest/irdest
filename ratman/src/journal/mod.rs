@@ -27,10 +27,10 @@
 //!
 
 use self::{
-    page::{JournalCache, CachePage, SerdeFrameType},
-    types::{BlockData, FrameData, LinkData, ManifestData, RouteData},
+    page::{CachePage, JournalCache, SerdeFrameType},
+    types::{BlockData, FrameData, ManifestData},
 };
-use crate::{core::dispatch, routes::RouteEntry};
+use crate::core::dispatch;
 use fjall::{Keyspace, PartitionCreateOptions};
 use libratman::{
     frame::{carrier::ManifestFrame, FrameParser},

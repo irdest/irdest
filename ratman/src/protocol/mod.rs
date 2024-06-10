@@ -19,7 +19,7 @@ use crate::{config::ConfigTree, context::RatmanContext, protocol::announce::Addr
 use libratman::{
     frame::carrier::{modes as fmodes, CarrierFrameHeader},
     tokio::{sync::Mutex, task},
-    types::Address,
+    types::{Address, ClientAuth},
     RatmanError, Result,
 };
 use serde::{Deserialize, Serialize};
@@ -59,6 +59,7 @@ impl Protocol {
     pub(crate) async fn online(
         self: Arc<Self>,
         address: Address,
+        auth: ClientAuth,
         ctx: Arc<RatmanContext>,
     ) -> Result<()> {
         let mut map = self.online.lock().await;
@@ -83,7 +84,9 @@ impl Protocol {
             }) as u16;
 
         task::spawn(async move {
-            AddressAnnouncer(address).run(b, announce_delay, ctx).await;
+            AddressAnnouncer::new(address, auth, &ctx)
+                .run(b, announce_delay, ctx)
+                .await;
         });
 
         Ok(())
@@ -98,29 +101,6 @@ impl Protocol {
             .map(|b| b.swap(false, Ordering::Relaxed))
             .map_or(Err(RatmanError::NoSuchAddress(id)), |_| Ok(()))
     }
-
-    // /// Try to parse a frame as an announcement
-    // pub(crate) fn is_announce(f: &Frame) -> Option<Address> {
-    //     let Frame { ref payload, .. } = f;
-
-    //     bincode::deserialize(payload)
-    //         .map(|p| match p {
-    //             ProtoPayload::Announce { id, .. } => id,
-    //         })
-    //         .ok()
-    // }
-
-    // /// Build an announcement message for a user
-    // fn announce(sender: Address) -> Frame {
-    //     let payload = bincode::serialize(&ProtoPayload::Announce {
-    //         id: sender,
-    //         no_sync: true,
-    //     })
-    //     .unwrap();
-
-    //     // Currently we just use the sender address as the "scope" of the
-    //     Frame::inline_flood(sender, sender, payload)
-    // }
 }
 
 /// Match the carrier modes bitfield to decide what kind of frame

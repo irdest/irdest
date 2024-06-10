@@ -1,16 +1,21 @@
 use std::{collections::BTreeMap, sync::Arc};
 
-use crate::{
-    crypto::Keypair,
-    storage::{addrs::StorageAddress, client::StorageClient},
-    util::IoPair,
-};
+use crate::{crypto::Keypair, util::IoPair};
 use atomptr::AtomPtr;
 use chrono::{DateTime, Utc};
-use libratman::types::{Address, Id};
+use libratman::types::{Address, ClientAuth, Id};
 use serde::{Deserialize, Serialize};
 
 pub(crate) struct ConnectionManager {
+    inner: BTreeMap<Id, Arc<RouterClient>>,
+}
+
+impl ConnectionManager {
+    pub fn new() -> Self {
+        Self {
+            inner: BTreeMap::default(),
+        }
+    }
 }
 
 /// Represent an API client (application)'s base state
@@ -19,62 +24,40 @@ pub(crate) struct ConnectionManager {
 /// and a secret token that must be provided on future handshakes, but
 /// doesn't assume any ongoing connection details.
 #[derive(Clone, Serialize, Deserialize)]
-pub struct BaseClient {
-    /// Anonymous clients MUST be filtered when saving known clients
-    pub(crate) anonymous: bool,
-
-    /// A secret (ish) token that must be provided by this client on
-    /// every future connection handshake
-    // TODO: make it so that this doesn't have to be accessible from
-    // everywhere in the daemon
-    pub(crate) token: Id,
+pub struct RouterClient {
     /// A list of addresses
     ///
-    /// The first address in the list is considered the "default"
-    /// address for this client.
-    pub(crate) addrs: Vec<StorageAddress>,
+    /// The first address in the list is considered the "default" address for
+    /// this client.  Each address has an associated "auth" token which prevents
+    /// any client not in possesion of the address secret from using it
+    pub(crate) addrs: Vec<(Address, ClientAuth)>,
     /// Last connection timestamp
     pub(crate) last_connection: DateTime<Utc>,
 }
 
-impl BaseClient {
-    #[inline]
-    fn new(addrs: Vec<StorageAddress>, anonymous: bool) -> Arc<Self> {
+impl RouterClient {
+    /// Register a new BaseClient with its first known address and the
+    /// current time for the connection timestamp.
+    pub(crate) fn new_with_registry(id: Address, auth: ClientAuth) -> Arc<Self> {
         Arc::new(Self {
-            anonymous,
-            addrs,
-            token: Id::random(),
+            addrs: vec![(id, auth)],
             last_connection: Utc::now(),
         })
     }
 
-    /// Register a new BaseClient with its first known address and the
-    /// current time for the connection timestamp.
-    pub(crate) fn register(id: Address, first_addr: Keypair) -> Arc<Self> {
-        Self::new(vec![StorageAddress::new(id, &first_addr)], false)
-    }
-
-    /// Create a new anonymous base client
-    pub(crate) fn anonymous() -> Arc<Self> {
-        Self::new(vec![], true)
+    pub(crate) fn add_address(&mut self, id: Address, auth: ClientAuth) {
+        self.addrs.push((id, auth));
     }
 
     /// Gets the primary address for a given client
     pub(crate) fn primary_address(&self) -> Address {
         self.addrs
             .get(0)
-            .expect("BaseClient had no primary address")
-            .id
+            .expect("Router client had no primary address")
+            .0
     }
 
-    /// Take an existing BaseClient and augment it with an I/O socket
-    pub(crate) fn connect(self: &Arc<Self>, io: ()) -> OnlineClient {
-        OnlineClient {
-            base: Arc::clone(self),
-            // io,
-        }
+    pub(crate) fn all_addrs(&self) -> Vec<Address> {
+        self.addrs.iter().map(|(a, _)| *a).collect()
     }
 }
-
-pub type BaseClientMap = BTreeMap<Id, Arc<BaseClient>>;
-pub type OnlineClientMap = BTreeMap<Id, OnlineClient>;

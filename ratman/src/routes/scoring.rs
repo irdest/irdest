@@ -1,11 +1,7 @@
-use std::sync::Arc;
+use crate::{context::RatmanContext, storage::route::RouteEntry};
 use async_trait::async_trait;
 use libratman::{frame::carrier::AnnounceFrame, Result};
-
-use crate::context::RatmanContext;
-
-use super::RouteEntry;
-
+use std::sync::Arc;
 
 #[async_trait]
 pub trait RouteScorer {

@@ -2,7 +2,10 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-mod client;
+mod clients;
+pub(crate) use clients::ConnectionManager;
+
+mod session;
 
 use crate::{config::ConfigTree, context::RatmanContext};
 use libratman::{
@@ -27,6 +30,8 @@ use libratman::{
 };
 use std::{sync::Arc, time::Duration};
 
+use self::session::handshake;
+
 /// Start a new thread to run the client API socket
 pub fn start_message_acceptor(
     context: Arc<RatmanContext>,
@@ -38,63 +43,6 @@ pub fn start_message_acceptor(
 
 pub async fn run_client_handler(context: Arc<RatmanContext>, stream: TcpStream) -> Result<()> {
     let raw_socket = handshake(stream).await?;
-
-    Ok(())
-}
-
-/// Initiate a new client connection
-async fn handshake(stream: TcpStream) -> Result<RawSocketHandle> {
-    // Wrap the TcpStream to bring its API into scope
-    let mut raw_socket = RawSocketHandle::new(stream);
-
-    // Read the client handshake to determine whether we are compatible
-    let (_header, handshake) = raw_socket.read_microframe::<Handshake>().await?;
-    let compatible = versions_compatible(libratman::api::VERSION, handshake.proto_version);
-
-    // Reject connection and disconnect
-    if !compatible {
-        raw_socket
-            .write_buffer(libratman::api::VERSION.to_vec())
-            .await?;
-
-        return Err(ClientError::IncompatibleVersion(format!(
-            "self:{},client:{}",
-            version_str(&libratman::api::VERSION),
-            version_str(&handshake.proto_version)
-        ))
-        .into());
-    }
-
-    Ok(raw_socket)
-}
-
-async fn single_session_exchange(
-    context: &Arc<RatmanContext>,
-    raw_socket: &mut RawSocketHandle,
-) -> Result<()> {
-    // a) Send a ping to initiate a response
-    // b) Wait for a command response
-    // c) Timeout connection in case of no reply
-
-    raw_socket
-        .write_microframe(
-            MicroframeHeader::intrinsic_noauth(),
-            ServerPing::Update {
-                available_subscriptions: vec![],
-            },
-        )
-        .await?;
-
-    match timeout(Duration::from_secs(30), raw_socket.read_header()).await {
-        Ok(Ok(header)) => todo!(),
-        Ok(Err(e)) => todo!(),
-        Err(Elapsed) => {
-            info!("Connection X timed out!");
-            raw_socket
-                .write_microframe(MicroframeHeader::intrinsic_noauth(), ServerPing::Timeout)
-                .await;
-        }
-    }
 
     Ok(())
 }

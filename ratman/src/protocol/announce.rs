@@ -2,6 +2,8 @@ use crate::{
     config::ConfigTree,
     context::RatmanContext,
     core::{self, dispatch},
+    crypto,
+    storage::MetadataDb,
 };
 use bincode::Config;
 use libratman::{
@@ -10,7 +12,7 @@ use libratman::{
         FrameGenerator,
     },
     tokio::time,
-    types::{Address, Id, InMemoryEnvelope},
+    types::{Address, ClientAuth, Id, InMemoryEnvelope},
 };
 use std::{
     sync::{
@@ -21,17 +23,43 @@ use std::{
 };
 
 /// Periodically announce an address to the network
-pub struct AddressAnnouncer(pub Address);
+pub struct AddressAnnouncer {
+    addr: Address,
+    auth: ClientAuth,
+    db: Arc<MetadataDb>,
+}
 
 impl AddressAnnouncer {
-    pub(crate) async fn generate_announce(&self, ctx: &Arc<RatmanContext>) -> AnnounceFrame {
+    /// Start a new address announcer with a client authenticator.  Even when
+    /// the starting client goes away, this is used to keep the thread local key
+    /// cache session alive
+    pub fn new(addr: Address, auth: ClientAuth, ctx: &Arc<RatmanContext>) -> Self {
+        ctx.meta_db.open_addr_key(addr, auth).unwrap();
+        Self {
+            addr,
+            auth,
+            db: Arc::clone(&ctx.meta_db),
+        }
+    }
+}
+
+// Drop the cached address key from the thread cache when the announcer goes out
+// of scope.  This means that the address has been taken offline and all cached
+// keys need to be wiped.
+impl Drop for AddressAnnouncer {
+    fn drop(&mut self) {
+        self.db.close_addr_key(self.auth);
+    }
+}
+
+impl AddressAnnouncer {
+    pub(crate) async fn generate_announce(&self) -> AnnounceFrame {
         let origin = OriginDataV1::now();
         let origin_signature = {
             let mut origin_buf = vec![];
             origin.clone().generate(&mut origin_buf).unwrap();
-            ctx.keys
-                .sign_message(self.0, origin_buf.as_slice())
-                .await
+            self.db
+                .sign_message(self.auth, origin_buf.as_slice())
                 .unwrap()
         };
 
@@ -54,7 +82,7 @@ impl AddressAnnouncer {
     ) {
         while online.load(Ordering::Acquire) {
             // Create a new announcement
-            let announce = self.generate_announce(&ctx).await;
+            let announce = self.generate_announce().await;
             let announce_buffer = {
                 let mut buf = vec![];
                 announce.generate(&mut buf);
@@ -63,7 +91,7 @@ impl AddressAnnouncer {
 
             // Pack it into a carrier and handle the nested encoding
             let header =
-                CarrierFrameHeader::new_announce_frame(self.0, announce_buffer.len() as u16);
+                CarrierFrameHeader::new_announce_frame(self.addr, announce_buffer.len() as u16);
 
             // Pre-maturely mark this announcement as "known", so that
             // the switch locally will ignore it when it is inevitably
@@ -84,7 +112,7 @@ impl AddressAnnouncer {
                 error!("failed to flood announcement: {}", e)
             }
 
-            // debug!("Sent address announcement for {}", self.0);
+            trace!("Sent address announcement for {}", self.addr);
 
             // Wait some amount of time
             time::sleep(Duration::from_secs(announce_delay as u64)).await;

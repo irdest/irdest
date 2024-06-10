@@ -4,13 +4,21 @@
 
 // Project internal imports
 use crate::{
-    api::{self, ConnectionManager}, config::{
+    api::ConnectionManager,
+    config::{
         helpers, netmods::initialise_netmods, peers::PeeringBuilder, ConfigTree, CFG_RATMAND,
-    }, core::{LinksMap, RouteTable}, crypto::Keystore, dispatch::{BlockCollector, BlockSlicer, StreamSlicer}, journal::Journal, procedures, protocol::Protocol, storage::MetadataDb, util::{
+    },
+    core::{LinksMap, RouteTable},
+    dispatch::{BlockCollector, BlockSlicer, StreamSlicer},
+    journal::Journal,
+    procedures,
+    protocol::Protocol,
+    storage::MetadataDb,
+    util::{
         self, codes, runtime_state::RuntimeState, setup_logging, IoPair, Os, StateDirectoryLock,
-    }
+    },
 };
-use fjall::Config;
+use fjall::{Config, Keyspace};
 use libratman::{
     frame::{
         carrier::{CarrierFrameHeader, CarrierFrameHeaderV1, ManifestFrame, ManifestFrameV1},
@@ -49,8 +57,6 @@ pub struct RatmanContext {
     pub(crate) routes: Arc<RouteTable>,
     /// Protocol state machines
     pub(crate) protocol: Arc<Protocol>,
-    /// Cryptographic store for local address keys
-    pub(crate) keys: Arc<Keystore>,
     /// Local client connection handler
     pub(crate) clients: Arc<ConnectionManager>,
     /// Indicate the current run state of the router context
@@ -71,22 +77,22 @@ impl RatmanContext {
         let protocol = Protocol::new();
 
         // Initialise storage journal
-        let fjall_db = Config::new(Os::match_os().data_path().join("journal.fjall")).open()?;
-        // let (dispatch, frame_rx) = JournalDispatch::new();
-        let journal = Arc::new(Journal::new(fjall_db)?);
+        let journal_fjall = Config::new(Os::match_os().data_path().join("journal.fjall")).open()?;
+        let meta_fjall = Config::new(Os::match_os().data_path().join("metadata.fjall")).open()?;
+        let journal = Arc::new(Journal::new(journal_fjall)?);
+        let meta_db = Arc::new(MetadataDb::new(meta_fjall)?);
 
         let (collector, links, routes) = crate::core::exec_core_loops(Arc::clone(&journal));
-        let keys = Arc::new(Keystore::new());
-        let clients = Arc::new(ConnectionManager {});
+        let clients = Arc::new(ConnectionManager::new());
 
         Ok(Arc::new(Self {
             config,
             collector,
             links,
             journal,
+            meta_db,
             routes,
             protocol,
-            keys,
             clients,
             runtime_state,
             _statedir_lock: Arc::new(AtomPtr::new(None)),
@@ -233,7 +239,7 @@ impl RatmanContext {
             let batch_size = 32; // todo make this configurable
             for (name, ep, id) in links.get_with_ids().await {
                 let this = Arc::clone(&this);
-                
+
                 new_async_thread::<String, _, ()>(
                     format!("ratmand-switch-{name}"),
                     1024,
