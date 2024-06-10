@@ -22,18 +22,12 @@
 //! metadata about its origin, type, and which blocks are associated with it.  A
 //! manifest is needed to
 //!
-//! - Routing table: keep track of known peers via their links and various
-//! metrics like MTU, uptime, and average ping.
-//!
 //! - Known frame IDs: keep track of known frame IDs to avoid re-broadcasting
 //! the same messages infinitely.
 //!
-//! - Link metadata: certain message streams have associations between them, or
-//! can be tagged with additional information for importance to prevent them
-//! from being cleaned from the journal in case of storage quota limits.
 
 use self::{
-    page::{JournalCache, JournalPage, SerdeFrameType},
+    page::{JournalCache, CachePage, SerdeFrameType},
     types::{BlockData, FrameData, LinkData, ManifestData, RouteData},
 };
 use crate::{core::dispatch, routes::RouteEntry};
@@ -48,7 +42,7 @@ use libratman::{
 };
 use std::marker::PhantomData;
 
-mod page;
+pub mod page;
 pub mod types;
 
 #[cfg(test)]
@@ -66,32 +60,32 @@ mod test;
 pub struct Journal {
     db: Keyspace,
     /// Single cached frames that haven't yet been delivired
-    pub frames: JournalPage<FrameData>,
+    pub frames: CachePage<FrameData>,
     /// Fully cached blocks that may already have been delivered
-    pub blocks: JournalPage<BlockData>,
+    pub blocks: CachePage<BlockData>,
     /// Fully cached manifests for existing block streams
-    pub manifests: JournalPage<ManifestData>,
+    pub manifests: CachePage<ManifestData>,
     /// A simple lookup set for known frame IDs
     pub seen_frames: JournalCache<Id>,
-    /// Route metadata table
-    pub routes: JournalPage<RouteData>,
-    /// Message stream metadata table
-    pub links: JournalPage<LinkData>,
+    // /// Route metadata table
+    // pub routes: CachePage<RouteData>,
+    // /// Message stream metadata table
+    // pub links: CachePage<LinkData>,
 }
 
 impl Journal {
     pub fn new(db: Keyspace) -> Result<Self> {
-        let frames = JournalPage(
+        let frames = CachePage(
             db.open_partition("frames_data", PartitionCreateOptions::default())?,
             PhantomData,
         );
 
-        let blocks = JournalPage(
+        let blocks = CachePage(
             db.open_partition("blocks_data", PartitionCreateOptions::default())?,
             PhantomData,
         );
 
-        let manifests = JournalPage(
+        let manifests = CachePage(
             db.open_partition("blocks_manifests", PartitionCreateOptions::default())?,
             PhantomData,
         );
@@ -101,15 +95,15 @@ impl Journal {
             PhantomData,
         );
 
-        let routes = JournalPage(
-            db.open_partition("meta_routes", PartitionCreateOptions::default())?,
-            PhantomData,
-        );
+        // let routes = CachePage(
+        //     db.open_partition("meta_routes", PartitionCreateOptions::default())?,
+        //     PhantomData,
+        // );
 
-        let links = JournalPage(
-            db.open_partition("meta_links", PartitionCreateOptions::default())?,
-            PhantomData,
-        );
+        // let links = CachePage(
+        //     db.open_partition("meta_links", PartitionCreateOptions::default())?,
+        //     PhantomData,
+        // );
 
         Ok(Self {
             db,
@@ -117,8 +111,8 @@ impl Journal {
             blocks,
             manifests,
             seen_frames,
-            routes,
-            links,
+            // routes,
+            // links,
         })
     }
 

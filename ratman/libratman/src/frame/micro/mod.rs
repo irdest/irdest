@@ -32,7 +32,7 @@ pub mod client_modes {
     pub const STATUS: u8    = 0x7;
     pub const SUB: u8       = 0x8;
     pub const CLIENT: u8    = 0x9;
-    
+
     //// Creating new data or destroying it permanently
     pub const CREATE: u8    = 0x1;
     pub const DESTROY: u8   = 0x2;
@@ -67,7 +67,7 @@ pub mod client_modes {
     }
 
     // todo: add a better test here
-    
+
     #[test]
     fn test_addr_create() {
         let mode = make(ADDR, CREATE);
@@ -83,6 +83,24 @@ pub struct MicroframeHeader {
     pub modes: u16,
     pub auth: Option<ClientAuth>,
     pub payload_size: u32,
+}
+
+impl MicroframeHeader {
+    pub fn intrinsic_noauth() -> Self {
+        Self {
+            modes: client_modes::make(client_modes::INTRINSIC, client_modes::INTRINSIC),
+            auth: None,
+            payload_size: 0,
+        }
+    }
+
+    pub fn intrinsic_auth(auth: ClientAuth) -> Self {
+        Self {
+            modes: client_modes::make(client_modes::INTRINSIC, client_modes::INTRINSIC),
+            auth: Some(auth),
+            payload_size: 0,
+        }
+    }
 }
 
 impl FrameGenerator for MicroframeHeader {

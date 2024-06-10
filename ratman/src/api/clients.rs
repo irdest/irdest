@@ -1,10 +1,17 @@
 use std::{collections::BTreeMap, sync::Arc};
 
-use crate::{crypto::Keypair, storage::{addrs::StorageAddress, client::StorageClient}, util::IoPair};
+use crate::{
+    crypto::Keypair,
+    storage::{addrs::StorageAddress, client::StorageClient},
+    util::IoPair,
+};
 use atomptr::AtomPtr;
 use chrono::{DateTime, Utc};
 use libratman::types::{Address, Id};
 use serde::{Deserialize, Serialize};
+
+pub(crate) struct ConnectionManager {
+}
 
 /// Represent an API client (application)'s base state
 ///
@@ -27,21 +34,7 @@ pub struct BaseClient {
     /// address for this client.
     pub(crate) addrs: Vec<StorageAddress>,
     /// Last connection timestamp
-    ///
-    /// If the client is currently connected this time refers to the
-    /// connection handshake timestamp (i.e. how long has the client
-    /// been connected).  If the client is not currently connected it
-    /// refers to the connection close/ drop timestamp (i.e. since
-    /// when has the client been disconnected).
     pub(crate) last_connection: DateTime<Utc>,
-}
-
-/// Represents an application connected to the Ratman API
-pub struct OnlineClient {
-    /// An online client consists of a corresponding base client
-    pub(crate) base: Arc<BaseClient>,
-    // Hold the current connection socket
-    // pub(crate) io: Io,
 }
 
 impl BaseClient {
@@ -52,24 +45,6 @@ impl BaseClient {
             addrs,
             token: Id::random(),
             last_connection: Utc::now(),
-        })
-    }
-
-    /// Load an existing client (StorageClient)
-    // TODO: make this function zero-copy ?
-    pub(crate) fn existing(
-        StorageClient {
-            id: _,
-            token,
-            addrs,
-            last_connection,
-        }: &StorageClient,
-    ) -> Arc<Self> {
-        Arc::new(Self {
-            anonymous: false,
-            addrs: addrs.clone(),
-            token: *token,
-            last_connection: *last_connection,
         })
     }
 

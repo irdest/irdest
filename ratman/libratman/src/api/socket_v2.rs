@@ -85,12 +85,6 @@ impl RawSocketHandle {
             .await
     }
 
-    /// Read to fill a pre-allocated array
-    pub async fn read_into<const L: usize>(&mut self, buf: &mut [u8; L]) -> Result<()> {
-        self.stream.read(buf).await?;
-        Ok(())
-    }
-
     /// Read a const size chunk payload
     pub async fn read_chunk<const L: usize>(&mut self) -> Result<Chunk<L>> {
         let chunk = AsyncReader::<'_, L, _>::read_to_chunk(&mut self.stream).await?;

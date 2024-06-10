@@ -4,19 +4,11 @@
 
 // Project internal imports
 use crate::{
-    api::{self, ConnectionManager},
-    config::{
+    api::{self, ConnectionManager}, config::{
         helpers, netmods::initialise_netmods, peers::PeeringBuilder, ConfigTree, CFG_RATMAND,
-    },
-    core::{LinksMap, RouteTable},
-    crypto::Keystore,
-    dispatch::{BlockCollector, BlockSlicer, StreamSlicer},
-    journal::Journal,
-    procedures,
-    protocol::Protocol,
-    util::{
+    }, core::{LinksMap, RouteTable}, crypto::Keystore, dispatch::{BlockCollector, BlockSlicer, StreamSlicer}, journal::Journal, procedures, protocol::Protocol, storage::MetadataDb, util::{
         self, codes, runtime_state::RuntimeState, setup_logging, IoPair, Os, StateDirectoryLock,
-    },
+    }
 };
 use fjall::Config;
 use libratman::{
@@ -49,9 +41,10 @@ pub struct RatmanContext {
     pub(crate) collector: Arc<BlockCollector>,
     /// Runtime management of connected network drivers
     pub(crate) links: Arc<LinksMap>,
-    /// Keeps track of undeliverable blocks, frames, incomplete
-    /// messages, message IDs and other network activities.
+    /// Keep track of blocks, frames, incomplete messages and seen IDs
     pub(crate) journal: Arc<Journal>,
+    /// Keep track of network and router metadata
+    pub(crate) meta_db: Arc<MetadataDb>,
     /// Current routing table state and query interface for resolution
     pub(crate) routes: Arc<RouteTable>,
     /// Protocol state machines
@@ -61,7 +54,6 @@ pub struct RatmanContext {
     /// Local client connection handler
     pub(crate) clients: Arc<ConnectionManager>,
     /// Indicate the current run state of the router context
-    // TODO: change this to be an AtomPtr
     runtime_state: RuntimeState,
     /// Atomic state directory lock
     ///

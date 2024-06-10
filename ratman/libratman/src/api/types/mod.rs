@@ -22,7 +22,7 @@ use crate::{
         FrameGenerator, FrameParser,
     },
     types::Id,
-    Result,
+    EncodingError, Result,
 };
 
 /// Sent from the router to the client when a client connects
@@ -68,34 +68,52 @@ impl FrameParser for Handshake {
 }
 
 /// Sent from the router to the client on every 'ping'
-pub struct Ping {
+pub enum ServerPing {
     /// Indicate to the client which subscription IDs are available
     ///
     /// A client can then decide to pull a particular subscription Id
     /// to get the next message stream for that subscription
-    pub available_subscriptions: Vec<Id>,
+    Update {
+        available_subscriptions: Vec<Id>,
+    },
+    Timeout,
 }
 
-impl FrameGenerator for Ping {
+impl FrameGenerator for ServerPing {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
-        buf.push(1);
-        self.available_subscriptions.generate(buf)?;
+        match self {
+            Self::Update {
+                available_subscriptions,
+            } => {
+                buf.push(1);
+                available_subscriptions.generate(buf)?;
+            }
+            Self::Timeout => {
+                buf.push(2);
+            }
+        }
+
         Ok(())
     }
 }
 
-impl FrameParser for Ping {
-    type Output = Self;
+impl FrameParser for ServerPing {
+    type Output = Result<Self>;
     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
-        let (input, version) = parse::take_byte(input)?;
-        assert_eq!(version, 1);
-        let (input, available_subscriptions) = vec_of(take_id, input)?;
+        let (mut input, tt) = parse::take_byte(input)?;
 
-        Ok((
-            input,
-            Self {
-                available_subscriptions,
-            },
-        ))
+        let output = match tt {
+            1 => {
+                let (_input, available_subscriptions) = vec_of(take_id, input)?;
+                input = _input; // wish we didn't need this weirdness
+                Ok(Self::Update {
+                    available_subscriptions,
+                })
+            }
+            2 => Ok(Self::Timeout),
+            _ => Err(EncodingError::Parsing(format!("Invalid ServerPing type={}", tt)).into()),
+        };
+
+        Ok((input, output))
     }
 }

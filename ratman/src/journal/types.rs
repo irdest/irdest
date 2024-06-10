@@ -33,17 +33,3 @@ pub struct ManifestLinkData {
     pub extra_blocks: Vec<BlockReference>,
     pub metadata: String,
 }
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct RouteData {
-    peer: Address,
-    link_id: Id,
-    route_id: Id,
-    route: RouteEntry,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct LinkData {
-    link_id: Id,
-    neighbour_data: SerdeFrameType<PeerDataV1>,
-}

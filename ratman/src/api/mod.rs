@@ -6,18 +6,26 @@ mod client;
 
 use crate::{config::ConfigTree, context::RatmanContext};
 use libratman::{
-    api::{socket_v2::RawSocketHandle, version_str, versions_compatible},
+    api::{
+        socket_v2::RawSocketHandle,
+        types::{Handshake, ServerPing},
+        version_str, versions_compatible,
+    },
+    frame::{
+        carrier::modes,
+        micro::{client_modes as cm, MicroframeHeader},
+    },
     rt::{new_async_thread, writer::AsyncWriter},
     tokio::{
         net::{unix::SocketAddr, TcpStream},
         sync::mpsc::{channel, Sender},
+        time::timeout,
     },
+    tokio_stream::Elapsed,
     types::{Address, Id},
     ClientError, Result,
 };
-use std::sync::Arc;
-
-pub(crate) struct ConnectionManager {}
+use std::{sync::Arc, time::Duration};
 
 /// Start a new thread to run the client API socket
 pub fn start_message_acceptor(
@@ -28,18 +36,20 @@ pub fn start_message_acceptor(
     Ok(())
 }
 
-/// Initiate a new client connection
-async fn handshake(context: Arc<RatmanContext>, stream: TcpStream) -> Result<Sender<Id>> {
-    // Create a notifier channel for Subscription updates
-    let (cl_notify_t, cl_notify_r) = channel(8);
+pub async fn run_client_handler(context: Arc<RatmanContext>, stream: TcpStream) -> Result<()> {
+    let raw_socket = handshake(stream).await?;
 
+    Ok(())
+}
+
+/// Initiate a new client connection
+async fn handshake(stream: TcpStream) -> Result<RawSocketHandle> {
     // Wrap the TcpStream to bring its API into scope
     let mut raw_socket = RawSocketHandle::new(stream);
 
-    // Read the client API version to determine whether we are compatible
-    let client_version = [0; 2];
-    raw_socket.read_into(&mut client_version).await?;
-    let compatible = versions_compatible(libratman::api::VERSION, client_version);
+    // Read the client handshake to determine whether we are compatible
+    let (_header, handshake) = raw_socket.read_microframe::<Handshake>().await?;
+    let compatible = versions_compatible(libratman::api::VERSION, handshake.proto_version);
 
     // Reject connection and disconnect
     if !compatible {
@@ -50,20 +60,43 @@ async fn handshake(context: Arc<RatmanContext>, stream: TcpStream) -> Result<Sen
         return Err(ClientError::IncompatibleVersion(format!(
             "self:{},client:{}",
             version_str(&libratman::api::VERSION),
-            version_str(&client_version)
+            version_str(&handshake.proto_version)
         ))
         .into());
     }
 
-    // a) Server sends Ping
-    // b) Client respond with Command or Pong::None
+    Ok(raw_socket)
+}
 
-    // Wait for the Handshake reply from the client
-    let hs_header = raw_socket.read_header().await?;
+async fn single_session_exchange(
+    context: &Arc<RatmanContext>,
+    raw_socket: &mut RawSocketHandle,
+) -> Result<()> {
+    // a) Send a ping to initiate a response
+    // b) Wait for a command response
+    // c) Timeout connection in case of no reply
 
-    
-    
-    Ok(cl_notify_t)
+    raw_socket
+        .write_microframe(
+            MicroframeHeader::intrinsic_noauth(),
+            ServerPing::Update {
+                available_subscriptions: vec![],
+            },
+        )
+        .await?;
+
+    match timeout(Duration::from_secs(30), raw_socket.read_header()).await {
+        Ok(Ok(header)) => todo!(),
+        Ok(Err(e)) => todo!(),
+        Err(Elapsed) => {
+            info!("Connection X timed out!");
+            raw_socket
+                .write_microframe(MicroframeHeader::intrinsic_noauth(), ServerPing::Timeout)
+                .await;
+        }
+    }
+
+    Ok(())
 }
 
 // async fn run_relay(context: Arc<RatmanContext>) {

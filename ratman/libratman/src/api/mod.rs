@@ -92,7 +92,7 @@ impl RatmanIpcExtV1 for RatmanIpc {
             )
             .await?;
 
-        if !versions_compatible(VERSION, router_version.as_slice()) {
+        if !versions_compatible(VERSION, router_version) {
             if let Err(e) = self.socket.shutdown().await {
                 error!("failed to close router connection cleanly: {:?}", e);
             }

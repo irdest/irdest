@@ -40,20 +40,3 @@ use libratman::frame::carrier::RouteDataV1;
 use serde::{Deserialize, Serialize};
 
 mod scoring;
-
-/// Represent a single route
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct RouteEntry {
-    pub data: RouteDataV1,
-    pub state: RouteState,
-    pub first_seen: DateTime<Utc>,
-    pub last_seen: DateTime<Utc>,
-}
-
-/// Describe the state of a given route
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum RouteState {
-    Active,
-    Idle,
-    Lost,
-}

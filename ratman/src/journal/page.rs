@@ -15,14 +15,14 @@ use std::{
     sync::Arc,
 };
 
-/// Represent a single logical page in the storage journal
+/// Represent a single logical page in the fjall database
 ///
-/// A journal page has an associated Rust type which it will serialize and
+/// A cache page has an associated Rust type which it will serialize and
 /// deserialize for storage. Each page can be configured with a custom block
 /// size if that is desired.
-pub struct JournalPage<T: Serialize + DeserializeOwned>(pub PartitionHandle, pub PhantomData<T>);
+pub struct CachePage<T: Serialize + DeserializeOwned>(pub PartitionHandle, pub PhantomData<T>);
 
-impl<T: Serialize + DeserializeOwned> JournalPage<T> {
+impl<T: Serialize + DeserializeOwned> CachePage<T> {
     pub fn new(keyspace: &Keyspace, name: &str, block_size: Option<u32>) -> Result<Self> {
         let inner = keyspace.open_partition(
             name,
@@ -52,7 +52,7 @@ impl<T: Serialize + DeserializeOwned> JournalPage<T> {
 }
 
 #[async_trait]
-impl<const L: usize> BlockStorage<L> for JournalPage<BlockData> {
+impl<const L: usize> BlockStorage<L> for CachePage<BlockData> {
     async fn store(&mut self, block: &Block<L>) -> IoResult<()> {
         self.insert(
             block.reference().to_string(),
