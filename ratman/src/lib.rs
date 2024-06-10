@@ -25,10 +25,10 @@ extern crate tracing;
 
 mod api;
 mod clock;
-mod core;
 mod crypto;
 mod dispatch;
 mod journal;
+mod links;
 mod procedures;
 mod protocol;
 mod routes;

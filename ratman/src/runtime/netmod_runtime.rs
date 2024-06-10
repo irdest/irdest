@@ -1,4 +1,4 @@
-use crate::core::GenericEndpoint;
+use crate::links::GenericEndpoint;
 use libratman::{
     futures::stream::{FuturesUnordered, StreamExt},
     tokio,

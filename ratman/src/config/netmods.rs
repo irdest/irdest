@@ -6,7 +6,7 @@
 //!
 //!
 
-use crate::{config::ConfigTree, core::LinksMap};
+use crate::{config::ConfigTree, links::LinksMap};
 use std::sync::Arc;
 
 #[cfg(feature = "datalink")]

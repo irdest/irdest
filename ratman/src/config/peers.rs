@@ -3,10 +3,9 @@
 //! Ratman can either be launched with a known set of peers, or it
 //! must be configured to `accept_unknown_peers`.
 
-use std::sync::Arc;
-
-use crate::core::LinksMap;
+use crate::links::LinksMap;
 use libratman::{endpoint::EndpointExt, NetmodError, RatmanError};
+use std::sync::Arc;
 
 /// A helper that parses, validates, and attaches peer data to drivers
 ///

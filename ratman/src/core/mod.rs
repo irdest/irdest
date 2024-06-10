@@ -9,14 +9,10 @@
 //! component. This has proven to be a hard to maintain approach, so
 //! instead the core has been split into several parts.
 
-pub mod dispatch;
-mod ingress;
 mod links;
-mod routes;
 
 pub(crate) use crate::dispatch::BlockCollector;
 pub(crate) use links::{GenericEndpoint, LinksMap};
-pub(crate) use routes::{EpNeighbourPair, RouteTable, RouteType};
 
 // use self::ingress::run_message_assembler;
 

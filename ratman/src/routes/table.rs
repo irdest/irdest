@@ -1,9 +1,7 @@
-// SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
+// SPDX-FileCopyrightText: 2019-2024 Katharina Fey <kookie@spacekookie.de>
 // SPDX-FileCopyrightText: 2022 embr <hi@liclac.eu>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
-
-//! Routing table module
 
 use crate::util::IoPair;
 use libratman::{

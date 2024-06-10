@@ -8,23 +8,27 @@ use crate::{
     config::{
         helpers, netmods::initialise_netmods, peers::PeeringBuilder, ConfigTree, CFG_RATMAND,
     },
-    core::{LinksMap, RouteTable},
     dispatch::BlockCollector,
     journal::Journal,
+    links::LinksMap,
     procedures,
     protocol::Protocol,
+    routes::RouteTable,
     runtime::thread_man::AsyncThreadManager,
     storage::MetadataDb,
-    util::{self, codes, runtime_state::RuntimeState, setup_logging, Os, StateDirectoryLock},
+    util::{self, codes, setup_logging, Os, StateDirectoryLock},
 };
-use libratman::{rt::new_async_thread, tokio::sync::mpsc::channel, Result};
+use libratman::{
+    rt::new_async_thread,
+    tokio::{sync::mpsc::channel, task::spawn_local},
+    Result,
+};
 
 // External imports
 use atomptr::AtomPtr;
 use fjall::Config;
 use std::{net::SocketAddr, sync::Arc};
-// use tracing_subscriber::fmt::format;
-// use tripwire::Tripwire;
+use tripwire::Tripwire;
 
 /// Top-level Ratman router state handle
 ///
@@ -52,7 +56,7 @@ pub struct RatmanContext {
     /// Keep track of async thread system receivers for error output
     pub(crate) thread_man: AsyncThreadManager,
     /// Indicate the current run state of the router context
-    runtime_state: RuntimeState,
+    pub(crate) tripwire: Tripwire,
     /// Atomic state directory lock
     ///
     /// If None, ratman is running in ephemeral mode and no data will
@@ -65,11 +69,11 @@ impl RatmanContext {
     /// Create the in-memory Context, without any initialisation
     // todo: return errors here to allow the journal init to fail gracefully
     pub(crate) fn new(config: ConfigTree) -> Result<Arc<Self>> {
-        let runtime_state = RuntimeState::start_initialising();
         let thread_man = AsyncThreadManager::start();
-        // let tw = Tripwire::new_simple();
-
+        let (tripwire, tw_worker) = Tripwire::new_signals();
         let protocol = Protocol::new();
+
+        spawn_local(tw_worker);
 
         // Initialise storage systems
         let journal_fjall = Config::new(Os::match_os().data_path().join("journal.fjall")).open()?;
@@ -92,7 +96,7 @@ impl RatmanContext {
             protocol,
             clients,
             thread_man,
-            runtime_state,
+            tripwire,
             _statedir_lock: Arc::new(AtomPtr::new(None)),
         }))
     }
@@ -203,7 +207,6 @@ impl RatmanContext {
         }
 
         // At this point we can mark the router as having finished initialising
-        this.runtime_state.finished_initialising();
 
         // Finally, we start the machinery that accepts new client
         // connections.  We hand it a complete (atomic reference) copy
@@ -227,7 +230,6 @@ impl RatmanContext {
         // todo: setup management machinery to handle result events
         if let Err(e) = api::start_api_thread(Arc::clone(&this), api_bind_addr).await {
             // todo: setup tripwire here
-            this.runtime_state.kill();
             util::elog(
                 format!("failed to start client handler: {e}"),
                 util::codes::FATAL,
@@ -256,6 +258,7 @@ impl RatmanContext {
                             &this_.links,
                             &this_.journal,
                             &this_.collector,
+                            this_.tripwire.clone(),
                             (&name, &ep),
                             channel(1),
                             // #[cfg(feature = "dashboard")]
@@ -270,9 +273,8 @@ impl RatmanContext {
             }
         }
 
-        // If we reach this point the router is shutting down
-        // (allegedly?)
-        this.runtime_state.terminate();
+        this.tripwire.clone().await;
+        info!("Ratmand core shutting down...");
     }
 
     /// Test whether Ratman is capable of writing anything to disk

@@ -6,7 +6,10 @@
 
 //! Asynchronous Ratman routing core
 
-use crate::core::{EpNeighbourPair, LinksMap, RouteTable};
+use crate::{
+    links::LinksMap,
+    routes::{EpNeighbourPair, RouteTable},
+};
 use libratman::{
     types::Recipient,
     types::{InMemoryEnvelope, Neighbour},

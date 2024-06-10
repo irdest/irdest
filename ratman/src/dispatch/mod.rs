@@ -7,6 +7,7 @@
 //! into full ERIS blocks.
 
 mod collector;
+mod send;
 mod slicer;
 
 use crate::{context::RatmanContext, journal::Journal};
@@ -23,6 +24,7 @@ use libratman::{
 use std::sync::Arc;
 
 pub(crate) use collector::BlockCollector;
+pub(crate) use send::{dispatch_frame, flood_frame};
 
 /// A high-level message manifest which is used to encode information
 /// about where and how a message should be sent

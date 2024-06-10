@@ -11,7 +11,6 @@ pub mod codes;
 pub mod fork;
 
 pub(crate) mod pidfile;
-pub(crate) mod runtime_state;
 // pub(crate) mod upnp; // FIXME: this currently doesn't work
 
 use crate::config::{ConfigTree, SubConfig};

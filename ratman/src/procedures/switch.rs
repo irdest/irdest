@@ -1,16 +1,17 @@
 use crate::{
-    core::{dispatch, GenericEndpoint, LinksMap, RouteTable, RouteType},
-    dispatch::BlockCollector,
+    dispatch::{self, BlockCollector},
     journal::Journal,
+    links::{GenericEndpoint, LinksMap},
+    routes::{RouteTable, RouteType},
     util::IoPair,
 };
-use libratman::tokio::task::spawn_local;
+use libratman::tokio::{select, task::spawn_local};
 use libratman::{
-    endpoint::EndpointExt,
     frame::carrier::modes::{self as fmodes, DATA, MANIFEST},
     types::{InMemoryEnvelope, Recipient},
 };
 use std::sync::Arc;
+use tripwire::Tripwire;
 
 /// Run a batch of receive jobs for a given endpoint and state context
 pub(crate) async fn exec_switching_batch(
@@ -33,6 +34,8 @@ pub(crate) async fn exec_switching_batch(
     // The switch dispatches locally addressed frames into the block
     // collector
     collector: &Arc<BlockCollector>,
+    // Allow the switch to shut down gracefully
+    tripwire: Tripwire,
     // The netmod driver endpoint to switch messages for
     (ep_name, ep): (&String, &Arc<GenericEndpoint>),
     // Control flow endpoint to send signals to this switch between
@@ -43,9 +46,15 @@ pub(crate) async fn exec_switching_batch(
     // #[cfg(feature = "dashboard")] metrics: &Arc<metrics::Metrics>,
 ) {
     for _ in 0..batch_size {
-        let (InMemoryEnvelope { header, buffer }, t) = match ep.next().await {
-            Ok(f) => f,
-            _ => continue,
+        let (InMemoryEnvelope { header, buffer }, t) = select! {
+            biased;
+            _ = tripwire.clone() => break,
+            item = ep.next() => {
+                match item {
+                    Ok(f) => f,
+                    _ => continue,
+                }
+            }
         };
 
         trace!(
@@ -118,13 +127,16 @@ pub(crate) async fn exec_switching_batch(
 
                     // Update the routing table and re-flood the announcement
                     routes.update(id as u8, t, header.get_sender()).await;
-                    dispatch::flood_frame(
+                    if let Err(e) = dispatch::flood_frame(
                         &routes,
                         &links,
                         InMemoryEnvelope { header, buffer },
                         Some((ep_name.clone(), t)),
                     )
-                    .await;
+                    .await
+                    {
+                        error!("failed to flood announcement frame: {e:?}");
+                    }
                 }
             }
             //
@@ -167,12 +179,15 @@ pub(crate) async fn exec_switching_batch(
                     }
                     // Any frame for a reachable remote address will be forwarded
                     Some(RouteType::Remote(_)) => {
-                        dispatch::dispatch_frame(
+                        if let Err(e) = dispatch::dispatch_frame(
                             routes,
                             links,
                             InMemoryEnvelope { header, buffer },
                         )
-                        .await;
+                        .await
+                        {
+                            error!("failed to forward frame: {e:?}");
+                        }
                     }
                     // A frame for an unreachable address (either
                     // local or remote) will be queued in the
@@ -180,7 +195,10 @@ pub(crate) async fn exec_switching_batch(
                     None => {
                         let journal = Arc::clone(&journal);
                         spawn_local(async move {
-                            journal.queue_frame(InMemoryEnvelope { header, buffer });
+                            if let Err(e) = journal.queue_frame(InMemoryEnvelope { header, buffer })
+                            {
+                                error!("failed to queue frame to journal: {e:?}");
+                            }
                         });
                     }
                 }
@@ -204,8 +222,16 @@ pub(crate) async fn exec_switching_batch(
                 // network.
                 if journal.is_unknown(&announce_id).unwrap() {
                     journal.save_as_known(&announce_id).unwrap();
-                    dispatch::flood_frame(routes, links, InMemoryEnvelope { header, buffer }, None)
-                        .await;
+                    if let Err(e) = dispatch::flood_frame(
+                        routes,
+                        links,
+                        InMemoryEnvelope { header, buffer },
+                        None,
+                    )
+                    .await
+                    {
+                        error!("failed to flood frame to namespace: {e:?}");
+                    }
                 }
             }
             //
@@ -221,9 +247,10 @@ pub(crate) async fn exec_switching_batch(
     }
 }
 
-#[cfg(feature = "dashboard")]
-pub(crate) use self::metrics as switch_metrics;
+// #[cfg(feature = "dashboard")]
+// pub(crate) use self::metrics as switch_metrics;
 
+#[allow(unused)]
 #[cfg(feature = "dashboard")]
 pub(crate) mod metrics {
     use libratman::types::{Address, Recipient};
