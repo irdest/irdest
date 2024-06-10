@@ -12,7 +12,6 @@ mod slicer;
 
 use crate::{context::RatmanContext, journal::Journal};
 use async_eris::ReadCapability;
-use curve25519_dalek::traits::VartimePrecomputedMultiscalarMul;
 use libratman::{
     api::socket_v2::RawSocketHandle,
     chunk::ChunkIter,

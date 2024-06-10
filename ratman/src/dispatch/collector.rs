@@ -1,16 +1,22 @@
 use crate::{
     journal::{types::BlockData, Journal},
-    storage::block::StorageBlock,
+    storage::{
+        block::{IncompleteBlockData, StorageBlock},
+        MetadataDb,
+    },
 };
 use libratman::{
     tokio::{
-        sync::mpsc::{channel, Receiver, Sender},
-        sync::RwLock,
+        sync::{
+            mpsc::{channel, Receiver, Sender},
+            RwLock,
+        },
         task,
     },
     types::{Id, InMemoryEnvelope, SequenceIdV1},
-    RatmanError, Result,
+    EncodingError, RatmanError, Result,
 };
+use serde::Deserialize;
 use std::{collections::BTreeMap, sync::Arc};
 
 type EnvSender = Sender<(SequenceIdV1, InMemoryEnvelope)>;
@@ -24,6 +30,7 @@ pub struct BlockCollectorWorker {
     buffer: Vec<InMemoryEnvelope>,
     senders: SenderStore,
     journal: Arc<Journal>,
+    meta_db: Arc<MetadataDb>,
 }
 
 impl BlockCollectorWorker {
@@ -38,10 +45,10 @@ impl BlockCollectorWorker {
                 if insert_at_end { -1 } else { seq_id.num as i8 }
             );
 
-            // If the index we're looking at is beyond the limit of
-            // the current vector, append the envelope to the end.  We
-            // do this until the indices start being in range, at
-            // which point we insert into the exact index instead.
+            // If the index we're looking at is beyond the limit of the current
+            // vector, append the envelope to the end.  We do this until the
+            // indices start being in range, at which point we insert into the
+            // exact index instead.
             if insert_at_end {
                 this.buffer.push(envelope)
             } else {
@@ -96,22 +103,40 @@ impl BlockCollectorWorker {
 pub struct BlockCollector {
     inner: SenderStore,
     journal: Arc<Journal>,
+    meta_db: Arc<MetadataDb>,
 }
 
 impl BlockCollector {
-    pub fn new(journal: Arc<Journal>) -> Arc<Self> {
-        Arc::new(Self {
+    pub async fn new(journal: Arc<Journal>, meta_db: Arc<MetadataDb>) -> Result<Arc<Self>> {
+        let this = Arc::new(Self {
             inner: Default::default(),
             journal,
-        })
-    }
+            meta_db,
+        });
 
-    /// Close the journal sender channel
-    ///
-    /// This signals that after the remaining BlockCollectionWorkers
-    /// have run, no more blocks will come.
-    pub fn queue_shutdown(&self) {
-        // self.output.close();
+        // Restore existing workers for blocks that were still being assembled
+        // when the router last shut down
+        for entry in Arc::clone(&this.meta_db).incomplete.0.iter() {
+            let (key, val) = entry?;
+            let id = Id::from_bytes(&key);
+            let incomplete = rmp_serde::from_slice::<'_, IncompleteBlockData>(&val)
+                .map_err(|e| EncodingError::Internal(e.to_string()))?;
+
+            info!(
+                "Restoring block collection worker for block {id}; {}/{}",
+                incomplete.buffer.len(),
+                incomplete.max_num
+            );
+            for frame in incomplete.buffer {
+                this.queue_and_spawn(InMemoryEnvelope {
+                    header: frame.0.maybe_inner()?,
+                    buffer: frame.1,
+                })
+                .await?;
+            }
+        }
+
+        Ok(this)
     }
 
     /// Queue a new frame and spawn a collection worker if none exists yet
@@ -127,7 +152,10 @@ impl BlockCollector {
         match maybe_sender {
             Some(sender) => {
                 debug!("Queue new frame for block_id {}", sequence_id.hash);
-                sender.send((sequence_id, env)).await;
+                sender
+                    .send((sequence_id, env))
+                    .await
+                    .expect("failed to send frame sequence to collection worker");
             }
             None => {
                 let (tx, rx) = channel(8);
@@ -142,7 +170,8 @@ impl BlockCollector {
                         max_num: sequence_id.max,
                         buffer: vec![],
                         senders,
-                        journal: self.journal.clone(),
+                        journal: Arc::clone(&self.journal),
+                        meta_db: Arc::clone(&self.meta_db),
                     }
                     .run(rx),
                 );
@@ -155,7 +184,9 @@ impl BlockCollector {
                     .insert(sequence_id.hash, tx.clone());
 
                 // Finally queue the first envelope!
-                tx.send((sequence_id, env)).await;
+                if let Err(e) = tx.send((sequence_id, env)).await {
+                    error!("failed to forward frame to collection worker: {e}");
+                }
             }
         }
 

@@ -230,7 +230,7 @@ impl EndpointExt for InetEndpoint {
     async fn next(&self) -> Result<(InMemoryEnvelope, Neighbour)> {
         self.next()
             .await
-            .ok_or(RatmanError::Netmod(NetmodError::ConnectionLost))
+            .ok_or(RatmanError::Netmod(NetmodError::RecvSocketClosed))
             .map(|(target, envelope)| (envelope, Neighbour::Single(target)))
     }
 }

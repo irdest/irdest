@@ -177,9 +177,12 @@ pub enum NetmodError {
     FrameTooLarge,
     /// Connection was dropped during transmission
     ///
-    /// The
-    #[error("peering connection was suddenly lost mid-transfer")]
+    /// Returns the payload to be queued in the journal.  Do not use this type
+    /// for receiving action
+    #[error("peering connection was lost mid-transfer")]
     ConnectionLost(InMemoryEnvelope),
+    #[error("unable to receive new data since the local socket has closed")]
+    RecvSocketClosed,
     #[error("the provided peer '{}' was invalid!", 0)]
     InvalidPeer(String),
     /// An error type for a netmod that tries to bind any resource

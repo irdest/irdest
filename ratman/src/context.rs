@@ -14,13 +14,12 @@ use crate::{
     procedures,
     protocol::Protocol,
     routes::RouteTable,
-    runtime::thread_man::AsyncThreadManager,
     storage::MetadataDb,
     util::{self, codes, setup_logging, Os, StateDirectoryLock},
 };
 use libratman::{
     rt::new_async_thread,
-    tokio::{sync::broadcast::channel as bcast_channel, sync::mpsc::channel, task::spawn_local},
+    tokio::{sync::mpsc::channel, task::spawn_local},
     Result,
 };
 
@@ -53,8 +52,6 @@ pub struct RatmanContext {
     pub(crate) protocol: Arc<Protocol>,
     /// Local client connection handler
     pub(crate) clients: Arc<ConnectionManager>,
-    /// Keep track of async thread system receivers for error output
-    pub(crate) thread_man: AsyncThreadManager,
     /// Indicate the current run state of the router context
     pub(crate) tripwire: Tripwire,
     /// Atomic state directory lock
@@ -68,8 +65,7 @@ pub struct RatmanContext {
 impl RatmanContext {
     /// Create the in-memory Context, without any initialisation
     // todo: return errors here to allow the journal init to fail gracefully
-    pub(crate) fn new(config: ConfigTree) -> Result<Arc<Self>> {
-        let thread_man = AsyncThreadManager::start();
+    pub(crate) async fn new(config: ConfigTree) -> Result<Arc<Self>> {
         let (tripwire, tw_worker) = Tripwire::new_signals();
         let protocol = Protocol::new();
 
@@ -83,7 +79,8 @@ impl RatmanContext {
 
         let links = LinksMap::new();
         let routes = RouteTable::new();
-        let collector = BlockCollector::new(Arc::clone(&journal));
+
+        let collector = BlockCollector::new(Arc::clone(&journal), Arc::clone(&meta_db)).await?;
         let clients = Arc::new(ConnectionManager::new());
 
         Ok(Arc::new(Self {
@@ -95,7 +92,6 @@ impl RatmanContext {
             routes,
             protocol,
             clients,
-            thread_man,
             tripwire,
             _statedir_lock: Arc::new(AtomPtr::new(None)),
         }))
@@ -103,9 +99,12 @@ impl RatmanContext {
 
     /// Create and start a new Ratman router context with a config
     pub async fn start(cfg: ConfigTree) {
-        let this = match Self::new(cfg) {
+        let this = match Self::new(cfg).await {
             Ok(t) => t,
-            Err(e) => util::elog(format!("failed to initalise journal: {e:?}"), codes::FATAL),
+            Err(e) => util::elog(
+                format!("failed to initialise/ restore journal state: {e:?}"),
+                codes::FATAL,
+            ),
         };
 
         // Parse the ratmand config tree
@@ -245,7 +244,6 @@ impl RatmanContext {
                 Ok(())
             });
 
-            this.thread_man.add_receiver(thrx).await;
             ingress_tx
         };
 
@@ -261,7 +259,7 @@ impl RatmanContext {
                 let this_ = Arc::clone(&this);
                 let ingress_tx = ingress_tx.clone();
 
-                let thrx = new_async_thread::<String, _, ()>(
+                new_async_thread::<String, _, ()>(
                     format!("ratmand-switch-{name}"),
                     1024,
                     async move {
@@ -282,8 +280,6 @@ impl RatmanContext {
                         Ok(())
                     },
                 );
-
-                this.thread_man.add_receiver(thrx).await;
             }
         }
 

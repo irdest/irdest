@@ -77,7 +77,9 @@ impl AddressAnnouncer {
             let announce = self.generate_announce().await;
             let announce_buffer = {
                 let mut buf = vec![];
-                announce.generate(&mut buf);
+                announce
+                    .generate(&mut buf)
+                    .expect("failed to generate announcement!");
                 buf
             };
 

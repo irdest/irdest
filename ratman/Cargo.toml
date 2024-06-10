@@ -57,6 +57,7 @@ rand = "0.7"
 deadpool-sqlite = { version = "0.5", features = ["rt_tokio_1"], default-features = false }
 kdl = "4.6"
 fjall = "1.0"
+rmp-serde = "1.3.0"
 
 ## Logging and logging accessories
 tracing = "0.1"
@@ -90,6 +91,7 @@ netmod-inet = { path = "../netmods/netmod-inet", version = "0.4", optional = tru
 netmod-lan = { path = "../netmods/netmod-lan", version = "0.2", optional = true }
 netmod-lora = { path = "../netmods/netmod-lora", version = "0.1", optional = true }
 netmod-mem = { path = "../netmods/netmod-mem", version = "0.4", optional = true }
+
 
 [dev-dependencies]
 bincode = "1.2"

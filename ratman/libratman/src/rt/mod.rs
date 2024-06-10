@@ -76,19 +76,13 @@ impl AsyncSystem {
 }
 
 /// Spawn new worker thread with an async system launcher
-pub fn new_async_thread<S, F, O>(
-    label: S,
-    stack_mb: usize,
-    f: F,
-) -> mpsc::Receiver<(String, Result<O>)>
+pub fn new_async_thread<S, F, O>(label: S, stack_mb: usize, f: F)
 where
     S: Into<String>,
     F: Future<Output = Result<O>> + Send + 'static,
     O: Sized + Send + 'static,
 {
     let label = label.into();
-    let (tx, rx) = mpsc::channel(2);
-
     std::thread::spawn(move || {
         let system = AsyncSystem::new(label, stack_mb);
         let res = system.exec(f);
@@ -98,12 +92,8 @@ where
                 Ok(_) => info!("Worker thread {label} completed successfully!"),
                 Err(ref e) => error!("Worker thread {label} encountered a fatal error: {e}"),
             }
-
-            let _ = tx.send((label, res)).await;
         });
     });
-
-    rx
 }
 
 #[test]

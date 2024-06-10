@@ -114,7 +114,7 @@ impl EndpointExt for MemMod {
             None => Err(RatmanError::Netmod(NetmodError::NotSupported)),
             Some(ref io) => match io.inc.recv().await {
                 Ok(f) => Ok((f, Neighbour::Single(0))),
-                Err(_) => Err(RatmanError::Netmod(NetmodError::ConnectionLost)),
+                Err(_) => Err(RatmanError::Netmod(NetmodError::RecvSocketClosed)),
             },
         }
     }

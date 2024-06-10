@@ -149,16 +149,16 @@ pub(crate) async fn exec_switching_batch(
                     // A locally addressed data frame is inserted
                     // into the collector
                     Some(RouteType::Local) if mode == DATA => {
-                        // if let Err(_e) = collector
-                        //     .queue_and_spawn(InMemoryEnvelope { header, buffer })
-                        //     .await
-                        // {
-                        //     error!(
-                        //         "Failed to queue frame in sequence {:?}",
-                        //         header.get_seq_id()
-                        //     );
-                        //     continue;
-                        // }
+                        if let Err(_e) = collector
+                            .queue_and_spawn(InMemoryEnvelope { header, buffer })
+                            .await
+                        {
+                            error!(
+                                "Failed to queue frame in sequence {:?}",
+                                header.get_seq_id()
+                            );
+                            continue;
+                        }
 
                         // Integrate this branch into the new block collector
                         todo!()
@@ -193,7 +193,9 @@ pub(crate) async fn exec_switching_batch(
                         {
                             Err(RatmanError::Netmod(NetmodError::ConnectionLost(envelope))) => {
                                 debug!("Connection dropped while forwarding frame!  Message contents were saved");
-                                journal.queue_frame(envelope);
+                                if let Err(e) = journal.queue_frame(envelope) {
+                                    error!("failed to queue frame to journal: {e}!  Data has been dropped");
+                                }
                             }
                             Err(e) => {
                                 warn!("Error occured while dispatching frame: {e}!  Message contents were lost");

@@ -45,8 +45,6 @@ pub async fn start_api_thread(
 
         Ok(())
     });
-
-    ctx.thread_man.add_receiver(thrx).await;
     Ok(())
 }
 

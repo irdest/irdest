@@ -91,9 +91,24 @@ impl<T: FrameGenerator> From<T> for SerdeFrameType<T> {
 }
 
 impl<T: FrameParser<Output = T>> SerdeFrameType<T> {
+    #[deprecated]
     pub fn to_frametype(&self) -> Result<T> {
         match T::parse(&self.0) {
             Ok((_, t)) => Ok(t),
+            Err(e) => Err(RatmanError::Encoding(EncodingError::from(e))),
+        }
+    }
+
+    #[allow(deprecated)]
+    pub fn to_inner(&self) -> Result<T> {
+        self.to_frametype()
+    }
+}
+
+impl<T: FrameParser<Output = Result<T>>> SerdeFrameType<T> {
+    pub fn maybe_inner(&self) -> Result<T> {
+        match T::parse(&self.0) {
+            Ok((_, t)) => t,
             Err(e) => Err(RatmanError::Encoding(EncodingError::from(e))),
         }
     }
