@@ -1,12 +1,10 @@
-
-
 use chrono::{DateTime, Utc};
 use libratman::{
     tokio::sync::{Mutex, MutexGuard},
     types::{Address, Id},
 };
 use serde::{Deserialize, Serialize};
-use std::{collections::BTreeMap};
+use std::collections::BTreeMap;
 
 pub(crate) struct ConnectionManager {
     /// A map of client_id -> client metadata

@@ -2,13 +2,11 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use crate::{journal::Journal};
-use async_eris::{ReadCapability};
+use crate::journal::Journal;
+use async_eris::ReadCapability;
 
 use libratman::{
-    frame::{
-        carrier::{CarrierFrameHeader},
-    },
+    frame::carrier::CarrierFrameHeader,
     tokio::{
         sync::mpsc::{channel, Receiver, Sender},
         task::spawn_local,
@@ -17,10 +15,7 @@ use libratman::{
     types::{Letterhead, SequenceIdV1, TimePair},
     BlockError, RatmanError, Result,
 };
-use std::{
-    sync::Arc,
-    time::Duration,
-};
+use std::{sync::Arc, time::Duration};
 
 pub type JournalSender = Sender<(Vec<u8>, SequenceIdV1)>;
 pub type JournalReceiver = Receiver<(Vec<u8>, SequenceIdV1)>;

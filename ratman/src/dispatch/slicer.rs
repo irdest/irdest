@@ -5,12 +5,10 @@
 
 //! Slices `Message` into a series of Frames
 
-
-
 use crate::context::RatmanContext;
 use async_eris::{BlockReference, BlockSize, MemoryStorage, ReadCapability};
 use libratman::{
-    frame::carrier::{CarrierFrameHeader},
+    frame::carrier::CarrierFrameHeader,
     futures::AsyncRead,
     types::{Address, Id, InMemoryEnvelope, Letterhead, Recipient, SequenceIdV1},
     Result,

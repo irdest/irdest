@@ -12,7 +12,6 @@
 
 // Re-export the entire clockctrl crate here for convenience
 
-
 /// A collection of tasks running inside the Ratman router
 #[derive(Hash, Ord, PartialOrd, Eq, PartialEq)]
 pub enum Tasks {

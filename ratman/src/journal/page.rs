@@ -7,10 +7,7 @@ use libratman::{
     EncodingError, RatmanError, Result,
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::{
-    io::Result as IoResult,
-    marker::PhantomData,
-};
+use std::{io::Result as IoResult, marker::PhantomData};
 
 /// Represent a single logical page in the fjall database
 ///

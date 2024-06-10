@@ -9,25 +9,20 @@
 mod collector;
 mod slicer;
 
-use crate::{
-    context::RatmanContext, journal::Journal,
-};
-use async_eris::{ReadCapability};
+use crate::{context::RatmanContext, journal::Journal};
+use async_eris::ReadCapability;
 use curve25519_dalek::traits::VartimePrecomputedMultiscalarMul;
 use libratman::{
     api::socket_v2::RawSocketHandle,
     chunk::ChunkIter,
     tokio::{net::TcpStream, task::spawn_local},
     tokio_util::compat::{Compat, TokioAsyncReadCompatExt},
-    types::{Address},
+    types::Address,
     Result,
 };
-use std::{
-    sync::Arc,
-};
+use std::sync::Arc;
 
 pub(crate) use collector::BlockCollector;
-
 
 /// A high-level message manifest which is used to encode information
 /// about where and how a message should be sent

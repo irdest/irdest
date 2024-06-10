@@ -3,11 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use libratman::{endpoint::EndpointExt, tokio::sync::RwLock};
-use std::{
-    sync::{
-        atomic::{AtomicUsize, Ordering},
-        Arc,
-    },
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Arc,
 };
 
 /// A dynamicly allocated, generic driver in memory

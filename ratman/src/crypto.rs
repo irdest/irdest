@@ -9,9 +9,9 @@
 
 // Utility imports
 
-use libratman::{types::Address};
+use libratman::types::Address;
 use rand::{thread_rng, RngCore};
-use std::{convert::TryInto};
+use std::convert::TryInto;
 
 // Cryptography imports
 use chacha20::cipher::{KeyIvInit, StreamCipher};

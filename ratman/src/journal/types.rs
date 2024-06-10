@@ -1,14 +1,11 @@
-use async_eris::{BlockReference};
+use async_eris::BlockReference;
 use libratman::{
     frame::carrier::{CarrierFrameHeader, ManifestFrame},
     types::{Address, Id, Recipient},
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    journal::page::SerdeFrameType,
-    storage::{block::StorageBlock},
-};
+use crate::{journal::page::SerdeFrameType, storage::block::StorageBlock};
 
 /// Events applied to the block partition
 #[derive(Clone, Debug, Serialize, Deserialize)]

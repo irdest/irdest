@@ -1,8 +1,4 @@
-use crate::{
-    context::RatmanContext,
-    core::{dispatch},
-    storage::MetadataDb,
-};
+use crate::{context::RatmanContext, core::dispatch, storage::MetadataDb};
 
 use libratman::{
     frame::{

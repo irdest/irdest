@@ -131,7 +131,7 @@ pub(super) async fn single_session_exchange(
         m if m == cm::make(cm::ADDR, cm::DESTROY) => {
             let _payload = raw_socket
                 .read_payload::<AddrDestroy>(header.payload_size)
-                .await?;            
+                .await?;
         }
         // ^-^ Mark an existing address as "up" given the correct authentication
         m if m == cm::make(cm::ADDR, cm::UP) => {

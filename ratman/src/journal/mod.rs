@@ -32,11 +32,10 @@ use self::{
 };
 
 use fjall::{Keyspace, PartitionCreateOptions};
+use libratman::frame::{carrier::ManifestFrame, FrameParser};
 use libratman::{
-    frame::{carrier::ManifestFrame, FrameParser},
-};
-use libratman::{
-    types::{Id, InMemoryEnvelope}, Result,
+    types::{Id, InMemoryEnvelope},
+    Result,
 };
 use std::marker::PhantomData;
 

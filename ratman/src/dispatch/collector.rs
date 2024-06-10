@@ -5,7 +5,7 @@ use crate::{
 use libratman::{
     tokio::{
         sync::mpsc::{channel, Receiver, Sender},
-        sync::{RwLock},
+        sync::RwLock,
         task,
     },
     types::{Id, InMemoryEnvelope, SequenceIdV1},

@@ -2,8 +2,10 @@ use nom::IResult;
 
 use crate::{
     frame::{
+        carrier::take_address,
         generate::{generate_cstring_tuple_vec, generate_option_cstring},
-        FrameGenerator, FrameParser, carrier::take_address, parse::maybe_cstring,
+        parse::maybe_cstring,
+        FrameGenerator, FrameParser,
     },
     types::{to_cstring, Address},
     Result,
@@ -60,8 +62,6 @@ impl FrameParser for ContactAdd {
             return Ok((input, Err(e)));
         }
 
-        
-        
         todo!()
     }
 }

@@ -35,8 +35,4 @@
 //! utilities, and route scoring, which is how Ratman decides on a route if
 //! multiple active options exist.
 
-
-
-
-
 mod scoring;
