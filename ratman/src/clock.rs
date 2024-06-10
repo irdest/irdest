@@ -11,7 +11,7 @@
 //! [`clockctrl`]: https://docs.rs/clockctrl
 
 // Re-export the entire clockctrl crate here for convenience
-pub(crate) use clockctrl::*;
+
 
 /// A collection of tasks running inside the Ratman router
 #[derive(Hash, Ord, PartialOrd, Eq, PartialEq)]

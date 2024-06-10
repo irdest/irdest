@@ -1,12 +1,12 @@
-use crate::{crypto::Keypair, util::IoPair};
-use atomptr::AtomPtr;
+
+
 use chrono::{DateTime, Utc};
 use libratman::{
     tokio::sync::{Mutex, MutexGuard},
-    types::{Address, ClientAuth, Id},
+    types::{Address, Id},
 };
 use serde::{Deserialize, Serialize};
-use std::{collections::BTreeMap, sync::Arc};
+use std::{collections::BTreeMap};
 
 pub(crate) struct ConnectionManager {
     /// A map of client_id -> client metadata

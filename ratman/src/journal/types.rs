@@ -1,13 +1,13 @@
-use async_eris::{Block, BlockReference};
+use async_eris::{BlockReference};
 use libratman::{
-    frame::carrier::{CarrierFrameHeader, ManifestFrame, PeerDataV1},
-    types::{Address, Id, Recipient, SequenceIdV1},
+    frame::carrier::{CarrierFrameHeader, ManifestFrame},
+    types::{Address, Id, Recipient},
 };
 use serde::{Deserialize, Serialize};
 
 use crate::{
     journal::page::SerdeFrameType,
-    storage::{block::StorageBlock, route::RouteEntry},
+    storage::{block::StorageBlock},
 };
 
 /// Events applied to the block partition

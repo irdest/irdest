@@ -4,7 +4,6 @@
 
 use libratman::{endpoint::EndpointExt, tokio::sync::RwLock};
 use std::{
-    collections::BTreeMap,
     sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,

@@ -5,14 +5,14 @@
 
 //! Slices `Message` into a series of Frames
 
-use std::time::Duration;
+
 
 use crate::context::RatmanContext;
 use async_eris::{BlockReference, BlockSize, MemoryStorage, ReadCapability};
 use libratman::{
-    frame::carrier::{modes, CarrierFrameHeader},
+    frame::carrier::{CarrierFrameHeader},
     futures::AsyncRead,
-    types::{Address, ClientAuth, Id, InMemoryEnvelope, Letterhead, Recipient, SequenceIdV1},
+    types::{Address, Id, InMemoryEnvelope, Letterhead, Recipient, SequenceIdV1},
     Result,
 };
 use std::sync::Arc;
@@ -22,13 +22,13 @@ pub struct StreamSlicer;
 impl StreamSlicer {
     /// Take a stream of ERIS blocks and slice them into
     pub fn slice<I: Iterator<Item = (BlockReference, Vec<u8>)>>(
-        ctx: &Arc<RatmanContext>,
+        _ctx: &Arc<RatmanContext>,
         recipient: Recipient,
         sender: Address,
         input: I,
     ) -> Result<Vec<InMemoryEnvelope>> {
         let mut buf = vec![];
-        let header_size = CarrierFrameHeader::get_blockdata_size(sender, recipient);
+        let _header_size = CarrierFrameHeader::get_blockdata_size(sender, recipient);
 
         // Iterate over all available blocks and their hash
         // references.  The hash reference is used as the first part
@@ -36,7 +36,7 @@ impl StreamSlicer {
         // possible.
         for (block_ref, block_data) in input {
             let max_payload_size = 999; // fixme /o\
-            let max_in_sequence = block_data.as_slice().len() / max_payload_size as usize;
+            let _max_in_sequence = block_data.as_slice().len() / max_payload_size as usize;
             let block_ref = Id::from_bytes(block_ref.as_slice());
 
             // We chunk the data block into as many pieces as are
@@ -88,12 +88,12 @@ pub(crate) struct BlockSlicer;
 
 impl BlockSlicer {
     pub(crate) async fn slice(
-        ctx: &Arc<RatmanContext>,
+        _ctx: &Arc<RatmanContext>,
         // auth: ClientAuth,
-        (lhead, reader): (Letterhead, &mut (impl AsyncRead + Unpin)),
-        block_size: BlockSize,
+        (_lhead, _reader): (Letterhead, &mut (impl AsyncRead + Unpin)),
+        _block_size: BlockSize,
     ) -> Result<(ReadCapability, MemoryStorage)> {
-        let mut blocks = MemoryStorage::new();
+        let _blocks = MemoryStorage::new();
         // ctx.meta_db
         //     .start_stream(lhead.from, lhead.to.inner_address(), auth)?;
 

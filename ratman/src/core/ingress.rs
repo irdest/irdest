@@ -2,25 +2,22 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use crate::{journal::Journal, storage::block::StorageBlock};
-use async_eris::{Block, BlockKey, BlockReference, BlockStorage, ReadCapability};
-use async_trait::async_trait;
+use crate::{journal::Journal};
+use async_eris::{ReadCapability};
+
 use libratman::{
     frame::{
-        carrier::{CarrierFrameHeader, ManifestFrame, ManifestFrameV1},
-        FrameParser,
+        carrier::{CarrierFrameHeader},
     },
     tokio::{
-        sync::mpsc::{channel, unbounded_channel, Receiver, Sender},
-        sync::RwLock,
+        sync::mpsc::{channel, Receiver, Sender},
         task::spawn_local,
         time,
     },
-    types::{Id, InMemoryEnvelope, Letterhead, Recipient, SequenceIdV1, TimePair},
+    types::{Letterhead, SequenceIdV1, TimePair},
     BlockError, RatmanError, Result,
 };
 use std::{
-    collections::{HashMap, HashSet},
     sync::Arc,
     time::Duration,
 };

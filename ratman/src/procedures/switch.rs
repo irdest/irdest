@@ -1,5 +1,4 @@
 use crate::{
-    context,
     core::{dispatch, GenericEndpoint, LinksMap, RouteTable, RouteType},
     dispatch::BlockCollector,
     journal::Journal,
@@ -38,7 +37,7 @@ pub(crate) async fn exec_switching_batch(
     (ep_name, ep): (&String, &Arc<GenericEndpoint>),
     // Control flow endpoint to send signals to this switch between
     // batches
-    ctrl: IoPair<usize>,
+    _ctrl: IoPair<usize>,
     // Metrics collector state to allow diagnostic analysis of this
     // procedure
     // #[cfg(feature = "dashboard")] metrics: &Arc<metrics::Metrics>,
@@ -136,7 +135,7 @@ pub(crate) async fn exec_switching_batch(
                     // A locally addressed data frame is inserted
                     // into the collector
                     Some(RouteType::Local) if mode == DATA => {
-                        if let Err(e) = collector
+                        if let Err(_e) = collector
                             .queue_and_spawn(InMemoryEnvelope { header, buffer })
                             .await
                         {
@@ -188,7 +187,7 @@ pub(crate) async fn exec_switching_batch(
             }
             //
             // A data or manifest frame that is addressed to a network namespace
-            (_, Some(Recipient::Namespace(ns))) => {
+            (_, Some(Recipient::Namespace(_ns))) => {
                 let announce_id = match header.get_seq_id() {
                     Some(seq) => seq.hash,
                     None => {

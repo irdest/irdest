@@ -14,20 +14,6 @@ mod ingress;
 mod links;
 mod routes;
 
-use crate::journal::Journal;
-use fjall::Keyspace;
-use libratman::{
-    futures::channel::oneshot::channel,
-    tokio::{
-        sync::mpsc::{self, Receiver},
-        task::spawn_local,
-    },
-    types::{Address, Recipient},
-    types::{InMemoryEnvelope, Letterhead, Neighbour},
-    RatmanError, Result,
-};
-use std::sync::Arc;
-
 pub(crate) use crate::dispatch::BlockCollector;
 pub(crate) use links::{GenericEndpoint, LinksMap};
 pub(crate) use routes::{EpNeighbourPair, RouteTable, RouteType};

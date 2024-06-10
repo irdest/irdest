@@ -26,9 +26,7 @@ impl AsyncThreadManager {
                     receivers.push(new_recv);
                 }
 
-                // fixme: no idea why this doesn't work >_>
-                // select_all(receivers).await;
-
+                // todo: replace with select_all(...)
                 for rx in &mut receivers {
                     if let Ok((label, res)) = rx.try_recv() {
                         match res {
@@ -38,9 +36,8 @@ impl AsyncThreadManager {
                     }
                 }
 
+                // Pause and yield to avoid creating a nastly busy loop
                 sleep(Duration::from_millis(110)).await;
-
-                // Yield to avoid creating a nastly busy loop
                 yield_now().await;
             }
         });

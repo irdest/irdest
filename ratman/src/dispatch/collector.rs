@@ -5,7 +5,7 @@ use crate::{
 use libratman::{
     tokio::{
         sync::mpsc::{channel, Receiver, Sender},
-        sync::{RwLock, RwLockReadGuard},
+        sync::{RwLock},
         task,
     },
     types::{Id, InMemoryEnvelope, SequenceIdV1},
@@ -64,7 +64,7 @@ impl BlockCollectorWorker {
                 core::mem::replace(&mut this.buffer, Default::default())
                     .into_iter()
                     // todo: can we avoid copying here?
-                    .for_each(|mut chunk| block.extend_from_slice(chunk.get_payload_slice()));
+                    .for_each(|chunk| block.extend_from_slice(chunk.get_payload_slice()));
 
                 // Then offer the finished block up to the block god
                 match StorageBlock::reconstruct_from_vec(block) {
@@ -120,7 +120,7 @@ impl BlockCollector {
             .header
             .get_seq_id()
             .map_or(Err(RatmanError::DesequenceFault), |i| Ok(i))?;
-        let max_num = sequence_id.max;
+        let _max_num = sequence_id.max;
 
         let read = self.inner.read().await;
         let maybe_sender = read.get(&sequence_id.hash);

@@ -6,7 +6,7 @@ use libratman::{
         version_str, versions_compatible,
     },
     frame::micro::{client_modes as cm, MicroframeHeader},
-    tokio::{net::TcpStream, task::spawn_local, time::timeout},
+    tokio::{net::TcpStream, time::timeout},
     types::{ClientAuth, Id},
     ClientError, RatmanError, Result,
 };
@@ -94,7 +94,7 @@ pub(super) async fn single_session_exchange(
             // The client sent us rubbish but it won't phase us
             return Ok(SessionResult::Drop);
         }
-        Err(Elapsed) => {
+        Err(_) => {
             info!("Connection X timed out!");
             // We ignore the error here in case the timeout send fails
             let _ = raw_socket

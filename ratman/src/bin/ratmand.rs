@@ -12,8 +12,8 @@ use ratmand::{
 };
 use std::path::PathBuf;
 
-async fn generate_default_config(path: &PathBuf) {
-    let cfg = ConfigTree::default_in_memory();
+async fn generate_default_config(_path: &PathBuf) {
+    let _cfg = ConfigTree::default_in_memory();
 }
 
 //#[async_std::main]

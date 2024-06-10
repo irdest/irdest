@@ -57,7 +57,7 @@ impl NetmodState {
             Self::Complete(map) => map
                 .values()
                 .map(|ep| ep.next())
-                .fold(FuturesUnordered::new(), |mut acc, f| {
+                .fold(FuturesUnordered::new(), |acc, f| {
                     acc.push(f);
                     acc
                 })

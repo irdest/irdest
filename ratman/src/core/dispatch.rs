@@ -6,9 +6,8 @@
 
 //! Asynchronous Ratman routing core
 
-use crate::core::{BlockCollector, EpNeighbourPair, LinksMap, RouteTable};
+use crate::core::{EpNeighbourPair, LinksMap, RouteTable};
 use libratman::{
-    tokio::task,
     types::Recipient,
     types::{InMemoryEnvelope, Neighbour},
     RatmanError, Result,
@@ -49,7 +48,7 @@ pub(crate) async fn dispatch_frame(
 
 // todo: implement the exception mechanism
 pub(crate) async fn flood_frame(
-    routes: &Arc<RouteTable>,
+    _routes: &Arc<RouteTable>,
     drivers: &Arc<LinksMap>,
     envelope: InMemoryEnvelope,
     _except: Option<(String, Neighbour)>,

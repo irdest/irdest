@@ -6,7 +6,7 @@
 
 use crate::util::{env_xdg_config, env_xdg_data};
 use directories::ProjectDirs;
-use libratman::{tokio::fs::File, NonfatalError, RatmanError, Result};
+use libratman::{tokio::fs::File, RatmanError, Result};
 use std::{os::fd::AsRawFd, path::PathBuf};
 
 /// OS specific support

@@ -10,28 +10,24 @@ mod collector;
 mod slicer;
 
 use crate::{
-    config::ConfigTree, context::RatmanContext, crypto, journal::Journal,
-    storage::block::StorageBlock,
+    context::RatmanContext, journal::Journal,
 };
-use async_eris::{BlockReference, MemoryStorage, ReadCapability};
+use async_eris::{ReadCapability};
 use curve25519_dalek::traits::VartimePrecomputedMultiscalarMul;
 use libratman::{
     api::socket_v2::RawSocketHandle,
     chunk::ChunkIter,
-    frame::micro::MicroframeHeader,
-    rt::size_commonbuf_t,
-    tokio::{net::TcpStream, sync::mpsc, task::spawn_local},
+    tokio::{net::TcpStream, task::spawn_local},
     tokio_util::compat::{Compat, TokioAsyncReadCompatExt},
-    types::{Address, Recipient},
+    types::{Address},
     Result,
 };
 use std::{
-    collections::{HashMap, HashSet},
     sync::Arc,
 };
 
 pub(crate) use collector::BlockCollector;
-pub(crate) use slicer::{BlockSlicer, StreamSlicer};
+
 
 /// A high-level message manifest which is used to encode information
 /// about where and how a message should be sent
@@ -79,22 +75,22 @@ pub struct LetterManifest {
 /// created sequences MUST be marked with `incomplete=?` in the
 /// journal tagging system
 pub(crate) async fn exec_sender_system<const L: usize>(
-    context: &Arc<RatmanContext>,
+    _context: &Arc<RatmanContext>,
     reader: TcpStream,
     // todo: replace with sled integration
     journal: Journal,
     LetterManifest {
-        from,
-        to,
-        selected_block_size,
+        from: _,
+        to: _,
+        selected_block_size: _,
         total_message_size,
     }: LetterManifest,
 ) -> Result<()> {
     // let (tx, rx) = mpsc::channel(size_commonbuf_t::<L>());
-    let mut socket = RawSocketHandle::new(reader);
+    let socket = RawSocketHandle::new(reader);
 
     // Setup the block slicer
-    let (iter_tx, chunk_iter) = ChunkIter::<L>::new();
+    let (_iter_tx, chunk_iter) = ChunkIter::<L>::new();
     let read_cap_f = spawn_local(block_slicer_task(journal, chunk_iter));
 
     // Read from the socket until we have reached the upper message
@@ -120,7 +116,7 @@ pub(crate) async fn exec_sender_system<const L: usize>(
         todo!()
     }
 
-    let read_cap = read_cap_f
+    let _read_cap = read_cap_f
         .await
         .expect("failed to produce message manifest")?;
 
@@ -131,7 +127,7 @@ pub(crate) async fn exec_sender_system<const L: usize>(
 /// blocks from the content
 async fn block_slicer_task<const L: usize>(
     mut journal: Journal,
-    mut iter: ChunkIter<L>,
+    iter: ChunkIter<L>,
 ) -> Result<ReadCapability> {
     debug!("Starting block slicer on ChunkIter<{}>", L);
     async_eris::encode_const::<_, Compat<ChunkIter<L>>, L>(

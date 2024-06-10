@@ -8,10 +8,10 @@
 //! private key is not shared outside the router.
 
 // Utility imports
-use crate::storage::MetadataDb;
-use libratman::{tokio::sync::RwLock, types::Address};
-use rand::{rngs::OsRng, thread_rng, RngCore};
-use std::{collections::BTreeMap, convert::TryInto, sync::Arc};
+
+use libratman::{types::Address};
+use rand::{thread_rng, RngCore};
+use std::{convert::TryInto};
 
 // Cryptography imports
 use chacha20::cipher::{KeyIvInit, StreamCipher};

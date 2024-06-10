@@ -51,7 +51,7 @@ pub(crate) async fn query_known(table: &Arc<RouteTable>, addr: Address, local: b
     }
 }
 
-pub(crate) async fn exec_route_table(tabel: &Arc<RouteTable>) {
+pub(crate) async fn exec_route_table(_table: &Arc<RouteTable>) {
     // Do route things ??
 }
 

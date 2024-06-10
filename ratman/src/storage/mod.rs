@@ -172,7 +172,7 @@ impl MetadataDb {
         &self,
         self_addr: Address,
         target_addr: Address,
-        auth: ClientAuth,
+        _auth: ClientAuth,
         chunk: &mut [u8; L],
     ) -> [u8; 12] {
         SHARED_CACHE.with(|map| {

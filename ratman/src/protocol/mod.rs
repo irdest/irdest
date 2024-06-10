@@ -15,7 +15,7 @@
 
 mod announce;
 
-use crate::{config::ConfigTree, context::RatmanContext, protocol::announce::AddressAnnouncer};
+use crate::{context::RatmanContext, protocol::announce::AddressAnnouncer};
 use libratman::{
     frame::carrier::{modes as fmodes, CarrierFrameHeader},
     tokio::{sync::Mutex, task},
@@ -27,7 +27,6 @@ use std::{
     collections::BTreeMap,
     sync::atomic::{AtomicBool, Ordering},
     sync::Arc,
-    time::Duration,
 };
 
 /// A payload that represents a RATMAN-protocol message
@@ -104,7 +103,7 @@ impl Protocol {
 }
 
 /// Match the carrier modes bitfield to decide what kind of frame
-pub fn parse(carrier_meta: CarrierFrameHeader, bin_envelope: Vec<u8>) {
+pub fn parse(carrier_meta: CarrierFrameHeader, _bin_envelope: Vec<u8>) {
     match carrier_meta.get_modes() {
         fmodes::ANNOUNCE => {}
         fmodes::DATA => {}

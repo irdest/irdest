@@ -1,7 +1,7 @@
 use crate::{journal::types::BlockData, storage::block::StorageBlock};
 use async_eris::{Block, BlockReference, BlockStorage};
 use async_trait::async_trait;
-use fjall::{Config, Keyspace, PartitionCreateOptions, PartitionHandle};
+use fjall::{Keyspace, PartitionCreateOptions, PartitionHandle};
 use libratman::{
     frame::{FrameGenerator, FrameParser},
     EncodingError, RatmanError, Result,
@@ -10,9 +10,6 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{
     io::Result as IoResult,
     marker::PhantomData,
-    ops::Deref,
-    path::{Path, PathBuf},
-    sync::Arc,
 };
 
 /// Represent a single logical page in the fjall database

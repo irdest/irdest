@@ -12,16 +12,12 @@ pub mod fork;
 
 pub(crate) mod pidfile;
 pub(crate) mod runtime_state;
-pub(crate) mod thread;
 // pub(crate) mod upnp; // FIXME: this currently doesn't work
 
-use crate::{
-    config::{ConfigTree, SubConfig},
-    core::GenericEndpoint,
-};
+use crate::config::{ConfigTree, SubConfig};
 use libratman::tokio::sync::mpsc::{Receiver, Sender};
 use nix::unistd::Uid;
-use std::{collections::BTreeMap, sync::Arc};
+
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
 
 /// A convevient Sender/Receiver pair for a type

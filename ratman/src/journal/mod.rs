@@ -30,15 +30,13 @@ use self::{
     page::{CachePage, JournalCache, SerdeFrameType},
     types::{BlockData, FrameData, ManifestData},
 };
-use crate::core::dispatch;
+
 use fjall::{Keyspace, PartitionCreateOptions};
 use libratman::{
     frame::{carrier::ManifestFrame, FrameParser},
-    tokio::sync::mpsc::{channel, Receiver, Sender},
 };
 use libratman::{
-    types::{Id, InMemoryEnvelope},
-    RatmanError, Result,
+    types::{Id, InMemoryEnvelope}, Result,
 };
 use std::marker::PhantomData;
 
