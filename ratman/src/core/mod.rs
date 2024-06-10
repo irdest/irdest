@@ -34,22 +34,6 @@ pub(crate) use routes::{EpNeighbourPair, RouteTable, RouteType};
 
 // use self::ingress::run_message_assembler;
 
-/// Execute the Ratman router core as an async task
-pub(crate) fn exec_core_loops(
-    journal: Arc<Journal>,
-) -> (
-    Arc<BlockCollector>,
-    Arc<LinksMap>,
-    Arc<RouteTable>,
-    // Receiver<Letterhead>,
-) {
-    let links = LinksMap::new();
-    let routes = RouteTable::new();
-    let collector = BlockCollector::new(journal);
-
-    (collector, links, routes)
-}
-
 // impl Core {
 
 // /// Register metrics with a Prometheus registry.

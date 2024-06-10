@@ -25,7 +25,7 @@ use crate::{
         FrameGenerator, FrameParser,
     },
     types::Id,
-    EncodingError, RatmanError, Result,
+    EncodingError, Result,
 };
 
 /// Sent from the router to the client when a client connects
@@ -70,8 +70,10 @@ impl FrameParser for Handshake {
     }
 }
 
-/// Sent from the router to the client on every 'ping'
+/// Router-client ping and response type
 pub enum ServerPing {
+    /// A generic "everything is good" response
+    Ok,
     /// Indicate to the client which subscription IDs are available
     ///
     /// A client can then decide to pull a particular subscription Id
@@ -86,19 +88,18 @@ pub enum ServerPing {
 impl FrameGenerator for ServerPing {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         match self {
+            Self::Ok => buf.push(1),
             Self::Update {
                 available_subscriptions,
             } => {
-                buf.push(1);
+                buf.push(2);
                 available_subscriptions.generate(buf)?;
             }
             Self::Error(error) => {
-                buf.push(2);
+                buf.push(3);
                 generate_cstring(error, buf)?;
             }
-            Self::Timeout => {
-                buf.push(3);
-            }
+            Self::Timeout => buf.push(4),
         }
 
         Ok(())

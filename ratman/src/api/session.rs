@@ -1,14 +1,14 @@
 use crate::context::RatmanContext;
-use libratman::tokio::{net::TcpStream, time::timeout};
 use libratman::{
     api::{
         socket_v2::RawSocketHandle,
-        types::{Handshake, ServerPing},
+        types::{AddrCreate, AddrDestroy, AddrDown, AddrUp, Handshake, ServerPing},
         version_str, versions_compatible,
     },
     frame::micro::{client_modes as cm, MicroframeHeader},
-    types::Id,
-    ClientError, Result,
+    tokio::{net::TcpStream, task::spawn_local, time::timeout},
+    types::{ClientAuth, Id},
+    ClientError, RatmanError, Result,
 };
 use std::ffi::CString;
 use std::{sync::Arc, time::Duration};
@@ -44,8 +44,26 @@ pub(super) enum SessionResult {
     Drop,
 }
 
+fn check_auth(header: &MicroframeHeader, expected_auth: Option<ClientAuth>) -> Result<ClientAuth> {
+    header
+        .auth
+        .ok_or(RatmanError::ClientApi(ClientError::InvalidAuth))
+        .and_then(|given_auth| match expected_auth {
+            Some(expected_auth) if given_auth == expected_auth => Ok(given_auth),
+            _ => Err(RatmanError::ClientApi(ClientError::InvalidAuth)),
+        })
+}
+
+async fn reply_ok(raw_socket: &mut RawSocketHandle, auth: ClientAuth) -> Result<()> {
+    raw_socket
+        .write_microframe(MicroframeHeader::intrinsic_auth(auth), ServerPing::Ok)
+        .await
+}
+
 pub(super) async fn single_session_exchange(
     ctx: &Arc<RatmanContext>,
+    client_id: Id,
+    expected_auth: &mut Option<ClientAuth>,
     raw_socket: &mut RawSocketHandle,
 ) -> Result<SessionResult> {
     // a) Send a ping to initiate a response
@@ -91,11 +109,56 @@ pub(super) async fn single_session_exchange(
     ////////////////////////////////////////////////
 
     match header.modes {
-        // Creating a new
+        // ^-^ Creating a new address key and client auth token
         m if m == cm::make(cm::ADDR, cm::CREATE) => {
-            let (addr, client_auth) = ctx.meta_db.insert_addr_key(Id::random())?;
-        }
+            let _payload = raw_socket
+                .read_payload::<AddrCreate>(header.payload_size)
+                .await?;
+            let (addr, client_auth) = ctx.meta_db.insert_addr_key(client_id)?;
 
+            ctx.clients
+                .lock()
+                .await
+                .get_mut(&client_id)
+                .unwrap()
+                .add_address(addr);
+
+            raw_socket
+                .write_microframe(MicroframeHeader::intrinsic_auth(client_auth), addr)
+                .await?;
+        }
+        // ^-^ Destroy an existing address
+        m if m == cm::make(cm::ADDR, cm::DESTROY) => {
+            let _payload = raw_socket
+                .read_payload::<AddrDestroy>(header.payload_size)
+                .await?;            
+        }
+        // ^-^ Mark an existing address as "up" given the correct authentication
+        m if m == cm::make(cm::ADDR, cm::UP) => {
+            let addr_up = raw_socket
+                .read_payload::<AddrUp>(header.payload_size)
+                .await??;
+
+            // Check if the given auth is valid for this session
+            let auth = check_auth(&header, *expected_auth)?;
+
+            Arc::clone(&ctx.protocol)
+                .online(addr_up.addr, auth, Arc::clone(&ctx))
+                .await?;
+
+            reply_ok(raw_socket, auth).await?;
+        }
+        // ^-^ Mark an address as "down" which is currently "up"
+        m if m == cm::make(cm::ADDR, cm::DOWN) => {
+            let addr_down = raw_socket
+                .read_payload::<AddrDown>(header.payload_size)
+                .await??;
+
+            let auth = check_auth(&header, *expected_auth)?;
+            ctx.protocol.offline(addr_down.addr).await?;
+            reply_ok(raw_socket, auth).await?;
+        }
+        // u-u Don't know what to do with this
         mode => {
             raw_socket
                 .write_microframe(

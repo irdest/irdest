@@ -22,16 +22,25 @@ use nom::IResult;
 pub mod client_modes {
 
     //// List of mode namespaces that are available
+
+    /// Namespace for basic handshake and client-router communication
     pub const INTRINSIC: u8 = 0x0;
+    /// Local addresses
     pub const ADDR: u8      = 0x1;
+    /// Per-address contact book
     pub const CONTACT: u8   = 0x2;
+    /// Active router-to-router links
     pub const LINK: u8      = 0x3;
+    /// Peers on the network
     pub const PEER: u8      = 0x4;
+    /// Receive mode
     pub const RECV: u8      = 0x5;
+    /// Send mode
     pub const SEND: u8      = 0x6;
+    /// General status queries
     pub const STATUS: u8    = 0x7;
+    /// Stream and namespace subscriptions
     pub const SUB: u8       = 0x8;
-    pub const CLIENT: u8    = 0x9;
 
     //// Creating new data or destroying it permanently
     pub const CREATE: u8    = 0x1;
@@ -41,8 +50,7 @@ pub mod client_modes {
     pub const UP: u8        = 0x3;
     pub const DOWN: u8      = 0x4;
 
-    //// Add and delete are reversible, and re-appliable.  No source
-    //// data is being destroyed, just associations.
+    //// Add and delete are reversible, and re-appliable
     pub const ADD: u8       = 0x5;
     pub const DELETE: u8    = 0x6;
     pub const MODIFY: u8    = 0x7;

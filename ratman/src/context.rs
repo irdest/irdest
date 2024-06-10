@@ -4,37 +4,27 @@
 
 // Project internal imports
 use crate::{
-    api::ConnectionManager,
+    api::{self, ConnectionManager},
     config::{
         helpers, netmods::initialise_netmods, peers::PeeringBuilder, ConfigTree, CFG_RATMAND,
     },
     core::{LinksMap, RouteTable},
-    dispatch::{BlockCollector, BlockSlicer, StreamSlicer},
+    dispatch::BlockCollector,
     journal::Journal,
     procedures,
     protocol::Protocol,
+    runtime::thread_man::AsyncThreadManager,
     storage::MetadataDb,
-    util::{
-        self, codes, runtime_state::RuntimeState, setup_logging, IoPair, Os, StateDirectoryLock,
-    },
+    util::{self, codes, runtime_state::RuntimeState, setup_logging, Os, StateDirectoryLock},
 };
-use fjall::{Config, Keyspace};
-use libratman::{
-    frame::{
-        carrier::{CarrierFrameHeader, CarrierFrameHeaderV1, ManifestFrame, ManifestFrameV1},
-        FrameGenerator,
-    },
-    rt::{new_async_thread, AsyncSystem},
-    tokio::sync::mpsc::{channel, Receiver},
-    types::{Address, InMemoryEnvelope, Letterhead, Recipient, SequenceIdV1},
-    Result,
-};
+use libratman::{rt::new_async_thread, tokio::sync::mpsc::channel, Result};
 
 // External imports
-use async_eris::{BlockSize, ReadCapability};
 use atomptr::AtomPtr;
+use fjall::Config;
 use std::{net::SocketAddr, sync::Arc};
-use tracing_subscriber::fmt::format;
+// use tracing_subscriber::fmt::format;
+// use tripwire::Tripwire;
 
 /// Top-level Ratman router state handle
 ///
@@ -59,6 +49,8 @@ pub struct RatmanContext {
     pub(crate) protocol: Arc<Protocol>,
     /// Local client connection handler
     pub(crate) clients: Arc<ConnectionManager>,
+    /// Keep track of async thread system receivers for error output
+    pub(crate) thread_man: AsyncThreadManager,
     /// Indicate the current run state of the router context
     runtime_state: RuntimeState,
     /// Atomic state directory lock
@@ -74,15 +66,20 @@ impl RatmanContext {
     // todo: return errors here to allow the journal init to fail gracefully
     pub(crate) fn new(config: ConfigTree) -> Result<Arc<Self>> {
         let runtime_state = RuntimeState::start_initialising();
+        let thread_man = AsyncThreadManager::start();
+        // let tw = Tripwire::new_simple();
+
         let protocol = Protocol::new();
 
-        // Initialise storage journal
+        // Initialise storage systems
         let journal_fjall = Config::new(Os::match_os().data_path().join("journal.fjall")).open()?;
         let meta_fjall = Config::new(Os::match_os().data_path().join("metadata.fjall")).open()?;
         let journal = Arc::new(Journal::new(journal_fjall)?);
         let meta_db = Arc::new(MetadataDb::new(meta_fjall)?);
 
-        let (collector, links, routes) = crate::core::exec_core_loops(Arc::clone(&journal));
+        let links = LinksMap::new();
+        let routes = RouteTable::new();
+        let collector = BlockCollector::new(Arc::clone(&journal));
         let clients = Arc::new(ConnectionManager::new());
 
         Ok(Arc::new(Self {
@@ -94,13 +91,14 @@ impl RatmanContext {
             routes,
             protocol,
             clients,
+            thread_man,
             runtime_state,
             _statedir_lock: Arc::new(AtomPtr::new(None)),
         }))
     }
 
     /// Create and start a new Ratman router context with a config
-    pub async fn start(cfg: ConfigTree) -> Arc<Self> {
+    pub async fn start(cfg: ConfigTree) {
         let this = match Self::new(cfg) {
             Ok(t) => t,
             Err(e) => util::elog(format!("failed to initalise journal: {e:?}"), codes::FATAL),
@@ -191,7 +189,7 @@ impl RatmanContext {
         // If the dashboard feature and configuration is enabled
         #[cfg(feature = "dashboard")]
         if let Some(true) = ratmand_config.get_bool_value("enable_dashboard") {
-            let dashboard_bind = ratmand_config
+            let _dashboard_bind = ratmand_config
                 .get_string_value("dashboard_bind")
                 .unwrap_or_else(|| "localhost:8090".to_owned());
 
@@ -226,170 +224,59 @@ impl RatmanContext {
             }
         };
 
-        // We block execution on running the API module
-        // if let Err(e) = api::run(Arc::clone(&this), api_bind_addr) {
-        //     // If we returned an error, the API module has crashed
-        //     error!("API connector crashed with error: {}", e);
-        //     this.runtime_state.kill();
-        // }
+        // todo: setup management machinery to handle result events
+        if let Err(e) = api::start_api_thread(Arc::clone(&this), api_bind_addr).await {
+            // todo: setup tripwire here
+            this.runtime_state.kill();
+            util::elog(
+                format!("failed to start client handler: {e}"),
+                util::codes::FATAL,
+            );
+        }
 
-        // Start the switch and off we go
+        // Start the switches and off we go
         {
             let links = Arc::clone(&this.links);
-            let batch_size = 32; // todo make this configurable
-            for (name, ep, id) in links.get_with_ids().await {
-                let this = Arc::clone(&this);
 
-                new_async_thread::<String, _, ()>(
+            // todo: make this configurable
+            let batch_size = 32;
+
+            // todo: use the configurable netmod runtime here instead
+            for (name, ep, id) in links.get_with_ids().await {
+                let this_ = Arc::clone(&this);
+
+                let thrx = new_async_thread::<String, _, ()>(
                     format!("ratmand-switch-{name}"),
                     1024,
                     async move {
                         procedures::exec_switching_batch(
                             id,
                             batch_size,
-                            &this.routes,
-                            &this.links,
-                            &this.journal,
-                            &this.collector,
+                            &this_.routes,
+                            &this_.links,
+                            &this_.journal,
+                            &this_.collector,
                             (&name, &ep),
                             channel(1),
-                            #[cfg(feature = "dashboard")]
-                            todo!(),
+                            // #[cfg(feature = "dashboard")]
+                            // todo!()
                         )
                         .await;
+                        Ok(())
                     },
                 );
+
+                this.thread_man.add_receiver(thrx).await;
             }
         }
-
-        // libratman::tokio::time::sleep(std::time::Duration::from_secs(2)).await;
 
         // If we reach this point the router is shutting down
         // (allegedly?)
         this.runtime_state.terminate();
-
-        this
     }
-
-    // /// Create a new address
-    // ///
-    // /// This function creates a new keypair, inserts the address part
-    // /// into the local routing table, and starts announcing it to the
-    // /// rest of the network.
-    // pub async fn create_new_address(self: &Arc<Self>) -> Result<Address> {
-    //     let addr = self.keys.create_address().await;
-    //     self.core.add_local_address(addr).await?;
-    //     self.online(addr).await?;
-    //     Ok(addr)
-    // }
-
-    // // TODO: this function must handle address key decryption
-    // pub async fn load_existing_address(
-    //     self: &Arc<Self>,
-    //     addr: Address,
-    //     key_data: &[u8],
-    // ) -> Result<()> {
-    //     self.keys.add_address(addr, key_data).await;
-    //     self.core.add_local_address(addr).await?;
-    //     self.online(addr).await?;
-    //     Ok(())
-    // }
-
-    // async fn online(self: &Arc<Self>, addr: Address) -> Result<()> {
-    //     // This checks whether the address actually exists first
-    //     self.core.known(addr, true).await?;
-
-    //     // Then start a new protocol handler task for the address
-    //     Arc::clone(&self.protocol)
-    //         .online(addr, Arc::clone(self))
-    //         .await
-    // }
 
     /// Test whether Ratman is capable of writing anything to disk
     pub fn ephemeral(&self) -> bool {
         self._statedir_lock.get_ref().is_none()
     }
-
-    // // TODO: should this require some kind of cryptographic challenge maybe ??
-    // pub async fn set_address_offline(&self, addr: Address) -> Result<()> {
-    //     self.core.known(addr, true).await?;
-    //     self.protocol.offline(addr).await
-    // }
-
-    // /// Dispatch a high-level message
-    // // todo: this function should do a few more things around the
-    // // journal!
-    // //
-    // // - If sending fails, insert the frame into the journal frame queue
-    // // - Insert created blocks into the journal for future store & forward
-    // // - Slice manifest correctly if needed
-    // pub async fn send(self: &Arc<Self>, mut msg: Message) -> Result<()> {
-    //     let sender = msg.sender;
-
-    //     // remap the recipient type because the client API sucks ass
-    //     let recipient = match msg.recipient {
-    //         ApiRecipient::Standard(ref t) => {
-    //             Recipient::Target(*t.first().expect("no recipient in message!"))
-    //         }
-    //         ApiRecipient::Flood(ref t) => Recipient::Flood(*t),
-    //     };
-
-    //     // Turn the message into blocks, based on the size of the
-    //     // message payload.  Currently the cut-off between 1K blocks
-    //     // and 32K blocks is 14kb
-    //     let selected_block_size = if msg.payload.len() > 14336 {
-    //         BlockSize::_32K
-    //     } else {
-    //         BlockSize::_1K
-    //     };
-
-    //     let (read_capability, mut blocks) =
-    //         BlockSlicer::slice(self, &mut msg, selected_block_size).await?;
-
-    //     // Then turn the set of blocks into a series of MTU-sliced
-    //     // carrier frames
-    //     let carriers = StreamSlicer::slice(self, recipient, sender, blocks.clone().into_iter())?;
-    //     info!(
-    //         "Message ID {} resulted in {} blocks (of size {}), yielding {} carrier frames",
-    //         msg.id,
-    //         blocks.len(),
-    //         match selected_block_size {
-    //             BlockSize::_1K => "1K",
-    //             _ => "32K",
-    //         },
-    //         carriers.len()
-    //     );
-
-    //     // Iterate over all the data frames and send them off
-    //     for envelope in carriers {
-    //         self.core.dispatch.dispatch_frame(envelope).await?;
-    //     }
-
-    //     // Finally create a Manifest frame and send that off last
-    //     {
-    //         let manifest_frame = ManifestFrame::V1(ManifestFrameV1::from(read_capability));
-    //         let mut manifest_payload = vec![];
-    //         manifest_frame.generate(&mut manifest_payload)?;
-
-    //         // todo: currently we don't try to slice the manifest at
-    //         // all.  If it gets too big it may not fit across every
-    //         // transport channel.
-    //         let m_header = CarrierFrameHeader::new_blockmanifest_frame(
-    //             sender,
-    //             recipient,
-    //             SequenceIdV1 {
-    //                 hash: msg.get_id(),
-    //                 num: 1,
-    //                 max: 1,
-    //             },
-    //             manifest_payload.len() as u16,
-    //         );
-
-    //         let m_envelope = InMemoryEnvelope::from_header_and_payload(m_header, manifest_payload)?;
-    //         self.core.dispatch.dispatch_frame(m_envelope).await?;
-    //         trace!("Sending message manifest was successful!");
-    //     }
-
-    //     Ok(())
-    // }
 }

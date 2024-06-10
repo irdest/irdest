@@ -142,7 +142,7 @@ impl RatmanIpcExtV1 for RatmanIpc {
         let msg = encode_micro_frame(
             cm::make(cm::ADDR, cm::DELETE),
             Some(auth),
-            Some(ty::AddrDelete { addr, force }),
+            Some(ty::AddrDestroy { addr, force }),
         )?;
 
         todo!()

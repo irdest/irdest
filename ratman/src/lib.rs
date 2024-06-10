@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-#![allow(warnings)]
-
 //! # Ratman packet router
 //!
 //! **Note** most likely you are interested in the
@@ -57,5 +55,5 @@ pub fn start_with_configuration(cfg: config::ConfigTree) {
     // respond to them.
 
     let system = AsyncSystem::new("ratmand-core".to_owned(), 8);
-    let _ctx = system.exec(context::RatmanContext::start(cfg));
+    system.exec(context::RatmanContext::start(cfg));
 }

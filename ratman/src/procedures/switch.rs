@@ -41,7 +41,7 @@ pub(crate) async fn exec_switching_batch(
     ctrl: IoPair<usize>,
     // Metrics collector state to allow diagnostic analysis of this
     // procedure
-    #[cfg(feature = "dashboard")] metrics: &Arc<metrics::Metrics>,
+    // #[cfg(feature = "dashboard")] metrics: &Arc<metrics::Metrics>,
 ) {
     for _ in 0..batch_size {
         let (InMemoryEnvelope { header, buffer }, t) = match ep.next().await {
@@ -61,22 +61,22 @@ pub(crate) async fn exec_switching_batch(
 
         // If the dashboard feature is enabled we first update the
         // metrics engine before all the data gets moved away >:(
-        #[cfg(feature = "dashboard")]
-        {
-            let metric_labels = &metrics::Labels {
-                sender_id: header.get_sender(),
-                recp_type: header.get_recipient().as_ref().into(),
-                recp_id: header
-                    .get_recipient()
-                    .map(|r| r.inner_address().to_string())
-                    .unwrap_or_else(|| "None".to_owned()),
-            };
-            metrics.frames_total.get_or_create(metric_labels).inc();
-            metrics
-                .bytes_total
-                .get_or_create(metric_labels)
-                .inc_by(header.get_payload_length() as u64);
-        }
+        // #[cfg(feature = "dashboard")]
+        // {
+        //     let metric_labels = &metrics::Labels {
+        //         sender_id: header.get_sender(),
+        //         recp_type: header.get_recipient().as_ref().into(),
+        //         recp_id: header
+        //             .get_recipient()
+        //             .map(|r| r.inner_address().to_string())
+        //             .unwrap_or_else(|| "None".to_owned()),
+        //     };
+        //     metrics.frames_total.get_or_create(metric_labels).inc();
+        //     metrics
+        //         .bytes_total
+        //         .get_or_create(metric_labels)
+        //         .inc_by(header.get_payload_length() as u64);
+        // }
 
         // This is the core Ratman switch logic.  The accepted
         // frame header will be inspected below, and then the full

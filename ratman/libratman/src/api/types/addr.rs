@@ -11,6 +11,7 @@ use std::ffi::CString;
 
 pub struct AddrCreate {
     pub name: Option<CString>,
+    // pub auto_up: bool,
 }
 
 impl FrameGenerator for AddrCreate {
@@ -42,12 +43,12 @@ impl FrameParser for AddrCreate {
     }
 }
 
-pub struct AddrDelete {
+pub struct AddrDestroy {
     pub addr: Address,
     pub force: bool,
 }
 
-impl FrameGenerator for AddrDelete {
+impl FrameGenerator for AddrDestroy {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         self.addr.generate(buf)?;
         match self.force {
@@ -58,7 +59,7 @@ impl FrameGenerator for AddrDelete {
     }
 }
 
-impl FrameParser for AddrDelete {
+impl FrameParser for AddrDestroy {
     type Output = Result<Self>;
     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
         let (input, addr) = maybe(parse::take_address, input)?;

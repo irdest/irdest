@@ -56,7 +56,7 @@ impl RawSocketHandle {
         let payload_buf = self.read_buffer(header.payload_size as usize).await?;
         let (_remainder, payload) =
             T::parse(payload_buf.as_slice()).map_err(|p| EncodingError::Parsing(p.to_string()))?;
-        assert_eq!(_remainder.len(), 0);
+        assert_eq!(_remainder.len(), 0); // todo: don't crash here :(
         Ok((header, payload))
     }
 
@@ -69,6 +69,17 @@ impl RawSocketHandle {
         Ok(MicroframeHeader::parse(frame_buffer.as_slice())
             .map_err(Into::<EncodingError>::into)?
             .1?)
+    }
+
+    /// Read a decodable payload from this socket
+    pub async fn read_payload<T: FrameParser>(&mut self, length: u32) -> Result<T::Output> {
+        let payload_buffer = AsyncVecReader::new(length as usize, &mut self.stream)
+            .read_to_vec()
+            .await?;
+        let (_remainder, payload) =
+            T::parse(&payload_buffer).map_err(|p| EncodingError::Parsing(p.to_string()))?;
+        assert_eq!(_remainder.len(), 0); // todo: DON'T CRASH HERE >:(
+        Ok(payload)
     }
 
     /// Read a constant number of bytes into an array
