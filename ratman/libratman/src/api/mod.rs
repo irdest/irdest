@@ -111,10 +111,6 @@ impl RatmanIpcExtV1 for RatmanIpc {
         Ok(())
     }
 
-    async fn register_client(self: &Arc<Self>) -> Result<ClientAuth> {
-        todo!()
-    }
-
     async fn addr_create(
         self: &Arc<Self>,
         auth: ClientAuth,

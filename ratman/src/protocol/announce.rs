@@ -1,4 +1,4 @@
-use crate::{context::RatmanContext, dispatch, storage::MetadataDb};
+use crate::{context::RatmanContext, crypto, dispatch, storage::MetadataDb};
 use libratman::{
     frame::{
         carrier::{AnnounceFrame, AnnounceFrameV1, CarrierFrameHeader, OriginDataV1, RouteDataV1},
@@ -14,6 +14,7 @@ use std::{
     },
     time::Duration,
 };
+use tripwire::Tripwire;
 
 /// Periodically announce an address to the network
 pub struct AddressAnnouncer {
@@ -27,7 +28,7 @@ impl AddressAnnouncer {
     /// the starting client goes away, this is used to keep the thread local key
     /// cache session alive
     pub fn new(addr: Address, auth: ClientAuth, ctx: &Arc<RatmanContext>) -> Self {
-        ctx.meta_db.open_addr_key(addr, auth).unwrap();
+        crypto::open_addr_key(&ctx.meta_db, addr, auth).unwrap();
         Self {
             addr,
             auth,
@@ -41,7 +42,7 @@ impl AddressAnnouncer {
 // keys need to be wiped.
 impl Drop for AddressAnnouncer {
     fn drop(&mut self) {
-        self.db.close_addr_key(self.auth);
+        crypto::close_addr_key(&self.db, self.auth);
     }
 }
 
@@ -51,9 +52,7 @@ impl AddressAnnouncer {
         let origin_signature = {
             let mut origin_buf = vec![];
             origin.clone().generate(&mut origin_buf).unwrap();
-            self.db
-                .sign_message(self.auth, origin_buf.as_slice())
-                .unwrap()
+            crypto::sign_message(self.auth, origin_buf.as_slice()).unwrap()
         };
 
         // Create a full announcement and encode it

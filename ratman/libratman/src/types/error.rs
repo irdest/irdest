@@ -7,6 +7,8 @@ use async_eris::BlockReference;
 use std::net::AddrParseError;
 use tokio::{io, time::error::Elapsed};
 
+use super::InMemoryEnvelope;
+
 /// An Irdest-wide Result capable of expressing many different states
 pub type Result<T> = std::result::Result<T, RatmanError>;
 
@@ -173,8 +175,11 @@ pub enum NetmodError {
     NotSupported,
     #[error("frame is too large to send through this channel")]
     FrameTooLarge,
+    /// Connection was dropped during transmission
+    ///
+    /// The
     #[error("peering connection was suddenly lost mid-transfer")]
-    ConnectionLost,
+    ConnectionLost(InMemoryEnvelope),
     #[error("the provided peer '{}' was invalid!", 0)]
     InvalidPeer(String),
     /// An error type for a netmod that tries to bind any resource

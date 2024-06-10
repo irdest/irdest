@@ -20,7 +20,7 @@ use crate::{
 };
 use libratman::{
     rt::new_async_thread,
-    tokio::{sync::mpsc::channel, task::spawn_local},
+    tokio::{sync::broadcast::channel as bcast_channel, sync::mpsc::channel, task::spawn_local},
     Result,
 };
 
@@ -206,8 +206,6 @@ impl RatmanContext {
             // }
         }
 
-        // At this point we can mark the router as having finished initialising
-
         // Finally, we start the machinery that accepts new client
         // connections.  We hand it a complete (atomic reference) copy
         // of the router state context.
@@ -236,6 +234,21 @@ impl RatmanContext {
             );
         }
 
+        // Setup the ingress system, responsible for collecting all blocks
+        // contained in a manifest back into a complete message streams
+        let ingress_tx = {
+            let (ingress_tx, rx) = channel(32);
+
+            let this_ = Arc::clone(&this);
+            let thrx = new_async_thread("ratmand-ingress", 1024 * 32, async move {
+                procedures::exec_ingress_system(this_, rx).await;
+                Ok(())
+            });
+
+            this.thread_man.add_receiver(thrx).await;
+            ingress_tx
+        };
+
         // Start the switches and off we go
         {
             let links = Arc::clone(&this.links);
@@ -246,6 +259,7 @@ impl RatmanContext {
             // todo: use the configurable netmod runtime here instead
             for (name, ep, id) in links.get_with_ids().await {
                 let this_ = Arc::clone(&this);
+                let ingress_tx = ingress_tx.clone();
 
                 let thrx = new_async_thread::<String, _, ()>(
                     format!("ratmand-switch-{name}"),
@@ -260,7 +274,7 @@ impl RatmanContext {
                             &this_.collector,
                             this_.tripwire.clone(),
                             (&name, &ep),
-                            channel(1),
+                            ingress_tx,
                             // #[cfg(feature = "dashboard")]
                             // todo!()
                         )

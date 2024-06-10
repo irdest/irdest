@@ -14,9 +14,6 @@ pub trait RatmanIpcExtV1 {
     // (@^_^@) Address commands
     //
 
-    /// Register a new client and return a ClientAuth object
-    async fn register_client(self: &Arc<Self>) -> Result<ClientAuth>;
-
     /// Create a new address for an existing client token
     ///
     /// Optionally you may give this address a name.  It won't be

@@ -1,17 +1,19 @@
 use crate::{
     dispatch::{self, BlockCollector},
-    journal::Journal,
+    journal::{self, Journal},
     links::{GenericEndpoint, LinksMap},
     routes::{RouteTable, RouteType},
-    util::IoPair,
 };
-use libratman::tokio::{select, task::spawn_local};
+use libratman::tokio::{select, sync::mpsc::Sender, task::spawn_local};
 use libratman::{
     frame::carrier::modes::{self as fmodes, DATA, MANIFEST},
     types::{InMemoryEnvelope, Recipient},
+    NetmodError, RatmanError,
 };
 use std::sync::Arc;
 use tripwire::Tripwire;
+
+use super::ingress::MessageNotifier;
 
 /// Run a batch of receive jobs for a given endpoint and state context
 pub(crate) async fn exec_switching_batch(
@@ -40,7 +42,7 @@ pub(crate) async fn exec_switching_batch(
     (ep_name, ep): (&String, &Arc<GenericEndpoint>),
     // Control flow endpoint to send signals to this switch between
     // batches
-    _ctrl: IoPair<usize>,
+    ingress_tx: Sender<MessageNotifier>,
     // Metrics collector state to allow diagnostic analysis of this
     // procedure
     // #[cfg(feature = "dashboard")] metrics: &Arc<metrics::Metrics>,
@@ -147,16 +149,19 @@ pub(crate) async fn exec_switching_batch(
                     // A locally addressed data frame is inserted
                     // into the collector
                     Some(RouteType::Local) if mode == DATA => {
-                        if let Err(_e) = collector
-                            .queue_and_spawn(InMemoryEnvelope { header, buffer })
-                            .await
-                        {
-                            error!(
-                                "Failed to queue frame in sequence {:?}",
-                                header.get_seq_id()
-                            );
-                            continue;
-                        }
+                        // if let Err(_e) = collector
+                        //     .queue_and_spawn(InMemoryEnvelope { header, buffer })
+                        //     .await
+                        // {
+                        //     error!(
+                        //         "Failed to queue frame in sequence {:?}",
+                        //         header.get_seq_id()
+                        //     );
+                        //     continue;
+                        // }
+
+                        // Integrate this branch into the new block collector
+                        todo!()
                     }
                     // A locally addressed manifest is given to
                     // the journal to collect
@@ -179,14 +184,22 @@ pub(crate) async fn exec_switching_batch(
                     }
                     // Any frame for a reachable remote address will be forwarded
                     Some(RouteType::Remote(_)) => {
-                        if let Err(e) = dispatch::dispatch_frame(
+                        match dispatch::dispatch_frame(
                             routes,
                             links,
                             InMemoryEnvelope { header, buffer },
                         )
                         .await
                         {
-                            error!("failed to forward frame: {e:?}");
+                            Err(RatmanError::Netmod(NetmodError::ConnectionLost(envelope))) => {
+                                debug!("Connection dropped while forwarding frame!  Message contents were saved");
+                                journal.queue_frame(envelope);
+                            }
+                            Err(e) => {
+                                warn!("Error occured while dispatching frame: {e}!  Message contents were lost");
+                                continue;
+                            }
+                            _ => continue,
                         }
                     }
                     // A frame for an unreachable address (either

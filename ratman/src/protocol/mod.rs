@@ -18,7 +18,7 @@ mod announce;
 use crate::{context::RatmanContext, protocol::announce::AddressAnnouncer};
 use libratman::{
     frame::carrier::{modes as fmodes, CarrierFrameHeader},
-    tokio::{sync::Mutex, task},
+    tokio::{select, sync::Mutex, task},
     types::{Address, ClientAuth},
     RatmanError, Result,
 };
@@ -28,6 +28,7 @@ use std::{
     sync::atomic::{AtomicBool, Ordering},
     sync::Arc,
 };
+use tripwire::Tripwire;
 
 /// A payload that represents a RATMAN-protocol message
 #[derive(Debug, Serialize, Deserialize)]
@@ -82,10 +83,15 @@ impl Protocol {
                 2
             }) as u16;
 
+        let tripwire = ctx.tripwire.clone();
         task::spawn(async move {
-            AddressAnnouncer::new(address, auth, &ctx)
-                .run(b, announce_delay, ctx)
-                .await;
+            select! {
+                biased;
+                _ = tripwire => {
+                    return;
+                }
+                _ = AddressAnnouncer::new(address, auth, &ctx).run(b, announce_delay, ctx) => {}
+            }
         });
 
         Ok(())

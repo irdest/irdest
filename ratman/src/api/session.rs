@@ -1,4 +1,4 @@
-use crate::context::RatmanContext;
+use crate::{context::RatmanContext, crypto};
 use libratman::{
     api::{
         socket_v2::RawSocketHandle,
@@ -114,7 +114,7 @@ pub(super) async fn single_session_exchange(
             let _payload = raw_socket
                 .read_payload::<AddrCreate>(header.payload_size)
                 .await?;
-            let (addr, client_auth) = ctx.meta_db.insert_addr_key(client_id)?;
+            let (addr, client_auth) = crypto::insert_addr_key(&ctx.meta_db, client_id)?;
 
             ctx.clients
                 .lock()

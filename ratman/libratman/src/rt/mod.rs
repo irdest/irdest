@@ -95,8 +95,8 @@ where
         let label = system.label.clone();
         system.exec(async move {
             match res {
-                Ok(_) => info!("Worker thread {} completed successfully!", label),
-                Err(ref e) => println!("Worker thread {} encountered an error: {}", label, e),
+                Ok(_) => info!("Worker thread {label} completed successfully!"),
+                Err(ref e) => error!("Worker thread {label} encountered a fatal error: {e}"),
             }
 
             let _ = tx.send((label, res)).await;

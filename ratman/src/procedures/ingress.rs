@@ -2,9 +2,8 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use crate::journal::Journal;
+use crate::{context::RatmanContext, journal::Journal};
 use async_eris::ReadCapability;
-
 use libratman::{
     frame::carrier::CarrierFrameHeader,
     tokio::{
@@ -20,25 +19,30 @@ use std::{sync::Arc, time::Duration};
 pub type JournalSender = Sender<(Vec<u8>, SequenceIdV1)>;
 pub type JournalReceiver = Receiver<(Vec<u8>, SequenceIdV1)>;
 
-/// Block and yield the next completed message from the queue
-pub(crate) async fn pop_from_receiver(receiver: &mut Receiver<Letterhead>) -> Option<Letterhead> {
-    match receiver.recv().await {
-        Some(letterhead) => {
-            info!(
-                "[{:?}] Received new message '(id {})' from {}!",
-                letterhead.to, letterhead.stream_id, letterhead.from,
-            );
+// /// Block and yield the next completed message from the queue
+// pub(crate) async fn pop_from_receiver(
+//
+// ) -> Option<Letterhead> {
+//     match receiver.recv().await {
+//         Some(letterhead) => {
+//             info!(
+//                 "[{:?}] Received new message '(id {})' from {}!",
+//                 letterhead.to, letterhead.stream_id, letterhead.from,
+//             );
 
-            Some(letterhead)
-        }
-        _ => None,
-    }
-}
+//             Some(letterhead)
+//         }
+//         _ => None,
+//     }
+// }
 
 pub(crate) struct MessageNotifier {
     read_cap: ReadCapability,
     header: CarrierFrameHeader,
 }
+
+/// Listen to
+pub async fn exec_ingress_system(ctx: Arc<RatmanContext>, rx: Receiver<MessageNotifier>) {}
 
 /// Decode a single message from a manifest/ read_capability
 ///

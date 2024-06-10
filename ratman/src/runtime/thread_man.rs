@@ -9,6 +9,11 @@ use libratman::{
     Result,
 };
 
+/// Keep track of error outputs from various async threads
+///
+/// If a thread encounters an error or panic it will get logged by this task.
+/// Technically this is not a full runtime component but instead runs on the
+/// main ratmand thread system
 #[derive(Clone)]
 pub struct AsyncThreadManager {
     cmd: Sender<Receiver<(String, Result<()>)>>,

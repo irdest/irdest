@@ -8,10 +8,16 @@
 //! private key is not shared outside the router.
 
 // Utility imports
-
-use libratman::types::Address;
-use rand::{thread_rng, RngCore};
-use std::convert::TryInto;
+use crate::storage::{
+    addr_key::{AddressData, EncryptedKey},
+    MetadataDb,
+};
+use libratman::{
+    types::{Address, ClientAuth, Id},
+    Result,
+};
+use rand::{rngs::OsRng, thread_rng, RngCore};
+use std::{cell::RefCell, collections::BTreeMap, convert::TryInto, sync::Arc};
 
 // Cryptography imports
 use chacha20::cipher::{KeyIvInit, StreamCipher};
@@ -73,7 +79,7 @@ pub fn decrypt_raw(secret: &[u8; 32], nonce: [u8; 12], encrypted_data: &mut Vec<
     cipher.apply_keystream(encrypted_data.as_mut_slice());
 }
 
-pub fn diffie_hellman(self_keypair: &Keypair, peer: Address) -> Option<SharedSecret> {
+fn diffie_hellman(self_keypair: &Keypair, peer: Address) -> Option<SharedSecret> {
     // Here we're taking a private key on the edwards curve and
     // transform it to a private key on the montgomery curve.
     // This is done via the `ExpandedSecretKey` type, which does
@@ -100,9 +106,120 @@ pub fn diffie_hellman(self_keypair: &Keypair, peer: Address) -> Option<SharedSec
     Some(self_x25519_secret.diffie_hellman(&peer_x25519_public))
 }
 
-/// Sign a payload with your secret key
-pub fn sign_message(self_keypair: &Keypair, msg: &[u8]) -> Option<Signature> {
-    Some(self_keypair.inner.sign(msg))
+// Cache decrypted address keys and shared secret keys for particular streams
+thread_local! {
+    static KEY_CACHE: RefCell<BTreeMap<Id, Keypair>> = RefCell::new(BTreeMap::default());
+    static SHARED_CACHE: RefCell<BTreeMap<(Address, Address), SharedSecret>> = RefCell::new(BTreeMap::default());
+}
+
+pub fn insert_addr_key(meta_db: &Arc<MetadataDb>, client_id: Id) -> Result<(Address, ClientAuth)> {
+    // Generate a public-private keypair
+    let secret = SecretKey::generate(&mut OsRng {});
+    let public = PublicKey::from(&secret);
+    let addr = Address::from_bytes(public.as_bytes());
+
+    let client_auth = ClientAuth::new(client_id);
+
+    let mut encrypted_secret = *secret.as_bytes();
+    let nonce = encrypt_raw(
+        client_auth.token.as_bytes().try_into().unwrap(),
+        &mut encrypted_secret,
+    );
+
+    meta_db.addrs.insert(
+        addr.to_string(),
+        &AddressData::Local(EncryptedKey {
+            encrypted: encrypted_secret.to_vec(),
+            nonce,
+        }),
+    )?;
+
+    Ok((addr, client_auth))
+}
+
+/// Decrypt an address key and cache it for the local runner thread
+pub fn open_addr_key(meta_db: &Arc<MetadataDb>, addr: Address, auth: ClientAuth) -> Result<()> {
+    let key_data = match meta_db.addrs.get(&addr.to_string())? {
+        AddressData::Local(e) => e,
+        AddressData::Remote => unreachable!("called open_addr_key with a remote key"),
+    };
+
+    let mut decrypted_key = key_data.encrypted.clone();
+    decrypt_raw(
+        auth.token.as_bytes().try_into().unwrap(),
+        key_data.nonce,
+        &mut decrypted_key,
+    );
+
+    KEY_CACHE.with(|map| {
+        map.borrow_mut().insert(
+            auth.client_id,
+            Keypair::new(SecretKey::from_bytes(decrypted_key.as_slice()).unwrap()),
+        );
+    });
+
+    Ok(())
+}
+
+pub fn close_addr_key(meta_db: &Arc<MetadataDb>, auth: ClientAuth) {
+    KEY_CACHE.with(|map| {
+        map.borrow_mut().remove(&auth.client_id);
+    });
+}
+
+/// Cache a shared secret between two addresses
+pub fn start_stream(
+    meta_db: &Arc<MetadataDb>,
+    self_addr: Address,
+    target_addr: Address,
+    auth: ClientAuth,
+) -> Result<()> {
+    KEY_CACHE.with(|map| {
+        let map = map.borrow();
+        let decrypted_key = map.get(&auth.client_id).expect("decrypted key not cached!");
+        let shared_secret = diffie_hellman(&decrypted_key, target_addr).unwrap();
+
+        SHARED_CACHE.with(|map| {
+            map.borrow_mut()
+                .insert((self_addr, target_addr), shared_secret);
+        });
+    });
+
+    Ok(())
+}
+
+/// Clear a cached shared secret
+pub fn end_stream(meta_db: &Arc<MetadataDb>, self_addr: Address, target_addr: Address) {
+    SHARED_CACHE.with(|map| {
+        map.borrow_mut().remove(&(self_addr, target_addr));
+    })
+}
+
+/// Encrypt a chunk for an ongoing session.
+///
+/// Panics: This function will panic if start_stream is not called first!
+pub fn encrypt_chunk_for_key<const L: usize>(
+    meta_db: &Arc<MetadataDb>,
+    self_addr: Address,
+    target_addr: Address,
+    _auth: ClientAuth,
+    chunk: &mut [u8; L],
+) -> [u8; 12] {
+    SHARED_CACHE.with(|map| {
+        let map = map.borrow();
+        let shared = map
+            .get(&(self_addr, target_addr))
+            .expect("Shared secret not found in cache; must call `start_stream` first!");
+        encrypt_chunk(shared, chunk)
+    })
+}
+
+/// Sign a payload with a cached secret key
+pub fn sign_message(auth: ClientAuth, msg: &[u8]) -> Option<Signature> {
+    KEY_CACHE.with(|map| {
+        let map = map.borrow();
+        Some(map.get(&auth.token)?.inner.sign(msg))
+    })
 }
 
 /// Verify the signature of a payload with a peer's public key (address)

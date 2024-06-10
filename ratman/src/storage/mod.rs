@@ -14,6 +14,7 @@ use crate::{
     journal::page::CachePage,
     storage::{
         addr_key::{AddressData, EncryptedKey},
+        block::IncompleteBlockData,
         link::LinkData,
         route::RouteData,
     },
@@ -56,12 +57,7 @@ pub struct MetadataDb {
     pub addrs: CachePage<AddressData>,
     pub routes: CachePage<RouteData>,
     pub links: CachePage<LinkData>,
-}
-
-/// Cache decrypted address keys and shared secret keys for particular streams
-thread_local! {
-    static KEY_CACHE: RefCell<BTreeMap<Id, Keypair>> = RefCell::new(BTreeMap::default());
-    static SHARED_CACHE: RefCell<BTreeMap<(Address, Address), SharedSecret>> = RefCell::new(BTreeMap::default());
+    pub incomplete: CachePage<IncompleteBlockData>,
 }
 
 impl MetadataDb {
@@ -78,121 +74,17 @@ impl MetadataDb {
             db.open_partition("meta_links", PartitionCreateOptions::default())?,
             PhantomData,
         );
+        let incomplete = CachePage(
+            db.open_partition("meta_incomplete", PartitionCreateOptions::default())?,
+            PhantomData,
+        );
 
         Ok(Self {
             db,
             addrs,
             routes,
             links,
+            incomplete,
         })
-    }
-
-    pub fn insert_addr_key(&self, client_id: Id) -> Result<(Address, ClientAuth)> {
-        // Generate a public-private keypair
-        let secret = SecretKey::generate(&mut OsRng {});
-        let public = PublicKey::from(&secret);
-        let addr = Address::from_bytes(public.as_bytes());
-
-        let client_auth = ClientAuth::new(client_id);
-
-        let mut encrypted_secret = *secret.as_bytes();
-        let nonce = encrypt_raw(
-            client_auth.token.as_bytes().try_into().unwrap(),
-            &mut encrypted_secret,
-        );
-
-        self.addrs.insert(
-            addr.to_string(),
-            &AddressData::Local(EncryptedKey {
-                encrypted: encrypted_secret.to_vec(),
-                nonce,
-            }),
-        )?;
-
-        Ok((addr, client_auth))
-    }
-
-    /// Decrypt an address key and cache it for the local runner thread
-    pub fn open_addr_key(&self, addr: Address, auth: ClientAuth) -> Result<()> {
-        let key_data = match self.addrs.get(&addr.to_string())? {
-            AddressData::Local(e) => e,
-            AddressData::Remote => unreachable!("called open_addr_key with a remote key"),
-        };
-
-        let mut decrypted_key = key_data.encrypted.clone();
-        decrypt_raw(
-            auth.token.as_bytes().try_into().unwrap(),
-            key_data.nonce,
-            &mut decrypted_key,
-        );
-
-        KEY_CACHE.with(|map| {
-            map.borrow_mut().insert(
-                auth.client_id,
-                Keypair::new(SecretKey::from_bytes(decrypted_key.as_slice()).unwrap()),
-            );
-        });
-
-        Ok(())
-    }
-
-    pub fn close_addr_key(&self, auth: ClientAuth) {
-        KEY_CACHE.with(|map| {
-            map.borrow_mut().remove(&auth.client_id);
-        });
-    }
-
-    pub fn start_stream(
-        &self,
-        self_addr: Address,
-        target_addr: Address,
-        auth: ClientAuth,
-    ) -> Result<()> {
-        KEY_CACHE.with(|map| {
-            let map = map.borrow();
-            let decrypted_key = map.get(&auth.client_id).expect("decrypted key not cached!");
-            let shared_secret = crypto::diffie_hellman(&decrypted_key, target_addr).unwrap();
-
-            SHARED_CACHE.with(|map| {
-                map.borrow_mut()
-                    .insert((self_addr, target_addr), shared_secret);
-            });
-        });
-
-        Ok(())
-    }
-
-    pub fn end_stream(&self, self_addr: Address, target_addr: Address) {
-        SHARED_CACHE.with(|map| {
-            map.borrow_mut().remove(&(self_addr, target_addr));
-        })
-    }
-
-    pub fn encrypt_chunk_for_key<const L: usize>(
-        &self,
-        self_addr: Address,
-        target_addr: Address,
-        _auth: ClientAuth,
-        chunk: &mut [u8; L],
-    ) -> [u8; 12] {
-        SHARED_CACHE.with(|map| {
-            let map = map.borrow();
-            let shared = map.get(&(self_addr, target_addr)).unwrap();
-            encrypt_chunk(shared, chunk)
-        })
-    }
-
-    /// Sign a payload with your secret key
-    pub fn sign_message(&self, auth: ClientAuth, msg: &[u8]) -> Option<Signature> {
-        KEY_CACHE.with(|map| {
-            let map = map.borrow();
-            crypto::sign_message(map.get(&auth.token)?, msg)
-        })
-    }
-
-    /// Verify the signature of a payload with a peer's public key (address)
-    pub fn verify_message(&self, peer: Address, msg: &[u8], signature: Signature) -> Option<()> {
-        let peer_pubkey = PublicKey::from_bytes(peer.as_bytes()).ok()?;
-        crypto::verify_message(Address::from_bytes(peer_pubkey.as_bytes()), msg, signature)
     }
 }
