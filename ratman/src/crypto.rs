@@ -14,7 +14,7 @@ use crate::storage::{
 };
 use libratman::{
     types::{Address, ClientAuth, Id},
-    Result,
+    RatmanError, Result,
 };
 use rand::{rngs::OsRng, thread_rng, RngCore};
 use std::{cell::RefCell, collections::BTreeMap, convert::TryInto, sync::Arc};
@@ -139,7 +139,7 @@ pub fn insert_addr_key(meta_db: &Arc<MetadataDb>, client_id: Id) -> Result<(Addr
 
 /// Decrypt an address key and cache it for the local runner thread
 pub fn open_addr_key(meta_db: &Arc<MetadataDb>, addr: Address, auth: ClientAuth) -> Result<()> {
-    let key_data = match meta_db.addrs.get(&addr.to_string())? {
+    let key_data = match meta_db.addrs.get(&addr.to_string())?.unwrap() {
         AddressData::Local(e) => e,
         AddressData::Remote => unreachable!("called open_addr_key with a remote key"),
     };

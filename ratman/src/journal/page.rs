@@ -39,9 +39,32 @@ impl<T: Serialize + DeserializeOwned> CachePage<T> {
         Ok(())
     }
 
-    pub fn get(&self, key: &String) -> Result<T> {
-        let bin_data = self.0.get(key)?.unwrap();
-        Ok(bincode::deserialize(&*bin_data)?)
+    pub fn get(&self, key: &String) -> Result<Option<T>> {
+        Ok(self
+            .0
+            .get(key)?
+            .map(|bin_data| bincode::deserialize(&*bin_data).expect("failed deserialising")))
+    }
+
+    pub fn prefix<'key>(
+        &'key self,
+        prefix: &'key String,
+    ) -> impl DoubleEndedIterator<Item = (String, T)> + 'key {
+        self.0
+            .prefix(prefix)
+            // filter out read read failures
+            .filter(|x| x.is_ok())
+            .map(|x| x.unwrap())
+            // then deserialise the data
+            .map(|(item_key, item_data)| {
+                (
+                    String::from_utf8(item_key.to_vec()),
+                    bincode::deserialize(&*item_data),
+                )
+            })
+            // then filter out encoding failures
+            .filter(|(x, y)| x.is_ok() && y.is_ok())
+            .map(|(x, y)| (x.unwrap(), y.unwrap()))
     }
 }
 
@@ -63,7 +86,7 @@ impl<const L: usize> BlockStorage<L> for CachePage<BlockData> {
     async fn fetch(&self, reference: &BlockReference) -> IoResult<Option<Block<L>>> {
         match self.get(&reference.to_string()) {
             Err(RatmanError::Io(io)) => Err(io),
-            Ok(BlockData { data, valid }) if valid => Ok(Some(data.to_block())),
+            Ok(Some(BlockData { data, valid })) if valid => Ok(Some(data.to_block())),
             _ => Ok(None),
         }
     }

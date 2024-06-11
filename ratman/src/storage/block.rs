@@ -1,10 +1,6 @@
 use async_eris::{Block, BlockReference};
-use libratman::{
-    frame::carrier::CarrierFrameHeader, types::InMemoryEnvelope, BlockError, RatmanError, Result,
-};
+use libratman::{types::Id, BlockError, RatmanError, Result};
 use serde::{Deserialize, Serialize};
-
-use crate::journal::page::SerdeFrameType;
 
 /// A wrapper type for storing Blocks in various parts of the code
 ///
@@ -64,5 +60,5 @@ impl StorageBlock {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct IncompleteBlockData {
     pub max_num: u8,
-    pub buffer: Vec<(SerdeFrameType<CarrierFrameHeader>, Vec<u8>)>,
+    pub buffer: Vec<u8>,
 }

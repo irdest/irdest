@@ -121,11 +121,15 @@ impl Journal {
         self.seen_frames.insert(frame_id)
     }
 
+    /// Store a frame in the journal
+    ///
+    /// Frame keys are composed of the block ID and the number in sequence
+    /// (`<seq>::<num>`).  Frames without a sequence ???
     pub fn queue_frame(&self, InMemoryEnvelope { header, buffer }: InMemoryEnvelope) -> Result<()> {
         let seq_id = header.get_seq_id().unwrap();
 
         self.frames.insert(
-            seq_id.hash.to_string(),
+            format!("{}::{}", seq_id.hash, seq_id.num),
             &FrameData {
                 header: SerdeFrameType::from(header),
                 payload: buffer,

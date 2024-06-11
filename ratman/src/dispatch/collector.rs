@@ -11,12 +11,11 @@ use libratman::{
             mpsc::{channel, Receiver, Sender},
             RwLock,
         },
-        task,
+        task::{self, spawn_blocking},
     },
     types::{Id, InMemoryEnvelope, SequenceIdV1},
     EncodingError, RatmanError, Result,
 };
-use serde::Deserialize;
 use std::{collections::BTreeMap, sync::Arc};
 
 type EnvSender = Sender<(SequenceIdV1, InMemoryEnvelope)>;
@@ -30,7 +29,6 @@ pub struct BlockCollectorWorker {
     buffer: Vec<InMemoryEnvelope>,
     senders: SenderStore,
     journal: Arc<Journal>,
-    meta_db: Arc<MetadataDb>,
 }
 
 impl BlockCollectorWorker {
@@ -75,17 +73,22 @@ impl BlockCollectorWorker {
 
                 // Then offer the finished block up to the block god
                 match StorageBlock::reconstruct_from_vec(block) {
-                    Ok(block) => self
-                        .journal
-                        .blocks
-                        .insert(
-                            block.reference().to_string(),
-                            &BlockData {
-                                data: block.into(),
-                                valid: true,
-                            },
-                        )
-                        .expect("failed to insert block into journal!"),
+                    Ok(block) => {
+                        let journal = Arc::clone(&self.journal);
+                        spawn_blocking(move || {
+                            journal
+                                .blocks
+                                .insert(
+                                    block.reference().to_string(),
+                                    &BlockData {
+                                        data: block.into(),
+                                        valid: true,
+                                    },
+                                )
+                                .expect("failed to insert block into journal!")
+                        })
+                        .await;
+                    }
                     Err(e) => error!("failed to reconstruct block: {e:?}"),
                 }
 
@@ -107,7 +110,7 @@ pub struct BlockCollector {
 }
 
 impl BlockCollector {
-    pub async fn new(journal: Arc<Journal>, meta_db: Arc<MetadataDb>) -> Result<Arc<Self>> {
+    pub async fn restore(journal: Arc<Journal>, meta_db: Arc<MetadataDb>) -> Result<Arc<Self>> {
         let this = Arc::new(Self {
             inner: Default::default(),
             journal,
@@ -122,18 +125,24 @@ impl BlockCollector {
             let incomplete = rmp_serde::from_slice::<'_, IncompleteBlockData>(&val)
                 .map_err(|e| EncodingError::Internal(e.to_string()))?;
 
-            info!(
-                "Restoring block collection worker for block {id}; {}/{}",
-                incomplete.buffer.len(),
-                incomplete.max_num
-            );
-            for frame in incomplete.buffer {
+            let journal = Arc::clone(&this.journal);
+            let prefix_key = format!("{}::*", id);
+            let frames = journal.frames.prefix(&prefix_key);
+
+            let mut len = 0;
+            for (_, frame_data) in frames {
+                len += 1;
                 this.queue_and_spawn(InMemoryEnvelope {
-                    header: frame.0.maybe_inner()?,
-                    buffer: frame.1,
+                    header: frame_data.header.maybe_inner()?,
+                    buffer: frame_data.payload,
                 })
                 .await?;
             }
+
+            info!(
+                "Restoring block collection worker for block {id}; {}/{}",
+                len, incomplete.max_num
+            );
         }
 
         Ok(this)
@@ -147,6 +156,22 @@ impl BlockCollector {
             .map_or(Err(RatmanError::DesequenceFault), |i| Ok(i))?;
         let _max_num = sequence_id.max;
 
+        if let Ok(Some(mut block_meta)) = self.meta_db.incomplete.get(&sequence_id.hash.to_string())
+        {
+            block_meta.buffer.push(sequence_id.num);
+            self.meta_db
+                .incomplete
+                .insert(sequence_id.hash.to_string(), &block_meta)?;
+        } else {
+            self.meta_db.incomplete.insert(
+                sequence_id.hash.to_string(),
+                &IncompleteBlockData {
+                    max_num: sequence_id.max,
+                    buffer: vec![sequence_id.num],
+                },
+            )?;
+        }
+
         let read = self.inner.read().await;
         let maybe_sender = read.get(&sequence_id.hash);
         match maybe_sender {
@@ -159,6 +184,15 @@ impl BlockCollector {
             }
             None => {
                 let (tx, rx) = channel(8);
+
+                // We drop our read handle, then switch to a write handle
+                drop(read);
+                self.inner
+                    .write()
+                    .await
+                    .insert(sequence_id.hash, tx.clone());
+
+                // Setup a new block worker
                 let senders = Arc::clone(&self.inner);
                 debug!(
                     "Spawn new frame collector for block_id {}",
@@ -171,17 +205,9 @@ impl BlockCollector {
                         buffer: vec![],
                         senders,
                         journal: Arc::clone(&self.journal),
-                        meta_db: Arc::clone(&self.meta_db),
                     }
                     .run(rx),
                 );
-
-                // We drop our read handle, then switch to a write handle
-                drop(read);
-                self.inner
-                    .write()
-                    .await
-                    .insert(sequence_id.hash, tx.clone());
 
                 // Finally queue the first envelope!
                 if let Err(e) = tx.send((sequence_id, env)).await {

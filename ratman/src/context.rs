@@ -52,7 +52,7 @@ pub struct RatmanContext {
     pub(crate) protocol: Arc<Protocol>,
     /// Local client connection handler
     pub(crate) clients: Arc<ConnectionManager>,
-    /// Indicate the current run state of the router context
+    /// React to shutdown signals and gracefully quit
     pub(crate) tripwire: Tripwire,
     /// Atomic state directory lock
     ///
@@ -80,7 +80,7 @@ impl RatmanContext {
         let links = LinksMap::new();
         let routes = RouteTable::new();
 
-        let collector = BlockCollector::new(Arc::clone(&journal), Arc::clone(&meta_db)).await?;
+        let collector = BlockCollector::restore(Arc::clone(&journal), Arc::clone(&meta_db)).await?;
         let clients = Arc::new(ConnectionManager::new());
 
         Ok(Arc::new(Self {

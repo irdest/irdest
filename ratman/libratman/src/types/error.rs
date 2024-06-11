@@ -33,6 +33,8 @@ pub enum RatmanError {
     Io(io::Error),
     #[error("an i/o error: {0}")]
     TokioIo(#[from] tokio::io::Error),
+    #[error("a threading error: {0}")]
+    TokioJoin(#[from] tokio::task::JoinError),
     #[error("a frame parsing error: {0}")]
     Encoding(#[from] self::EncodingError),
     #[error("microframe failed to decode: {0}")]

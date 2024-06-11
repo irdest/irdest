@@ -159,9 +159,6 @@ pub(crate) async fn exec_switching_batch(
                             );
                             continue;
                         }
-
-                        // Integrate this branch into the new block collector
-                        todo!()
                     }
                     // A locally addressed manifest is given to
                     // the journal to collect
