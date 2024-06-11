@@ -20,6 +20,12 @@ fn u32_to_big_endian(val: u32) -> [u8; 4] {
     v
 }
 
+fn u64_to_big_endian(val: u64) -> [u8; 8] {
+    let mut v = [0; 8];
+    BigEndian::write_u64(&mut v, val);
+    v
+}
+
 #[test]
 fn test_u16_to_big_endian() {
     let val: u16 = 1312;
@@ -44,6 +50,13 @@ impl FrameGenerator for u16 {
 impl FrameGenerator for u32 {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         let slice = u32_to_big_endian(self);
+        slice.generate(buf)
+    }
+}
+
+impl FrameGenerator for u64 {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        let slice = u64_to_big_endian(self);
         slice.generate(buf)
     }
 }

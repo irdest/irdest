@@ -8,12 +8,12 @@ use crate::{
     EncodingError, Result,
 };
 use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
+    io::AsyncWriteExt,
     net::{tcp::OwnedReadHalf, TcpStream},
 };
 
 pub struct RawSocketHandle {
-    stream: TcpStream,
+    pub(crate) stream: TcpStream,
     read_counter: usize,
 }
 
@@ -129,19 +129,64 @@ impl RawSocketHandle {
     }
 
     /// Take both the header and a payload encoder and write both
+    pub async fn write_microframe_debug<T: FrameGenerator>(
+        &mut self,
+        mut header: MicroframeHeader,
+        payload: T,
+    ) -> Result<()> {
+        // Encode the payload first
+        let mut payload_buf = vec![];
+        payload.generate(&mut payload_buf)?;
+
+        // Then update the header payload_size
+        header.payload_size = payload_buf
+            .len()
+            .try_into()
+            .expect("payload too large for microframe");
+
+        // Then encode the header
+        let mut header_buf = vec![];
+        header.generate(&mut header_buf)?;
+
+        // Write a header length first, then the rest
+        write_u32(&mut self.stream, header_buf.len() as u32).await?;
+        AsyncWriter::new(header_buf.as_slice(), &mut self.stream)
+            .write_buffer()
+            .await?;
+        AsyncWriter::new(payload_buf.as_slice(), &mut self.stream)
+            .write_buffer()
+            .await?;
+        Ok(())
+    }
+
+    /// Take both the header and a payload encoder and write both
     pub async fn write_microframe<T: FrameGenerator>(
         &mut self,
         mut header: MicroframeHeader,
         payload: T,
     ) -> Result<()> {
-        let mut buf = vec![];
-        payload.generate(&mut buf)?;
-        header.payload_size = buf
+        // Encode the payload first
+        let mut payload_buf = vec![];
+        payload.generate(&mut payload_buf)?;
+
+        // Then update the header payload_size
+        header.payload_size = payload_buf
             .len()
             .try_into()
             .expect("payload too large for microframe");
-        self.write_header(header).await?;
-        self.write_buffer(buf).await?;
+
+        // Then encode the header
+        let mut header_buf = vec![];
+        header.generate(&mut header_buf)?;
+
+        // Write a header length first, then the rest
+        write_u32(&mut self.stream, header_buf.len() as u32).await?;
+        AsyncWriter::new(header_buf.as_slice(), &mut self.stream)
+            .write_buffer()
+            .await?;
+        AsyncWriter::new(payload_buf.as_slice(), &mut self.stream)
+            .write_buffer()
+            .await?;
         Ok(())
     }
 }

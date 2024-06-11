@@ -1,14 +1,15 @@
 use crate::{
-    types::{Address, ClientAuth, Id, Modify, Recipient},
+    api::SubscriptionHandle,
+    types::{Address, AddrAuth, Ident32, Modify, Recipient},
     Result,
 };
 use async_trait::async_trait;
-use std::{collections::BTreeMap, sync::Arc, time::Duration};
+use std::{collections::BTreeMap, net::SocketAddr, sync::Arc};
 
 #[async_trait]
 pub trait RatmanIpcExtV1 {
-    /// A shared initialiser function.  This should spawn local tasks!
-    async fn start(&mut self) -> Result<()>;
+    /// Create a new Ratman IPC interface given a
+    async fn start(bind: SocketAddr) -> Result<Arc<Self>>;
 
     //
     // (@^_^@) Address commands
@@ -19,25 +20,21 @@ pub trait RatmanIpcExtV1 {
     /// Optionally you may give this address a name.  It won't be
     /// shared with any other network participant or client and purely
     /// serves as a human identifier.
-    async fn addr_create(
-        self: &Arc<Self>,
-        auth: ClientAuth,
-        name: Option<String>,
-    ) -> Result<Address>;
+    async fn addr_create(self: &Arc<Self>, name: Option<String>) -> Result<(Address, AddrAuth)>;
 
     /// Delete an address, optionally including all its linked data
     async fn addr_destroy(
         self: &Arc<Self>,
-        auth: ClientAuth,
+        auth: AddrAuth,
         addr: Address,
         force: bool,
     ) -> Result<()>;
 
     /// Mark a particular address as "up"
-    async fn addr_up(self: &Arc<Self>, auth: ClientAuth, addr: Address) -> Result<()>;
+    async fn addr_up(self: &Arc<Self>, auth: AddrAuth, addr: Address) -> Result<()>;
 
     /// Mark a particular address as "down"
-    async fn addr_down(self: &Arc<Self>, auth: ClientAuth, addr: Address) -> Result<()>;
+    async fn addr_down(self: &Arc<Self>, auth: AddrAuth, addr: Address) -> Result<()>;
 
     //
     // (@^_^@) Contact commands
@@ -49,17 +46,17 @@ pub trait RatmanIpcExtV1 {
     /// way to share contacts between clients.
     async fn contact_add(
         self: &Arc<Self>,
-        auth: ClientAuth,
+        auth: AddrAuth,
         addr: Address,
         note: Option<String>,
         tags: BTreeMap<String, String>,
         trust: u8,
-    ) -> Result<Id>;
+    ) -> Result<Ident32>;
 
     /// Apply a simple change across one or multiple contact entries
     async fn contact_modify(
         self: &Arc<Self>,
-        auth: ClientAuth,
+        auth: AddrAuth,
 
         // Selection filter section
         addr_filter: Vec<Address>,
@@ -69,14 +66,17 @@ pub trait RatmanIpcExtV1 {
         // Modification section
         note_modify: Modify<String>,
         tags_modify: Modify<(String, String)>,
-    ) -> Result<Vec<Id>>;
+    ) -> Result<Vec<Ident32>>;
 
     /// Delete existing contact entries via filters
-    async fn contact_delete(self: &Arc<Self>, auth: ClientAuth, addr: Address) -> Result<()>;
+    async fn contact_delete(self: &Arc<Self>, auth: AddrAuth, addr: Address) -> Result<()>;
 
     //
     // (@^_^@) Subscription commands
     //
+
+    /// Check which subscriptions are currently available on the router
+    async fn subs_available(self: &Arc<Self>, auth: AddrAuth) -> Result<Vec<Ident32>>;
 
     /// Create a new subscription for a specific Recipient type
     ///
@@ -86,19 +86,33 @@ pub trait RatmanIpcExtV1 {
     /// additionally add the associated namespace key!  See [todo] for
     /// details!
     ///
-    /// A subscription can optionally be synced, meaning that no
-    /// messages are accepted for the subscription while the client is
-    /// offline (although no guarantees are made about other clients
-    /// -- relevant messages MAY still be able to be queried via the
-    /// journal if another client has added them).
+    /// When re-creating a subscription (for example after the client shuts
+    /// down) it will be reused by the router and a new handle is constructed.
     ///
-    /// Subscriptions can also be auto-deleting, if a `timeout`
-    /// Duration is provided.
-    async fn subs_add(
+    /// To explicitly stop a subscription from the router call `unsubscribe`
+    /// instead!
+    // A subscription can optionally be synced, meaning that no messages are
+    // accepted for the subscription while the client is offline (although no
+    // guarantees are made about other clients -- relevant messages MAY still be
+    // able to be queried via the journal if another client has added them).
+    //
+    // Subscriptions can also be auto-deleting, if a `timeout` Duration is
+    // provided.
+    async fn subs_create(
         self: &Arc<Self>,
-        auth: ClientAuth,
+        auth: AddrAuth,
         subscription_recipient: Recipient,
-        synced: bool,
-        timeout: Option<Duration>,
-    ) -> Result<Id>;
+        // synced: bool,
+        // timeout: Option<Duration>,
+    ) -> Result<SubscriptionHandle>;
+
+    /// Restore a previously created subscription
+    async fn subs_restore(
+        self: &Arc<Self>,
+        auth: AddrAuth,
+        sub_id: Ident32,
+    ) -> Result<SubscriptionHandle>;
+
+    /// Delete a subscription, invalidating any previous subscription handles
+    async fn subs_delete(self: &Arc<Self>, auth: AddrAuth, subsciption_id: Ident32) -> Result<()>;
 }

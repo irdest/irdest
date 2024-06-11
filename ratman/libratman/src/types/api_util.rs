@@ -1,9 +1,13 @@
-use nom::IResult;
+use nom::{combinator::peek, IResult};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    frame::{parse as fparse, FrameGenerator, FrameParser},
-    types::Id,
+    frame::{
+        micro::parse,
+        parse::{self as fparse, take_byte},
+        FrameGenerator, FrameParser,
+    },
+    types::Ident32,
     Result,
 };
 use std::{
@@ -16,29 +20,36 @@ pub fn to_cstring(s: &String) -> CString {
     CString::new(s.as_bytes()).expect("String could not be turned into CString")
 }
 
-/// A simple authentication object
+/// A simple authentication object for an address
+///
+/// A client can have multiple AddrAuth objects active at once, one for each
+/// address that it is using.  An auth object is required to have access to
+/// address functions and is used to encrypt the address private key on disk.
+///
+/// **It is thus strongly recommended to store this auth token encrypted with a
+/// user passphrase**
 #[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ClientAuth {
-    pub client_id: Id,
-    pub token: Id,
+pub struct AddrAuth {
+    pub client_id: Ident32,
+    pub token: Ident32,
 }
 
-impl ClientAuth {
-    pub fn new(client_id: Id) -> Self {
+impl AddrAuth {
+    pub fn new(client_id: Ident32) -> Self {
         Self {
             client_id,
-            token: Id::random(),
+            token: Ident32::random(),
         }
     }
 }
 
-impl Debug for ClientAuth {
+impl Debug for AddrAuth {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "ClientAuth {{ id: {}, token: _ }}", self.client_id)
     }
 }
 
-impl FrameGenerator for ClientAuth {
+impl FrameGenerator for AddrAuth {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         self.client_id.generate(buf)?;
         self.token.generate(buf)?;
@@ -46,7 +57,7 @@ impl FrameGenerator for ClientAuth {
     }
 }
 
-impl FrameGenerator for Option<ClientAuth> {
+impl FrameGenerator for Option<AddrAuth> {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         match self {
             Some(auth) => auth.generate(buf)?,
@@ -56,25 +67,33 @@ impl FrameGenerator for Option<ClientAuth> {
     }
 }
 
-impl FrameParser for ClientAuth {
+impl FrameParser for AddrAuth {
     type Output = Option<Self>;
     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
-        let (input, client_id) = fparse::maybe_id(input)?;
-        let (input, token) = fparse::maybe_id(input)?;
+        let (input, exists) = peek(take_byte)(input)?;
 
-        match (client_id, token) {
-            (Some(client_id), Some(token)) => Ok((input, Some(Self { client_id, token }))),
-            (None, None) => Ok((input, None)),
-            _ => unreachable!(
-                "Probably reachable, but probably we should return a Result<Option<T>> here"
-            ),
-            // let res = match (addr, token) {
-            //     (Some(addr), Some(token)) => Ok(Self { addr, token }),
-            //     (None, Some(_)) => Err(MicroframeError::MissingFields(&["addr"])),
-            //     (Some(_), None) => Err(MicroframeError::MissingFields(&["token"])),
-            //     (None, None) => Err(MicroframeError::MissingFields(&["addr", "token"])),
-            // }
-            // .map_err(|e| RatmanError::Microframe(e));
+        if exists == 0 {
+            // take the byte after all
+            let (input, _) = take_byte(input)?;
+            Ok((input, None))
+        } else {
+            let (input, client_id) = fparse::maybe_id(input)?;
+            let (input, token) = fparse::maybe_id(input)?;
+
+            match (client_id, token) {
+                (Some(client_id), Some(token)) => Ok((input, Some(Self { client_id, token }))),
+                (None, None) => Ok((input, None)),
+                _ => unreachable!(
+                    "Probably reachable, but probably we should return a Result<Option<T>> here"
+                ),
+                // let res = match (addr, token) {
+                //     (Some(addr), Some(token)) => Ok(Self { addr, token }),
+                //     (None, Some(_)) => Err(MicroframeError::MissingFields(&["addr"])),
+                //     (Some(_), None) => Err(MicroframeError::MissingFields(&["token"])),
+                //     (None, None) => Err(MicroframeError::MissingFields(&["addr", "token"])),
+                // }
+                // .map_err(|e| RatmanError::Microframe(e));
+            }
         }
     }
 }

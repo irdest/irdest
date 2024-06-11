@@ -9,7 +9,7 @@ use tokio::{
     sync::mpsc::{channel, Receiver, Sender},
 };
 
-/// Reads chunks from a channel and
+/// Reads chunks from a channel and garbage collect chunks that have already been read
 pub struct ChunkIter<const L: usize> {
     /// A sender and receiver for new chunks
     source: Receiver<Chunk<L>>,

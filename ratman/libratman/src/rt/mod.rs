@@ -17,12 +17,12 @@ use std::{
 };
 use tokio::{
     runtime::{Builder, Runtime},
-    sync::mpsc,
     task::LocalSet,
 };
 
 pub mod reader;
 pub mod writer;
+// pub mod async_io;
 
 /// An arbitrary buffer scheme size called "commonbuf"
 ///
@@ -106,18 +106,28 @@ fn simple_tcp_transfer() {
     use std::time::Duration;
     use tokio::{
         net::{TcpListener, TcpStream},
+        sync::mpsc::channel,
         time::timeout,
     };
 
     // Receiver
-    let mut responder_rx = new_async_thread("tcp server", 32, async move {
+    let (tx, mut rx) = channel(1);
+
+    new_async_thread("tcp server", 32, async move {
         let l = TcpListener::bind("localhost:5555").await.unwrap();
         let (mut stream, _addr) = l.accept().await.unwrap();
 
         let length = LengthReader::new(&mut stream).read_u32().await.unwrap();
-        AsyncVecReader::new(length as usize, &mut stream)
-            .read_to_vec()
-            .await
+
+        tx.send(
+            AsyncVecReader::new(length as usize, &mut stream)
+                .read_to_vec()
+                .await,
+        )
+        .await
+        .unwrap();
+
+        Ok(())
     });
 
     let mut input_data = vec![0; 1024 * 8];
@@ -143,7 +153,7 @@ fn simple_tcp_transfer() {
     });
 
     let received_data = AsyncSystem::new("main".into(), 1)
-        .exec(async move { responder_rx.recv().await.unwrap() })
+        .exec(async move { rx.recv().await.unwrap() })
         .unwrap();
 
     println!("We got {} datas", received_data.len());

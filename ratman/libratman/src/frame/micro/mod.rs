@@ -13,7 +13,7 @@ pub mod parse;
 
 use crate::{
     frame::{parse as fparse, FrameGenerator, FrameParser},
-    types::ClientAuth,
+    types::AddrAuth,
     Result,
 };
 use nom::IResult;
@@ -86,10 +86,10 @@ pub mod client_modes {
 
 /// Metadata header for a Microframe
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct MicroframeHeader {
     pub modes: u16,
-    pub auth: Option<ClientAuth>,
+    pub auth: Option<AddrAuth>,
     pub payload_size: u32,
 }
 
@@ -102,7 +102,7 @@ impl MicroframeHeader {
         }
     }
 
-    pub fn intrinsic_auth(auth: ClientAuth) -> Self {
+    pub fn intrinsic_auth(auth: AddrAuth) -> Self {
         Self {
             modes: client_modes::make(client_modes::INTRINSIC, client_modes::INTRINSIC),
             auth: Some(auth),
@@ -124,9 +124,9 @@ impl FrameParser for MicroframeHeader {
     type Output = Result<Self>;
 
     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
-        let (input, modes) = fparse::take_u16(input)?;
-        let (input, auth) = ClientAuth::parse(input)?;
-        let (input, payload_size) = fparse::take_u32(input)?;
+        let (input, modes) = fparse::take_u16(input).unwrap();
+        let (input, auth) = AddrAuth::parse(input).unwrap();
+        let (input, payload_size) = fparse::take_u32(input).unwrap();
 
         Ok((
             input,
@@ -139,31 +139,31 @@ impl FrameParser for MicroframeHeader {
     }
 }
 
-/// Creates a Microframe from
-///
-/// - message modes
-/// - an optional client auth token
-/// - an optional inner message payload
-pub fn encode_micro_frame<T: FrameGenerator>(
-    modes: u16,
-    auth: Option<ClientAuth>,
-    payload: Option<T>,
-) -> Result<Vec<u8>> {
-    let mut payload_buf = vec![];
-    match payload {
-        Some(p) => p.generate(&mut payload_buf)?,
-        None => {}
-    };
+// /// Creates a Microframe from
+// ///
+// /// - message modes
+// /// - an optional client auth token
+// /// - an optional inner message payload
+// pub fn encode_micro_frame<T: FrameGenerator>(
+//     modes: u16,
+//     auth: Option<AddrAuth>,
+//     payload: Option<T>,
+// ) -> Result<Vec<u8>> {
+//     let mut payload_buf = vec![];
+//     match payload {
+//         Some(p) => p.generate(&mut payload_buf)?,
+//         None => {}
+//     };
 
-    let header = MicroframeHeader {
-        modes,
-        auth,
-        payload_size: payload_buf.len() as u32,
-    };
+//     let header = MicroframeHeader {
+//         modes,
+//         auth,
+//         payload_size: payload_buf.len() as u32,
+//     };
 
-    let mut complete = vec![];
-    header.generate(&mut complete)?;
-    complete.append(&mut payload_buf);
+//     let mut complete = vec![];
+//     header.generate(&mut complete)?;
+//     complete.append(&mut payload_buf);
 
-    Ok(complete)
-}
+//     Ok(complete)
+// }

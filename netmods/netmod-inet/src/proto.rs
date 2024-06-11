@@ -8,7 +8,7 @@ use libratman::{
     frame::carrier::CarrierFrameHeader,
     tokio::io::{AsyncReadExt, AsyncWriteExt},
     tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf},
-    types::{Address, InMemoryEnvelope},
+    types::{Address, Ident32, InMemoryEnvelope},
     EncodingError, NonfatalError, Result,
 };
 use serde::{Deserialize, Serialize};
@@ -92,7 +92,7 @@ impl Handshake {
             CarrierFrameHeader::new_netmodproto_frame(
                 modes,
                 // todo: get router root key!
-                Address::random(),
+                Address(Ident32::random()),
                 payload.len() as u16,
             ),
             payload,

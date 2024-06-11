@@ -22,7 +22,7 @@ use libratman::{
 };
 use std::sync::Arc;
 
-pub(crate) use collector::BlockCollector;
+pub(crate) use collector::{BlockCollector, exec_block_collector_system};
 pub(crate) use send::{dispatch_frame, flood_frame};
 
 /// A high-level message manifest which is used to encode information

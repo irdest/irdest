@@ -6,8 +6,8 @@ use libratman::{
         version_str, versions_compatible,
     },
     frame::micro::{client_modes as cm, MicroframeHeader},
-    tokio::{net::TcpStream, time::timeout},
-    types::{ClientAuth, Id},
+    tokio::{io::ErrorKind, net::TcpStream, time::timeout},
+    types::{AddrAuth, Ident32},
     ClientError, RatmanError, Result,
 };
 use std::ffi::CString;
@@ -20,19 +20,31 @@ pub(super) async fn handshake(stream: TcpStream) -> Result<RawSocketHandle> {
 
     // Read the client handshake to determine whether we are compatible
     let (_header, handshake) = raw_socket.read_microframe::<Handshake>().await?;
-    let compatible = versions_compatible(libratman::api::VERSION, handshake.proto_version);
+    let compatible = versions_compatible(libratman::api::VERSION, handshake.client_version);
 
     // Reject connection and disconnect
-    if !compatible {
+    if compatible {
         raw_socket
-            .write_buffer(libratman::api::VERSION.to_vec())
+            .write_microframe(MicroframeHeader::intrinsic_noauth(), ServerPing::Ok)
+            .await?;
+    } else {
+        let router = version_str(&libratman::api::VERSION);
+        let client = version_str(&handshake.client_version);
+
+        raw_socket
+            .write_microframe(
+                MicroframeHeader::intrinsic_noauth(),
+                ServerPing::IncompatibleVersion {
+                    router: CString::new(router).unwrap(),
+                    client: CString::new(client).unwrap(),
+                },
+            )
             .await?;
 
-        return Err(ClientError::IncompatibleVersion(format!(
-            "self:{},client:{}",
+        return Err(ClientError::IncompatibleVersion(
             version_str(&libratman::api::VERSION),
-            version_str(&handshake.proto_version)
-        ))
+            version_str(&handshake.client_version),
+        )
         .into());
     }
 
@@ -44,7 +56,7 @@ pub(super) enum SessionResult {
     Drop,
 }
 
-fn check_auth(header: &MicroframeHeader, expected_auth: Option<ClientAuth>) -> Result<ClientAuth> {
+fn check_auth(header: &MicroframeHeader, expected_auth: Option<AddrAuth>) -> Result<AddrAuth> {
     header
         .auth
         .ok_or(RatmanError::ClientApi(ClientError::InvalidAuth))
@@ -54,7 +66,7 @@ fn check_auth(header: &MicroframeHeader, expected_auth: Option<ClientAuth>) -> R
         })
 }
 
-async fn reply_ok(raw_socket: &mut RawSocketHandle, auth: ClientAuth) -> Result<()> {
+async fn reply_ok(raw_socket: &mut RawSocketHandle, auth: AddrAuth) -> Result<()> {
     raw_socket
         .write_microframe(MicroframeHeader::intrinsic_auth(auth), ServerPing::Ok)
         .await
@@ -62,27 +74,36 @@ async fn reply_ok(raw_socket: &mut RawSocketHandle, auth: ClientAuth) -> Result<
 
 pub(super) async fn single_session_exchange(
     ctx: &Arc<RatmanContext>,
-    client_id: Id,
-    expected_auth: &mut Option<ClientAuth>,
+    client_id: Ident32,
+    expected_auth: &mut Option<AddrAuth>,
     raw_socket: &mut RawSocketHandle,
 ) -> Result<SessionResult> {
     // a) Send a ping to initiate a response
     // b) Wait for a command response
     // c) Timeout connection in case of no reply
 
-    raw_socket
-        .write_microframe(
-            MicroframeHeader::intrinsic_noauth(),
-            ServerPing::Update {
-                available_subscriptions: vec![],
-            },
-        )
-        .await?;
+    // raw_socket
+    //     .write_microframe(MicroframeHeader::intrinsic_noauth(), ServerPing::Poke)
+    //     .await?;
 
-    let header = match timeout(Duration::from_secs(30), raw_socket.read_header()).await {
+    let header = match timeout(
+        Duration::from_secs(/* 2 minute timeout */ 2 * 60),
+        raw_socket.read_header(),
+    )
+    .await
+    {
         Ok(Ok(header)) => header,
+        // Handle EOF errors explicitly to orderly shut down this thing
+        Ok(Err(RatmanError::TokioIo(err))) if err.kind() == ErrorKind::UnexpectedEof => {
+            MicroframeHeader {
+                modes: cm::make(cm::INTRINSIC, cm::DOWN),
+                auth: None,
+                payload_size: 0,
+            }
+        }
+        // Every other error can be logged properly
         Ok(Err(e)) => {
-            warn!("Client sent invalid payload: {e:?}");
+            debug!("Failed to read from socket: {e:?}");
             let encoded = CString::new(e.to_string().as_bytes()).expect("failed to encode CString");
             raw_socket
                 .write_microframe(
@@ -91,11 +112,11 @@ pub(super) async fn single_session_exchange(
                 )
                 .await?;
 
-            // The client sent us rubbish but it won't phase us
-            return Ok(SessionResult::Drop);
+            // This session ended unexpectedly
+            return Err(e);
         }
         Err(_) => {
-            info!("Connection X timed out!");
+            info!("Connection {client_id} timed out!");
             // We ignore the error here in case the timeout send fails
             let _ = raw_socket
                 .write_microframe(MicroframeHeader::intrinsic_noauth(), ServerPing::Timeout)
@@ -109,6 +130,11 @@ pub(super) async fn single_session_exchange(
     ////////////////////////////////////////////////
 
     match header.modes {
+        m if m == cm::make(cm::INTRINSIC, cm::DOWN) => {
+            info!("Client {client_id} disconnecting");
+            return Ok(SessionResult::Drop);
+        }
+
         // ^-^ Creating a new address key and client auth token
         m if m == cm::make(cm::ADDR, cm::CREATE) => {
             let _payload = raw_socket

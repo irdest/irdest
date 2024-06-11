@@ -16,8 +16,8 @@ mod timepair;
 
 pub use api_util::*;
 pub use envelope::InMemoryEnvelope;
-pub use identifiers::{address::Address, id::Id, subnet::Subnet, target::Neighbour, ID_LEN};
-pub use letterhead::Letterhead;
+pub use identifiers::{address::Address, id::Ident32, subnet::Subnet, target::Neighbour, ID_LEN};
+pub use letterhead::LetterheadV1;
 pub use recipient::Recipient;
 pub use sequence_id::SequenceIdV1;
 pub use status::CurrentStatus;

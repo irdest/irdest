@@ -10,7 +10,7 @@ use async_eris::{BlockReference, BlockSize, MemoryStorage, ReadCapability};
 use libratman::{
     frame::carrier::CarrierFrameHeader,
     futures::AsyncRead,
-    types::{Address, Id, InMemoryEnvelope, Letterhead, Recipient, SequenceIdV1},
+    types::{Address, Ident32, InMemoryEnvelope, LetterheadV1, Recipient, SequenceIdV1},
     Result,
 };
 use std::sync::Arc;
@@ -35,7 +35,7 @@ impl StreamSlicer {
         for (block_ref, block_data) in input {
             let max_payload_size = 999; // fixme /o\
             let _max_in_sequence = block_data.as_slice().len() / max_payload_size as usize;
-            let block_ref = Id::from_bytes(block_ref.as_slice());
+            let block_ref = Ident32::from_bytes(block_ref.as_slice());
 
             // We chunk the data block into as many pieces as are
             // required for the current MTU.  Each carrier frame gets
@@ -88,7 +88,7 @@ impl BlockSlicer {
     pub(crate) async fn slice(
         _ctx: &Arc<RatmanContext>,
         // auth: ClientAuth,
-        (_lhead, _reader): (Letterhead, &mut (impl AsyncRead + Unpin)),
+        (_lhead, _reader): (LetterheadV1, &mut (impl AsyncRead + Unpin)),
         _block_size: BlockSize,
     ) -> Result<(ReadCapability, MemoryStorage)> {
         let _blocks = MemoryStorage::new();

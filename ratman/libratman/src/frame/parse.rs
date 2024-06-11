@@ -1,5 +1,5 @@
 use crate::{
-    types::{Address, Id},
+    types::{Address, Ident32},
     EncodingError, Result,
 };
 use byteorder::{BigEndian, ByteOrder};
@@ -10,9 +10,7 @@ use std::ffi::CString;
 // Re-export the most common nom combinators and make sure we use the
 // same ones everewhere
 pub use nom::{bytes::complete::take, IResult};
-use nom::{bytes::complete::take_while1, combinator::peek, multi::many0, AsBytes};
-
-use super::{generate::generate_cstring, micro::parse::vec_of};
+use nom::{bytes::complete::take_while1, combinator::peek};
 
 /// Peek one byte to check if the next section exists, if so, read LEN
 /// bytes, otherwise burn the zero byte
@@ -39,13 +37,18 @@ pub fn take_u32(input: &[u8]) -> IResult<&[u8], u32> {
     Ok((input, BigEndian::read_u32(slice)))
 }
 
+pub fn take_u64(input: &[u8]) -> IResult<&[u8], u64> {
+    let (input, slice) = take(core::mem::size_of::<u64>())(input)?;
+    Ok((input, BigEndian::read_u64(slice)))
+}
+
 pub fn take_address(input: &[u8]) -> IResult<&[u8], Address> {
     let (input, slice) = take(32 as usize)(input)?;
     Ok((input, Address::from_bytes(slice)))
 }
 
 pub fn take_cstring(input: &[u8]) -> IResult<&[u8], Result<CString>> {
-    let (input, bytes) = take_while1(|c| c as char != '\n')(input)?;
+    let (input, bytes) = take_while1(|c| c as char != '\0')(input)?;
     Ok((
         input,
         CString::new(bytes).map_err(|c| EncodingError::Parsing(format!("{:?}", c)).into()),
@@ -89,6 +92,33 @@ pub fn take_cstring_vec(input: &[u8]) -> IResult<&[u8], Result<Vec<CString>>> {
     Ok((input, Ok(buf)))
 }
 
+pub fn take_cstring_tuple_vec(input: &[u8]) -> IResult<&[u8], Result<Vec<(CString, CString)>>> {
+    let (mut input, num) = take_u16(input)?;
+
+    let (mut cstr_key, mut cstr_val);
+    let mut buf = vec![];
+    for i in 0..num {
+        (input, cstr_key) = maybe_cstring(input)?;
+        (input, cstr_val) = maybe_cstring(input)?;
+        match (cstr_key, cstr_val) {
+            (Ok(Some(c)), Ok(Some(c2))) => buf.push((c, c2)),
+            (Ok(Some(_)), Ok(None)) | (Ok(None), Ok(Some(_))) | (Ok(None), Ok(None)) => {
+                return Ok((
+                    input,
+                    Err(EncodingError::Parsing(format!(
+                        "Tried to read {} string tuples, but only {} were provided",
+                        num, i
+                    ))
+                    .into()),
+                ));
+            }
+            (Err(e), _) | (_, Err(e)) => return Ok((input, Err(e.into()))),
+        }
+    }
+
+    Ok((input, Ok(buf)))
+}
+
 /// Read a single byte to check for existence of a payload, then maybe
 /// read 31 more bytes and assemble it into a full 32 byte address
 pub fn maybe_address(input: &[u8]) -> IResult<&[u8], Option<Address>> {
@@ -111,12 +141,12 @@ pub fn take_byte(input: &[u8]) -> IResult<&[u8], u8> {
 }
 
 /// Peek one byte and then maybe take an Id
-pub fn maybe_id(input: &[u8]) -> IResult<&[u8], Option<Id>> {
+pub fn maybe_id(input: &[u8]) -> IResult<&[u8], Option<Ident32>> {
     maybe_address(input).map(|(i, a)| (i, a.map(|a| a.peel())))
 }
 
 /// Take 32 bytes for an Id
-pub fn take_id(input: &[u8]) -> IResult<&[u8], Id> {
+pub fn take_id(input: &[u8]) -> IResult<&[u8], Ident32> {
     take_address(input).map(|(i, a)| (i, a.peel()))
 }
 
@@ -168,22 +198,23 @@ pub fn maybe_signature(input: &[u8]) -> IResult<&[u8], Option<[u8; 64]>> {
 
 #[test]
 fn test_cstring() {
+    use crate::frame::generate::generate_cstring;
     let data = "Hello to the world!";
     let c = CString::new(data.as_bytes()).unwrap();
 
     let mut cbuf = vec![];
     generate_cstring(c, &mut cbuf).unwrap();
-
-    assert_eq!(cbuf.as_bytes(), format!("{}\0", data).as_bytes());
+    assert_eq!(String::from_utf8(cbuf).unwrap(), format!("{}\0", data));
 }
 
-#[test]
-fn test_cstring_vec() {
-    let data = "Hello to the world!";
-    let c = CString::new(data.as_bytes()).unwrap();
+// #[test]
+// fn test_cstring_vec() {
+//     use crate::frame::generate::generate_cstring;
+//     let data = "Hello to the world!";
+//     let c = CString::new(data.as_bytes()).unwrap();
 
-    let mut cbuf = vec![];
-    generate_cstring(c, &mut cbuf).unwrap();
+//     let mut cbuf = vec![];
+//     generate_cstring(c, &mut cbuf).unwrap();
 
-    assert_eq!(cbuf.as_bytes(), format!("{}\0", data).as_bytes());
-}
+//     assert_eq!(cbuf.as_bytes(), format!("{}\0", data).as_bytes());
+// }

@@ -2,32 +2,27 @@ use crate::{chunk::Chunk, Result};
 use byteorder::{BigEndian, ByteOrder};
 use tokio::io::{AsyncRead, AsyncReadExt};
 
+use super::writer::AsyncWriter;
+
 /// A structure capable of reading a certain length of data
 ///
-/// This API is a bit bonkers: the first runtime is for the reader
-/// type (in this case we own the TcpStream). The second parameter is
-/// the length of the internal chunk.  For data chunks we use
-/// well-known sizes, but the const buffer can be re-used to read
-/// individual values from a stream.
+/// Because we want to allow to read a chunk section by section the "consume"
+/// function takes its own const generic type: S, which is runtime enforced to
+/// be a valid position within L.  But it does mean that a user of this API
+/// needs to:
 ///
-/// Importantly because we want to allow to read a chunk section by
-/// section the "consume" function takes its own const generic type:
-/// S, which is runtime enforced to be a valid position within L.  But
-/// it does mean that a user of this API needs to:
-///
-/// - Stub out a lifetime that can usually be inferred - Provide a
-/// const generic size for the inner chunk - Provide the type of
-/// reader
+/// - Stub out a lifetime that can usually be inferred - Provide a const generic
+/// size for the inner chunk - Provide the type of reader
 ///
 /// And then when consuming data from it:
 ///
 /// - specify the consumption size
 /// - Potentially twice, depending on usage
 ///
-/// Still: it provides a UNIFORM and straight forward API for reading
-/// a chunk of data and OWNING the data afterward. References can
-/// later be made to sub chunks, but it's important that a chunk of
-/// memory can simply be owned in an array.
+/// Still: it provides a UNIFORM and straight forward API for reading a chunk of
+/// data and OWNING the data afterward. References can later be made to sub
+/// chunks, but it's important that a chunk of memory can simply be owned in an
+/// array.
 pub struct AsyncReader<'r, const L: usize, T: AsyncRead + Unpin>(Chunk<L>, &'r mut T);
 
 impl<'r, const L: usize, T: 'r + AsyncRead + Unpin> AsyncReader<'r, L, T> {

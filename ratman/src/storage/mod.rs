@@ -10,26 +10,14 @@
 //! -
 
 use crate::{
-    crypto::{self, decrypt_raw, encrypt_chunk, encrypt_raw, Keypair},
     journal::page::CachePage,
     storage::{
-        addr_key::{AddressData, EncryptedKey},
-        block::IncompleteBlockData,
-        link::LinkData,
-        route::RouteData,
+        addr_key::AddressData, block::IncompleteBlockData, link::LinkData, route::RouteData,
     },
 };
-use ed25519_dalek::{PublicKey, SecretKey, Signature};
 use fjall::{Keyspace, PartitionCreateOptions};
-use libratman::{
-    types::{Address, ClientAuth, Id},
-    Result,
-};
-use rand::rngs::OsRng;
-use std::{
-    borrow::BorrowMut, cell::RefCell, collections::BTreeMap, convert::TryInto, marker::PhantomData,
-};
-use x25519_dalek::SharedSecret;
+use libratman::{types::LetterheadV1, Result};
+use std::marker::PhantomData;
 
 pub mod addr_key;
 pub mod block;
@@ -58,6 +46,7 @@ pub struct MetadataDb {
     pub routes: CachePage<RouteData>,
     pub links: CachePage<LinkData>,
     pub incomplete: CachePage<IncompleteBlockData>,
+    pub available_streams: CachePage<LetterheadV1>,
 }
 
 impl MetadataDb {
@@ -78,6 +67,10 @@ impl MetadataDb {
             db.open_partition("meta_incomplete", PartitionCreateOptions::default())?,
             PhantomData,
         );
+        let available_streams = CachePage(
+            db.open_partition("meta_available_streams", PartitionCreateOptions::default())?,
+            PhantomData,
+        );
 
         Ok(Self {
             db,
@@ -85,6 +78,7 @@ impl MetadataDb {
             routes,
             links,
             incomplete,
+            available_streams,
         })
     }
 }

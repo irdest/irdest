@@ -7,7 +7,7 @@
 
 use libratman::{
     frame::{carrier::CarrierFrameHeader, FrameGenerator, FrameParser},
-    types::{Address, InMemoryEnvelope, Neighbour},
+    types::{Address, Ident32, InMemoryEnvelope, Neighbour},
     EncodingError, NonfatalError, Result,
 };
 use serde::{Deserialize, Serialize};
@@ -63,7 +63,7 @@ impl Handshake {
             CarrierFrameHeader::new_netmodproto_frame(
                 modes,
                 // todo: get router root key!
-                Address::random(),
+                Address(Ident32::random()),
                 payload.len() as u16,
             ),
             payload,

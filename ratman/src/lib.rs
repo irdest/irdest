@@ -42,6 +42,9 @@ pub mod config;
 pub mod context;
 pub mod util;
 
+#[cfg(test)]
+mod test;
+
 /// Start a new Ratman router instance with a launch configuration
 ///
 /// When embedding Ratman into an existing application context (i.e. a

@@ -34,7 +34,7 @@ use self::{
 use fjall::{Keyspace, PartitionCreateOptions};
 use libratman::frame::{carrier::ManifestFrame, FrameParser};
 use libratman::{
-    types::{Id, InMemoryEnvelope},
+    types::{Ident32, InMemoryEnvelope},
     Result,
 };
 use std::marker::PhantomData;
@@ -63,7 +63,7 @@ pub struct Journal {
     /// Fully cached manifests for existing block streams
     pub manifests: CachePage<ManifestData>,
     /// A simple lookup set for known frame IDs
-    pub seen_frames: JournalCache<Id>,
+    pub seen_frames: JournalCache<Ident32>,
     // /// Route metadata table
     // pub routes: CachePage<RouteData>,
     // /// Message stream metadata table
@@ -113,11 +113,11 @@ impl Journal {
         })
     }
 
-    pub fn is_unknown(&self, frame_id: &Id) -> Result<bool> {
+    pub fn is_unknown(&self, frame_id: &Ident32) -> Result<bool> {
         self.seen_frames.get(frame_id)
     }
 
-    pub fn save_as_known(&self, frame_id: &Id) -> Result<()> {
+    pub fn save_as_known(&self, frame_id: &Ident32) -> Result<()> {
         self.seen_frames.insert(frame_id)
     }
 
@@ -137,7 +137,7 @@ impl Journal {
         )
     }
 
-    pub fn remove_frame(&self, frame_id: &Id) -> Result<()> {
+    pub fn remove_frame(&self, frame_id: &Ident32) -> Result<()> {
         self.frames.remove(frame_id.to_string())?;
         Ok(())
     }

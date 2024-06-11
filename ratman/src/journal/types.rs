@@ -1,7 +1,7 @@
 use async_eris::BlockReference;
 use libratman::{
     frame::carrier::{CarrierFrameHeader, ManifestFrame},
-    types::{Address, Id, Recipient},
+    types::{Address, Ident32, Recipient},
 };
 use serde::{Deserialize, Serialize};
 
@@ -29,7 +29,7 @@ pub struct ManifestData {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ManifestLinkData {
-    pub root_ref: Id,
+    pub root_ref: Ident32,
     pub extra_blocks: Vec<BlockReference>,
     pub metadata: String,
 }

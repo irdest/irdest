@@ -5,7 +5,7 @@ use libratman::{
         FrameGenerator,
     },
     tokio::time,
-    types::{Address, ClientAuth, InMemoryEnvelope},
+    types::{Address, AddrAuth, InMemoryEnvelope},
 };
 use std::{
     sync::{
@@ -19,7 +19,7 @@ use tripwire::Tripwire;
 /// Periodically announce an address to the network
 pub struct AddressAnnouncer {
     addr: Address,
-    auth: ClientAuth,
+    auth: AddrAuth,
     db: Arc<MetadataDb>,
 }
 
@@ -27,7 +27,7 @@ impl AddressAnnouncer {
     /// Start a new address announcer with a client authenticator.  Even when
     /// the starting client goes away, this is used to keep the thread local key
     /// cache session alive
-    pub fn new(addr: Address, auth: ClientAuth, ctx: &Arc<RatmanContext>) -> Self {
+    pub fn new(addr: Address, auth: AddrAuth, ctx: &Arc<RatmanContext>) -> Self {
         crypto::open_addr_key(&ctx.meta_db, addr, auth).unwrap();
         Self {
             addr,

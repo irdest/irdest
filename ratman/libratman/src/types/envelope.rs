@@ -1,6 +1,5 @@
 use crate::{
     frame::{carrier::CarrierFrameHeader, FrameGenerator, FrameParser},
-    types::Address,
     EncodingError, Result,
 };
 
@@ -12,9 +11,9 @@ pub struct InMemoryEnvelope {
 }
 
 impl InMemoryEnvelope {
-    #[allow(deprecated)]
+    #[cfg(tests)]
     pub fn test_envelope() -> Self {
-        let header = CarrierFrameHeader::new_announce_frame(Address::random(), 0);
+        let header = CarrierFrameHeader::new_announce_frame(crate::types::Address::random(), 0);
         let mut buffer = vec![];
         let _ = header.generate(&mut buffer);
         Self { header, buffer }

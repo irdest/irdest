@@ -1,14 +1,14 @@
 use chrono::{DateTime, Utc};
 use libratman::{
     tokio::sync::{Mutex, MutexGuard},
-    types::{Address, Id},
+    types::{Address, Ident32},
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 pub(crate) struct ConnectionManager {
     /// A map of client_id -> client metadata
-    inner: Mutex<BTreeMap<Id, RouterClient>>,
+    inner: Mutex<BTreeMap<Ident32, RouterClient>>,
 }
 
 impl ConnectionManager {
@@ -18,8 +18,23 @@ impl ConnectionManager {
         }
     }
 
-    pub async fn lock<'a>(&'a self) -> MutexGuard<'a, BTreeMap<Id, RouterClient>> {
+    pub async fn lock<'a>(&'a self) -> MutexGuard<'a, BTreeMap<Ident32, RouterClient>> {
         self.inner.lock().await
+    }
+
+    pub async fn client_exists_for_address(&self, addr: Address) -> bool {
+        self.inner
+            .lock()
+            .await
+            .iter()
+            .find(|(_, client)| {
+                client
+                    .addrs
+                    .iter()
+                    .find(|client_addr| client_addr == &&addr)
+                    .is_some()
+            })
+            .is_some()
     }
 }
 

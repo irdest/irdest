@@ -4,7 +4,7 @@ use std::ffi::CString;
 
 use crate::{
     frame::FrameGenerator,
-    types::{Address, Id, SequenceIdV1},
+    types::{Address, Ident32, SequenceIdV1},
     EncodingError, Result,
 };
 use byteorder::{BigEndian, ByteOrder};
@@ -19,6 +19,12 @@ fn u16_to_big_endian(val: u16) -> [u8; 2] {
 fn u32_to_big_endian(val: u32) -> [u8; 4] {
     let mut v = [0; 4];
     BigEndian::write_u32(&mut v, val);
+    v
+}
+
+fn u64_to_big_endian(val: u64) -> [u8; 8] {
+    let mut v = [0; 8];
+    BigEndian::write_u64(&mut v, val);
     v
 }
 
@@ -50,6 +56,13 @@ impl FrameGenerator for u32 {
     }
 }
 
+impl FrameGenerator for u64 {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        let slice = u64_to_big_endian(self);
+        slice.generate(buf)
+    }
+}
+
 #[test]
 fn test_slice_generate() {
     let val: u16 = 1312;
@@ -58,35 +71,16 @@ fn test_slice_generate() {
     assert_eq!(buf.as_slice(), [5, 32]);
 }
 
-impl FrameGenerator for Id {
+impl FrameGenerator for Ident32 {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         buf.extend_from_slice(self.as_bytes());
         Ok(())
     }
 }
 
-impl FrameGenerator for Option<Id> {
+impl FrameGenerator for Option<Ident32> {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         // If the Id is None we simply push a zero-byte
-        match self {
-            Some(id) => buf.extend_from_slice(id.as_bytes()),
-            None => buf.push(0),
-        }
-
-        Ok(())
-    }
-}
-
-impl FrameGenerator for Address {
-    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
-        buf.extend_from_slice(self.as_bytes());
-        Ok(())
-    }
-}
-
-impl FrameGenerator for Option<Address> {
-    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
-        // If the Address is None we simply push a zero-byte
         match self {
             Some(id) => buf.extend_from_slice(id.as_bytes()),
             None => buf.push(0),

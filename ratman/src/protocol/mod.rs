@@ -19,7 +19,7 @@ use crate::{context::RatmanContext, protocol::announce::AddressAnnouncer};
 use libratman::{
     frame::carrier::{modes as fmodes, CarrierFrameHeader},
     tokio::{select, sync::Mutex, task},
-    types::{Address, ClientAuth},
+    types::{Address, AddrAuth},
     RatmanError, Result,
 };
 use serde::{Deserialize, Serialize};
@@ -59,7 +59,7 @@ impl Protocol {
     pub(crate) async fn online(
         self: Arc<Self>,
         address: Address,
-        auth: ClientAuth,
+        auth: AddrAuth,
         ctx: Arc<RatmanContext>,
     ) -> Result<()> {
         let mut map = self.online.lock().await;

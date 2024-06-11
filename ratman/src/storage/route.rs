@@ -1,15 +1,15 @@
 use chrono::{DateTime, Utc};
 use libratman::{
     frame::carrier::RouteDataV1,
-    types::{Address, Id},
+    types::{Address, Ident32},
 };
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RouteData {
     peer: Address,
-    link_id: Id,
-    route_id: Id,
+    link_id: Ident32,
+    route_id: Ident32,
     route: RouteEntry,
 }
 

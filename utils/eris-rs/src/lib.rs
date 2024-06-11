@@ -61,6 +61,13 @@ impl BlockReference {
     pub fn as_slice(&self) -> &[u8] {
         &self.0
     }
+    pub fn from_bytes(bytes: &[u8]) -> Self {
+        Self(
+            bytes
+                .try_into()
+                .expect("not enough bytes for a block reference"),
+        )
+    }
 }
 
 impl TryFrom<&String> for BlockReference {

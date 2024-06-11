@@ -31,3 +31,16 @@ pub trait FrameParser {
 pub trait FrameGenerator {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()>;
 }
+
+impl FrameGenerator for () {
+    fn generate(self, _: &mut Vec<u8>) -> Result<()> {
+        Ok(())
+    }
+}
+
+impl FrameParser for () {
+    type Output = ();
+    fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
+        Ok((input, ()))
+    }
+}

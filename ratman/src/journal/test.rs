@@ -1,7 +1,7 @@
 use fjall::{Config, Keyspace};
 use libratman::{
     frame::carrier::{modes, CarrierFrameHeader, CarrierFrameHeaderV1},
-    types::{Address, Id, Recipient, SequenceIdV1},
+    types::{Address, Ident32, Recipient, SequenceIdV1},
 };
 use tempdir::TempDir;
 
@@ -27,7 +27,7 @@ fn insert_get_frames() {
         Address::random(),
         Some(Recipient::Namespace(Address::random())),
         Some(SequenceIdV1 {
-            hash: Id::random(),
+            hash: Ident32::random(),
             num: 0,
             max: 0,
         }),
@@ -42,10 +42,12 @@ fn insert_get_frames() {
         payload: vec![],
     };
 
-    journal.frames.insert(frame_id.to_string(), &frame_data);
-    journal.seen_frames.insert(&frame_id);
+    journal
+        .frames
+        .insert(frame_id.to_string(), &frame_data)
+        .unwrap();
+    journal.seen_frames.insert(&frame_id).unwrap();
 
     let recovered_event = journal.frames.get(&frame_id.to_string()).unwrap();
-
-    assert_eq!(frame_data, recovered_event);
+    assert_eq!(Some(frame_data), recovered_event);
 }

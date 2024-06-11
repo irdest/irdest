@@ -11,12 +11,17 @@ use crate::{
     api::session::{handshake, single_session_exchange, SessionResult},
     context::RatmanContext,
 };
-use libratman::tokio::{
-    net::{TcpListener, TcpStream},
-    task::{spawn_local, yield_now},
+use libratman::{
+    api::types::ServerPing, frame::micro::MicroframeHeader, rt::new_async_thread, types::Ident32,
+    Result,
 };
 use libratman::{
-    api::types::ServerPing, frame::micro::MicroframeHeader, rt::new_async_thread, types::Id, Result,
+    tokio::{
+        io::ErrorKind as TokioIoErrorKind,
+        net::{TcpListener, TcpStream},
+        task::{spawn_local, yield_now},
+    },
+    RatmanError,
 };
 use std::{ffi::CString, future::IntoFuture, net::SocketAddr, sync::Arc};
 
@@ -26,19 +31,19 @@ pub async fn start_api_thread(
     addr: SocketAddr,
     // config: &ConfigTree,
 ) -> Result<()> {
-    let ctx = Arc::clone(&context);
-    let thrx = new_async_thread("api-acceptor", 1024, async move {
+    new_async_thread("ratmand-api-acceptor", 1024, async move {
         let l = TcpListener::bind(addr).await?;
 
-        for (stream, _client_addr) in l.accept().await {
+        while let Ok((stream, client_addr)) = l.accept().await {
             let jh = spawn_local(run_client_handler(Arc::clone(&context), stream));
             spawn_local(async move {
                 let res = jh
                     .into_future()
                     .await
                     .expect("failed to join `run_client_handler` future");
-                if let Err(e) = res {
-                    error!("error occured while handling client connection: {e}");
+                match res {
+                    Ok(()) => info!("Client {client_addr:?} has disconnected gracefully!"),
+                    Err(e) => error!("error occured while handling client connection: {e}"),
                 }
             });
         }
@@ -51,7 +56,7 @@ pub async fn start_api_thread(
 pub async fn run_client_handler(ctx: Arc<RatmanContext>, stream: TcpStream) -> Result<()> {
     let mut raw_socket = handshake(stream).await?;
     let mut active_auth = None;
-    let client_id = Id::random();
+    let client_id = Ident32::random();
 
     // Add a new client entry for this session
     ctx.clients
@@ -63,6 +68,11 @@ pub async fn run_client_handler(ctx: Arc<RatmanContext>, stream: TcpStream) -> R
         match single_session_exchange(&ctx, client_id, &mut active_auth, &mut raw_socket).await {
             Ok(SessionResult::Next) => yield_now().await,
             Ok(SessionResult::Drop) => break,
+            Err(RatmanError::TokioIo(io_err))
+                if io_err.kind() == TokioIoErrorKind::UnexpectedEof =>
+            {
+                debug!("Unexpected end of file, we are probably expecting this");
+            }
             Err(e) => {
                 error!("Fatal error occured in client session: {e}");
                 let e_str = CString::new(e.to_string()).unwrap();

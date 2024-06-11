@@ -17,12 +17,6 @@ use libratman::{
 };
 use std::sync::Arc;
 
-/// A special result type which returns the undelivered buffer
-pub(crate) enum DispatchResult {
-    Ok(()),
-    Err(RatmanError, InMemoryEnvelope),
-}
-
 /// Resolve the target address and dispatch the frame
 ///
 /// Returns an error if resolving or sending failed

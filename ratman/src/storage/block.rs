@@ -1,5 +1,5 @@
 use async_eris::{Block, BlockReference};
-use libratman::{types::Id, BlockError, RatmanError, Result};
+use libratman::{types::Ident32, BlockError, RatmanError, Result};
 use serde::{Deserialize, Serialize};
 
 /// A wrapper type for storing Blocks in various parts of the code

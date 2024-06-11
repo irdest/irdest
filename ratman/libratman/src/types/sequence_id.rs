@@ -1,6 +1,6 @@
 use crate::{
     frame::{parse, FrameGenerator, FrameParser},
-    types::Id,
+    types::Ident32,
     Result,
 };
 use nom::IResult;
@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SequenceIdV1 {
     /// The block's content reference
-    pub hash: Id,
+    pub hash: Ident32,
     /// Number of THIS frame
     pub num: u8,
     /// Number of the LAST frame in the sequence

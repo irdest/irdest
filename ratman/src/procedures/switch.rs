@@ -43,6 +43,7 @@ pub(crate) async fn exec_switching_batch(
     // Control flow endpoint to send signals to this switch between
     // batches
     ingress_tx: Sender<MessageNotifier>,
+    collector_tx: Sender<InMemoryEnvelope>,
     // Metrics collector state to allow diagnostic analysis of this
     // procedure
     // #[cfg(feature = "dashboard")] metrics: &Arc<metrics::Metrics>,
@@ -146,12 +147,10 @@ pub(crate) async fn exec_switching_batch(
             (mode, Some(Recipient::Address(address))) => {
                 // Check if the target address is "reachable"
                 match routes.reachable(address).await {
-                    // A locally addressed data frame is inserted
-                    // into the collector
+                    // A locally addressed data frame is queued on the collector
                     Some(RouteType::Local) if mode == DATA => {
-                        if let Err(_e) = collector
-                            .queue_and_spawn(InMemoryEnvelope { header, buffer })
-                            .await
+                        if let Err(_e) =
+                            collector_tx.send(InMemoryEnvelope { header, buffer }).await
                         {
                             error!(
                                 "Failed to queue frame in sequence {:?}",
@@ -160,19 +159,22 @@ pub(crate) async fn exec_switching_batch(
                             continue;
                         }
                     }
-                    // A locally addressed manifest is given to
-                    // the journal to collect
+                    // Locally addressed manifest is cached in the journal, then
+                    // we notify the ingress system to start collecting the full
+                    // message stream.
                     Some(RouteType::Local) if mode == MANIFEST => {
                         let journal = Arc::clone(&journal);
+                        let ingress_tx = ingress_tx.clone();
                         spawn_local(async move {
                             if let Err(e) =
                                 journal.queue_manifest(InMemoryEnvelope { header, buffer })
                             {
                                 error!("failed to queue Manifest: {e:?}.  This will result in unrecoverable blocks");
                             }
-
-                            // todo: setup consolidation task
-                        });
+                            if let Err(e) = ingress_tx.send(MessageNotifier(header.get_seq_id().unwrap().hash)).await {
+                                error!("failed to notify ingress system for manifest: {e}");
+                            }
+                        }).await.unwrap();
                     }
                     // Any other frame types are currently ignored
                     Some(RouteType::Local) => {

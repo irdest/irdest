@@ -1,6 +1,6 @@
 use crate::{
     frame::{carrier::modes, parse, FrameGenerator, FrameParser},
-    types::{Address, Id, Recipient, SequenceIdV1},
+    types::{Address, Ident32, Recipient, SequenceIdV1},
     EncodingError, Result,
 };
 use chrono::{DateTime, Utc};
@@ -76,7 +76,7 @@ impl CarrierFrameHeader {
             sender,
             recipient: None,
             seq_id: Some(SequenceIdV1 {
-                hash: Id::random(),
+                hash: Ident32::random(),
                 num: 0,
                 max: 0,
             }),
@@ -91,7 +91,7 @@ impl CarrierFrameHeader {
             sender,
             recipient,
             SequenceIdV1 {
-                hash: Id::random(),
+                hash: Ident32::random(),
                 num: 0,
                 max: 0,
             },

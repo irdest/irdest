@@ -1,5 +1,7 @@
 use crate::{
+    context::RatmanContext,
     journal::{types::BlockData, Journal},
+    procedures::BlockNotifier,
     storage::{
         block::{IncompleteBlockData, StorageBlock},
         MetadataDb,
@@ -7,24 +9,50 @@ use crate::{
 };
 use libratman::{
     tokio::{
+        select,
         sync::{
+            broadcast::Sender as BcastSender,
             mpsc::{channel, Receiver, Sender},
             RwLock,
         },
         task::{self, spawn_blocking},
     },
-    types::{Id, InMemoryEnvelope, SequenceIdV1},
+    types::{Ident32, InMemoryEnvelope, SequenceIdV1},
     EncodingError, RatmanError, Result,
 };
 use std::{collections::BTreeMap, sync::Arc};
 
 type EnvSender = Sender<(SequenceIdV1, InMemoryEnvelope)>;
 type EnvReceiver = Receiver<(SequenceIdV1, InMemoryEnvelope)>;
-type SenderStore = Arc<RwLock<BTreeMap<Id, EnvSender>>>;
+type SenderStore = Arc<RwLock<BTreeMap<Ident32, EnvSender>>>;
+
+pub async fn exec_block_collector_system(
+    ctx: Arc<RatmanContext>,
+    mut rx: Receiver<InMemoryEnvelope>,
+    block_bcast: BcastSender<BlockNotifier>,
+) -> Result<()> {
+    loop {
+        let tripwire = ctx.tripwire.clone();
+        select! {
+            biased;
+            _ = tripwire => {},
+            env = rx.recv() => {
+                if env.is_none() {
+                    debug!("Reached the end of frame envelope stream");
+                    break;
+                }
+
+                Arc::clone(&ctx.collector).queue_and_spawn(env.unwrap(), block_bcast.clone()).await?;
+            }
+        }
+    }
+
+    info!("Block collector system shut down");
+    Ok(())
+}
 
 /// Takes a series of frames and re-constructs a single ERIS block
 pub struct BlockCollectorWorker {
-    sequence_id: Id,
     max_num: u8,
     buffer: Vec<InMemoryEnvelope>,
     senders: SenderStore,
@@ -33,7 +61,7 @@ pub struct BlockCollectorWorker {
 
 impl BlockCollectorWorker {
     /// Spawn this!
-    pub async fn run(mut self, mut recv: EnvReceiver) {
+    pub async fn run(mut self, mut recv: EnvReceiver, block_bcast: BcastSender<BlockNotifier>) {
         let this = &mut self;
         while let Some((seq_id, envelope)) = recv.recv().await {
             let insert_at_end = seq_id.num as usize >= this.buffer.len();
@@ -87,13 +115,14 @@ impl BlockCollectorWorker {
                                 )
                                 .expect("failed to insert block into journal!")
                         })
-                        .await;
+                        .await
+                        .unwrap();
                     }
                     Err(e) => error!("failed to reconstruct block: {e:?}"),
                 }
 
-                // self.journal.blocks.insert(format!("{seq_id:?}"), block);
-                // this.output.send((block, seq_id)).await;
+                // Notify all current stream re-assemblers
+                block_bcast.send(BlockNotifier);
 
                 // Finally shut down this block collection worker
                 self.senders.write().await.remove(&seq_id.hash);
@@ -110,7 +139,11 @@ pub struct BlockCollector {
 }
 
 impl BlockCollector {
-    pub async fn restore(journal: Arc<Journal>, meta_db: Arc<MetadataDb>) -> Result<Arc<Self>> {
+    pub async fn restore(
+        journal: Arc<Journal>,
+        meta_db: Arc<MetadataDb>,
+        block_bcast: BcastSender<BlockNotifier>,
+    ) -> Result<Arc<Self>> {
         let this = Arc::new(Self {
             inner: Default::default(),
             journal,
@@ -121,7 +154,7 @@ impl BlockCollector {
         // when the router last shut down
         for entry in Arc::clone(&this.meta_db).incomplete.0.iter() {
             let (key, val) = entry?;
-            let id = Id::from_bytes(&key);
+            let id = Ident32::from_bytes(&key);
             let incomplete = rmp_serde::from_slice::<'_, IncompleteBlockData>(&val)
                 .map_err(|e| EncodingError::Internal(e.to_string()))?;
 
@@ -132,10 +165,13 @@ impl BlockCollector {
             let mut len = 0;
             for (_, frame_data) in frames {
                 len += 1;
-                this.queue_and_spawn(InMemoryEnvelope {
-                    header: frame_data.header.maybe_inner()?,
-                    buffer: frame_data.payload,
-                })
+                this.queue_and_spawn(
+                    InMemoryEnvelope {
+                        header: frame_data.header.maybe_inner()?,
+                        buffer: frame_data.payload,
+                    },
+                    block_bcast.clone(),
+                )
                 .await?;
             }
 
@@ -149,7 +185,11 @@ impl BlockCollector {
     }
 
     /// Queue a new frame and spawn a collection worker if none exists yet
-    pub async fn queue_and_spawn(self: &Arc<Self>, env: InMemoryEnvelope) -> Result<()> {
+    pub async fn queue_and_spawn(
+        self: &Arc<Self>,
+        env: InMemoryEnvelope,
+        block_bcast: BcastSender<BlockNotifier>,
+    ) -> Result<()> {
         let sequence_id = env
             .header
             .get_seq_id()
@@ -200,13 +240,12 @@ impl BlockCollector {
                 );
                 task::spawn_local(
                     BlockCollectorWorker {
-                        sequence_id: sequence_id.hash,
                         max_num: sequence_id.max,
                         buffer: vec![],
                         senders,
                         journal: Arc::clone(&self.journal),
                     }
-                    .run(rx),
+                    .run(rx, block_bcast.clone()),
                 );
 
                 // Finally queue the first envelope!

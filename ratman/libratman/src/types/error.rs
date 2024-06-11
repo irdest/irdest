@@ -87,6 +87,10 @@ pub enum NonfatalError {
     MismatchedEncodingTypes,
     #[error("the stream or buffer didn't have any data at this time")]
     NoData,
+    #[error("a stream is already in progress")]
+    OngoingStream,
+    #[error("no stream is in progress")]
+    NoStream,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -156,8 +160,8 @@ pub enum ScheduleError {
 /// handled by [RatmanError](crate::RatmanError) instead!
 #[derive(Debug, thiserror::Error)]
 pub enum ClientError {
-    #[error("ratman-client and router have incompatible versions: {0}")]
-    IncompatibleVersion(String),
+    #[error("ratman-client ({0}) and router ({1}) have incompatible versions")]
+    IncompatibleVersion(String, String),
     #[error("failed to provide correct authentication in handshake")]
     InvalidAuth,
     #[error("connection was unexpectedly dropped")]

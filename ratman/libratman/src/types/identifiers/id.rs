@@ -15,7 +15,7 @@ use std::{
 #[cfg(feature = "metrics")]
 use prometheus_client::encoding::text::Encode;
 
-/// A cryptographic identifier for the Irdest ecosystem
+/// A random identifier for the Irdest ecosystem
 ///
 /// Internally an ID is 32 bytes long.  This data can either be:
 ///
@@ -32,15 +32,15 @@ use prometheus_client::encoding::text::Encode;
 /// ([`from_hash()])(Id::from_hash).  The hash function used is
 /// blake2.
 #[derive(Copy, Clone, Hash, PartialOrd, Ord, PartialEq, Eq)]
-pub struct Id([u8; ID_LEN]);
+pub struct Ident32([u8; ID_LEN]);
 
-impl Debug for Id {
+impl Debug for Ident32 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "<ID: {}>", hex::encode_upper(self))
     }
 }
 
-impl Display for Id {
+impl Display for Ident32 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -57,13 +57,13 @@ impl Display for Id {
 }
 
 #[cfg(feature = "metrics")]
-impl Encode for Id {
+impl Encode for Ident32 {
     fn encode(&self, w: &mut dyn std::io::Write) -> std::io::Result<()> {
         write!(w, "{:}", self)
     }
 }
 
-impl Id {
+impl Ident32 {
     /// Create an identity from the first 16 bytes of a vector
     ///
     /// This function will panic, if the provided vector isn't long
@@ -210,35 +210,35 @@ impl Id {
 }
 
 /// Implement RAW `From` binary array
-impl From<[u8; ID_LEN]> for Id {
+impl From<[u8; ID_LEN]> for Ident32 {
     fn from(i: [u8; ID_LEN]) -> Self {
         Self(i)
     }
 }
 
 /// Implement RAW `From` binary (reference) array
-impl From<&[u8; ID_LEN]> for Id {
+impl From<&[u8; ID_LEN]> for Ident32 {
     fn from(i: &[u8; ID_LEN]) -> Self {
         Self(i.clone())
     }
 }
 
 /// Implement binary array `From` RAW
-impl From<Id> for [u8; ID_LEN] {
-    fn from(i: Id) -> Self {
+impl From<Ident32> for [u8; ID_LEN] {
+    fn from(i: Ident32) -> Self {
         i.0
     }
 }
 
 /// Implement binary array `From` RAW reference
-impl From<&Id> for [u8; ID_LEN] {
-    fn from(i: &Id) -> Self {
+impl From<&Ident32> for [u8; ID_LEN] {
+    fn from(i: &Ident32) -> Self {
         i.0.clone()
     }
 }
 
 /// Implement RAW identity to binary array reference
-impl AsRef<[u8]> for Id {
+impl AsRef<[u8]> for Ident32 {
     fn as_ref(&self) -> &[u8] {
         &self.0
     }
@@ -247,7 +247,7 @@ impl AsRef<[u8]> for Id {
 /// Iterator for iterating over `Identity`
 pub struct Iter {
     index: usize,
-    ident: Id,
+    ident: Ident32,
 }
 
 impl Iterator for Iter {
@@ -259,7 +259,7 @@ impl Iterator for Iter {
     }
 }
 
-impl IntoIterator for Id {
+impl IntoIterator for Ident32 {
     type Item = u8;
     type IntoIter = Iter;
     fn into_iter(self) -> Self::IntoIter {
@@ -270,7 +270,7 @@ impl IntoIterator for Id {
     }
 }
 
-impl Serialize for Id {
+impl Serialize for Ident32 {
     fn serialize<S>(&self, ser: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -283,7 +283,7 @@ impl Serialize for Id {
     }
 }
 
-impl<'de> Deserialize<'de> for Id {
+impl<'de> Deserialize<'de> for Ident32 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -293,7 +293,7 @@ impl<'de> Deserialize<'de> for Id {
         struct IdentityVisitor;
 
         impl IdentityVisitor {
-            fn from_str<E: Error>(v: &str) -> Result<Id, E> {
+            fn from_str<E: Error>(v: &str) -> Result<Ident32, E> {
                 let v: Vec<u8> = v
                     .split("-")
                     .map(|s| hex::decode(s).map_err(|e| E::custom(e)))
@@ -307,7 +307,7 @@ impl<'de> Deserialize<'de> for Id {
                 Self::from_bytes(&v)
             }
 
-            fn from_bytes<E: Error, V: AsRef<[u8]>>(v: V) -> Result<Id, E> {
+            fn from_bytes<E: Error, V: AsRef<[u8]>>(v: V) -> Result<Ident32, E> {
                 let v = v.as_ref();
                 if v.len() != ID_LEN {
                     return Err(E::custom(format!(
@@ -317,7 +317,7 @@ impl<'de> Deserialize<'de> for Id {
                     )));
                 }
 
-                Ok(Id(v.iter().enumerate().take(ID_LEN).fold(
+                Ok(Ident32(v.iter().enumerate().take(ID_LEN).fold(
                     [0; ID_LEN],
                     |mut buf, (i, u)| {
                         buf[i] = *u;
@@ -328,7 +328,7 @@ impl<'de> Deserialize<'de> for Id {
         }
 
         impl<'de> Visitor<'de> for IdentityVisitor {
-            type Value = Id;
+            type Value = Ident32;
 
             fn expecting(&self, f: &mut Formatter) -> fmt::Result {
                 write!(
@@ -385,7 +385,7 @@ mod test {
     #[cfg(not(features = "aligned"))]
     fn json_serde() {
         let s = b"Yes, we will make total destroy.";
-        let i = Id::truncate(&s.to_vec());
+        let i = Ident32::truncate(&s.to_vec());
         let v = serde_json::to_string(&i).unwrap();
         assert_eq!(
             v,
@@ -399,7 +399,7 @@ mod test {
     #[cfg(not(features = "aligned"))]
     fn bincode_serde() {
         let s = b"Yes, we will make total destroy.";
-        let i = Id::truncate(&s.to_vec());
+        let i = Ident32::truncate(&s.to_vec());
         let v: Vec<u8> = bincode::serialize(&i).unwrap();
         assert_eq!(
             v,
