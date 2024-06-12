@@ -5,6 +5,7 @@ use crate::{
 };
 use async_eris::{BlockKey, BlockReference, ReadCapability};
 use nom::{AsBytes, IResult};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub enum ManifestFrame {

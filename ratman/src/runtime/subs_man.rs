@@ -1,12 +1,9 @@
-use crate::{
-    dispatch::LetterManifest,
-    storage::{subs::SubscriptionData, MetadataDb},
-};
+use crate::storage::{subs::SubscriptionData, MetadataDb};
 use async_eris::ReadCapability;
 use libratman::{
     tokio::sync::{
         broadcast::{channel, Receiver, Sender},
-        RwLock,
+        Mutex,
     },
     types::{Address, Ident32, LetterheadV1, Recipient},
     ClientError, RatmanError, Result,
@@ -32,7 +29,7 @@ impl SubsManager {
         Arc::new(Self {
             meta_db: Arc::clone(meta_db),
             recipients: Locked::new(recipients),
-            active_listeners: Locked::default,
+            active_listeners: Locked::default(),
         })
     }
 
@@ -40,8 +37,9 @@ impl SubsManager {
         self.active_listeners
             .lock()
             .await
-            .entry()
+            .entry(sub_id)
             .or_insert(channel(64).0)
+            .clone()
     }
 
     pub async fn create_subscription(
@@ -75,6 +73,7 @@ impl SubsManager {
                     &SubscriptionData {
                         recipient,
                         listeners: vec![addr].into_iter().collect(),
+                        missed_items: Default::default(),
                     },
                 )?;
 
@@ -103,8 +102,8 @@ impl SubsManager {
         sub.listeners.remove(&addr);
         if sub.listeners.is_empty() {
             self.meta_db.subscriptions.remove(sub_id.to_string())?;
-            self.recipients.lock().await.remove(sub.recipient);
-            self.active_listeners.lock().await.remove(sub_id);
+            self.recipients.lock().await.remove(&sub.recipient);
+            self.active_listeners.lock().await.remove(&sub_id);
         } else {
             self.meta_db
                 .subscriptions
@@ -135,9 +134,30 @@ impl SubsManager {
             .contains(&addr)
         {
             let tx = self.sub_listener(sub_id).await;
+
             Ok(tx.subscribe())
         } else {
             Err(RatmanError::ClientApi(ClientError::NoAddress))
         }
+    }
+
+    pub async fn missed_item(
+        &self,
+        to: Recipient,
+        letterhead: LetterheadV1,
+        read_cap: ReadCapability,
+    ) -> Result<()> {
+        let sid = *self.recipients.lock().await.get(&to).unwrap();
+        let mut sentry = self.meta_db.subscriptions.get(&sid.to_string())?.unwrap();
+
+        sentry
+            .missed_items
+            .entry(to)
+            .or_default()
+            .push((letterhead, read_cap));
+
+        self.meta_db.subscriptions.insert(sid, &sentry)?;
+        
+        Ok(())
     }
 }

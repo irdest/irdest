@@ -20,16 +20,16 @@ use prometheus_client::encoding::text::Encode;
 /// Internally an ID is 32 bytes long.  This data can either be:
 ///
 /// 1. A random identifier for any given resource.
+///
 /// 2. An ed25519 public key, backed by a corresponding private key.
 ///
-/// API functions that _require_ an `Id` to be backed by a private key
-/// MUST wrap it via the [`Address`](super::address::Address) type.
+/// API functions that _require_ an `Id` to be backed by a private key MUST wrap
+/// it via the [`Address`](super::address::Address) type.
 ///
-/// For every consumer that simply wants to identify a unique object,
-/// with a reasonable amount of entropy to avoid collisions, this type
-/// is sufficient.  You can generate it via [`random()`](Id::random)
-/// function, or by hashing a piece of data
-/// ([`from_hash()])(Id::from_hash).  The hash function used is
+/// For every consumer that simply wants to identify a unique object, with a
+/// reasonable amount of entropy to avoid collisions, this type is sufficient.
+/// You can generate it via [`random()`](Id::random) function, or by hashing a
+/// piece of data ([`from_hash()])(Id::from_hash).  The hash function used is
 /// blake2.
 #[derive(Copy, Clone, Hash, PartialOrd, Ord, PartialEq, Eq)]
 pub struct Ident32([u8; ID_LEN]);
@@ -144,8 +144,6 @@ impl Ident32 {
     /// result in a precise ID length data output.  The hash function
     /// is the cryptographic [blake2] cipher, so it can be used to
     /// turn secrets into identity information.
-    ///
-    /// This function requires the `digest` feature.
     ///
     /// [blake2]: https://blake2.net/
     pub fn with_digest<'vec, V: Into<&'vec Vec<u8>>>(vec: V) -> Self {

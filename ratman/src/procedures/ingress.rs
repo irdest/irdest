@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use crate::{context::RatmanContext, journal::Journal};
+use crate::context::RatmanContext;
 use async_eris::ReadCapability;
 use libratman::{
     api::socket_v2::RawSocketHandle,
@@ -12,15 +12,14 @@ use libratman::{
     },
     tokio::{
         fs::File,
-        io::AsyncWrite,
         select,
         sync::{
             broadcast::{Receiver as BcastReceiver, Sender as BcastSender},
-            mpsc::{Receiver, Sender},
+            mpsc::Receiver,
         },
-        task::spawn_local,
+        task::{spawn_local, JoinHandle},
     },
-    tokio_util::compat::{Compat, TokioAsyncReadCompatExt, TokioAsyncWriteCompatExt},
+    tokio_util::compat::TokioAsyncReadCompatExt,
     types::{AddrAuth, Ident32, LetterheadV1},
     NonfatalError, RatmanError, Result,
 };
@@ -128,16 +127,20 @@ async fn decode_message(
     let sub_id = ctx
         .subs
         .recipients
+        .lock()
+        .await
         .get(&manifest.recipient)
         .ok_or(RatmanError::Nonfatal(NonfatalError::NoStream))?;
     let bcast_tx = ctx
         .subs
         .active_listeners
+        .lock()
+        .await
         .get(sub_id)
         .ok_or(RatmanError::Nonfatal(NonfatalError::NoStream))?;
 
     // Notify all actively listening streams
-    bcast_tx.send((letterhead, read_cap)).await?;
+    bcast_tx.send((letterhead, read_cap)).await.unwrap();
     Ok(())
 }
 
@@ -152,58 +155,68 @@ pub async fn handle_subscription_socket(
         let tw = ctx.tripwire.clone();
 
         let item = select! {
-                biased;
-                _ = tw => break,
-                item = rx.recv() => item,
+            biased;
+            _ = tw => break,
+            item = rx.recv() => item,
         };
 
         match item {
             Err(_) => break,
             Ok((letterhead, read_cap)) => {
-                match handle_subscription_stream(&ctx, client_socket, auth, letterhead, read_cap)
-                    .await
-                {
-                    Ok(socket) => {
-                        client_socket = socket;
+                let ctx2 = Arc::clone(&ctx);
+                let rc2 = read_cap.clone();
+                let lh2 = letterhead.clone();
+                
+                // Put the client socket back
+                client_socket =
+                // Run the stream as a function which spawns a local tast
+                // and returns the join handle to wait for.  We do this
+                // because there's no async closures.  Why not just have a
+                // function?  This seemed like more fun.
+                    match |mut client_socket: RawSocketHandle| -> JoinHandle<Result<RawSocketHandle>> {
+                        use libratman::frame::micro::client_modes as cm;
+
+                        // Spawn task on local worker set
+                        spawn_local(async move {
+                            client_socket
+                                .write_microframe(
+                                    MicroframeHeader {
+                                        modes: cm::make(cm::SUB, cm::ONE),
+                                        auth: Some(auth),
+                                        payload_size: 0,
+                                    },
+                                    lh2,
+                                )
+                                .await?;
+
+                            let mut compat_socket = client_socket.stream.compat();
+
+                            // Stream the block stream to the client
+                            async_eris::decode(&mut compat_socket, &rc2, &ctx2.journal.blocks)
+                                .await
+                                .map_err(|e| RatmanError::Block(libratman::BlockError::Eris(e)))?;
+
+                            Ok(RawSocketHandle::new(compat_socket.into_inner()))
+                        })
                     }
+                // Call and await the closure immediately
+                (client_socket)
+                    .await
+                    .expect("failed to join subscription stream task")
+                {
+                    Ok(s) => s,
                     Err(e) => {
-                        error!("subscription socket dead: {e}");
+                        error!("subscription socket died: {e}");
+                        if let Err(e) = ctx.subs.missed_item(letterhead.to, read_cap).await {
+                            error!("failed to persist missed item; client will miss this one: {e}");
+                        }
+                        
                         break;
                     }
-                }
+                };
             }
         }
     }
 
     info!("Subscription socket {sub_id} terminated");
-}
-
-async fn handle_subscription_stream(
-    ctx: &Arc<RatmanContext>,
-    mut socket: RawSocketHandle,
-    auth: AddrAuth,
-    letterhead: LetterheadV1,
-    read_cap: ReadCapability,
-) -> Result<RawSocketHandle> {
-    use libratman::frame::micro::client_modes as cm;
-
-    socket
-        .write_microframe(
-            MicroframeHeader {
-                modes: cm::make(cm::SUB, cm::ONE),
-                auth: Some(auth),
-                payload_size: 0,
-            },
-            letterhead,
-        )
-        .await?;
-
-    let mut compat_socket = socket.stream.compat();
-
-    // Stream the block stream to the client
-    async_eris::decode(&mut compat_socket, &read_cap, &ctx.journal.blocks)
-        .await
-        .map_err(|e| RatmanError::Block(libratman::BlockError::Eris(e)))?;
-
-    Ok(RawSocketHandle::new(compat_socket.into_inner()))
 }

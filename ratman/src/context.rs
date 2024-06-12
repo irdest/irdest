@@ -39,7 +39,6 @@ use tripwire::Tripwire;
 /// This type is responsible for starting and owning various types
 /// that control client and driver connections, and internal coherency
 /// tasks.
-// #[derive(Clone)]
 pub struct RatmanContext {
     /// Keep a version of the launch configuration around
     pub(crate) config: ConfigTree,
@@ -142,9 +141,10 @@ impl RatmanContext {
         // If ratmand isn't set up to run ephemerally (for tests) try
         // to lock the state directory here and crash if we can't.
         if ratmand_config.get_bool_value("ephemeral").unwrap_or(false) {
-            warn!("ratmand is running in ephemeral mode: no data will be persisted to disk");
-            warn!("State directory locking is unimplemented");
-            warn!("Take care that peering hardware is not used from multiple drivers!");
+            // warn!("ratmand is running in ephemeral mode: no data will be persisted to disk");
+            // warn!("State directory locking is unimplemented");
+            // warn!("Take care that peering hardware is not used from multiple drivers!");
+            warn!("ephemeral mode is currently unimplemented");
         } else {
             match Os::lock_state_directory(None).await {
                 Ok(Some(lock)) => {
