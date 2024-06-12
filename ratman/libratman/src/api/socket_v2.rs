@@ -13,7 +13,7 @@ use tokio::{
 };
 
 pub struct RawSocketHandle {
-    pub(crate) stream: TcpStream,
+    pub stream: TcpStream,
     read_counter: usize,
 }
 
@@ -190,6 +190,16 @@ impl RawSocketHandle {
         Ok(())
     }
 }
+
+// impl FuturesAsyncWrite for RawSocketHandle {
+//     fn poll_write(self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &[u8]) -> Poll<IoResult<usize>> {
+//         Poll::Pending
+//     }
+
+//     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<()>> {
+//         Poll::Pending
+//     }
+// }
 
 #[tokio::test]
 async fn test_socket_write_header() -> Result<()> {

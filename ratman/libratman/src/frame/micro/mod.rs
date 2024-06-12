@@ -47,24 +47,19 @@ pub mod client_modes {
     pub const DESTROY: u8   = 0x2;
 
     //// Changing the uptime state of a component
-    pub const UP: u8        = 0x3;
-    pub const DOWN: u8      = 0x4;
+    pub const UP: u8        = 0x10;
+    pub const DOWN: u8      = 0x11;
 
     //// Add and delete are reversible, and re-appliable
-    pub const ADD: u8       = 0x5;
-    pub const DELETE: u8    = 0x6;
-    pub const MODIFY: u8    = 0x7;
+    pub const ADD: u8       = 0x20;
+    pub const DELETE: u8    = 0x21;
+    pub const MODIFY: u8    = 0x22;
 
-    //// A bunch of modes I forgot why we needed
-    pub const LIST: u8      = 0x10;
-    pub const QUERY: u8     = 0x11;
-    pub const ONE: u8       = 0x12;
-    pub const MANY: u8      = 0x13;
-    pub const FLOOD: u8     = 0x14;
-    pub const FETCH: u8     = 0x15;
-    pub const SYSTEM: u8    = 0x16;
-    pub const OP_ADDR: u8   = 0x17;
-    pub const OP_LINK: u8   = 0x18;
+    //// Kitchen sink of auxiliary operations
+    pub const LIST: u8      = 0x30;
+    pub const QUERY: u8     = 0x31;
+    pub const ONE: u8       = 0x32;
+    pub const MANY: u8      = 0x33;
 
 
     /// Assemble a full mode byte from a command namespace and a

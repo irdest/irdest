@@ -19,7 +19,7 @@ use crate::{context::RatmanContext, protocol::announce::AddressAnnouncer};
 use libratman::{
     frame::carrier::{modes as fmodes, CarrierFrameHeader},
     tokio::{select, sync::Mutex, task},
-    types::{Address, AddrAuth},
+    types::{AddrAuth, Address, Ident32},
     RatmanError, Result,
 };
 use serde::{Deserialize, Serialize};
@@ -28,7 +28,6 @@ use std::{
     sync::atomic::{AtomicBool, Ordering},
     sync::Arc,
 };
-use tripwire::Tripwire;
 
 /// A payload that represents a RATMAN-protocol message
 #[derive(Debug, Serialize, Deserialize)]
@@ -60,6 +59,7 @@ impl Protocol {
         self: Arc<Self>,
         address: Address,
         auth: AddrAuth,
+        client_id: Ident32,
         ctx: Arc<RatmanContext>,
     ) -> Result<()> {
         let mut map = self.online.lock().await;
@@ -90,7 +90,7 @@ impl Protocol {
                 _ = tripwire => {
                     return;
                 }
-                _ = AddressAnnouncer::new(address, auth, &ctx).run(b, announce_delay, ctx) => {}
+                _ = AddressAnnouncer::new(address, auth, client_id, &ctx).run(b, announce_delay, ctx) => {}
             }
         });
 

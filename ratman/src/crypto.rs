@@ -13,7 +13,7 @@ use crate::storage::{
     MetadataDb,
 };
 use libratman::{
-    types::{Address, AddrAuth, Ident32},
+    types::{AddrAuth, Address, Ident32},
     RatmanError, Result,
 };
 use rand::{rngs::OsRng, thread_rng, RngCore};
@@ -112,13 +112,13 @@ thread_local! {
     static SHARED_CACHE: RefCell<BTreeMap<(Address, Address), SharedSecret>> = RefCell::new(BTreeMap::default());
 }
 
-pub fn insert_addr_key(meta_db: &Arc<MetadataDb>, client_id: Ident32) -> Result<(Address, AddrAuth)> {
+pub fn insert_addr_key(meta_db: &Arc<MetadataDb>) -> Result<(Address, AddrAuth)> {
     // Generate a public-private keypair
     let secret = SecretKey::generate(&mut OsRng {});
     let public = PublicKey::from(&secret);
     let addr = Address::from_bytes(public.as_bytes());
 
-    let client_auth = AddrAuth::new(client_id);
+    let client_auth = AddrAuth::new();
 
     let mut encrypted_secret = *secret.as_bytes();
     let nonce = encrypt_raw(
@@ -137,8 +137,21 @@ pub fn insert_addr_key(meta_db: &Arc<MetadataDb>, client_id: Ident32) -> Result<
     Ok((addr, client_auth))
 }
 
+/// Destroy the local address key data
+pub fn destroy_addr_key(meta_db: &Arc<MetadataDb>, addr: Address, auth: AddrAuth, client_id: Ident32) -> Result<()> {
+    // Close the address key if it existed
+    let _ = close_addr_key(meta_db, auth, client_id);
+    meta_db.addrs.remove(addr.to_string())?;
+    Ok(())
+}
+
 /// Decrypt an address key and cache it for the local runner thread
-pub fn open_addr_key(meta_db: &Arc<MetadataDb>, addr: Address, auth: AddrAuth) -> Result<()> {
+pub fn open_addr_key(
+    meta_db: &Arc<MetadataDb>,
+    addr: Address,
+    auth: AddrAuth,
+    client_id: Ident32,
+) -> Result<()> {
     let key_data = match meta_db.addrs.get(&addr.to_string())?.unwrap() {
         AddressData::Local(e) => e,
         AddressData::Remote => unreachable!("called open_addr_key with a remote key"),
@@ -153,7 +166,7 @@ pub fn open_addr_key(meta_db: &Arc<MetadataDb>, addr: Address, auth: AddrAuth) -
 
     KEY_CACHE.with(|map| {
         map.borrow_mut().insert(
-            auth.client_id,
+            client_id,
             Keypair::new(SecretKey::from_bytes(decrypted_key.as_slice()).unwrap()),
         );
     });
@@ -161,9 +174,9 @@ pub fn open_addr_key(meta_db: &Arc<MetadataDb>, addr: Address, auth: AddrAuth) -
     Ok(())
 }
 
-pub fn close_addr_key(meta_db: &Arc<MetadataDb>, auth: AddrAuth) {
+pub fn close_addr_key(meta_db: &Arc<MetadataDb>, auth: AddrAuth, client_id: Ident32) {
     KEY_CACHE.with(|map| {
-        map.borrow_mut().remove(&auth.client_id);
+        map.borrow_mut().remove(&client_id);
     });
 }
 
@@ -173,10 +186,11 @@ pub fn start_stream(
     self_addr: Address,
     target_addr: Address,
     auth: AddrAuth,
+    client_id: Ident32,
 ) -> Result<()> {
     KEY_CACHE.with(|map| {
         let map = map.borrow();
-        let decrypted_key = map.get(&auth.client_id).expect("decrypted key not cached!");
+        let decrypted_key = map.get(&client_id).expect("decrypted key not cached!");
         let shared_secret = diffie_hellman(&decrypted_key, target_addr).unwrap();
 
         SHARED_CACHE.with(|map| {

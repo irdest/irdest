@@ -4,10 +4,11 @@
 
 use crate::types::Address;
 use async_eris::BlockReference;
-use std::net::AddrParseError;
+use serde::{Deserialize, Serialize};
+use std::{ffi::CString, net::AddrParseError};
 use tokio::{io, time::error::Elapsed};
 
-use super::InMemoryEnvelope;
+use super::{Ident32, InMemoryEnvelope};
 
 /// An Irdest-wide Result capable of expressing many different states
 pub type Result<T> = std::result::Result<T, RatmanError>;
@@ -158,7 +159,7 @@ pub enum ScheduleError {
 ///
 /// Importantly, more base-type errors (such as I/O and encoding) are
 /// handled by [RatmanError](crate::RatmanError) instead!
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error, Serialize, Deserialize)]
 pub enum ClientError {
     #[error("ratman-client ({0}) and router ({1}) have incompatible versions")]
     IncompatibleVersion(String, String),
@@ -172,6 +173,10 @@ pub enum ClientError {
     NoAddress,
     #[error("address already exists in routing table")]
     DuplicateAddress,
+    #[error("internal server error: {0}")]
+    Internal(String),
+    #[error("requested subscrition ({0}) does not exist")]
+    NoSuchSubscription(Ident32),
 }
 
 /// Any error that can occur when interacting with a netmod driver

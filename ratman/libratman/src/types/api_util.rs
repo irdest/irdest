@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     frame::{
-        micro::parse,
         parse::{self as fparse, take_byte},
         FrameGenerator, FrameParser,
     },
@@ -28,16 +27,14 @@ pub fn to_cstring(s: &String) -> CString {
 ///
 /// **It is thus strongly recommended to store this auth token encrypted with a
 /// user passphrase**
-#[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct AddrAuth {
-    pub client_id: Ident32,
     pub token: Ident32,
 }
 
 impl AddrAuth {
-    pub fn new(client_id: Ident32) -> Self {
+    pub fn new() -> Self {
         Self {
-            client_id,
             token: Ident32::random(),
         }
     }
@@ -45,13 +42,12 @@ impl AddrAuth {
 
 impl Debug for AddrAuth {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "ClientAuth {{ id: {}, token: _ }}", self.client_id)
+        write!(f, "ClientAuth {{ token: _ }}")
     }
 }
 
 impl FrameGenerator for AddrAuth {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
-        self.client_id.generate(buf)?;
         self.token.generate(buf)?;
         Ok(())
     }
@@ -77,22 +73,11 @@ impl FrameParser for AddrAuth {
             let (input, _) = take_byte(input)?;
             Ok((input, None))
         } else {
-            let (input, client_id) = fparse::maybe_id(input)?;
             let (input, token) = fparse::maybe_id(input)?;
 
-            match (client_id, token) {
-                (Some(client_id), Some(token)) => Ok((input, Some(Self { client_id, token }))),
-                (None, None) => Ok((input, None)),
-                _ => unreachable!(
-                    "Probably reachable, but probably we should return a Result<Option<T>> here"
-                ),
-                // let res = match (addr, token) {
-                //     (Some(addr), Some(token)) => Ok(Self { addr, token }),
-                //     (None, Some(_)) => Err(MicroframeError::MissingFields(&["addr"])),
-                //     (Some(_), None) => Err(MicroframeError::MissingFields(&["token"])),
-                //     (None, None) => Err(MicroframeError::MissingFields(&["addr", "token"])),
-                // }
-                // .map_err(|e| RatmanError::Microframe(e));
+            match token {
+                Some(token) => Ok((input, Some(Self { token }))),
+                None => Ok((input, None)),
             }
         }
     }

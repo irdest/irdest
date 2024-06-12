@@ -5,7 +5,11 @@
 use crate::{context::RatmanContext, journal::Journal};
 use async_eris::ReadCapability;
 use libratman::{
-    frame::carrier::{ManifestFrame, ManifestFrameV1},
+    api::socket_v2::RawSocketHandle,
+    frame::{
+        carrier::{ManifestFrame, ManifestFrameV1},
+        micro::MicroframeHeader,
+    },
     tokio::{
         fs::File,
         io::AsyncWrite,
@@ -16,29 +20,12 @@ use libratman::{
         },
         task::spawn_local,
     },
-    tokio_util::compat::{Compat, TokioAsyncReadCompatExt},
-    types::{Ident32, LetterheadV1},
-    Result,
+    tokio_util::compat::{Compat, TokioAsyncReadCompatExt, TokioAsyncWriteCompatExt},
+    types::{AddrAuth, Ident32, LetterheadV1},
+    NonfatalError, RatmanError, Result,
 };
 use std::sync::Arc;
 use tripwire::Tripwire;
-
-// /// Block and yield the next completed message from the queue
-// pub(crate) async fn pop_from_receiver(
-//
-// ) -> Option<Letterhead> {
-//     match receiver.recv().await {
-//         Some(letterhead) => {
-//             info!(
-//                 "[{:?}] Received new message '(id {})' from {}!",
-//                 letterhead.to, letterhead.stream_id, letterhead.from,
-//             );
-
-//             Some(letterhead)
-//         }
-//         _ => None,
-//     }
-// }
 
 /// Notify the ingress system of a new manifest in the journal
 pub(crate) struct MessageNotifier(pub Ident32);
@@ -77,7 +64,7 @@ pub async fn exec_ingress_system(
                 let tripwire = ctx.tripwire.clone();
                 spawn_local(async move {
                     if let Err(e) = decode_message(ctx, manifest_notifier.unwrap(), tripwire, block_notifier.subscribe()).await {
-                        error!("failed to reassemble message stream: {e}");
+                        error!("message stream stuck: {e}");
                         return;
                     }
                 });
@@ -96,13 +83,16 @@ async fn decode_message(
     manifest: MessageNotifier,
     tripwire: Tripwire,
     mut block_notify: BcastReceiver<BlockNotifier>,
-) -> Result<LetterheadV1> {
+) -> Result<()> {
     let manifest = ctx.journal.manifests.get(&manifest.0.to_string())?.unwrap();
 
     // fixme: this won't work on non-linux?
     let null_file = File::open("/dev/null").await?;
-    let read_cap = match manifest.manifest.maybe_inner()? {
-        ManifestFrame::V1(v1) => <ManifestFrameV1 as Into<Result<ReadCapability>>>::into(v1)?,
+    let (read_cap, letterhead) = match manifest.manifest.maybe_inner()? {
+        ManifestFrame::V1(v1) => (
+            <ManifestFrameV1 as Into<Result<ReadCapability>>>::into(v1)?,
+            v1.letterhead,
+        ),
     };
 
     // check that we have all the bits we need to decode a message stream.  If
@@ -111,6 +101,7 @@ async fn decode_message(
         .await
         .is_ok()
     {
+        debug!("Assembled full block: {}", read_cap.root_reference);
     }
     // If we weren't able to decode the full stream we wait for a block notifier
     // event and then try again.
@@ -134,80 +125,85 @@ async fn decode_message(
         }
     }
 
-    // loop {}
+    let sub_id = ctx
+        .subs
+        .recipients
+        .get(&manifest.recipient)
+        .ok_or(RatmanError::Nonfatal(NonfatalError::NoStream))?;
+    let bcast_tx = ctx
+        .subs
+        .active_listeners
+        .get(sub_id)
+        .ok_or(RatmanError::Nonfatal(NonfatalError::NoStream))?;
 
-    // let mut payload_buffer = vec![];
-    // async_eris::decode(&mut payload_buffer, read_cap, &journal.blocks)
-    //     .await
-    //     .map_err(|e| RatmanError::Block(BlockError::from(e)))?;
-
-    // // todo: this is a terrible api and it needs to change.  But
-    // // also this type might be completely useless??
-    // let mut time = TimePair::sending();
-    // time.receive();
-
-    // debug!("Decoding letterhead was successful!");
-    // Ok(Letterhead {
-    //     from: header.get_sender(),
-    //     to: header.get_recipient().unwrap(),
-    //     time,
-    //     stream_id: header.get_seq_id().unwrap().hash,
-    //     payload_length: header.get_payload_length(),
-    //     auxiliary_data: vec![],
-    // })
-
-    todo!()
+    // Notify all actively listening streams
+    bcast_tx.send((letterhead, read_cap)).await?;
+    Ok(())
 }
 
-// /// Run an async task that attempts to re-assemble messages from a
-// /// Manifest, and spawns a long-running version of itself if some
-// /// blocks are still missing.
-// pub(crate) async fn run_message_assembler(
-//     journal: Arc<Journal>,
-//     // mut notifier: Receiver<MessageNotifier>,
-//     sender: Sender<Letterhead>,
-// ) {
-//     let (_, mut notifier) = channel::<MessageNotifier>(1); // fixme: is this even still needed???
+pub async fn handle_subscription_socket(
+    ctx: Arc<RatmanContext>,
+    mut rx: BcastReceiver<(LetterheadV1, ReadCapability)>,
+    mut client_socket: RawSocketHandle,
+    auth: AddrAuth,
+    sub_id: Ident32,
+) {
+    loop {
+        let tw = ctx.tripwire.clone();
 
-//     while let Some(message_notifier) = notifier.recv().await {
-//         let message_id = message_notifier.header.get_seq_id().unwrap().hash;
-//         let sender = sender.clone();
+        let item = select! {
+                biased;
+                _ = tw => break,
+                item = rx.recv() => item,
+        };
 
-//         match decode_message(&journal, &message_notifier).await {
-//             Ok(message) => {
-//                 sender.send(message).await;
-//             }
-//             Err(_) => {
-//                 let journal = Arc::clone(&journal);
+        match item {
+            Err(_) => break,
+            Ok((letterhead, read_cap)) => {
+                match handle_subscription_stream(&ctx, client_socket, auth, letterhead, read_cap)
+                    .await
+                {
+                    Ok(socket) => {
+                        client_socket = socket;
+                    }
+                    Err(e) => {
+                        error!("subscription socket dead: {e}");
+                        break;
+                    }
+                }
+            }
+        }
+    }
 
-//                 warn!(
-//                     "Can't assemble {}, blocks missing!  Trying again later...",
-//                     message_id
-//                 );
-//                 spawn_local(async move {
-//                     let mut ctr = 0;
+    info!("Subscription socket {sub_id} terminated");
+}
 
-//                     loop {
-//                         let millis = (100 + (ctr * 20)).clamp(0, 32);
-//                         debug!(
-//                             "Waiting {}ms for attempt #{} to assemble message {}",
-//                             millis, ctr, message_id,
-//                         );
-//                         time::sleep(Duration::from_millis(millis)).await;
-//                         match decode_message(&journal, &message_notifier).await {
-//                             Ok(msg) => {
-//                                 sender.send(msg).await;
-//                                 break;
-//                             }
-//                             Err(e) => {
-//                                 error!("failed to re-assemble message because of {}", e)
-//                             }
-//                         }
+async fn handle_subscription_stream(
+    ctx: &Arc<RatmanContext>,
+    mut socket: RawSocketHandle,
+    auth: AddrAuth,
+    letterhead: LetterheadV1,
+    read_cap: ReadCapability,
+) -> Result<RawSocketHandle> {
+    use libratman::frame::micro::client_modes as cm;
 
-//                         ctr += 1;
-//                     }
-//                 });
-//             }
-//         }
-//     }
-// }
+    socket
+        .write_microframe(
+            MicroframeHeader {
+                modes: cm::make(cm::SUB, cm::ONE),
+                auth: Some(auth),
+                payload_size: 0,
+            },
+            letterhead,
+        )
+        .await?;
+
+    let mut compat_socket = socket.stream.compat();
+
+    // Stream the block stream to the client
+    async_eris::decode(&mut compat_socket, &read_cap, &ctx.journal.blocks)
+        .await
+        .map_err(|e| RatmanError::Block(libratman::BlockError::Eris(e)))?;
+
+    Ok(RawSocketHandle::new(compat_socket.into_inner()))
+}

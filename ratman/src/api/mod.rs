@@ -13,7 +13,7 @@ use crate::{
 };
 use libratman::{
     api::types::ServerPing, frame::micro::MicroframeHeader, rt::new_async_thread, types::Ident32,
-    Result,
+    ClientError, Result,
 };
 use libratman::{
     tokio::{
@@ -23,7 +23,7 @@ use libratman::{
     },
     RatmanError,
 };
-use std::{ffi::CString, future::IntoFuture, net::SocketAddr, sync::Arc};
+use std::{collections::BTreeMap, future::IntoFuture, net::SocketAddr, sync::Arc};
 
 /// Start a new thread to run the client API socket
 pub async fn start_api_thread(
@@ -55,7 +55,7 @@ pub async fn start_api_thread(
 
 pub async fn run_client_handler(ctx: Arc<RatmanContext>, stream: TcpStream) -> Result<()> {
     let mut raw_socket = handshake(stream).await?;
-    let mut active_auth = None;
+    let mut active_auth = BTreeMap::new();
     let client_id = Ident32::random();
 
     // Add a new client entry for this session
@@ -71,24 +71,26 @@ pub async fn run_client_handler(ctx: Arc<RatmanContext>, stream: TcpStream) -> R
             Err(RatmanError::TokioIo(io_err))
                 if io_err.kind() == TokioIoErrorKind::UnexpectedEof =>
             {
-                debug!("Unexpected end of file, we are probably expecting this");
+                debug!("Unexpected end of file but we were probably expecting this");
+            }
+            Err(RatmanError::ClientApi(client_err)) => {
+                debug!("Client {client_id} invoked an operation with invalid authentication");
+                raw_socket
+                    .write_microframe(
+                        MicroframeHeader::intrinsic_noauth(),
+                        ServerPing::Error(client_err),
+                    )
+                    .await?;
             }
             Err(e) => {
-                error!("Fatal error occured in client session: {e}");
-                let e_str = CString::new(e.to_string()).unwrap();
-
                 // Terminate the session and send error payload to client
-                let _ = match active_auth {
-                    Some(auth) => raw_socket.write_microframe(
-                        MicroframeHeader::intrinsic_auth(auth),
-                        ServerPing::Error(e_str),
-                    ),
-                    None => raw_socket.write_microframe(
+                error!("Fatal error occured in client session: {e}");
+                raw_socket
+                    .write_microframe(
                         MicroframeHeader::intrinsic_noauth(),
-                        ServerPing::Error(e_str),
-                    ),
-                }
-                .await;
+                        ServerPing::Error(ClientError::Internal(e.to_string())),
+                    )
+                    .await?;
                 break;
             }
         }

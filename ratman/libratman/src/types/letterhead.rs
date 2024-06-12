@@ -3,6 +3,7 @@ use crate::{
     types::{Address, Recipient},
     Result,
 };
+use chrono::Utc;
 use nom::IResult;
 use serde::{Deserialize, Serialize};
 use std::ffi::CString;
@@ -32,6 +33,55 @@ pub struct LetterheadV1 {
     /// provided payload.  Please consult the manual for details.
     // todo: limit the auxiliary data size to allow it to be copy?
     pub auxiliary_data: Vec<(CString, CString)>,
+}
+
+impl LetterheadV1 {
+    pub fn new(from: Address, to: Recipient, payload_length: u64) -> Self {
+        Self {
+            from,
+            to,
+            payload_length,
+            auxiliary_data: vec![],
+        }
+    }
+
+    pub fn add_send_time(mut self) -> Self {
+        self.auxiliary_data.push((
+            CString::new("time-sent").unwrap(),
+            CString::new(Utc::now().to_string()).unwrap(),
+        ));
+        self
+    }
+
+    /// Add your own metadata to the stream
+    ///
+    /// This data is only attached to the stream *Manifest* message and will be
+    /// passed to the receiving client ahead of reading the incoming stream.
+    ///
+    /// **Note** this data is NOT being encrypted and every network participant
+    /// will be able to see it.
+    pub fn add_aux_data(mut self, key: impl Into<Vec<u8>>, val: impl Into<Vec<u8>>) -> Self {
+        let key = CString::new(key).expect("invalid key data!");
+        let val = CString::new(val).expect("invalid value data!");
+
+        self.auxiliary_data.push((key, val));
+        self
+    }
+
+    /// Turn a single letterhead into a set of letterheads to multiple recipients
+    ///
+    /// The `to`, `payload_length`, and `auxiliary_data` fields are copied from
+    /// the initial letterhead, so any metadata you want to include in the
+    /// auxiliary data section must be attached before calling this function.
+    pub fn to_many(self, additional_recipients: Vec<Recipient>) -> Vec<Self> {
+        let mut vec = vec![self.clone()];
+        additional_recipients.into_iter().for_each(|recipient| {
+            let mut new_lh = self.clone();
+            new_lh.to = recipient;
+            vec.push(new_lh)
+        });
+        vec
+    }
 }
 
 impl FrameGenerator for LetterheadV1 {

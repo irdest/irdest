@@ -17,17 +17,6 @@ use std::{io::Result as IoResult, marker::PhantomData};
 pub struct CachePage<T: Serialize + DeserializeOwned>(pub PartitionHandle, pub PhantomData<T>);
 
 impl<T: Serialize + DeserializeOwned> CachePage<T> {
-    pub fn new(keyspace: &Keyspace, name: &str, block_size: Option<u32>) -> Result<Self> {
-        let inner = keyspace.open_partition(
-            name,
-            match block_size {
-                Some(bs) => PartitionCreateOptions::default().block_size(bs),
-                None => PartitionCreateOptions::default(),
-            },
-        )?;
-        Ok(Self(inner, PhantomData))
-    }
-
     pub fn insert(&self, key: String, value: &T) -> Result<()> {
         let bin = bincode::serialize(value)?;
         self.0.insert(key, bin)?;
@@ -46,6 +35,7 @@ impl<T: Serialize + DeserializeOwned> CachePage<T> {
             .map(|bin_data| bincode::deserialize(&*bin_data).expect("failed deserialising")))
     }
 
+    /// Perform a prefix key search and filter out invalid entries
     pub fn prefix<'key>(
         &'key self,
         prefix: &'key String,
@@ -65,6 +55,17 @@ impl<T: Serialize + DeserializeOwned> CachePage<T> {
             // then filter out encoding failures
             .filter(|(x, y)| x.is_ok() && y.is_ok())
             .map(|(x, y)| (x.unwrap(), y.unwrap()))
+    }
+
+    /// Get an iterator over all valid entries on this page and their keys
+    pub fn iter<'page>(&'page self) -> impl DoubleEndedIterator<Item = (String, T)> + 'page {
+        self.0.iter().filter_map(|item| match item {
+            Ok((key, val)) => Some((
+                String::from_utf8(key.to_vec()).unwrap(),
+                bincode::deserialize(&*val).unwrap(),
+            )),
+            Err(_) => None,
+        })
     }
 }
 
@@ -107,24 +108,8 @@ pub struct SerdeFrameType<T>(Vec<u8>, PhantomData<T>);
 impl<T: FrameGenerator> From<T> for SerdeFrameType<T> {
     fn from(input: T) -> SerdeFrameType<T> {
         let mut frame_buf = vec![];
-        input.generate(&mut frame_buf);
-
+        input.generate(&mut frame_buf).unwrap();
         SerdeFrameType(frame_buf, PhantomData)
-    }
-}
-
-impl<T: FrameParser<Output = T>> SerdeFrameType<T> {
-    #[deprecated]
-    pub fn to_frametype(&self) -> Result<T> {
-        match T::parse(&self.0) {
-            Ok((_, t)) => Ok(t),
-            Err(e) => Err(RatmanError::Encoding(EncodingError::from(e))),
-        }
-    }
-
-    #[allow(deprecated)]
-    pub fn to_inner(&self) -> Result<T> {
-        self.to_frametype()
     }
 }
 
@@ -153,7 +138,7 @@ impl<T: AsRef<[u8]>> JournalCache<T> {
     }
 
     pub fn insert(&self, value: &T) -> Result<()> {
-        self.0.insert(value, &[true as u8]);
+        self.0.insert(value, &[true as u8])?;
         Ok(())
     }
 

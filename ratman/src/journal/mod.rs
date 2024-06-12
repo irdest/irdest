@@ -55,6 +55,7 @@ mod test;
 /// Warning: if a later read depends on the immediate availability of a previous
 /// insert it is highly recommended not to use the dispatch queue.
 pub struct Journal {
+    #[allow(unused)]
     db: Keyspace,
     /// Single cached frames that haven't yet been delivired
     pub frames: CachePage<FrameData>,
@@ -153,7 +154,7 @@ impl Journal {
                 recipient: env.header.get_recipient().unwrap(),
                 manifest: SerdeFrameType::from(manifest?),
             },
-        );
+        )?;
 
         Ok(())
     }

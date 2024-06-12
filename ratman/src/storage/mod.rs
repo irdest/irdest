@@ -13,6 +13,7 @@ use crate::{
     journal::page::CachePage,
     storage::{
         addr_key::AddressData, block::IncompleteBlockData, link::LinkData, route::RouteData,
+        subs::SubscriptionData,
     },
 };
 use fjall::{Keyspace, PartitionCreateOptions};
@@ -23,6 +24,7 @@ pub mod addr_key;
 pub mod block;
 pub mod link;
 pub mod route;
+pub mod subs;
 
 /// Metadata database handle
 ///
@@ -47,6 +49,7 @@ pub struct MetadataDb {
     pub links: CachePage<LinkData>,
     pub incomplete: CachePage<IncompleteBlockData>,
     pub available_streams: CachePage<LetterheadV1>,
+    pub subscriptions: CachePage<SubscriptionData>,
 }
 
 impl MetadataDb {
@@ -71,6 +74,10 @@ impl MetadataDb {
             db.open_partition("meta_available_streams", PartitionCreateOptions::default())?,
             PhantomData,
         );
+        let subscriptions = CachePage(
+            db.open_partition("meta_subscriptions", PartitionCreateOptions::default())?,
+            PhantomData,
+        );
 
         Ok(Self {
             db,
@@ -79,6 +86,7 @@ impl MetadataDb {
             links,
             incomplete,
             available_streams,
+            subscriptions,
         })
     }
 }

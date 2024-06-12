@@ -1,17 +1,24 @@
-use crate::{context::RatmanContext, crypto};
+use crate::{context::RatmanContext, crypto, procedures::handle_subscription_socket};
 use libratman::{
     api::{
         socket_v2::RawSocketHandle,
-        types::{AddrCreate, AddrDestroy, AddrDown, AddrUp, Handshake, ServerPing},
+        types::{
+            AddrCreate, AddrDestroy, AddrDown, AddrUp, Handshake, ServerPing, SubsCreate,
+            SubsDelete, SubsRestore,
+        },
         version_str, versions_compatible,
     },
     frame::micro::{client_modes as cm, MicroframeHeader},
-    tokio::{io::ErrorKind, net::TcpStream, time::timeout},
-    types::{AddrAuth, Ident32},
+    tokio::{
+        io::ErrorKind,
+        net::{TcpListener, TcpStream},
+        task::spawn_local,
+        time::timeout,
+    },
+    types::{AddrAuth, Address, Ident32},
     ClientError, RatmanError, Result,
 };
-use std::ffi::CString;
-use std::{sync::Arc, time::Duration};
+use std::{collections::BTreeMap, ffi::CString, sync::Arc, time::Duration};
 
 /// Initiate a new client connection
 pub(super) async fn handshake(stream: TcpStream) -> Result<RawSocketHandle> {
@@ -56,12 +63,16 @@ pub(super) enum SessionResult {
     Drop,
 }
 
-fn check_auth(header: &MicroframeHeader, expected_auth: Option<AddrAuth>) -> Result<AddrAuth> {
+fn check_auth(
+    header: &MicroframeHeader,
+    address: Address,
+    expected_auth: &mut BTreeMap<AddrAuth, Address>,
+) -> Result<AddrAuth> {
     header
         .auth
         .ok_or(RatmanError::ClientApi(ClientError::InvalidAuth))
-        .and_then(|given_auth| match expected_auth {
-            Some(expected_auth) if given_auth == expected_auth => Ok(given_auth),
+        .and_then(|given_auth| match expected_auth.get(&given_auth) {
+            Some(addr) if addr == &address => Ok(given_auth),
             _ => Err(RatmanError::ClientApi(ClientError::InvalidAuth)),
         })
 }
@@ -75,17 +86,9 @@ async fn reply_ok(raw_socket: &mut RawSocketHandle, auth: AddrAuth) -> Result<()
 pub(super) async fn single_session_exchange(
     ctx: &Arc<RatmanContext>,
     client_id: Ident32,
-    expected_auth: &mut Option<AddrAuth>,
+    expected_auth: &mut BTreeMap<AddrAuth, Address>,
     raw_socket: &mut RawSocketHandle,
 ) -> Result<SessionResult> {
-    // a) Send a ping to initiate a response
-    // b) Wait for a command response
-    // c) Timeout connection in case of no reply
-
-    // raw_socket
-    //     .write_microframe(MicroframeHeader::intrinsic_noauth(), ServerPing::Poke)
-    //     .await?;
-
     let header = match timeout(
         Duration::from_secs(/* 2 minute timeout */ 2 * 60),
         raw_socket.read_header(),
@@ -104,11 +107,10 @@ pub(super) async fn single_session_exchange(
         // Every other error can be logged properly
         Ok(Err(e)) => {
             debug!("Failed to read from socket: {e:?}");
-            let encoded = CString::new(e.to_string().as_bytes()).expect("failed to encode CString");
             raw_socket
                 .write_microframe(
                     MicroframeHeader::intrinsic_noauth(),
-                    ServerPing::Error(encoded),
+                    ServerPing::Error(ClientError::Internal(e.to_string())),
                 )
                 .await?;
 
@@ -130,17 +132,21 @@ pub(super) async fn single_session_exchange(
     ////////////////////////////////////////////////
 
     match header.modes {
+        //
+        //
+        // ;-; Client is breaking up with us, but at least it's not just a text
         m if m == cm::make(cm::INTRINSIC, cm::DOWN) => {
-            info!("Client {client_id} disconnecting");
+            debug!("Client {client_id} disconnecting gracefully");
             return Ok(SessionResult::Drop);
         }
-
+        //
+        //
         // ^-^ Creating a new address key and client auth token
         m if m == cm::make(cm::ADDR, cm::CREATE) => {
             let _payload = raw_socket
                 .read_payload::<AddrCreate>(header.payload_size)
-                .await?;
-            let (addr, client_auth) = crypto::insert_addr_key(&ctx.meta_db, client_id)?;
+                .await??;
+            let (addr, client_auth) = crypto::insert_addr_key(&ctx.meta_db)?;
 
             ctx.clients
                 .lock()
@@ -153,47 +159,163 @@ pub(super) async fn single_session_exchange(
                 .write_microframe(MicroframeHeader::intrinsic_auth(client_auth), addr)
                 .await?;
         }
+        //
+        //
         // ^-^ Destroy an existing address
         m if m == cm::make(cm::ADDR, cm::DESTROY) => {
-            let _payload = raw_socket
+            let AddrDestroy { addr, force: _ } = raw_socket
                 .read_payload::<AddrDestroy>(header.payload_size)
-                .await?;
+                .await??;
+
+            let auth = check_auth(&header, addr, expected_auth)?;
+
+            crypto::destroy_addr_key(&ctx.meta_db, addr, auth, client_id)?;
+
+            reply_ok(raw_socket, auth).await?;
         }
+        //
+        //
         // ^-^ Mark an existing address as "up" given the correct authentication
         m if m == cm::make(cm::ADDR, cm::UP) => {
             let addr_up = raw_socket
                 .read_payload::<AddrUp>(header.payload_size)
                 .await??;
 
-            // Check if the given auth is valid for this session
-            let auth = check_auth(&header, *expected_auth)?;
+            // Use the provided auth to open the stored address key.  If this
+            // works then we store the provided authentication object in
+            // "expected auth"
+            crypto::open_addr_key(
+                &ctx.meta_db,
+                addr_up.addr,
+                header
+                    .auth
+                    .ok_or(RatmanError::ClientApi(ClientError::InvalidAuth))?,
+                client_id,
+            )?;
+
+            let auth = check_auth(&header, addr_up.addr, expected_auth)?;
 
             Arc::clone(&ctx.protocol)
-                .online(addr_up.addr, auth, Arc::clone(&ctx))
+                .online(addr_up.addr, auth, client_id, Arc::clone(&ctx))
                 .await?;
 
             reply_ok(raw_socket, auth).await?;
         }
+        //
+        //
         // ^-^ Mark an address as "down" which is currently "up"
         m if m == cm::make(cm::ADDR, cm::DOWN) => {
             let addr_down = raw_socket
                 .read_payload::<AddrDown>(header.payload_size)
                 .await??;
 
-            let auth = check_auth(&header, *expected_auth)?;
+            let auth = check_auth(&header, addr_down.addr, expected_auth)?;
+
             ctx.protocol.offline(addr_down.addr).await?;
+            expected_auth.remove(&auth);
+
             reply_ok(raw_socket, auth).await?;
         }
+        //
+        //
+        // ^-^ Create a new subscription
+        m if m == cm::make(cm::SUB, cm::CREATE) => {
+            let subs_create = raw_socket
+                .read_payload::<SubsCreate>(header.payload_size)
+                .await?;
+
+            let auth = check_auth(&header, subs_create.addr, expected_auth)?;
+
+            let (sub_id, rx) = ctx
+                .subs
+                .create_subscription(subs_create.addr, subs_create.recipient)
+                .await?;
+
+            let sub_listen = TcpListener::bind("127.0.0.1:0").await?;
+            let bind = sub_listen.local_addr()?.to_string();
+
+            let stream_ctx = Arc::clone(ctx);
+            spawn_local(async move {
+                if let Ok((stream, _)) = sub_listen.accept().await {
+                    let raw_socket = RawSocketHandle::new(stream);
+                    handle_subscription_socket(stream_ctx, rx, raw_socket, auth, sub_id).await;
+                }
+            });
+
+            raw_socket
+                .write_microframe(
+                    MicroframeHeader::intrinsic_auth(auth),
+                    ServerPing::Subscription {
+                        sub_id,
+                        sub_bind: CString::new(bind).unwrap(),
+                    },
+                )
+                .await?;
+        }
+        //
+        //
+        // ^-^ Destroy an existing subscription
+        m if m == cm::make(cm::SUB, cm::DELETE) => {
+            let subs_delete = raw_socket
+                .read_payload::<SubsDelete>(header.payload_size)
+                .await?;
+
+            let auth = check_auth(&header, subs_delete.addr, expected_auth)?;
+
+            ctx.subs
+                .delete_subscription(subs_delete.addr, subs_delete.sub_id)
+                .await?;
+
+            reply_ok(raw_socket, auth).await?;
+        }
+        //
+        //
+        // ^-^ List available subscriptions
+        m if m == cm::make(cm::SUB, cm::LIST) => {}
+        //
+        //
+        // ^-^ Restore an existing subscription
+        m if m == cm::make(cm::SUB, cm::UP) => {
+            let subs_restore = raw_socket
+                .read_payload::<SubsRestore>(header.payload_size)
+                .await?;
+
+            let auth = check_auth(&header, subs_restore.addr, expected_auth)?;
+
+            let rx = ctx
+                .subs
+                .restore_subscription(subs_restore.addr, subs_restore.sub_id)
+                .await?;
+
+            // todo: spawn receiver task/ socket
+            // todo: return the correct type
+        }
+        //
+        //
+        // ^-^ Client wants to receive exactly one message
+        m if m == cm::make(cm::RECV, cm::ONE) => {}
+        //
+        //
+        // ^-^ Client wants to listen for messages in this session
+        m if m == cm::make(cm::RECV, cm::MANY) => {}
+        //
+        //
+        // ^-^ Client wants to send a message to one recipient
+        m if m == cm::make(cm::SEND, cm::ONE) => {}
+        //
+        //
+        // ^-^ Client wants to send a message to many recipients
+        m if m == cm::make(cm::SEND, cm::MANY) => {}
+        //
+        //
         // u-u Don't know what to do with this
         mode => {
             raw_socket
                 .write_microframe(
                     MicroframeHeader::intrinsic_noauth(),
-                    ServerPing::Error(
-                        CString::new(format!("Invalid mode provided: {}", mode)).unwrap(),
-                    ),
+                    ServerPing::Error(ClientError::Internal(format!("Invalid frame mode: {mode}"))),
                 )
-                .await;
+                .await?;
 
             return Ok(SessionResult::Next);
         }

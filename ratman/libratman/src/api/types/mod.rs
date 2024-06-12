@@ -7,24 +7,26 @@ mod contact;
 mod link;
 mod peer;
 mod recv;
+mod send;
 
 pub use addr::*;
 pub use contact::*;
 pub use link::*;
 pub use peer::*;
 pub use recv::*;
+pub use send::*;
 
 use crate::{
     frame::{
         generate::generate_cstring,
         micro::parse::vec_of,
-        parse::{self, take_cstring, take_id},
+        parse::{self, take_cstring, take_id, take_u32},
         FrameGenerator, FrameParser,
     },
     types::Ident32,
-    EncodingError, Result,
+    ClientError, EncodingError, Result,
 };
-use nom::IResult;
+use nom::{bytes::complete::take, IResult};
 use std::ffi::CString;
 
 /// Sent from the router to the client when a client connects
@@ -84,11 +86,13 @@ pub enum ServerPing {
         available_subscriptions: Vec<Ident32>,
     },
     /// Communicate some kind of API error to the calling client
-    Error(CString),
+    Error(ClientError),
     ///
     IncompatibleVersion { router: CString, client: CString },
     /// Connection timed out
     Timeout,
+    /// Subscription response type
+    Subscription { sub_id: Ident32, sub_bind: CString },
 }
 
 impl FrameGenerator for ServerPing {
@@ -103,13 +107,22 @@ impl FrameGenerator for ServerPing {
             }
             Self::Error(error) => {
                 buf.push(3);
-                generate_cstring(error, buf)?;
+                let mut err_buf = bincode::serialize(&error)?;
+                let mut len_buf = vec![];
+                (buf.len() as u32).generate(&mut len_buf)?;
+                buf.append(&mut len_buf);
+                buf.append(&mut err_buf);
             }
             Self::Timeout => buf.push(4),
             Self::IncompatibleVersion { router, client } => {
                 buf.push(5);
                 generate_cstring(router, buf)?;
                 generate_cstring(client, buf)?;
+            }
+            Self::Subscription { sub_id, sub_bind } => {
+                buf.push(6);
+                Some(sub_id).generate(buf)?;
+                generate_cstring(sub_bind, buf)?;
             }
         }
 
@@ -132,9 +145,11 @@ impl FrameParser for ServerPing {
                 })
             }
             3 => {
-                let (_input, err_str) = take_cstring(input)?;
+                let (_input, err_len) = take_u32(input)?;
+                let (_input, err_buf) = take(err_len as usize)(input)?;
+                let err = bincode::deserialize(&err_buf).unwrap();
                 input = _input;
-                Ok(Self::Error(err_str.expect("failed to decode error string")))
+                Ok(Self::Error(err))
             }
             4 => Ok(Self::Timeout),
             5 => {
@@ -145,6 +160,12 @@ impl FrameParser for ServerPing {
                     router: router.expect("failed to decode version string"),
                     client: client.expect("failed to decode version string"),
                 })
+            }
+            6 => {
+                let (_input, sub_id) = take_id(input)?;
+                let (_input, sub_bind) = take_cstring(input)?;
+                input = _input;
+                sub_bind.map(|sub_bind| Self::Subscription { sub_id, sub_bind })
             }
             _ => Err(EncodingError::Parsing(format!("Invalid ServerPing type={}", tt)).into()),
         };

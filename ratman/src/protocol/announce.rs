@@ -5,7 +5,7 @@ use libratman::{
         FrameGenerator,
     },
     tokio::time,
-    types::{Address, AddrAuth, InMemoryEnvelope},
+    types::{AddrAuth, Address, Ident32, InMemoryEnvelope},
 };
 use std::{
     sync::{
@@ -14,12 +14,12 @@ use std::{
     },
     time::Duration,
 };
-use tripwire::Tripwire;
 
 /// Periodically announce an address to the network
 pub struct AddressAnnouncer {
     addr: Address,
-    auth: AddrAuth,
+    pub(super) auth: AddrAuth,
+    client_id: Ident32,
     db: Arc<MetadataDb>,
 }
 
@@ -27,11 +27,17 @@ impl AddressAnnouncer {
     /// Start a new address announcer with a client authenticator.  Even when
     /// the starting client goes away, this is used to keep the thread local key
     /// cache session alive
-    pub fn new(addr: Address, auth: AddrAuth, ctx: &Arc<RatmanContext>) -> Self {
-        crypto::open_addr_key(&ctx.meta_db, addr, auth).unwrap();
+    pub fn new(
+        addr: Address,
+        auth: AddrAuth,
+        client_id: Ident32,
+        ctx: &Arc<RatmanContext>,
+    ) -> Self {
+        crypto::open_addr_key(&ctx.meta_db, addr, auth, client_id).unwrap();
         Self {
             addr,
             auth,
+            client_id,
             db: Arc::clone(&ctx.meta_db),
         }
     }
@@ -42,7 +48,7 @@ impl AddressAnnouncer {
 // keys need to be wiped.
 impl Drop for AddressAnnouncer {
     fn drop(&mut self) {
-        crypto::close_addr_key(&self.db, self.auth);
+        crypto::close_addr_key(&self.db, self.auth, self.client_id);
     }
 }
 

@@ -1,10 +1,12 @@
 use crate::{
     api::SubscriptionHandle,
-    types::{Address, AddrAuth, Ident32, Modify, Recipient},
+    types::{AddrAuth, Address, Ident32, LetterheadV1, Modify, Recipient},
     Result,
 };
 use async_trait::async_trait;
+use futures::AsyncWrite;
 use std::{collections::BTreeMap, net::SocketAddr, sync::Arc};
+use tokio::io::AsyncRead;
 
 #[async_trait]
 pub trait RatmanIpcExtV1 {
@@ -101,18 +103,72 @@ pub trait RatmanIpcExtV1 {
     async fn subs_create(
         self: &Arc<Self>,
         auth: AddrAuth,
-        subscription_recipient: Recipient,
-        // synced: bool,
-        // timeout: Option<Duration>,
+        addr: Address,
+        recipient: Recipient,
     ) -> Result<SubscriptionHandle>;
 
     /// Restore a previously created subscription
     async fn subs_restore(
         self: &Arc<Self>,
         auth: AddrAuth,
+        addr: Address,
         sub_id: Ident32,
     ) -> Result<SubscriptionHandle>;
 
     /// Delete a subscription, invalidating any previous subscription handles
-    async fn subs_delete(self: &Arc<Self>, auth: AddrAuth, subsciption_id: Ident32) -> Result<()>;
+    async fn subs_delete(
+        self: &Arc<Self>,
+        auth: AddrAuth,
+        addr: Address,
+        subsciption_id: Ident32,
+    ) -> Result<()>;
+}
+
+#[async_trait]
+pub trait RatmanStreamExtV1: RatmanIpcExtV1 {
+    /// Send a message stream to a single address on the network
+    ///
+    /// A send action needs a valid authentication token for the address that it
+    /// is being sent from.  The letterhead contains metadata about the stream:
+    /// what address is sending where, and how much.
+    ///
+    /// Optionally you can call `.add_send_time()` on the letterhead before
+    /// passing it to this function to include the current time in the stream
+    /// for the receiving client.
+    async fn send_to<I: AsyncRead>(
+        self: &Arc<Self>,
+        auth: AddrAuth,
+        letterhead: LetterheadV1,
+        data_reader: I,
+    ) -> Result<()>;
+
+    /// Send the same message stream to multiple recipients
+    ///
+    /// Most of the Letterhead
+    async fn send_many<I: AsyncRead>(
+        self: &Arc<Self>,
+        auth: AddrAuth,
+        letterheads: Vec<LetterheadV1>,
+        data_reader: I,
+    ) -> Result<()>;
+
+    /// Block this task/ socket to wait for a single incoming message stream
+    async fn recv_one<I: AsyncWrite>(
+        self: &Arc<Self>,
+        auth: AddrAuth,
+        to: Recipient,
+        data_writer: I,
+    ) -> Result<LetterheadV1>;
+
+    /// Return an iterator over a stream of letterheads and read streams
+    async fn recv_many<I, R, C>(self: &Arc<Self>, auth: AddrAuth, to: Recipient) -> Result<I>
+    where
+        I: Iterator<Item = (LetterheadV1, R, C)>,
+        R: AsyncRead,
+        C: Cancel;
+}
+
+#[async_trait]
+pub trait Cancel {
+    async fn cancel(&self);
 }

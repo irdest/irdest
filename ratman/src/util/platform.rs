@@ -20,7 +20,7 @@ pub enum Os {
 
 /// Represents a state-directory lock which must be kept alive for the
 /// runtime of the daemon
-pub struct StateDirectoryLock(File);
+pub struct StateDirectoryLock(#[allow(unused)] File);
 
 impl Os {
     pub fn match_os() -> Os {

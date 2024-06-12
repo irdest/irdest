@@ -42,17 +42,24 @@ mod test;
 use crate::{
     api::{
         socket_v2::RawSocketHandle,
-        types::{Handshake, ServerPing},
+        types::{Handshake, ServerPing, SubsCreate, SubsDelete},
     },
     frame::micro::{client_modes as cm, MicroframeHeader},
-    rt::new_async_thread,
     types::Address,
     ClientError, EncodingError, Result,
 };
 pub use _trait::RatmanIpcExtV1;
 use async_trait::async_trait;
-use std::{collections::BTreeMap, ffi::CString, net::SocketAddr, sync::Arc};
-use tokio::{net::TcpStream, runtime::Runtime, spawn, sync::Mutex, task::spawn_local};
+use std::{
+    collections::BTreeMap,
+    ffi::CString,
+    net::{AddrParseError, Ipv4Addr, SocketAddr, SocketAddrV4},
+    str::FromStr,
+    sync::Arc,
+};
+use tokio::{net::TcpStream, sync::Mutex};
+
+use self::types::SubsRestore;
 
 /// Indicate the current version of this library.
 ///
@@ -151,13 +158,26 @@ impl RatmanIpcExtV1 for RatmanIpc {
         addr: crate::types::Address,
         force: bool,
     ) -> crate::Result<()> {
-        // let msg = encode_micro_frame(
-        //     cm::make(cm::ADDR, cm::DELETE),
-        //     Some(auth),
-        //     Some(ty::AddrDestroy { addr, force }),
-        // )?;
+        let mut socket = self.socket().lock().await;
 
-        todo!()
+        socket
+            .write_microframe(
+                MicroframeHeader {
+                    modes: cm::make(cm::ADDR, cm::DESTROY),
+                    auth: Some(auth),
+                    ..Default::default()
+                },
+                ty::AddrDestroy { addr, force },
+            )
+            .await?;
+
+        let (_, ping) = socket.read_microframe::<ServerPing>().await?;
+
+        match ping? {
+            ServerPing::Ok => Ok(()),
+            ServerPing::Error(e) => Err(e.into()),
+            _ => Err(ClientError::ConnectionLost.into()),
+        }
     }
 
     async fn addr_up(
@@ -165,13 +185,26 @@ impl RatmanIpcExtV1 for RatmanIpc {
         auth: crate::types::AddrAuth,
         addr: crate::types::Address,
     ) -> crate::Result<()> {
-        // let msg = encode_micro_frame(
-        //     cm::make(cm::ADDR, cm::UP),
-        //     Some(auth),
-        //     Some(ty::AddrUp { addr }),
-        // )?;
+        let mut socket = self.socket().lock().await;
 
-        todo!()
+        socket
+            .write_microframe(
+                MicroframeHeader {
+                    modes: cm::make(cm::ADDR, cm::UP),
+                    auth: Some(auth),
+                    ..Default::default()
+                },
+                ty::AddrUp { addr },
+            )
+            .await?;
+
+        let (_, ping) = socket.read_microframe::<ServerPing>().await?;
+
+        match ping? {
+            ServerPing::Ok => Ok(()),
+            ServerPing::Error(e) => Err(e.into()),
+            _ => Err(ClientError::ConnectionLost.into()),
+        }
     }
 
     async fn addr_down(
@@ -179,55 +212,60 @@ impl RatmanIpcExtV1 for RatmanIpc {
         auth: crate::types::AddrAuth,
         addr: crate::types::Address,
     ) -> crate::Result<()> {
-        // let msg = encode_micro_frame(
-        //     cm::make(cm::ADDR, cm::DOWN),
-        //     Some(auth),
-        //     Some(ty::AddrUp { addr }),
-        // )?;
+        let mut socket = self.socket().lock().await;
 
-        todo!()
+        socket
+            .write_microframe(
+                MicroframeHeader {
+                    modes: cm::make(cm::ADDR, cm::DOWN),
+                    auth: Some(auth),
+                    ..Default::default()
+                },
+                ty::AddrDown { addr },
+            )
+            .await?;
+
+        let (_, ping) = socket.read_microframe::<ServerPing>().await?;
+
+        match ping? {
+            ServerPing::Ok => Ok(()),
+            ServerPing::Error(e) => Err(e.into()),
+            _ => Err(ClientError::ConnectionLost.into()),
+        }
     }
 
     async fn contact_add(
         self: &Arc<Self>,
-        auth: crate::types::AddrAuth,
-        addr: crate::types::Address,
-        note: Option<String>,
-        tags: BTreeMap<String, String>,
-        trust: u8,
+        _auth: crate::types::AddrAuth,
+        _addr: crate::types::Address,
+        _note: Option<String>,
+        _tags: BTreeMap<String, String>,
+        _trust: u8,
     ) -> crate::Result<crate::types::Ident32> {
-        // let msg = encode_micro_frame(
-        //     cm::make(cm::CONTACT, cm::ADD),
-        //     Some(auth),
-        //     Some(ty::ContactAdd::new(addr, note, tags.into_iter(), trust)),
-        // )?;
-
         todo!()
     }
 
     async fn contact_modify(
         self: &Arc<Self>,
-        auth: crate::types::AddrAuth,
+        _auth: crate::types::AddrAuth,
 
         // Selection filter section
-        addr_filter: Vec<crate::types::Address>,
-        note_filter: Option<String>,
-        tags_filter: BTreeMap<String, String>,
+        _addr_filter: Vec<crate::types::Address>,
+        _note_filter: Option<String>,
+        _tags_filter: BTreeMap<String, String>,
 
         // Modification section
-        note_modify: crate::types::Modify<String>,
-        tags_modify: crate::types::Modify<(String, String)>,
+        _note_modify: crate::types::Modify<String>,
+        _tags_modify: crate::types::Modify<(String, String)>,
     ) -> crate::Result<Vec<crate::types::Ident32>> {
-        let modes = cm::make(cm::CONTACT, cm::MODIFY);
         todo!()
     }
 
     async fn contact_delete(
         self: &Arc<Self>,
-        auth: crate::types::AddrAuth,
-        addr: crate::types::Address,
+        _auth: crate::types::AddrAuth,
+        _addr: crate::types::Address,
     ) -> crate::Result<()> {
-        let modes = cm::make(cm::CONTACT, cm::DELETE);
         todo!()
     }
 
@@ -235,43 +273,134 @@ impl RatmanIpcExtV1 for RatmanIpc {
         self: &Arc<Self>,
         auth: crate::types::AddrAuth,
     ) -> crate::Result<Vec<crate::types::Ident32>> {
-        // let msg = encode_micro_frame::<()>(cm::make(cm::SUB, cm::LIST), Some(auth), None)?;
+        let mut socket = self.socket().lock().await;
+        socket
+            .write_microframe(
+                MicroframeHeader {
+                    modes: cm::make(cm::SUB, cm::LIST),
+                    auth: Some(auth),
+                    ..Default::default()
+                },
+                (), // no payload needed
+            )
+            .await?;
 
-        todo!()
+        let (_, ping) = socket.read_microframe::<ServerPing>().await?;
+
+        match ping? {
+            ServerPing::Update {
+                available_subscriptions,
+            } => Ok(available_subscriptions),
+            ServerPing::Error(e) => Err(e.into()),
+            _ => Err(ClientError::ConnectionLost.into()),
+        }
     }
 
     async fn subs_create(
         self: &Arc<Self>,
         auth: crate::types::AddrAuth,
-        subscription_recipient: crate::types::Recipient,
+        addr: crate::types::Address,
+        recipient: crate::types::Recipient,
     ) -> crate::Result<crate::api::SubscriptionHandle> {
-        // let msg = encode_micro_frame(
-        //     cm::make(cm::CONTACT, cm::ADD),
-        //     Some(auth),
-        //     Some(ty::SubsCreate {
-        //         recipient: subscription_recipient,
-        //     }),
-        // )?;
+        let mut socket = self.socket().lock().await;
+        socket
+            .write_microframe(
+                MicroframeHeader {
+                    modes: cm::make(cm::SUB, cm::CREATE),
+                    auth: Some(auth),
+                    ..Default::default()
+                },
+                SubsCreate { addr, recipient },
+            )
+            .await?;
 
-        // self.socket.write_buffer(msg).await?;
+        let (_, resp) = socket.read_microframe::<ServerPing>().await?;
 
-        todo!()
+        match resp? {
+            ServerPing::Subscription { sub_id, sub_bind } => {
+                let bind_str: String = sub_bind
+                    .into_string()
+                    .map_err(|e| EncodingError::Internal(e.to_string()))?;
+
+                Ok(SubscriptionHandle {
+                    id: sub_id,
+                    curr_stream: None,
+                    read_from_stream: 0,
+                    socket: RawSocketHandle::new(TcpStream::connect(&bind_str).await?),
+                })
+            }
+            ServerPing::Error(e) => Err(e.into()),
+            _ => Err(ClientError::ConnectionLost.into()),
+        }
     }
 
     async fn subs_restore(
         self: &Arc<Self>,
         auth: crate::types::AddrAuth,
-        sub_id: crate::types::Ident32,
+        addr: crate::types::Address,
+        req_sub_id: crate::types::Ident32,
     ) -> crate::Result<SubscriptionHandle> {
-        todo!()
+        let mut socket = self.socket().lock().await;
+        socket
+            .write_microframe(
+                MicroframeHeader {
+                    modes: cm::make(cm::SUB, cm::UP),
+                    auth: Some(auth),
+                    ..Default::default()
+                },
+                SubsRestore { sub_id: req_sub_id, addr },
+            )
+            .await?;
+
+        let (_, resp) = socket.read_microframe::<ServerPing>().await?;
+
+        match resp? {
+            ServerPing::Subscription { sub_id, sub_bind } => {
+                warn!(
+                    "Returned subscription ID ({}) does not match requested ({})",
+                    req_sub_id, sub_id
+                );
+
+                let bind_str: String = sub_bind
+                    .into_string()
+                    .map_err(|e| EncodingError::Internal(e.to_string()))?;
+
+                Ok(SubscriptionHandle {
+                    id: sub_id,
+                    curr_stream: None,
+                    read_from_stream: 0,
+                    socket: RawSocketHandle::new(TcpStream::connect(&bind_str).await?),
+                })
+            }
+            ServerPing::Error(e) => Err(e.into()),
+            _ => Err(ClientError::ConnectionLost.into()),
+        }
     }
 
     async fn subs_delete(
         self: &Arc<Self>,
         auth: crate::types::AddrAuth,
-        subscription_id: crate::types::Ident32,
+        addr: crate::types::Address,
+        sub_id: crate::types::Ident32,
     ) -> crate::Result<()> {
-        todo!()
+        let mut socket = self.socket().lock().await;
+        socket
+            .write_microframe(
+                MicroframeHeader {
+                    modes: cm::make(cm::SUB, cm::CREATE),
+                    auth: Some(auth),
+                    ..Default::default()
+                },
+                SubsDelete { sub_id, addr },
+            )
+            .await?;
+
+        let (_, resp) = socket.read_microframe::<ServerPing>().await?;
+        match resp? {
+            ServerPing::Ok => Ok(()),
+            ServerPing::Error(e) => Err(e.into()),
+            _ => Err(ClientError::ConnectionLost.into()),
+        }
     }
 }
 
@@ -280,49 +409,38 @@ impl RatmanIpc {
         self.socket.as_ref().unwrap()
     }
 
-    // async fn shutdown(&self) {
-    //     self.socket()
-    //         .lock()
-    //         .await
-    //         .write_microframe(
-    //             MicroframeHeader {
-    //                 modes: cm::make(cm::INTRINSIC, cm::DOWN),
-    //                 auth: None,
-    //                 payload_size: 0,
-    //             },
-    //             (),
-    //         )
-    //         .await
-    //         .unwrap();
-    //     self.socket().lock().await.shutdown().await.unwrap();
-    // }
+    async fn shutdown(&self) {
+        self.socket()
+            .lock()
+            .await
+            .write_microframe(
+                MicroframeHeader {
+                    modes: cm::make(cm::INTRINSIC, cm::DOWN),
+                    auth: None,
+                    payload_size: 0,
+                },
+                (),
+            )
+            .await
+            .unwrap();
+        self.socket().lock().await.shutdown().await.unwrap();
+    }
 }
 
-// impl Drop for RatmanIpc {
-//     fn drop(&mut self) {
-//         let socket = core::mem::replace(&mut self.socket, None);
-//         spawn(async move {
-//             let this = Self { socket };
-//             this.shutdown().await;
-//         });
-//     }
-// }
+impl Drop for RatmanIpc {
+    fn drop(&mut self) {
+        let socket = core::mem::replace(&mut self.socket, None);
+        tokio::task::spawn(async move {
+            let this = Self { socket };
+            this.shutdown().await;
+        });
+    }
+}
 
-// pub struct IpcSocket(RawSocketHandle, Receiver<(Letterhead, Vec<u8>)>);
-
-// impl IpcSocket {
-//     async fn connect_to(
-//         addr: impl ToSocketAddrs,
-//         sender: Sender<(MicroframeHeader, Vec<u8>)>,
-//     ) -> Result<Self> {
-//         let socket = TcpStream::connect(addr).await?;
-//         Ok(Self(RawSocketHandle::new(socket, sender)))
-//     }
-
-//     pub async fn default_address() -> Result<IpcSocket> {
-//         let (send, recv) = channel(4);
-//         let inner = Self::connect_to("localhost:5862", send).await?;
-
-//         todo!()
-//     }
-// }
+/// Return the default socket bind for the ratmand API socket
+///
+/// If the local ratmand instance is configured to listen to a different socket
+/// this function will not work.
+pub fn default_api_bind() -> SocketAddr {
+    SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 5852))
+}

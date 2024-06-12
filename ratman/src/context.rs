@@ -14,6 +14,7 @@ use crate::{
     procedures::{self, BlockNotifier},
     protocol::Protocol,
     routes::RouteTable,
+    runtime::subs_man::SubsManager,
     storage::MetadataDb,
     util::{self, codes, setup_logging, Os, StateDirectoryLock},
 };
@@ -56,6 +57,8 @@ pub struct RatmanContext {
     pub(crate) protocol: Arc<Protocol>,
     /// Local client connection handler
     pub(crate) clients: Arc<ConnectionManager>,
+    /// Keep track of local subscriptions
+    pub(crate) subs: Arc<SubsManager>,
     /// React to shutdown signals and gracefully quit
     pub(crate) tripwire: Tripwire,
     /// Atomic state directory lock
@@ -94,6 +97,7 @@ impl RatmanContext {
         )
         .await?;
         let clients = Arc::new(ConnectionManager::new());
+        let subs = SubsManager::new(&meta_db);
 
         Ok(Arc::new(Self {
             config,
@@ -104,6 +108,7 @@ impl RatmanContext {
             routes,
             protocol,
             clients,
+            subs,
             tripwire,
             _statedir_lock: Arc::new(AtomPtr::new(None)),
         }))

@@ -12,7 +12,6 @@ mod letterhead;
 mod recipient;
 mod sequence_id;
 mod status;
-mod timepair;
 
 pub use api_util::*;
 pub use envelope::InMemoryEnvelope;
@@ -21,4 +20,3 @@ pub use letterhead::LetterheadV1;
 pub use recipient::Recipient;
 pub use sequence_id::SequenceIdV1;
 pub use status::CurrentStatus;
-pub use timepair::TimePair;
