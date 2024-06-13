@@ -27,7 +27,7 @@ use chacha20::cipher::{KeyIvInit, StreamCipher};
 use chacha20::ChaCha20;
 use derive_more::{DebugCustom, Deref, DerefMut, Display, From};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::RwLock};
 
 fn display_base32(bytes: &[u8]) -> String {
     base32::encode(base32::Alphabet::RFC4648 { padding: false }, bytes)
@@ -52,7 +52,9 @@ fn decode_base32<const BS: usize>(s: &str) -> Result<[u8; BS]> {
 }
 
 /// A 32 byte block reference identifier
-#[derive(Clone, PartialEq, Eq, Hash, Deref, From, Display, DebugCustom, Serialize, Deserialize)]
+#[derive(
+    Clone, Copy, PartialEq, Eq, Hash, Deref, From, Display, DebugCustom, Serialize, Deserialize,
+)]
 #[display(fmt = "{}", "display_base32(&self.0)")]
 #[debug(fmt = "{}", "self")]
 pub struct BlockReference([u8; 32]);
@@ -79,7 +81,7 @@ impl TryFrom<&String> for BlockReference {
 }
 
 /// Represents a 32 byte ChaCha20 key for encryption
-#[derive(Clone, Deref, From, Display, DebugCustom)]
+#[derive(Clone, Copy, Deref, From, Display, DebugCustom, Serialize, Deserialize)]
 #[display(fmt = "{}", "display_base32(&self.0)")]
 #[debug(fmt = "{}", "self")]
 pub struct BlockKey([u8; 32]);
@@ -134,21 +136,25 @@ impl<const BS: usize> TryFrom<&String> for Block<BS> {
 
 #[async_trait]
 pub trait BlockStorage<const BS: usize> {
-    async fn store(&mut self, block: &Block<BS>) -> std::io::Result<()>;
+    async fn store(&self, block: &Block<BS>) -> std::io::Result<()>;
     async fn fetch(&self, reference: &BlockReference) -> std::io::Result<Option<Block<BS>>>;
 }
 
-pub type MemoryStorage = HashMap<BlockReference, Vec<u8>>;
+pub type MemoryStorage = RwLock<HashMap<BlockReference, Vec<u8>>>;
 
 #[async_trait]
 impl<const BS: usize> BlockStorage<BS> for MemoryStorage {
-    async fn store(&mut self, block: &Block<BS>) -> std::io::Result<()> {
-        self.insert(block.reference(), block.0.to_vec());
+    async fn store(&self, block: &Block<BS>) -> std::io::Result<()> {
+        self.write()
+            .unwrap()
+            .insert(block.reference(), block.0.to_vec());
         Ok(())
     }
 
     async fn fetch(&self, reference: &BlockReference) -> std::io::Result<Option<Block<BS>>> {
-        self.get(reference)
+        self.read()
+            .unwrap()
+            .get(reference)
             .map(|x| -> std::io::Result<_> {
                 let arr: [u8; BS] = x.clone().try_into().map_err(|_| {
                     std::io::Error::new(std::io::ErrorKind::Other, "Block has unexpected size")
@@ -169,7 +175,7 @@ fn log_2(x: usize) -> u32 {
     num_bits::<usize>() as u32 - x.leading_zeros() - 1
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct ReadCapability {
     pub root_reference: BlockReference,
     pub root_key: BlockKey,
@@ -227,6 +233,7 @@ impl<const BS: usize> Block<BS> {
     }
 
     pub(crate) fn chacha20(&mut self, key: &BlockKey) {
+        // audit(security): is this correct?  This doesn't seem correct
         let nonce = [0; 12];
         let mut cipher = ChaCha20::new(&(**key).into(), &nonce.into());
         cipher.apply_keystream(&mut **self);

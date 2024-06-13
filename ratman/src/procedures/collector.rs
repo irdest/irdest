@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2023-2024 Katharina Fey <kookie@spacekookie.de>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 use crate::{
     context::RatmanContext,
     journal::{types::BlockData, Journal},
@@ -122,7 +126,10 @@ impl BlockCollectorWorker {
                 }
 
                 // Notify all current stream re-assemblers
-                block_bcast.send(BlockNotifier);
+                if let Err(e) = block_bcast.send(BlockNotifier) {
+                    warn!("failed to notify block re-assemblers: {e}");
+                    // todo: store this error somewhere so we can retry later?
+                }
 
                 // Finally shut down this block collection worker
                 self.senders.write().await.remove(&seq_id.hash);

@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use clap::{arg, Arg, ArgAction, Command};
+use libratman::{api::RatmanIpcExtV1, tokio};
 // use libratman::client::{Address, RatmanIpc};
 
 fn setup_cli() -> Command {
@@ -49,11 +50,11 @@ fn setup_cli() -> Command {
                                 .action(ArgAction::Set)
                         ]),
                     Command::new("up")
-                        .about("Mark the current identity address as online"),
+                        .about("Mark the given address as online"),
                     Command::new("down")
-                        .about("Mark the current identity address as offline"),
+                        .about("Mark the given address as offline"),
                     Command::new("delete")
-                        .about("Delete the current identity address, optionally with associated data")
+                        .about("Delete the given address, optionally with associated data")
                         .args([
                             Arg::new("force")
                                 .help("Delete all data referred to by the deleted address")
@@ -135,22 +136,25 @@ fn setup_cli() -> Command {
                     Command::new("add")
                         .about("Add a new subscription for the current identity")
                         .args([
+                            Arg::new("recipient")
+                                .help("a recipient pattern to subscribe to")
+                                .action(ArgAction::Set)
                             //// This has no bearing on other
                             //// subscriptions to a given namespace:
                             //// another address may have an async
                             //// subscription and thus packets may
                             //// still be collected
-                            Arg::new("synced")
-                                .help("Don't collect messages for the namespace when the address is offline")
-                                .action(ArgAction::SetTrue),
+                            // Arg::new("synced")
+                            //     .help("Don't collect messages for the namespace when the address is offline")
+                            //     .action(ArgAction::SetTrue),
 
                             //// Again, this MAY not have an effect on
                             //// the journal on disk, if another
                             //// subscription still has claim to some
                             //// of the same data.
-                            Arg::new("timeout")
-                                .help("Set a pre-determined destruct date for the subscription")
-                                .action(ArgAction::Set)
+                            // Arg::new("timeout")
+                            //     .help("Set a pre-determined destruct date for the subscription")
+                            //     .action(ArgAction::Set)
                         ]),
                     //// Removing a subscription is very straight
                     //// forward, just one mandatory parameter is
@@ -159,8 +163,9 @@ fn setup_cli() -> Command {
                     Command::new("rm")
                         .about("Remove an existing subscription for the current identity")
                         .arg(
-                            Arg::new("namespace")
+                            Arg::new("sub-id")
                                 .help("Specify which subscription to delete")
+                                .action(ArgAction::Set)
                         ),
                 ]),
             //// Query various types of status output
@@ -253,10 +258,14 @@ fn setup_cli() -> Command {
 //     Ok(ipc.get_peers().await?)
 // }
 
-#[async_std::main]
+#[tokio::main]
 async fn main() {
     let cli = setup_cli();
     let m = cli.get_matches();
+
+    let ipc = libratman::api::RatmanIpc::start(libratman::api::default_api_bind())
+        .await
+        .unwrap();
 
     // if let Err(e) = ratman_tools::command_filter(m).await {
     //     eprintln!("Operation failed, an Error occurred:\n{}", e);

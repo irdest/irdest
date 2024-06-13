@@ -1,7 +1,12 @@
+// SPDX-FileCopyrightText: 2019-2024 Katharina Fey <kookie@spacekookie.de>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 use crate::{
-    dispatch::{self, BlockCollector},
+    dispatch,
     journal::{self, Journal},
     links::{GenericEndpoint, LinksMap},
+    procedures::BlockCollector,
     routes::{RouteTable, RouteType},
 };
 use libratman::tokio::{select, sync::mpsc::Sender, task::spawn_local};

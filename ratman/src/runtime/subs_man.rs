@@ -143,21 +143,22 @@ impl SubsManager {
 
     pub async fn missed_item(
         &self,
-        to: Recipient,
         letterhead: LetterheadV1,
         read_cap: ReadCapability,
     ) -> Result<()> {
-        let sid = *self.recipients.lock().await.get(&to).unwrap();
+        let sid = *self.recipients.lock().await.get(&letterhead.to).unwrap();
         let mut sentry = self.meta_db.subscriptions.get(&sid.to_string())?.unwrap();
 
         sentry
             .missed_items
-            .entry(to)
+            .entry(letterhead.to)
             .or_default()
             .push((letterhead, read_cap));
 
-        self.meta_db.subscriptions.insert(sid, &sentry)?;
-        
+        self.meta_db
+            .subscriptions
+            .insert(sid.to_string(), &sentry)?;
+
         Ok(())
     }
 }

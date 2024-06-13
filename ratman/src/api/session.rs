@@ -1,10 +1,16 @@
-use crate::{context::RatmanContext, crypto, procedures::handle_subscription_socket};
+// SPDX-FileCopyrightText: 2023-2024 Katharina Fey <kookie@spacekookie.de>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
+use crate::{
+    context::RatmanContext, crypto, dispatch::StreamSlicer, procedures::handle_subscription_socket,
+};
 use libratman::{
     api::{
         socket_v2::RawSocketHandle,
         types::{
-            AddrCreate, AddrDestroy, AddrDown, AddrUp, Handshake, ServerPing, SubsCreate,
-            SubsDelete, SubsRestore,
+            AddrCreate, AddrDestroy, AddrDown, AddrUp, Handshake, RecvMany, RecvOne, ServerPing,
+            SubsCreate, SubsDelete, SubsRestore,
         },
         version_str, versions_compatible,
     },
@@ -12,6 +18,8 @@ use libratman::{
     tokio::{
         io::ErrorKind,
         net::{TcpListener, TcpStream},
+        sync::broadcast::channel as bcast_channel,
+        sync::mpsc::channel,
         task::spawn_local,
         time::timeout,
     },
@@ -141,6 +149,15 @@ pub(super) async fn single_session_exchange(
         }
         //
         //
+        // ^-^ List locally available addresses
+        m if m == cm::make(cm::ADDR, cm::LIST) => {
+            let local_addrs = crypto::list_addr_keys(&ctx.meta_db);
+            raw_socket
+                .write_microframe(MicroframeHeader::intrinsic_noauth(), local_addrs)
+                .await?;
+        }
+        //
+        //
         // ^-^ Creating a new address key and client auth token
         m if m == cm::make(cm::ADDR, cm::CREATE) => {
             let _payload = raw_socket
@@ -149,7 +166,7 @@ pub(super) async fn single_session_exchange(
             let (addr, client_auth) = crypto::insert_addr_key(&ctx.meta_db)?;
 
             ctx.clients
-                .lock()
+                .lock_inner()
                 .await
                 .get_mut(&client_id)
                 .unwrap()
@@ -287,17 +304,186 @@ pub(super) async fn single_session_exchange(
                 .restore_subscription(subs_restore.addr, subs_restore.sub_id)
                 .await?;
 
-            // todo: spawn receiver task/ socket
-            // todo: return the correct type
+            let sub_listen = TcpListener::bind("127.0.0.1:0").await?;
+            let bind = sub_listen.local_addr()?.to_string();
+            let sub_id = subs_restore.sub_id;
+
+            let stream_ctx = Arc::clone(ctx);
+            spawn_local(async move {
+                if let Ok((stream, _)) = sub_listen.accept().await {
+                    let raw_socket = RawSocketHandle::new(stream);
+                    handle_subscription_socket(
+                        stream_ctx,
+                        rx,
+                        raw_socket,
+                        auth,
+                        subs_restore.sub_id,
+                    )
+                    .await;
+                }
+            });
+
+            raw_socket
+                .write_microframe(
+                    MicroframeHeader::intrinsic_auth(auth),
+                    ServerPing::Subscription {
+                        sub_id,
+                        sub_bind: CString::new(bind).unwrap(),
+                    },
+                )
+                .await?;
         }
         //
         //
         // ^-^ Client wants to receive exactly one message
-        m if m == cm::make(cm::RECV, cm::ONE) => {}
+        m if m == cm::make(cm::RECV, cm::ONE) => {
+            let recv_one = raw_socket
+                .read_payload::<RecvOne>(header.payload_size)
+                .await?;
+
+            let auth = check_auth(&header, recv_one.addr, expected_auth)?;
+
+            let (tx, mut rx) = bcast_channel(1);
+            ctx.clients.insert_sync_listener(recv_one.to, tx).await;
+
+            match rx.recv().await {
+                Ok((letterhead, read_cap)) => {
+                    raw_socket
+                        .write_microframe(
+                            MicroframeHeader {
+                                modes: cm::make(cm::RECV, cm::ONE),
+                                auth: Some(auth),
+                                ..Default::default()
+                            },
+                            letterhead.clone(),
+                        )
+                        .await?;
+
+                    let mut compat_socket = raw_socket.to_compat();
+
+                    let res =
+                        async_eris::decode(&mut compat_socket, &read_cap, &ctx.journal.blocks)
+                            .await;
+
+                    raw_socket.from_compat(compat_socket);
+                    match res {
+                        Ok(()) => reply_ok(raw_socket, auth).await?,
+                        Err(e) => {
+                            raw_socket
+                                .write_microframe(
+                                    MicroframeHeader::intrinsic_auth(auth),
+                                    ServerPing::Error(ClientError::Internal(e.to_string())),
+                                )
+                                .await?
+                        }
+                    }
+                }
+                Err(e) => {
+                    raw_socket
+                        .write_microframe(
+                            MicroframeHeader::intrinsic_auth(auth),
+                            ServerPing::Error(ClientError::Internal(e.to_string())),
+                        )
+                        .await?
+                }
+            }
+
+            ctx.clients.remove_sync_listener(recv_one.to).await;
+        }
         //
         //
         // ^-^ Client wants to listen for messages in this session
-        m if m == cm::make(cm::RECV, cm::MANY) => {}
+        m if m == cm::make(cm::RECV, cm::MANY) => {
+            let recv_many = raw_socket
+                .read_payload::<RecvMany>(header.payload_size)
+                .await?;
+
+            let auth = check_auth(&header, recv_many.addr, expected_auth)?;
+
+            let (tx, mut rx) = bcast_channel(8);
+            ctx.clients.insert_sync_listener(recv_many.to, tx).await;
+
+            for _ in 0..recv_many.num {
+                match rx.recv().await {
+                    Ok((letterhead, read_cap)) => {
+                        raw_socket
+                            .write_microframe(
+                                MicroframeHeader {
+                                    modes: cm::make(cm::RECV, cm::MANY),
+                                    auth: Some(auth),
+                                    ..Default::default()
+                                },
+                                letterhead.clone(),
+                            )
+                            .await?;
+
+                        let mut compat_socket = raw_socket.to_compat();
+
+                        crypto::start_stream(
+                            &ctx.meta_db,
+                            letterhead.from,
+                            letterhead.to.inner_address(),
+                            auth,
+                            client_id,
+                        )?;
+
+                        let shared_key = crypto::stream_diffie_hellman(
+                            letterhead.from,
+                            letterhead.to.inner_address(),
+                        );
+
+                        let chosen_block_size = match letterhead.payload_length {
+                            m if m < (16 * 1024) => async_eris::BlockSize::_1K,
+                            _ => async_eris::BlockSize::_32K,
+                        };
+
+                        let res = async_eris::encode(
+                            &mut compat_socket,
+                            &shared_key,
+                            chosen_block_size,
+                            &ctx.journal.blocks,
+                        )
+                        .await;
+
+                        raw_socket.from_compat(compat_socket);
+                        match res {
+                            Ok(read_cap) => {
+                                let (tx, rx) = channel(2 * read_cap.level as usize);
+                                if let Err(e) =
+                                    (StreamSlicer { read_cap }).slice_async_stream(tx).await
+                                {
+                                    error!("failed to slice blocks to stream frames: {e}");
+                                }
+                            }
+                            Err(e) => {
+                                raw_socket
+                                    .write_microframe(
+                                        MicroframeHeader::intrinsic_auth(auth),
+                                        ServerPing::Error(ClientError::Internal(e.to_string())),
+                                    )
+                                    .await?
+                            }
+                        }
+
+                        crypto::end_stream(
+                            &ctx.meta_db,
+                            letterhead.from,
+                            letterhead.to.inner_address(),
+                        );
+                    }
+                    Err(e) => {
+                        raw_socket
+                            .write_microframe(
+                                MicroframeHeader::intrinsic_auth(auth),
+                                ServerPing::Error(ClientError::Internal(e.to_string())),
+                            )
+                            .await?
+                    }
+                }
+            }
+
+            ctx.clients.remove_sync_listener(recv_many.to).await;
+        }
         //
         //
         // ^-^ Client wants to send a message to one recipient

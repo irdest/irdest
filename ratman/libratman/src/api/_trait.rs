@@ -4,9 +4,14 @@ use crate::{
     Result,
 };
 use async_trait::async_trait;
-use futures::AsyncWrite;
 use std::{collections::BTreeMap, net::SocketAddr, sync::Arc};
-use tokio::io::AsyncRead;
+use tokio::{
+    io::{AsyncRead, AsyncWrite},
+    net::TcpStream,
+    sync::MutexGuard,
+};
+
+use super::socket_v2::RawSocketHandle;
 
 #[async_trait]
 pub trait RatmanIpcExtV1 {
@@ -16,6 +21,9 @@ pub trait RatmanIpcExtV1 {
     //
     // (@^_^@) Address commands
     //
+
+    /// List available local addresses
+    async fn addr_list(self: &Arc<Self>) -> Result<Vec<Address>>;
 
     /// Create a new address for an existing client token
     ///
@@ -139,7 +147,7 @@ pub trait RatmanStreamExtV1: RatmanIpcExtV1 {
         self: &Arc<Self>,
         auth: AddrAuth,
         letterhead: LetterheadV1,
-        data_reader: I,
+        data_reader: &I,
     ) -> Result<()>;
 
     /// Send the same message stream to multiple recipients
@@ -149,26 +157,53 @@ pub trait RatmanStreamExtV1: RatmanIpcExtV1 {
         self: &Arc<Self>,
         auth: AddrAuth,
         letterheads: Vec<LetterheadV1>,
-        data_reader: I,
+        data_reader: &I,
     ) -> Result<()>;
 
     /// Block this task/ socket to wait for a single incoming message stream
-    async fn recv_one<I: AsyncWrite>(
-        self: &Arc<Self>,
+    ///
+    /// This function returns a single stream letterhead (which indicates the
+    /// sender, receiver, and metadata such as stream length) and an async
+    /// reader, which can then be used to read the stream to some buffer or
+    /// writer stream.
+    ///
+    /// Reading more bytes than `letterhead.payload_length` indicates is
+    /// undefined behaviour!  You **must** drop the `ReadStream` after you're
+    /// done reading to make the socket available to other API exchanges again!
+    ///
+    /// If you need to receive data more consistently consider setting up a
+    /// subscription!
+    async fn recv_one<'s>(
+        self: &'s Arc<Self>,
         auth: AddrAuth,
+        addr: Address,
         to: Recipient,
-        data_writer: I,
-    ) -> Result<LetterheadV1>;
+    ) -> Result<(LetterheadV1, ReadStream<'s>)>;
 
     /// Return an iterator over a stream of letterheads and read streams
-    async fn recv_many<I, R, C>(self: &Arc<Self>, auth: AddrAuth, to: Recipient) -> Result<I>
+    ///
+    /// This function returns an iterator over incoming letterheads and read
+    /// handles, which MUST be dropped at the end of your iterator closure to
+    /// avoid deadlocking the next receive.  Reading more bytes than
+    /// `letterhead.payload_length` is undefined behaviour!
+    ///
+    /// If you need to receive data more consistently consider setting up a
+    /// subscription!
+    async fn recv_many<'s, I>(
+        self: &'s Arc<Self>,
+        auth: AddrAuth,
+        addr: Address,
+        to: Recipient,
+        num: u32,
+    ) -> Result<I>
     where
-        I: Iterator<Item = (LetterheadV1, R, C)>,
-        R: AsyncRead,
-        C: Cancel;
+        I: Iterator<Item = (LetterheadV1, ReadStream<'s>)>;
 }
 
-#[async_trait]
-pub trait Cancel {
-    async fn cancel(&self);
+pub struct ReadStream<'a>(pub(crate) MutexGuard<'a, RawSocketHandle>);
+
+impl<'a> ReadStream<'a> {
+    pub fn as_reader(&mut self) -> &mut impl AsyncRead {
+        &mut *self.0.stream()
+    }
 }

@@ -25,7 +25,7 @@ impl<const BS: usize> Block<BS> {
 
 pub struct Encoder<'a, S: BlockStorage<BS>, const BS: usize> {
     pub convergence_secret: [u8; 32],
-    pub block_storage: &'a mut S,
+    pub block_storage: &'a S,
 }
 
 /// Supported block sizes by this implementation
@@ -46,7 +46,7 @@ pub async fn encode<S: BlockStorage<1024> + BlockStorage<32768>, R: AsyncRead + 
     content: &mut R,
     convergence_secret: &[u8; 32],
     block_size: BlockSize,
-    block_storage: &mut S,
+    block_storage: &S,
 ) -> std::io::Result<ReadCapability> {
     match block_size {
         BlockSize::_1K => {
@@ -61,7 +61,7 @@ pub async fn encode<S: BlockStorage<1024> + BlockStorage<32768>, R: AsyncRead + 
 pub async fn encode_const<S: BlockStorage<BS>, R: AsyncRead + Unpin, const BS: usize>(
     content: &mut R,
     convergence_secret: &[u8; 32],
-    block_storage: &mut S,
+    block_storage: &S,
 ) -> std::io::Result<ReadCapability> {
     let mut encoder = Encoder::<S, BS> {
         convergence_secret: convergence_secret.clone(),

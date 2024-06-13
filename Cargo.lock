@@ -1911,6 +1911,7 @@ dependencies = [
  "flate2",
  "futures",
  "hex",
+ "lazy_static",
  "nix 0.23.2",
  "nom",
  "prometheus-client",
@@ -2898,8 +2899,12 @@ dependencies = [
 name = "ratman-tools"
 version = "0.5.0"
 dependencies = [
+<<<<<<< HEAD
  "async-std",
  "clap 4.4.3",
+=======
+ "clap 4.5.4",
+>>>>>>> 0df6dcf6 (Implement receive modes and partially implement send modes)
  "directories",
  "libratman",
  "nix 0.23.2",
@@ -2949,7 +2954,6 @@ dependencies = [
  "tempdir",
  "thiserror",
  "tide",
- "tokio",
  "tracing",
  "tracing-futures",
  "tracing-subscriber",

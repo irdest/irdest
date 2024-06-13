@@ -1,7 +1,13 @@
+// SPDX-FileCopyrightText: 2023-2024 Katharina Fey <kookie@spacekookie.de>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
+use async_eris::ReadCapability;
 use chrono::{DateTime, Utc};
 use libratman::{
-    tokio::sync::{Mutex, MutexGuard},
-    types::{Address, Ident32},
+    tokio::sync::{broadcast::Sender as BcastSender, Mutex, MutexGuard},
+    types::{Address, Ident32, LetterheadV1, Recipient},
+    NonfatalError, RatmanError, Result,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -9,17 +15,45 @@ use std::collections::BTreeMap;
 pub(crate) struct ConnectionManager {
     /// A map of client_id -> client metadata
     inner: Mutex<BTreeMap<Ident32, RouterClient>>,
+    sync_listeners: Mutex<BTreeMap<Recipient, BcastSender<(LetterheadV1, ReadCapability)>>>,
 }
 
 impl ConnectionManager {
     pub fn new() -> Self {
         Self {
             inner: Mutex::new(BTreeMap::default()),
+            sync_listeners: Mutex::new(BTreeMap::default()),
         }
     }
 
-    pub async fn lock<'a>(&'a self) -> MutexGuard<'a, BTreeMap<Ident32, RouterClient>> {
+    pub async fn lock_inner<'a>(&'a self) -> MutexGuard<'a, BTreeMap<Ident32, RouterClient>> {
         self.inner.lock().await
+    }
+
+    pub async fn insert_sync_listener(
+        &self,
+        recipient: Recipient,
+        tx: BcastSender<(LetterheadV1, ReadCapability)>,
+    ) {
+        let mut sync_inner = self.sync_listeners.lock().await;
+        sync_inner.insert(recipient, tx);
+    }
+
+    pub async fn remove_sync_listener(&self, recipient: Recipient) {
+        let mut sync_inner = self.sync_listeners.lock().await;
+        sync_inner.remove(&recipient);
+    }
+
+    pub async fn get_sync_listeners(
+        &self,
+        recipient: Recipient,
+    ) -> Result<BcastSender<(LetterheadV1, ReadCapability)>> {
+        self.sync_listeners
+            .lock()
+            .await
+            .get(&recipient)
+            .map(|vec| vec.clone())
+            .ok_or(RatmanError::Nonfatal(NonfatalError::NoStream))
     }
 
     pub async fn client_exists_for_address(&self, addr: Address) -> bool {

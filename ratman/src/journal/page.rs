@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2024 Katharina Fey <kookie@spacekookie.de>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 use crate::{journal::types::BlockData, storage::block::StorageBlock};
 use async_eris::{Block, BlockReference, BlockStorage};
 use async_trait::async_trait;
@@ -71,7 +75,7 @@ impl<T: Serialize + DeserializeOwned> CachePage<T> {
 
 #[async_trait]
 impl<const L: usize> BlockStorage<L> for CachePage<BlockData> {
-    async fn store(&mut self, block: &Block<L>) -> IoResult<()> {
+    async fn store(&self, block: &Block<L>) -> IoResult<()> {
         self.insert(
             block.reference().to_string(),
             &BlockData {

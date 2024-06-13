@@ -1,10 +1,12 @@
-// SPDX-FileCopyrightText: 2023 Katharina Fey <kookie@spacekookie.de>
+// SPDX-FileCopyrightText: 2023-2024 Katharina Fey <kookie@spacekookie.de>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 mod clients;
 pub(crate) use clients::ConnectionManager;
 
+mod receiving;
+mod sending;
 mod session;
 
 use crate::{
@@ -60,7 +62,7 @@ pub async fn run_client_handler(ctx: Arc<RatmanContext>, stream: TcpStream) -> R
 
     // Add a new client entry for this session
     ctx.clients
-        .lock()
+        .lock_inner()
         .await
         .insert(client_id, Default::default());
 
@@ -97,7 +99,7 @@ pub async fn run_client_handler(ctx: Arc<RatmanContext>, stream: TcpStream) -> R
     }
 
     info!("Shutting down client socket {client_id}!");
-    ctx.clients.lock().await.remove(&client_id);
+    ctx.clients.lock_inner().await.remove(&client_id);
 
     Ok(())
 }

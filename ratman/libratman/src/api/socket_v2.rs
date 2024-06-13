@@ -1,3 +1,8 @@
+use std::{
+    pin::Pin,
+    task::{Context, Poll},
+};
+
 use crate::{
     chunk::Chunk,
     frame::{micro::MicroframeHeader, FrameGenerator, FrameParser},
@@ -7,13 +12,15 @@ use crate::{
     },
     EncodingError, Result,
 };
+use futures::ready;
 use tokio::{
-    io::AsyncWriteExt,
+    io::{AsyncBufRead, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt},
     net::{tcp::OwnedReadHalf, TcpStream},
 };
+use tokio_util::compat::{Compat, TokioAsyncReadCompatExt};
 
 pub struct RawSocketHandle {
-    pub stream: TcpStream,
+    stream: Option<TcpStream>,
     read_counter: usize,
 }
 
@@ -30,13 +37,25 @@ pub async fn read_header(mut stream: &mut OwnedReadHalf) -> Result<MicroframeHea
 impl RawSocketHandle {
     pub fn new(stream: TcpStream) -> Self {
         Self {
-            stream,
+            stream: Some(stream),
             read_counter: 0,
         }
     }
 
+    pub fn to_compat(&mut self) -> Compat<TcpStream> {
+        core::mem::replace(&mut self.stream, None).unwrap().compat()
+    }
+
+    pub fn from_compat(&mut self, c: Compat<TcpStream>) {
+        core::mem::replace(&mut self.stream, Some(c.into_inner()));
+    }
+
+    pub fn stream(&mut self) -> &mut TcpStream {
+        self.stream.as_mut().unwrap()
+    }
+
     pub async fn shutdown(&mut self) -> Result<()> {
-        self.stream.shutdown().await?;
+        self.stream().shutdown().await?;
         Ok(())
     }
 
@@ -62,8 +81,8 @@ impl RawSocketHandle {
 
     /// Read a length-prepended microframe header
     pub async fn read_header(&mut self) -> Result<MicroframeHeader> {
-        let length = LengthReader::new(&mut self.stream).read_u32().await?;
-        let frame_buffer = AsyncVecReader::new(length as usize, &mut self.stream)
+        let length = LengthReader::new(&mut self.stream()).read_u32().await?;
+        let frame_buffer = AsyncVecReader::new(length as usize, &mut self.stream())
             .read_to_vec()
             .await?;
         Ok(MicroframeHeader::parse(frame_buffer.as_slice())
@@ -73,7 +92,7 @@ impl RawSocketHandle {
 
     /// Read a decodable payload from this socket
     pub async fn read_payload<T: FrameParser>(&mut self, length: u32) -> Result<T::Output> {
-        let payload_buffer = AsyncVecReader::new(length as usize, &mut self.stream)
+        let payload_buffer = AsyncVecReader::new(length as usize, &mut self.stream())
             .read_to_vec()
             .await?;
         let (_remainder, payload) =
@@ -84,21 +103,33 @@ impl RawSocketHandle {
 
     /// Read a constant number of bytes into an array
     pub async fn read_buffer_const<const L: usize>(&mut self) -> Result<[u8; L]> {
-        let mut buf = AsyncReader::<'_, L, _>::new(&mut self.stream);
+        let mut buf = AsyncReader::<'_, L, _>::new(self.stream());
         buf.read_to_fill().await?;
         Ok(buf.consume())
     }
 
     /// Read a specific number of bytes into a buffer
     pub async fn read_buffer(&mut self, len: usize) -> Result<Vec<u8>> {
-        AsyncVecReader::new(len, &mut self.stream)
+        AsyncVecReader::new(len, &mut self.stream())
             .read_to_vec()
             .await
     }
 
+    // pub async fn read_to_writer<I: AsyncWrite>(&mut self, len: usize, w: &mut I) -> Result<()> {
+    //     let mut amount_read = 0;
+    //     while amount_read < len {
+    //         let read = self.stream().read(&mut w).await?;
+    //     }
+
+    //     let mut buf = vec![0; len];
+    //     self.stream().read_exact(&mut buf).await?;
+    //     w.write_all(&buf);
+    //     Ok(())
+    // }
+
     /// Read a const size chunk payload
     pub async fn read_chunk<const L: usize>(&mut self) -> Result<Chunk<L>> {
-        let chunk = AsyncReader::<'_, L, _>::read_to_chunk(&mut self.stream).await?;
+        let chunk = AsyncReader::<'_, L, _>::read_to_chunk(self.stream()).await?;
         self.read_counter += chunk.1; // Increment the read count
         Ok(chunk)
     }
@@ -110,7 +141,7 @@ impl RawSocketHandle {
 
         // First write a u32 for the header length
         write_u32(
-            &mut self.stream,
+            self.stream(),
             buf.len()
                 .try_into()
                 .expect("failed to convert usize -> u32: buffer size too large to send"),
@@ -122,7 +153,7 @@ impl RawSocketHandle {
     }
 
     pub async fn write_buffer(&mut self, buf: Vec<u8>) -> Result<()> {
-        AsyncWriter::new(buf.as_slice(), &mut self.stream)
+        AsyncWriter::new(buf.as_slice(), self.stream())
             .write_buffer()
             .await?;
         Ok(())
@@ -149,11 +180,11 @@ impl RawSocketHandle {
         header.generate(&mut header_buf)?;
 
         // Write a header length first, then the rest
-        write_u32(&mut self.stream, header_buf.len() as u32).await?;
-        AsyncWriter::new(header_buf.as_slice(), &mut self.stream)
+        write_u32(self.stream(), header_buf.len() as u32).await?;
+        AsyncWriter::new(header_buf.as_slice(), self.stream())
             .write_buffer()
             .await?;
-        AsyncWriter::new(payload_buf.as_slice(), &mut self.stream)
+        AsyncWriter::new(payload_buf.as_slice(), self.stream())
             .write_buffer()
             .await?;
         Ok(())
@@ -180,11 +211,11 @@ impl RawSocketHandle {
         header.generate(&mut header_buf)?;
 
         // Write a header length first, then the rest
-        write_u32(&mut self.stream, header_buf.len() as u32).await?;
-        AsyncWriter::new(header_buf.as_slice(), &mut self.stream)
+        write_u32(self.stream(), header_buf.len() as u32).await?;
+        AsyncWriter::new(header_buf.as_slice(), self.stream())
             .write_buffer()
             .await?;
-        AsyncWriter::new(payload_buf.as_slice(), &mut self.stream)
+        AsyncWriter::new(payload_buf.as_slice(), self.stream())
             .write_buffer()
             .await?;
         Ok(())
@@ -234,4 +265,42 @@ async fn test_socket_write_header() -> Result<()> {
 
     raw.write_header(header).await.unwrap();
     Ok(())
+}
+
+pub(crate) struct CopyBuf<'a, R: ?Sized, W: AsyncWrite + Unpin + ?Sized> {
+    pub(crate) reader: &'a mut R,
+    pub(crate) writer: &'a mut W,
+    pub(crate) max: u64,
+    pub(crate) amt: u64,
+}
+
+impl<R, W> std::future::Future for CopyBuf<'_, R, W>
+where
+    R: AsyncBufRead + Unpin + ?Sized,
+    W: AsyncWrite + Unpin + ?Sized,
+{
+    type Output = std::io::Result<u64>;
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        loop {
+            let me = &mut *self;
+
+            if me.max <= me.amt {
+                return Poll::Ready(Ok(me.amt));
+            }
+
+            let buffer = ready!(Pin::new(&mut *me.reader).poll_fill_buf(cx))?;
+            if buffer.is_empty() {
+                ready!(Pin::new(&mut self.writer).poll_flush(cx))?;
+                return Poll::Ready(Ok(self.amt));
+            }
+
+            let i = ready!(Pin::new(&mut *me.writer).poll_write(cx, buffer))?;
+            if i == 0 {
+                return Poll::Ready(Err(std::io::ErrorKind::WriteZero.into()));
+            }
+            self.amt += i as u64;
+            Pin::new(&mut *self.reader).consume(i);
+        }
+    }
 }

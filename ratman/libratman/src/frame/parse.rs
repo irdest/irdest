@@ -12,6 +12,8 @@ use std::ffi::CString;
 pub use nom::{bytes::complete::take, IResult};
 use nom::{bytes::complete::take_while1, combinator::peek};
 
+use super::FrameParser;
+
 /// Peek one byte to check if the next section exists, if so, read LEN
 /// bytes, otherwise burn the zero byte
 pub fn maybe<const LEN: usize>(input: &[u8]) -> IResult<&[u8], Option<[u8; LEN]>> {
@@ -191,6 +193,23 @@ pub fn maybe_signature(input: &[u8]) -> IResult<&[u8], Option<[u8; 64]>> {
     } else {
         let (input, _) = take(1 as usize)(input)?;
         Ok((input, None))
+    }
+}
+
+impl<T: FrameParser> FrameParser for Vec<T> {
+    type Output = Vec<T::Output>;
+    fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
+        let (mut input, length) = take_u16(input)?;
+
+        let mut buf = vec![];
+
+        for _ in 0..length {
+            let (_input, item) = T::parse(input)?;
+            buf.push(item);
+            input = _input;
+        }
+
+        Ok((input, buf))
     }
 }
 

@@ -41,25 +41,30 @@ mod test;
 
 use crate::{
     api::{
+        _trait::{RatmanIpcExtV1, RatmanStreamExtV1, ReadStream},
         socket_v2::RawSocketHandle,
-        types::{Handshake, ServerPing, SubsCreate, SubsDelete},
+        types::{
+            Handshake, RecvMany, RecvOne, SendMany, SendTo, ServerPing, SubsCreate, SubsDelete,
+            SubsRestore,
+        },
     },
     frame::micro::{client_modes as cm, MicroframeHeader},
-    types::Address,
+    types::{Address, LetterheadV1},
     ClientError, EncodingError, Result,
 };
-pub use _trait::RatmanIpcExtV1;
 use async_trait::async_trait;
 use std::{
     collections::BTreeMap,
     ffi::CString,
-    net::{AddrParseError, Ipv4Addr, SocketAddr, SocketAddrV4},
-    str::FromStr,
+    net::{Ipv4Addr, SocketAddr, SocketAddrV4},
     sync::Arc,
 };
-use tokio::{net::TcpStream, sync::Mutex};
-
-use self::types::SubsRestore;
+use tokio::{
+    io::{AsyncRead, AsyncWrite},
+    net::TcpStream,
+    sync::Mutex,
+    task::{spawn_local, JoinHandle},
+};
 
 /// Indicate the current version of this library.
 ///
@@ -125,6 +130,25 @@ impl RatmanIpcExtV1 for RatmanIpc {
             ))
             .into()),
         }
+    }
+
+    async fn addr_list(self: &Arc<Self>) -> crate::Result<Vec<crate::types::Address>> {
+        let mut socket = self.socket().lock().await;
+
+        socket
+            .write_microframe(
+                MicroframeHeader {
+                    modes: cm::make(cm::ADDR, cm::LIST),
+                    auth: None,
+                    ..Default::default()
+                },
+                (),
+            )
+            .await?;
+
+        let (_header, addrs) = socket.read_microframe::<Vec<Address>>().await?;
+
+        Ok(addrs)
     }
 
     async fn addr_create(
@@ -242,7 +266,10 @@ impl RatmanIpcExtV1 for RatmanIpc {
         _tags: BTreeMap<String, String>,
         _trust: u8,
     ) -> crate::Result<crate::types::Ident32> {
-        todo!()
+        todo!(
+            "This API endpoint is unimplemented in {}",
+            version_str(&crate::api::VERSION)
+        );
     }
 
     async fn contact_modify(
@@ -258,7 +285,10 @@ impl RatmanIpcExtV1 for RatmanIpc {
         _note_modify: crate::types::Modify<String>,
         _tags_modify: crate::types::Modify<(String, String)>,
     ) -> crate::Result<Vec<crate::types::Ident32>> {
-        todo!()
+        todo!(
+            "This API endpoint is unimplemented in {}",
+            version_str(&crate::api::VERSION)
+        );
     }
 
     async fn contact_delete(
@@ -266,7 +296,10 @@ impl RatmanIpcExtV1 for RatmanIpc {
         _auth: crate::types::AddrAuth,
         _addr: crate::types::Address,
     ) -> crate::Result<()> {
-        todo!()
+        todo!(
+            "This API endpoint is unimplemented in {}",
+            version_str(&crate::api::VERSION)
+        );
     }
 
     async fn subs_available(
@@ -348,7 +381,10 @@ impl RatmanIpcExtV1 for RatmanIpc {
                     auth: Some(auth),
                     ..Default::default()
                 },
-                SubsRestore { sub_id: req_sub_id, addr },
+                SubsRestore {
+                    sub_id: req_sub_id,
+                    addr,
+                },
             )
             .await?;
 
@@ -443,4 +479,109 @@ impl Drop for RatmanIpc {
 /// this function will not work.
 pub fn default_api_bind() -> SocketAddr {
     SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 5852))
+}
+
+#[async_trait]
+impl RatmanStreamExtV1 for RatmanIpc {
+    /// Send a message stream to a single address on the network
+    ///
+    /// A send action needs a valid authentication token for the address that it
+    /// is being sent from.  The letterhead contains metadata about the stream:
+    /// what address is sending where, and how much.
+    ///
+    /// Optionally you can call `.add_send_time()` on the letterhead before
+    /// passing it to this function to include the current time in the stream
+    /// for the receiving client.
+    async fn send_to<I: AsyncRead>(
+        self: &Arc<Self>,
+        auth: crate::types::AddrAuth,
+        letterhead: crate::types::LetterheadV1,
+        data_reader: &I,
+    ) -> crate::Result<()> {
+        let mut socket = self.socket().lock().await;
+        socket
+            .write_microframe(
+                MicroframeHeader {
+                    modes: cm::make(cm::SEND, cm::ONE),
+                    auth: Some(auth),
+                    ..Default::default()
+                },
+                SendTo { letterhead },
+            )
+            .await?;
+
+        Ok(())
+    }
+
+    /// Send the same message stream to multiple recipients
+    ///
+    /// Most of the Letterhead
+    async fn send_many<I: AsyncRead>(
+        self: &Arc<Self>,
+        auth: crate::types::AddrAuth,
+        letterheads: Vec<crate::types::LetterheadV1>,
+        data_reader: &I,
+    ) -> crate::Result<()> {
+        Ok(())
+    }
+
+    /// Block this task/ socket to wait for a single incoming message stream
+    async fn recv_one<'s>(
+        self: &'s Arc<Self>,
+        auth: crate::types::AddrAuth,
+        addr: crate::types::Address,
+        to: crate::types::Recipient,
+    ) -> crate::Result<(crate::types::LetterheadV1, ReadStream<'s>)> {
+        let mut socket = self.socket().lock().await;
+        socket
+            .write_microframe(
+                MicroframeHeader {
+                    modes: cm::make(cm::RECV, cm::ONE),
+                    auth: Some(auth),
+                    ..Default::default()
+                },
+                RecvOne { addr, to },
+            )
+            .await?;
+
+        let (_, letterhead) = socket.read_microframe::<LetterheadV1>().await?;
+        Ok((letterhead?, ReadStream(socket)))
+    }
+
+    /// Return an iterator over a stream of letterheads and read streams
+    async fn recv_many<'s, I>(
+        self: &'s Arc<Self>,
+        auth: crate::types::AddrAuth,
+        addr: crate::types::Address,
+        to: crate::types::Recipient,
+        num: u32,
+    ) -> crate::Result<I>
+    where
+        I: Iterator<Item = (crate::types::LetterheadV1, ReadStream<'s>)>,
+    {
+        // let mut socket = self.socket().lock().await;
+        // socket
+        //     .write_microframe(
+        //         MicroframeHeader {
+        //             modes: cm::make(cm::RECV, cm::MANY),
+        //             auth: Some(auth),
+        //             ..Default::default()
+        //         },
+        //         RecvMany { addr, to, num },
+        //     )
+        //     .await?;
+
+        todo!(
+            "This API endpoint is unimplemented in {}",
+            version_str(&crate::api::VERSION)
+        );
+        // 0..num.into_iter().map(|_| {
+        //     let join =
+        //         spawn_local(async move { socket.read_microframe::<LetterheadV1>().await.unwrap() });
+
+        //     join.
+
+        //     todo!()
+        // })
+    }
 }

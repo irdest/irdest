@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2024 Katharina Fey <kookie@spacekookie.de>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
 //! Ratman storage journal module
 //!
 //! This module keeps track of network traffic events and payloads on disk to
@@ -25,6 +29,8 @@
 //! - Known frame IDs: keep track of known frame IDs to avoid re-broadcasting
 //! the same messages infinitely.
 //!
+
+use crate::storage::route::RouteData;
 
 use self::{
     page::{CachePage, JournalCache, SerdeFrameType},
@@ -65,8 +71,8 @@ pub struct Journal {
     pub manifests: CachePage<ManifestData>,
     /// A simple lookup set for known frame IDs
     pub seen_frames: JournalCache<Ident32>,
-    // /// Route metadata table
-    // pub routes: CachePage<RouteData>,
+    /// Route metadata table
+    pub routes: CachePage<RouteData>,
     // /// Message stream metadata table
     // pub links: CachePage<LinkData>,
 }
@@ -93,10 +99,10 @@ impl Journal {
             PhantomData,
         );
 
-        // let routes = CachePage(
-        //     db.open_partition("meta_routes", PartitionCreateOptions::default())?,
-        //     PhantomData,
-        // );
+        let routes = CachePage(
+            db.open_partition("meta_routes", PartitionCreateOptions::default())?,
+            PhantomData,
+        );
 
         // let links = CachePage(
         //     db.open_partition("meta_links", PartitionCreateOptions::default())?,
@@ -109,7 +115,7 @@ impl Journal {
             blocks,
             manifests,
             seen_frames,
-            // routes,
+            routes,
             // links,
         })
     }
@@ -153,6 +159,7 @@ impl Journal {
                 sender: env.header.get_sender(),
                 recipient: env.header.get_recipient().unwrap(),
                 manifest: SerdeFrameType::from(manifest?),
+                forwarded: false,
             },
         )?;
 

@@ -23,7 +23,7 @@ use crate::{
         parse::{self, take_cstring, take_id, take_u32},
         FrameGenerator, FrameParser,
     },
-    types::Ident32,
+    types::{Address, Ident32},
     ClientError, EncodingError, Result,
 };
 use nom::{bytes::complete::take, IResult};
@@ -93,6 +93,8 @@ pub enum ServerPing {
     Timeout,
     /// Subscription response type
     Subscription { sub_id: Ident32, sub_bind: CString },
+    /// A list of addresses, either local or remote
+    AddrList(Vec<Address>),
 }
 
 impl FrameGenerator for ServerPing {
@@ -123,6 +125,10 @@ impl FrameGenerator for ServerPing {
                 buf.push(6);
                 Some(sub_id).generate(buf)?;
                 generate_cstring(sub_bind, buf)?;
+            }
+            Self::AddrList(list) => {
+                buf.push(7);
+                list.generate(buf)?;
             }
         }
 
@@ -166,6 +172,11 @@ impl FrameParser for ServerPing {
                 let (_input, sub_bind) = take_cstring(input)?;
                 input = _input;
                 sub_bind.map(|sub_bind| Self::Subscription { sub_id, sub_bind })
+            }
+            7 => {
+                let (_input, list) = Vec::<Address>::parse(input)?;
+                input = _input;
+                Ok(Self::AddrList(list))
             }
             _ => Err(EncodingError::Parsing(format!("Invalid ServerPing type={}", tt)).into()),
         };

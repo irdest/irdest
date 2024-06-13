@@ -8,24 +8,27 @@ use crate::{
     config::{
         helpers, netmods::initialise_netmods, peers::PeeringBuilder, ConfigTree, CFG_RATMAND,
     },
-    dispatch::{exec_block_collector_system, BlockCollector},
     journal::Journal,
     links::LinksMap,
-    procedures::{self, BlockNotifier},
+    procedures::{self, BlockCollector, BlockNotifier},
     protocol::Protocol,
     routes::RouteTable,
     runtime::subs_man::SubsManager,
     storage::MetadataDb,
     util::{self, codes, setup_logging, Os, StateDirectoryLock},
 };
+use async_eris::ReadCapability;
 use libratman::{
     rt::new_async_thread,
     tokio::{
-        sync::broadcast::{channel as bcast_channel, Sender as BcastSender},
-        sync::mpsc::channel,
+        sync::{
+            broadcast::{channel as bcast_channel, Sender as BcastSender},
+            mpsc::channel,
+        },
         task::spawn_local,
     },
-    Result,
+    types::{Ident32, LetterheadV1, Recipient},
+    RatmanError, Result,
 };
 
 // External imports
@@ -254,7 +257,7 @@ impl RatmanContext {
             let collector_notify_tx = collector_notify_tx.clone();
 
             let this_ = Arc::clone(&this);
-            new_async_thread("ratmand-ingress", 1024 * 32, async move {
+            new_async_thread("ratmand-ingress", 1024 * 8, async move {
                 procedures::exec_ingress_system(this_, rx, collector_notify_tx).await;
                 Ok(())
             });
@@ -269,8 +272,9 @@ impl RatmanContext {
         {
             let ctx = Arc::clone(&this);
             let collector_notify_tx = collector_notify_tx.clone();
-            new_async_thread("ratmand-collector", 1024 * 8, async move {
-                exec_block_collector_system(ctx, collector_rx, collector_notify_tx).await
+            new_async_thread("ratmand-collector", 1024 * 32, async move {
+                procedures::exec_block_collector_system(ctx, collector_rx, collector_notify_tx)
+                    .await
             });
         }
 
@@ -328,5 +332,33 @@ impl RatmanContext {
     /// Test whether Ratman is capable of writing anything to disk
     pub fn ephemeral(&self) -> bool {
         self._statedir_lock.get_ref().is_none()
+    }
+
+    /// Utility function to get an active listener stream for a receiver
+    ///
+    /// An active listener can either be:
+    ///
+    /// - An active subscription managed by the meta_db and subscription
+    /// manager.  These are persistent and stay alive over a router reboot
+    ///
+    /// - A blocking receive stream, which is managed by the client connection
+    /// manager.  These are not persisted, meaning that after a router reboot
+    /// the client needs to re-connect to receive messages.
+    pub(crate) async fn get_active_listener(
+        self: &Arc<Self>,
+        sub_id: Option<Ident32>,
+        address_to: Recipient,
+    ) -> Result<BcastSender<(LetterheadV1, ReadCapability)>> {
+        match sub_id {
+            Some(sub_id) => self
+                .subs
+                .active_listeners
+                .lock()
+                .await
+                .get(&sub_id)
+                .map(|tx| tx.clone())
+                .ok_or(RatmanError::Nonfatal(libratman::NonfatalError::NoStream)),
+            None => self.clients.get_sync_listeners(address_to).await,
+        }
     }
 }

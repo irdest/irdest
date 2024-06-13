@@ -1,8 +1,6 @@
-use crate::{chunk::Chunk, Result};
+use crate::{chunk::Chunk, types::LetterheadV1, Result};
 use byteorder::{BigEndian, ByteOrder};
 use tokio::io::{AsyncRead, AsyncReadExt};
-
-use super::writer::AsyncWriter;
 
 /// A structure capable of reading a certain length of data
 ///

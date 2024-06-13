@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
+// SPDX-FileCopyrightText: 2019-2024 Katharina Fey <kookie@spacekookie.de>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
@@ -17,7 +17,7 @@ use libratman::{
             broadcast::{Receiver as BcastReceiver, Sender as BcastSender},
             mpsc::Receiver,
         },
-        task::{spawn_local, JoinHandle},
+        task::spawn_local,
     },
     tokio_util::compat::TokioAsyncReadCompatExt,
     types::{AddrAuth, Ident32, LetterheadV1},
@@ -62,7 +62,7 @@ pub async fn exec_ingress_system(
                 let ctx = Arc::clone(&ctx);
                 let tripwire = ctx.tripwire.clone();
                 spawn_local(async move {
-                    if let Err(e) = decode_message(ctx, manifest_notifier.unwrap(), tripwire, block_notifier.subscribe()).await {
+                    if let Err(e) = reassemble_message_stream(ctx, manifest_notifier.unwrap(), tripwire, block_notifier.subscribe()).await {
                         error!("message stream stuck: {e}");
                         return;
                     }
@@ -77,7 +77,7 @@ pub async fn exec_ingress_system(
 /// Decode a single message from a manifest/ read_capability
 ///
 /// Spawn a task that calls this function again if it failed.
-async fn decode_message(
+async fn reassemble_message_stream(
     ctx: Arc<RatmanContext>,
     manifest: MessageNotifier,
     tripwire: Tripwire,
@@ -88,9 +88,9 @@ async fn decode_message(
     // fixme: this won't work on non-linux?
     let null_file = File::open("/dev/null").await?;
     let (read_cap, letterhead) = match manifest.manifest.maybe_inner()? {
-        ManifestFrame::V1(v1) => (
-            <ManifestFrameV1 as Into<Result<ReadCapability>>>::into(v1)?,
-            v1.letterhead,
+        ManifestFrame::V1(ref v1) => (
+            <ManifestFrameV1 as Into<Result<ReadCapability>>>::into(v1.clone())?,
+            v1.letterhead.clone(),
         ),
     };
 
@@ -124,23 +124,24 @@ async fn decode_message(
         }
     }
 
-    let sub_id = ctx
+    let sub_id = *ctx
         .subs
         .recipients
         .lock()
         .await
         .get(&manifest.recipient)
         .ok_or(RatmanError::Nonfatal(NonfatalError::NoStream))?;
-    let bcast_tx = ctx
-        .subs
-        .active_listeners
-        .lock()
-        .await
-        .get(sub_id)
-        .ok_or(RatmanError::Nonfatal(NonfatalError::NoStream))?;
 
-    // Notify all actively listening streams
-    bcast_tx.send((letterhead, read_cap)).await.unwrap();
+    // Notify all listening subscription streams
+    if let Ok(bcast_tx) = ctx.get_active_listener(Some(sub_id), letterhead.to).await {
+        bcast_tx.send((letterhead.clone(), read_cap)).unwrap();
+    }
+
+    // Then notify all active sync listeners, if they exist
+    if let Ok(bcast_tx) = ctx.get_active_listener(None, letterhead.to).await {
+        bcast_tx.send((letterhead, read_cap)).unwrap();
+    }
+
     Ok(())
 }
 
@@ -163,57 +164,42 @@ pub async fn handle_subscription_socket(
         match item {
             Err(_) => break,
             Ok((letterhead, read_cap)) => {
-                let ctx2 = Arc::clone(&ctx);
-                let rc2 = read_cap.clone();
-                let lh2 = letterhead.clone();
-                
-                // Put the client socket back
-                client_socket =
-                // Run the stream as a function which spawns a local tast
-                // and returns the join handle to wait for.  We do this
-                // because there's no async closures.  Why not just have a
-                // function?  This seemed like more fun.
-                    match |mut client_socket: RawSocketHandle| -> JoinHandle<Result<RawSocketHandle>> {
-                        use libratman::frame::micro::client_modes as cm;
+                use libratman::frame::micro::client_modes as cm;
 
-                        // Spawn task on local worker set
-                        spawn_local(async move {
-                            client_socket
-                                .write_microframe(
-                                    MicroframeHeader {
-                                        modes: cm::make(cm::SUB, cm::ONE),
-                                        auth: Some(auth),
-                                        payload_size: 0,
-                                    },
-                                    lh2,
-                                )
-                                .await?;
-
-                            let mut compat_socket = client_socket.stream.compat();
-
-                            // Stream the block stream to the client
-                            async_eris::decode(&mut compat_socket, &rc2, &ctx2.journal.blocks)
-                                .await
-                                .map_err(|e| RatmanError::Block(libratman::BlockError::Eris(e)))?;
-
-                            Ok(RawSocketHandle::new(compat_socket.into_inner()))
-                        })
-                    }
-                // Call and await the closure immediately
-                (client_socket)
+                if let Err(e) = client_socket
+                    .write_microframe(
+                        MicroframeHeader {
+                            modes: cm::make(cm::SUB, cm::ONE),
+                            auth: Some(auth),
+                            payload_size: 0,
+                        },
+                        letterhead.clone(),
+                    )
                     .await
-                    .expect("failed to join subscription stream task")
                 {
-                    Ok(s) => s,
-                    Err(e) => {
-                        error!("subscription socket died: {e}");
-                        if let Err(e) = ctx.subs.missed_item(letterhead.to, read_cap).await {
-                            error!("failed to persist missed item; client will miss this one: {e}");
-                        }
-                        
-                        break;
+                    error!("failed to send stream letterhead: {e}");
+                    if let Err(e) = ctx.subs.missed_item(letterhead, read_cap).await {
+                        error!("failed to persist missed item; client will miss this one: {e}");
                     }
-                };
+                    break;
+                }
+
+                let mut compat_socket = client_socket.to_compat();
+
+                // Stream the block stream to the client
+                if let Err(e) =
+                    async_eris::decode(&mut compat_socket, &read_cap, &ctx.journal.blocks)
+                        .await
+                        .map_err(|e| RatmanError::Block(libratman::BlockError::Eris(e)))
+                {
+                    error!("subscription stream has died: {e}");
+                    if let Err(e) = ctx.subs.missed_item(letterhead, read_cap).await {
+                        error!("failed to persist missed item; client will miss this one: {e}");
+                    }
+                    break;
+                }
+
+                client_socket.from_compat(compat_socket);
             }
         }
     }

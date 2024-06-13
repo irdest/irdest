@@ -67,7 +67,7 @@ impl SubscriptionHandle {
 
         if buf.len() > bytes_left {
             let mut local_buf = vec![0; bytes_left];
-            self.socket.stream.read_exact(&mut local_buf).await?;
+            self.socket.stream().read_exact(&mut local_buf).await?;
             buf[0..].copy_from_slice(&local_buf);
             *amount_read = bytes_left;
 
@@ -75,7 +75,7 @@ impl SubscriptionHandle {
             self.curr_stream = None;
             Ok(None)
         } else {
-            self.socket.stream.read_exact(buf).await?;
+            self.socket.stream().read_exact(buf).await?;
             *amount_read = buf.len();
             Ok(Some(()))
         }

@@ -112,6 +112,14 @@ thread_local! {
     static SHARED_CACHE: RefCell<BTreeMap<(Address, Address), SharedSecret>> = RefCell::new(BTreeMap::default());
 }
 
+pub fn list_addr_keys(meta_db: &Arc<MetadataDb>) -> Vec<Address> {
+    meta_db
+        .addrs
+        .iter()
+        .map(|(addr, _)| Address::from_string(&addr))
+        .collect()
+}
+
 pub fn insert_addr_key(meta_db: &Arc<MetadataDb>) -> Result<(Address, AddrAuth)> {
     // Generate a public-private keypair
     let secret = SecretKey::generate(&mut OsRng {});
@@ -138,7 +146,12 @@ pub fn insert_addr_key(meta_db: &Arc<MetadataDb>) -> Result<(Address, AddrAuth)>
 }
 
 /// Destroy the local address key data
-pub fn destroy_addr_key(meta_db: &Arc<MetadataDb>, addr: Address, auth: AddrAuth, client_id: Ident32) -> Result<()> {
+pub fn destroy_addr_key(
+    meta_db: &Arc<MetadataDb>,
+    addr: Address,
+    auth: AddrAuth,
+    client_id: Ident32,
+) -> Result<()> {
     // Close the address key if it existed
     let _ = close_addr_key(meta_db, auth, client_id);
     meta_db.addrs.remove(addr.to_string())?;
@@ -197,9 +210,18 @@ pub fn start_stream(
             map.borrow_mut()
                 .insert((self_addr, target_addr), shared_secret);
         });
-    });
 
-    Ok(())
+        Ok(())
+    })
+}
+
+pub fn stream_diffie_hellman(self_addr: Address, target_addr: Address) -> [u8; 32] {
+    SHARED_CACHE.with(|map| {
+        map.borrow()
+            .get(&(self_addr, target_addr))
+            .expect("stream_diffie_hellman called without start_stream!")
+            .to_bytes()
+    })
 }
 
 /// Clear a cached shared secret
