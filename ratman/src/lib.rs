@@ -26,13 +26,11 @@ extern crate tracing;
 mod api;
 mod clock;
 mod crypto;
-mod dispatch;
 mod journal;
 mod links;
 mod procedures;
 mod protocol;
 mod routes;
-mod runtime;
 mod storage;
 
 // #[cfg(feature = "dashboard")]

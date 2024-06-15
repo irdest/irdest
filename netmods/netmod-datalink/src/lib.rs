@@ -10,13 +10,18 @@ extern crate tracing;
 mod socket;
 use std::{collections::HashMap, convert::TryInto, time::Duration};
 
-use libratman::NetmodError;
+use libratman::{
+    frame::FrameGenerator,
+    futures::future,
+    tokio::time::{self, timeout},
+    types::Ident32,
+    NetmodError,
+};
 pub(crate) use socket::Socket;
 
 use useful_netmod_bits::addrs::AddrTable;
 use useful_netmod_bits::framing::Envelope;
 
-use async_std::{future, sync::Arc, task};
 use async_trait::async_trait;
 use libratman::{
     endpoint::EndpointExt,
@@ -25,7 +30,7 @@ use libratman::{
 };
 use pnet::util::MacAddr;
 use pnet_datalink::interfaces;
-
+use std::sync::Arc;
 use zbus::{
     export::futures_util::{pin_mut, stream, StreamExt},
     zvariant::{OwnedObjectPath, Value},
@@ -78,15 +83,13 @@ async fn scan_wireless_for_ssid<'a>(
 
             info!("Scanning for SSID on {}...", dev_iface);
 
-            task::block_on(async {
-                future::timeout(Duration::from_secs(30), async {
-                    while i64::from(time) > wireless.last_scan().await.unwrap() {
-                        task::sleep(Duration::from_secs(1)).await;
-                    }
-                })
-                .await
-                .unwrap_or_else(|_| warn!("Scan timed out on {}.", dev_iface));
-            });
+            timeout(Duration::from_secs(30), async {
+                while i64::from(time) > wireless.last_scan().await.unwrap() {
+                    time::sleep(Duration::from_secs(1)).await;
+                }
+            })
+            .await
+            .unwrap_or_else(|_| warn!("Scan timed out on {}.", dev_iface));
 
             let aps = wireless.get_all_access_points().await.unwrap();
 
@@ -235,9 +238,9 @@ async fn configure_network_manager<'a>(
             info!("Waiting for NetworkManager to configure the device...");
 
             //Network sometimes takes a bit to get going.
-            future::timeout(Duration::from_secs(30), async {
+            timeout(Duration::from_secs(30), async {
                 while active.state().await.unwrap() != NMActiveConnectionState::Activated {
-                    task::sleep(Duration::from_secs(1)).await;
+                    time::sleep(Duration::from_secs(1)).await;
                 }
             })
             .await
@@ -254,24 +257,24 @@ async fn configure_network_manager<'a>(
 
 impl Endpoint {
     /// Create a new endpoint and spawn a dispatch task
-    pub fn spawn(iface: Option<&str>, ssid: Option<&str>) -> Arc<Self> {
-        task::block_on(async move {
-            let nmconn = Arc::new(Connection::system().await.unwrap());
-            let iface_str = configure_network_manager(&nmconn, iface, ssid)
+    pub async fn spawn(iface: Option<&str>, ssid: Option<&str>, self_rk_id: Ident32) -> Arc<Self> {
+        let nmconn = Arc::new(Connection::system().await.unwrap());
+        let iface_str = configure_network_manager(&nmconn, iface, ssid)
+            .await
+            .unwrap();
+
+        let niface = interfaces()
+            .into_iter()
+            .rfind(|i| i.name == iface_str)
+            .expect(&format!("Interface name {} not found.", iface_str));
+
+        let addrs = Arc::new(AddrTable::new());
+        Arc::new(Self {
+            socket: Socket::new(niface, Arc::clone(&addrs), self_rk_id)
                 .await
-                .unwrap();
-
-            let niface = interfaces()
-                .into_iter()
-                .rfind(|i| i.name == iface_str)
-                .expect(&format!("Interface name {} not found.", iface_str));
-
-            let addrs = Arc::new(AddrTable::new());
-            Arc::new(Self {
-                socket: Socket::new(niface, Arc::clone(&addrs)).await.unwrap(),
-                addrs,
-                nmconn,
-            })
+                .unwrap(),
+            addrs,
+            nmconn,
         })
     }
 
@@ -289,15 +292,19 @@ impl EndpointExt for Endpoint {
 
     async fn send(
         &self,
-        InMemoryEnvelope { buffer, .. }: InMemoryEnvelope,
+        InMemoryEnvelope { mut buffer, header }: InMemoryEnvelope,
         neighbour: Neighbour,
-        exclude: Option<u16>,
+        exclude: Option<Ident32>,
     ) -> Result<()> {
-        if buffer.len() > 1500 {
+        let mut full_buffer = vec![];
+        header.generate(&mut full_buffer)?;
+        full_buffer.append(&mut buffer);
+
+        if full_buffer.len() > 1500 {
             return Err(RatmanError::Netmod(NetmodError::FrameTooLarge));
         }
 
-        let env = Envelope::Data(buffer);
+        let env = Envelope::Data(full_buffer);
 
         match neighbour {
             Neighbour::Single(ref id) => {

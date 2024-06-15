@@ -7,15 +7,93 @@
 //! Asynchronous Ratman routing core
 
 use crate::{
+    context::RatmanContext,
     links::LinksMap,
     routes::{EpNeighbourPair, RouteTable},
 };
+use async_eris::ReadCapability;
 use libratman::{
-    types::Recipient,
-    types::{InMemoryEnvelope, Neighbour},
+    types::{InMemoryEnvelope, LetterheadV1, Neighbour, Recipient},
     RatmanError, Result,
 };
 use std::sync::Arc;
+
+/// Start a new async sender system based on an existing reader stream
+///
+/// A sender system consists of the following tasks:
+///
+/// 1) An async reader for the TcpStream/ input stream
+///
+/// 2) A chunk iterator that is continuously updated with chunks read
+///    from the async reader task
+///
+/// 3) Chunk iterator is handed to the block slicer, which produces a
+///    set of output blocks.
+///
+/// 4) Output blocks are streamed to a frame generator task
+///
+/// 5) Generated frames and block are cached in the respective journal
+///    pages
+///
+/// 6) Resolve the target route and setup an auto-resolver to update
+///    the route state every N? seconds.  This allows broken links to be
+///    respected and reduces the amount of required resends.
+///
+/// 7) Send the batch of frames via the required interface
+///
+/// Each task can depend on other tasks, but MUST yield when not able
+/// to continue.  This way data is streamed into the system, handled
+/// into blocks, sliced into frames, cached, (later: stored to disk),
+/// then resolved and dispatched.
+///
+/// A single thread is allocated for a send over the size of 512MB.  A
+/// shared thread is used for all messages below that size.
+///
+/// The reader will keep reading until the upper message size from the
+/// letter manifest is reached.  After this the stream will be
+/// forcably terminated, and created blocks and frames in any of the
+/// created sequences MUST be marked with `incomplete=?` in the
+/// journal tagging system
+pub(crate) async fn exec_sender_system<const L: usize>(
+    context: &Arc<RatmanContext>,
+    read_cap: ReadCapability,
+    letterhead: LetterheadV1,
+) -> Result<()> {
+    // let (tx, rx) = mpsc::channel(size_commonbuf_t::<L>());
+    // let socket = RawSocketHandle::new(reader);
+
+    // Setup the block slicer
+    // let (_iter_tx, chunk_iter) = ChunkIter::<L>::new();
+    // let read_cap_f = spawn_local(block_slicer_task(journal, chunk_iter));
+
+    // Read from the socket until we have reached the upper message limit
+    // while socket.read_counter() < total_message_size {
+    // We read a chunk from disk and handle content encryption
+    // first, then write out the encrypted chunk and resulting
+    // nonce into the outer block to handle.
+    // let (encrypted_chunk, chunk_nonce) = {
+    //     let mut raw_data = socket.read_chunk::<L>().await?;
+    //     if raw_data.1 < L {
+    //         debug!("Reached the last chunk in the data stream");
+    //     }
+
+    // // Encrypt the data before doing anything else!
+    // let shared_key = context.keys.diffie_hellman(from, to).await.expect(&format!(
+    //     "Diffie-Hellman key-exchange failed between {} and {}",
+    //     from, to,
+    // ));
+    // let nonce = crypto::encrypt_chunk(&shared_key, &mut raw_data.0);
+    // (raw_data, nonce) // data no longer raw!
+    // };
+
+    // }
+
+    // let _read_cap = read_cap_f
+    //     .await
+    //     .expect("failed to produce message manifest")?;
+
+    Ok(())
+}
 
 /// Resolve the target address and dispatch the frame
 ///
@@ -41,12 +119,11 @@ pub(crate) async fn dispatch_frame(
     let EpNeighbourPair(epid, nb) = match routes.resolve(target_address).await {
         // Return the endpoint/target ID pair from the resolver
         Some(resolve) => resolve,
-
         None => return Err(RatmanError::NoSuchAddress(target_address)),
     };
 
     let (_, ep) = drivers.get(epid as usize).await;
-    ep.send(envelope, nb, None).await
+    ep.send(envelope, Neighbour::Single(nb), None).await
 }
 
 // todo: implement the exception mechanism

@@ -15,14 +15,15 @@ pub(crate) use socket::Socket;
 mod framing;
 pub(crate) use framing::MemoryEnvelopeExt;
 
-use async_std::{sync::Arc, task};
 use async_trait::async_trait;
 use libratman::{
     endpoint::EndpointExt,
-    types::{InMemoryEnvelope, Neighbour},
+    tokio::task::spawn_local,
+    types::{Ident32, InMemoryEnvelope, Neighbour},
     Result,
 };
 use pnet_datalink::interfaces;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct Endpoint {
@@ -32,7 +33,11 @@ pub struct Endpoint {
 
 impl Endpoint {
     /// Create a new endpoint and spawn a dispatch task
-    pub fn spawn(iface: Option<String>, port: u16) -> std::result::Result<Arc<Self>, &'static str> {
+    pub async fn spawn(
+        iface: Option<String>,
+        port: u16,
+        r_key_id: Ident32,
+    ) -> std::result::Result<Arc<Self>, &'static str> {
         let iface_string = iface
             .or_else(|| {
                 default_iface().map(|iface| {
@@ -46,12 +51,10 @@ impl Endpoint {
             })
             .ok_or_else(|| "Could not find an interface to bind on.")?;
 
-        Ok(task::block_on(async move {
-            let addrs = Arc::new(AddrTable::new());
-            Arc::new(Self {
-                socket: Socket::new(&iface_string, port, Arc::clone(&addrs)).await,
-                addrs,
-            })
+        let addrs = Arc::new(AddrTable::new());
+        Ok(Arc::new(Self {
+            socket: Socket::new(&iface_string, port, Arc::clone(&addrs), r_key_id).await,
+            addrs,
         }))
     }
 
@@ -71,7 +74,7 @@ impl EndpointExt for Endpoint {
         &self,
         envelope: InMemoryEnvelope,
         target: Neighbour,
-        exclude: Option<u16>,
+        exclude: Option<Ident32>,
     ) -> Result<()> {
         match target {
             Neighbour::Single(ref id) => {

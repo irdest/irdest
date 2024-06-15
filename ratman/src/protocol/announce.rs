@@ -1,4 +1,4 @@
-use crate::{context::RatmanContext, crypto, dispatch, storage::MetadataDb};
+use crate::{context::RatmanContext, crypto, procedures, storage::MetadataDb};
 use libratman::{
     frame::{
         carrier::{AnnounceFrame, AnnounceFrameV1, CarrierFrameHeader, OriginDataV1, RouteDataV1},
@@ -101,7 +101,7 @@ impl AddressAnnouncer {
                 .unwrap();
 
             // Send it into the network
-            if let Err(e) = dispatch::flood_frame(
+            if let Err(e) = procedures::flood_frame(
                 &ctx.routes,
                 &ctx.links,
                 InMemoryEnvelope::from_header_and_payload(header, announce_buffer).unwrap(),

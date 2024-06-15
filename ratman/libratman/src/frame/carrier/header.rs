@@ -166,6 +166,12 @@ impl CarrierFrameHeader {
             Self::V1(inner) => inner.payload_length as usize,
         }
     }
+
+    pub fn get_auxiliary_data(&self) -> Option<[u8; 64]> {
+        match self {
+            Self::V1(inner) => inner.auxiliary_data,
+        }
+    }
 }
 
 impl FrameParser for CarrierFrameHeader {

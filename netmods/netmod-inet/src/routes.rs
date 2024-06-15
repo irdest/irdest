@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use crate::peer::Peer;
-use libratman::tokio::sync::RwLock;
+use libratman::{tokio::sync::RwLock, types::Ident32};
 use std::{
     collections::BTreeMap,
     sync::{
@@ -17,7 +17,7 @@ pub(crate) type Target = u16;
 #[derive(Default)]
 pub(crate) struct Routes {
     latest: AtomicU16,
-    pub(crate) inner: RwLock<BTreeMap<Target, Arc<Peer>>>,
+    pub(crate) inner: RwLock<BTreeMap<Ident32, Arc<Peer>>>,
 }
 
 impl Routes {
@@ -39,18 +39,18 @@ impl Routes {
     /// When adding a peer there might already have been a previous
     /// peer in the slot, meaning that outgoing frames have
     /// accumulated in the out buffer.  These need to be scheduled to send after this call is done
-    pub(crate) async fn add_peer(self: &Arc<Self>, target: Target, peer: Arc<Peer>) {
+    pub(crate) async fn add_peer(self: &Arc<Self>, peer_id: Ident32, peer: Arc<Peer>) {
         let mut inner = self.inner.write().await;
-        inner.insert(target, peer);
+        inner.insert(peer_id, peer);
     }
 
     /// Remove a peer from the routing map
     ///
     /// This should only be done by the peer itself, when it closes
     /// its stream
-    pub(crate) async fn remove_peer(self: &Arc<Self>, target: Target) -> Arc<Peer> {
+    pub(crate) async fn remove_peer(self: &Arc<Self>, peer_id: Ident32) -> Arc<Peer> {
         let mut inner = self.inner.write().await;
-        inner.remove(&target).unwrap()
+        inner.remove(&peer_id).unwrap()
     }
 
     /// All peers are valid, but some are more valid than others
@@ -58,18 +58,18 @@ impl Routes {
     /// Check if we can currently send data to this peer (i.e. will
     /// get_peer_by_id fail?).  There is a race condition in here
     /// somewhere. Woops
-    pub(crate) async fn exists(self: &Arc<Self>, target: Target) -> bool {
+    pub(crate) async fn exists(self: &Arc<Self>, peer_id: Ident32) -> bool {
         let inner = self.inner.read().await;
-        inner.get(&target).is_some()
+        inner.get(&peer_id).is_some()
     }
 
     /// Return the peer associated with a particular target ID
-    pub(crate) async fn get_peer_by_id(self: &Arc<Self>, target: Target) -> Option<Arc<Peer>> {
+    pub(crate) async fn get_peer_by_id(self: &Arc<Self>, peer_id: Ident32) -> Option<Arc<Peer>> {
         let inner = self.inner.read().await;
-        inner.get(&target).map(|peer| Arc::clone(&peer))
+        inner.get(&peer_id).map(|peer| Arc::clone(&peer))
     }
 
-    pub(crate) async fn get_all_valid(self: &Arc<Self>) -> Vec<(Arc<Peer>, u16)> {
+    pub(crate) async fn get_all_valid(self: &Arc<Self>) -> Vec<(Arc<Peer>, Ident32)> {
         let inner = self.inner.read().await;
         inner
             .iter()

@@ -59,8 +59,15 @@ mod modes {
 /// A simple handshake type to send across a newly created connection
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub(crate) enum Handshake {
-    Hello { tt: PeerType, self_port: u16 },
-    Ack { tt: PeerType },
+    Hello {
+        tt: PeerType,
+        self_port: u16,
+        r_key_id: Ident32,
+    },
+    Ack {
+        tt: PeerType,
+        r_key_id: Ident32,
+    },
 }
 
 impl Handshake {
@@ -86,13 +93,16 @@ impl Handshake {
     }
 
     pub(crate) fn to_carrier(self) -> Result<InMemoryEnvelope> {
+        let r_key_id = match self {
+            Self::Hello { r_key_id, .. } => r_key_id,
+            Self::Ack { r_key_id, .. } => r_key_id,
+        };
         let (payload, modes) = self.encode()?;
 
         InMemoryEnvelope::from_header_and_payload(
             CarrierFrameHeader::new_netmodproto_frame(
                 modes,
-                // todo: get router root key!
-                Address(Ident32::random()),
+                Address(r_key_id),
                 payload.len() as u16,
             ),
             payload,
@@ -105,6 +115,7 @@ fn encode_decode_handshake() {
     let hello = Handshake::Hello {
         tt: PeerType::Standard,
         self_port: 12,
+        r_key_id: Ident32::random(),
     };
 
     // let (payload, modes) = hello.clone().encode().unwrap();

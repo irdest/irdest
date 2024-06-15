@@ -13,6 +13,7 @@ use libratman::{
         net::{TcpListener, TcpStream},
         task::spawn_local,
     },
+    types::Ident32,
     NetmodError, RatmanError,
 };
 use std::{
@@ -40,13 +41,17 @@ impl From<io::Error> for ServerError {
 /// Tcp connection listener taking on connections from peers,
 /// configuring links, and spawning async peer handlers
 pub struct Server {
+    self_router_key_id: Ident32,
     ipv4_listen: Option<TcpListener>,
     ipv6_listen: TcpListener,
 }
 
 impl Server {
     /// Attempt to bind the server socket
-    pub(crate) async fn bind(bind: &str) -> Result<Server, RatmanError> {
+    pub(crate) async fn bind(
+        bind: &str,
+        self_router_key_id: Ident32,
+    ) -> Result<Server, RatmanError> {
         let addr: SocketAddr = bind
             .parse()
             .map_err(|e: AddrParseError| RatmanError::Netmod(e.into()))?;
@@ -58,6 +63,7 @@ impl Server {
         let ipv6_listen = TcpListener::bind(addr).await?;
 
         Ok(Self {
+            self_router_key_id,
             ipv4_listen: None,
             ipv6_listen,
         })
@@ -74,7 +80,12 @@ impl Server {
             match self.ipv6_listen.accept().await {
                 Ok((stream, _)) => {
                     let r = Arc::clone(&r);
-                    spawn_local(handle_stream(stream, sender.clone(), r));
+                    spawn_local(handle_stream(
+                        stream,
+                        sender.clone(),
+                        r,
+                        self.self_router_key_id,
+                    ));
                 }
                 Err(e) => {
                     warn!("Invalid incoming stream: {}", e);
@@ -89,8 +100,8 @@ impl Server {
 ///
 /// Currently only standard peer connections are supported, meaning
 /// that no reverse channel is created anywhere in this block.
-async fn handle_stream(s: TcpStream, sender: FrameSender, r: Arc<Routes>) {
-    let peer = match accept_connection(s, sender, &r).await {
+async fn handle_stream(s: TcpStream, sender: FrameSender, r: Arc<Routes>, self_key_id: Ident32) {
+    let peer = match accept_connection(s, sender, &r, self_key_id).await {
         Ok(peer) => peer,
         Err(e) => {
             error!("Failed to connect to peer: {}", e);
@@ -103,13 +114,14 @@ async fn handle_stream(s: TcpStream, sender: FrameSender, r: Arc<Routes>) {
     spawn_local(async move { this_peer.run().await });
 
     // Also add the peer to the routing table
-    r.add_peer(peer.id(), peer).await;
+    r.add_peer(peer.session.peer_router_key_id, peer).await;
 }
 
 async fn accept_connection(
     s: TcpStream,
     sender: FrameSender,
     r: &Arc<Routes>,
+    self_key_id: Ident32,
 ) -> Result<Arc<Peer>, io::Error> {
     let addr = s.peer_addr()?;
     let (mut read_stream, mut write_stream) = s.into_split();
@@ -118,8 +130,8 @@ async fn accept_connection(
     let frame = proto::read_blocking(&mut read_stream).await.unwrap();
     let handshake = Handshake::from_carrier(&frame).unwrap();
 
-    let tt = match handshake {
-        Handshake::Hello { tt, .. } => tt,
+    let (tt, r_key_id) = match handshake {
+        Handshake::Hello { tt, r_key_id, .. } => (tt, r_key_id),
         Handshake::Ack { .. } => {
             drop((read_stream, write_stream));
             return Err(io::Error::new(
@@ -130,13 +142,18 @@ async fn accept_connection(
     };
 
     // Send back an ACK to the client so it can chill out a bit
-    let ack = Handshake::Ack { tt };
+    let ack = Handshake::Ack {
+        tt,
+        r_key_id: self_key_id,
+    };
     let envelope = ack.to_carrier().unwrap();
     proto::write(&mut write_stream, &envelope).await.unwrap();
 
     let target = r.next_target();
     let data = SessionData {
         self_port: 0,
+        self_router_key_id: self_key_id,
+        peer_router_key_id: r_key_id,
         id: target,
         tt,
         addr,

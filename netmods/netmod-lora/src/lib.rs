@@ -6,8 +6,8 @@ extern crate tracing;
 use irdest_firmware_util::{decode_frame, encode_frame};
 use libratman::{
     endpoint::EndpointExt,
-    types::{InMemoryEnvelope, Neighbour},
-    Result as RatmanResult,
+    types::{Ident32, InMemoryEnvelope, Neighbour},
+    NetmodError, RatmanError, Result as RatmanResult,
 };
 
 use async_std::{channel, sync::Arc, sync::Mutex, task};
@@ -94,11 +94,12 @@ impl LoraPacket {
 
 pub struct LoraEndpoint {
     rx: channel::Receiver<InMemoryEnvelope>,
+    router_pk_id: Ident32,
     serial: Mutex<TTYPort>,
 }
 
 impl LoraEndpoint {
-    pub fn spawn(port: &str, baud: u32) -> Arc<Self> {
+    pub fn spawn(port: &str, baud: u32, router_pk_id: Ident32) -> Arc<Self> {
         let (tx, rx) = channel::bounded(BUFFER_SIZE);
         let serial = serialport::new(port, baud)
             .timeout(Duration::from_millis(10))
@@ -107,6 +108,7 @@ impl LoraEndpoint {
 
         let this = Arc::new(Self {
             rx,
+            router_pk_id,
             serial: Mutex::new(serial),
         });
 
@@ -161,7 +163,7 @@ impl EndpointExt for LoraEndpoint {
         &self,
         frame: InMemoryEnvelope,
         _target: Neighbour,
-        exclude: Option<u16>,
+        exclude: Option<Ident32>,
     ) -> RatmanResult<()> {
         if exclude.is_some() {
             warn!("Cannot send messages containing exlude fields");
@@ -204,7 +206,16 @@ impl EndpointExt for LoraEndpoint {
 
     async fn next(&self) -> RatmanResult<(InMemoryEnvelope, Neighbour)> {
         let frame = self.rx.recv().await.unwrap();
-        trace!("delivering frame to deamon");
-        Ok((frame, Neighbour::Single(0)))
+        trace!("delivering frame to router");
+        let peer_router_key_id = Ident32::from_bytes(
+            frame
+                .header
+                .get_auxiliary_data()
+                .ok_or(RatmanError::Netmod(NetmodError::InvalidPeer(
+                    "No router key_id!".into(),
+                )))?
+                .as_slice(),
+        );
+        Ok((frame, Neighbour::Single(peer_router_key_id)))
     }
 }

@@ -3,16 +3,22 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use crate::util::IoPair;
-use libratman::{
-    tokio::{
-        sync::{mpsc::channel, Mutex},
-        task,
+use crate::{
+    storage::{
+        route::{RouteData, RouteEntry, RouteState},
+        MetadataDb,
     },
-    types::{Address, Neighbour},
-    RatmanError, Result,
+    util::IoPair,
 };
-use std::{collections::BTreeMap, sync::Arc};
+use chrono::Utc;
+use libratman::{
+    frame::carrier::AnnounceFrameV1,
+    tokio::sync::mpsc::channel,
+    types::{Address, Ident32, Neighbour},
+    NetmodError, RatmanError, Result,
+};
+use serde::{Deserialize, Serialize};
+use std::{collections::VecDeque, iter::FromIterator, sync::Arc};
 
 /// Main Ratman routing table
 ///
@@ -20,16 +26,18 @@ use std::{collections::BTreeMap, sync::Arc};
 /// or local, and an address key or a namespace key).  New addresses
 /// can be polled via the `new` announce channel.
 pub(crate) struct RouteTable {
-    routes: Arc<Mutex<BTreeMap<Address, RouteType>>>,
+    meta_db: Arc<MetadataDb>,
+    // routes: Arc<Mutex<BTreeMap<Address, RouteType>>>,
     new: IoPair<Address>,
     #[cfg(feature = "dashboard")]
     metrics: metrics::RouteTableMetrics,
 }
 
 impl RouteTable {
-    pub(crate) fn new() -> Arc<Self> {
+    pub(crate) fn new(meta_db: Arc<MetadataDb>) -> Arc<Self> {
         Arc::new(Self {
-            routes: Default::default(),
+            meta_db,
+            // routes: Default::default(),
             new: channel(1),
             #[cfg(feature = "dashboard")]
             metrics: metrics::RouteTableMetrics::default(),
@@ -56,8 +64,8 @@ pub(crate) async fn exec_route_table(_table: &Arc<RouteTable>) {
 /////////////////////////////////// SNIP ///////////////////////////////////
 
 /// A netmod endpoint ID and an endpoint target ID
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) struct EpNeighbourPair(pub(crate) u8, pub(crate) Neighbour);
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub(crate) struct EpNeighbourPair(pub(crate) usize, pub(crate) Ident32);
 
 /// Describes the reachability of a route
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -83,23 +91,75 @@ impl RouteTable {
     ///
     /// If the Id was not previously known to the router, it is queued
     /// to the `new` set which can be polled by calling `discovered().await`.
-    pub(crate) async fn update(self: &Arc<Self>, if_: u8, t: Neighbour, id: Address) {
-        let mut tbl = self.routes.lock().await;
-        let route = RouteType::Remote(EpNeighbourPair(if_, t));
+    pub(crate) async fn update(
+        self: &Arc<Self>,
+        ep_neighbour: EpNeighbourPair,
+        peer_addr: Address,
+        announce_f: AnnounceFrameV1,
+    ) -> Result<()> {
+        // let mut tbl = self.routes.lock().await;
+        // let route = RouteType::Remote(EpNeighbourPair(ifid, t));
 
-        // Only "announce" a new user if it was not known before
-        if tbl.insert(id, route).is_none() {
-            info!("Discovered new address {}", id);
-            debug!("New routing table state is: {:#?}", tbl);
+        let new_route;
+        match self.meta_db.routes.get(&peer_addr.to_string())? {
+            Some(RouteData {
+                peer,
+                mut link_id,
+                route_id,
+                mut route,
+            }) => {
+                // If current ifid is contained in route set AND not currently
+                // the highest priority anyway (AND set not empty)
+                if link_id.contains(&ep_neighbour) && link_id.get(0) != Some(&ep_neighbour) {
+                    // filter current ifid from set and write back
+                    link_id = link_id.into_iter().filter(|x| x != &ep_neighbour).collect();
+                    // then push current ifid to front
+                    link_id.push_front(ep_neighbour);
+                }
 
-            #[cfg(feature = "dashboard")]
-            self.metrics
-                .routes_count
-                .get_or_create(&metrics::RouteLabels { kind: route })
-                .inc();
-            let s = Arc::clone(&self);
-            task::spawn(async move { s.new.0.send(id).await });
+                // Update other bits of metadata
+                route.last_seen = Utc::now();
+                route.state = RouteState::Active;
+                route.data = announce_f.route;
+
+                new_route = RouteData {
+                    peer,
+                    link_id,
+                    route_id,
+                    route,
+                };
+            }
+            None => {
+                new_route = RouteData {
+                    peer: peer_addr,
+                    link_id: VecDeque::from_iter(vec![ep_neighbour].into_iter()),
+                    route_id: Ident32::random(),
+                    route: RouteEntry {
+                        data: announce_f.route,
+                        state: RouteState::Active,
+                        first_seen: Utc::now(),
+                        last_seen: Utc::now(),
+                    },
+                };
+            }
         }
+
+        if self.meta_db.routes.get(&peer_addr.to_string())?.is_some() {
+            // spawn_local(async move { s.new.0.send(id).await });
+        }
+
+        // Then update the caches and on-disk table
+        self.meta_db
+            .routes
+            .insert(peer_addr.to_string(), &new_route)?;
+
+        // #[cfg(feature = "dashboard")]
+        // self.metrics
+        //     .routes_count
+        //     .get_or_create(&metrics::RouteLabels { kind: route })
+        //     .inc();
+
+        Ok(())
     }
 
     /// Poll the set of newly discovered users
@@ -107,71 +167,42 @@ impl RouteTable {
         self.new.1.recv().await.unwrap()
     }
 
-    /// Track a local ID in the routes table
-    pub(crate) async fn add_local(&self, id: Address) -> Result<()> {
-        match self.routes.lock().await.insert(id, RouteType::Local) {
-            Some(_) => Err(RatmanError::DuplicateAddress(id)),
-            None => {
-                #[cfg(feature = "dashboard")]
-                self.metrics
-                    .routes_count
-                    .get_or_create(&metrics::RouteLabels {
-                        kind: RouteType::Local,
-                    })
-                    .inc();
-                Ok(())
-            }
-        }
-    }
-
     /// Check if a user is locally known
     pub(crate) async fn local(&self, id: Address) -> Result<()> {
-        match self.reachable(id).await {
-            Some(RouteType::Local) => Ok(()),
-            _ => Err(RatmanError::NoSuchAddress(id)),
-        }
-    }
-
-    /// Delete an entry from the routing table
-    pub(crate) async fn delete(&self, id: Address) -> Result<()> {
-        match self.routes.lock().await.remove(&id) {
-            Some(_kind) => {
-                #[cfg(feature = "dashboard")]
-                self.metrics
-                    .routes_count
-                    .get_or_create(&metrics::RouteLabels { kind: _kind })
-                    .dec();
-                Ok(())
-            }
-            None => Err(RatmanError::NoSuchAddress(id)),
-        }
+        self.meta_db
+            .addrs
+            .get(&id.to_string())?
+            .ok_or(RatmanError::NoSuchAddress(id))
+            .map(|_| ())
     }
 
     /// Get all users in the routing table
-    pub(crate) async fn all(&self) -> Vec<(Address, RouteType)> {
-        self.routes
-            .lock()
-            .await
+    pub(crate) async fn all(&self) -> Vec<(Address, RouteEntry)> {
+        self.meta_db
+            .routes
             .iter()
-            .map(|(i, tt)| (*i, tt.clone()))
+            .map(|(id, data)| (Address::from_string(&id), data.route))
             .collect()
     }
 
-    /// Get the endpoint and target ID for a user Identity
-    ///
-    /// **Note**: this function may panic if no entry was found, and
-    /// returns `None` if the specified ID isn't remote.  To get more
-    /// control over how the table is queried, use `reachable` instead
-    pub(crate) async fn resolve(&self, id: Address) -> Option<EpNeighbourPair> {
-        match self.routes.lock().await.get(&id).cloned()? {
-            RouteType::Remote(ep) => Some(ep),
-            RouteType::Local => None,
-        }
+    /// Get the endpoint and target ID for a peer's address
+    pub(crate) async fn resolve(&self, peer_addr: Address) -> Option<EpNeighbourPair> {
+        self.meta_db
+            .routes
+            .get(&peer_addr.to_string())
+            .ok()
+            .flatten()
+            .and_then(|route_data| route_data.link_id.get(0).copied())
     }
 
     /// Check if an ID is reachable via currently known routes
-    pub(crate) async fn reachable(&self, id: Address) -> Option<RouteType> {
-        self.routes.lock().await.get(&id).cloned()
+    pub(crate) async fn reachable(&self, peer_addr: Address) -> Option<RouteState> {
+        self.meta_db
+            .routes
+            .get(&peer_addr.to_string())
+            .ok()
+            .flatten()
+            .map(|route_data| route_data.route.state)
     }
 }
 

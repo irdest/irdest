@@ -10,10 +10,9 @@ use crate::{
     },
     journal::Journal,
     links::LinksMap,
-    procedures::{self, BlockCollector, BlockNotifier},
+    procedures::{self, BlockCollector, BlockNotifier, SubsManager},
     protocol::Protocol,
     routes::RouteTable,
-    runtime::subs_man::SubsManager,
     storage::MetadataDb,
     util::{self, codes, setup_logging, Os, StateDirectoryLock},
 };
@@ -90,7 +89,7 @@ impl RatmanContext {
         let meta_db = Arc::new(MetadataDb::new(meta_fjall)?);
 
         let links = LinksMap::new();
-        let routes = RouteTable::new();
+        let routes = RouteTable::new(Arc::clone(&meta_db));
 
         let collector = BlockCollector::restore(
             Arc::clone(&journal),
@@ -164,7 +163,7 @@ impl RatmanContext {
         }
 
         // This never fails, we will have a map of netmods here, even if it is empty
-        initialise_netmods(&this.config, &this.links).await;
+        initialise_netmods(&this.config, &this.links, &this.meta_db).await;
 
         // Get the initial set of peers from the configuration.
         // Either this is done via the `peer_file` field, which is
@@ -301,7 +300,6 @@ impl RatmanContext {
                             &this_.routes,
                             &this_.links,
                             &this_.journal,
-                            &this_.collector,
                             this_.tripwire.clone(),
                             (&name, &ep),
                             ingress_tx,

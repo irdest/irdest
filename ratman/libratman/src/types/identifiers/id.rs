@@ -128,6 +128,11 @@ impl Ident32 {
         Self::from_bytes(&v)
     }
 
+    /// Create an un-initialised identifier which is all-zero
+    pub fn uninit() -> Self {
+        Self([0; 32])
+    }
+
     pub fn as_bytes(&self) -> &[u8] {
         &self.0
     }

@@ -3,14 +3,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use crate::{
-    context::RatmanContext, crypto, dispatch::StreamSlicer, procedures::handle_subscription_socket,
+    context::RatmanContext,
+    crypto,
+    procedures::{handle_subscription_socket, BlockWorker},
 };
+use async_eris::BlockSize;
 use libratman::{
     api::{
         socket_v2::RawSocketHandle,
         types::{
-            AddrCreate, AddrDestroy, AddrDown, AddrUp, Handshake, RecvMany, RecvOne, ServerPing,
-            SubsCreate, SubsDelete, SubsRestore,
+            AddrCreate, AddrDestroy, AddrDown, AddrUp, Handshake, RecvMany, RecvOne, SendTo,
+            ServerPing, SubsCreate, SubsDelete, SubsRestore,
         },
         version_str, versions_compatible,
     },
@@ -18,8 +21,7 @@ use libratman::{
     tokio::{
         io::ErrorKind,
         net::{TcpListener, TcpStream},
-        sync::broadcast::channel as bcast_channel,
-        sync::mpsc::channel,
+        sync::{broadcast::channel as bcast_channel, mpsc::channel},
         task::spawn_local,
         time::timeout,
     },
@@ -419,42 +421,13 @@ pub(super) async fn single_session_exchange(
 
                         let mut compat_socket = raw_socket.to_compat();
 
-                        crypto::start_stream(
-                            &ctx.meta_db,
-                            letterhead.from,
-                            letterhead.to.inner_address(),
-                            auth,
-                            client_id,
-                        )?;
-
-                        let shared_key = crypto::stream_diffie_hellman(
-                            letterhead.from,
-                            letterhead.to.inner_address(),
-                        );
-
-                        let chosen_block_size = match letterhead.payload_length {
-                            m if m < (16 * 1024) => async_eris::BlockSize::_1K,
-                            _ => async_eris::BlockSize::_32K,
-                        };
-
-                        let res = async_eris::encode(
-                            &mut compat_socket,
-                            &shared_key,
-                            chosen_block_size,
-                            &ctx.journal.blocks,
-                        )
-                        .await;
+                        let res =
+                            async_eris::decode(&mut compat_socket, &read_cap, &ctx.journal.blocks)
+                                .await;
 
                         raw_socket.from_compat(compat_socket);
                         match res {
-                            Ok(read_cap) => {
-                                let (tx, rx) = channel(2 * read_cap.level as usize);
-                                if let Err(e) =
-                                    (StreamSlicer { read_cap }).slice_async_stream(tx).await
-                                {
-                                    error!("failed to slice blocks to stream frames: {e}");
-                                }
-                            }
+                            Ok(()) => {}
                             Err(e) => {
                                 raw_socket
                                     .write_microframe(
@@ -464,12 +437,6 @@ pub(super) async fn single_session_exchange(
                                     .await?
                             }
                         }
-
-                        crypto::end_stream(
-                            &ctx.meta_db,
-                            letterhead.from,
-                            letterhead.to.inner_address(),
-                        );
                     }
                     Err(e) => {
                         raw_socket
@@ -487,7 +454,56 @@ pub(super) async fn single_session_exchange(
         //
         //
         // ^-^ Client wants to send a message to one recipient
-        m if m == cm::make(cm::SEND, cm::ONE) => {}
+        m if m == cm::make(cm::SEND, cm::ONE) => {
+            let SendTo { letterhead } = raw_socket
+                .read_payload::<SendTo>(header.payload_size)
+                .await??;
+
+            let auth = check_auth(&header, letterhead.from, expected_auth)?;
+
+            crypto::start_stream(
+                &ctx.meta_db,
+                letterhead.from,
+                letterhead.to.inner_address(),
+                auth,
+                client_id,
+            )?;
+
+            let shared_key =
+                crypto::stream_diffie_hellman(letterhead.from, letterhead.to.inner_address());
+
+            let chosen_block_size = match letterhead.payload_length {
+                m if m < (16 * 1024) => async_eris::BlockSize::_1K,
+                _ => async_eris::BlockSize::_32K,
+            };
+
+            let mut compat_socket = raw_socket.to_compat();
+            let read_cap = async_eris::encode(
+                &mut compat_socket,
+                &shared_key,
+                chosen_block_size,
+                &ctx.journal.blocks,
+            )
+            .await?;
+            raw_socket.from_compat(compat_socket);
+            crypto::end_stream(&ctx.meta_db, letterhead.from, letterhead.to.inner_address());
+
+            let (tx_1k, rx) = channel(17);
+            let (tx_32k, rx) = channel(17);
+
+            match chosen_block_size {
+                BlockSize::_1K => {
+                    BlockWorker { read_cap }
+                        .traverse_block_tree::<1024>(&ctx, tx_1k)
+                        .await?
+                }
+                BlockSize::_32K => {
+                    BlockWorker { read_cap }
+                        .traverse_block_tree::<32768>(&ctx, tx_32k)
+                        .await?
+                }
+            }
+        }
         //
         //
         // ^-^ Client wants to send a message to many recipients

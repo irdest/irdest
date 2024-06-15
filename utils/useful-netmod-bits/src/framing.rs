@@ -5,7 +5,7 @@
 
 //! UDP overlay protocol and framing
 
-use libratman::types::{InMemoryEnvelope, Neighbour};
+use libratman::types::{Ident32, InMemoryEnvelope, Neighbour};
 use serde::{Deserialize, Serialize};
 
 /// A framing device to encapsulate the ethernet overlay protocol
@@ -25,9 +25,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Envelope {
     /// Announcing an endpoint via multicast
-    Announce,
+    Announce(Ident32),
     /// Reply to an announce
-    Reply,
+    Reply(Ident32),
     /// A raw data frame
     Data(Vec<u8>),
 }

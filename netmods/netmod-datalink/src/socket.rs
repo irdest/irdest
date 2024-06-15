@@ -5,13 +5,15 @@
 
 //! Socket handler module
 
-use async_std::{
-    future::{self, Future},
-    pin::Pin,
-    sync::{Arc, Mutex, RwLock},
-    task::{self, Poll},
+use libratman::{
+    frame::{carrier::CarrierFrameHeader, FrameParser},
+    futures::future,
+    tokio::{
+        sync::{Mutex, RwLock},
+        task::spawn_local,
+    },
+    types::{Ident32, InMemoryEnvelope, Neighbour},
 };
-use libratman::types::{InMemoryEnvelope, Neighbour};
 use nix::errno::Errno;
 use pnet::{
     packet::ethernet::{EtherType, EthernetPacket, MutableEthernetPacket},
@@ -19,8 +21,9 @@ use pnet::{
     util::MacAddr,
 };
 use pnet_datalink::{channel, Channel, DataLinkReceiver, DataLinkSender, NetworkInterface};
-use std::collections::VecDeque;
-use std::error::Error;
+use std::sync::Arc;
+use std::{collections::VecDeque, pin::Pin, task::Poll};
+use std::{error::Error, future::Future};
 use task_notify::Notify;
 use useful_netmod_bits::addrs::AddrTable;
 use useful_netmod_bits::framing::{Envelope, FrameExt};
@@ -28,6 +31,7 @@ use useful_netmod_bits::framing::{Envelope, FrameExt};
 /// Wraps the pnet ethernet channel and the input queue
 pub(crate) struct Socket {
     iface: NetworkInterface,
+    self_rk_id: Ident32,
     tx: Arc<Mutex<Box<dyn DataLinkSender>>>,
     rx: Arc<Mutex<Box<dyn DataLinkReceiver>>>,
     inbox: Arc<RwLock<Notify<VecDeque<FrameExt>>>>,
@@ -40,6 +44,7 @@ impl Socket {
     pub(crate) async fn new(
         iface: NetworkInterface,
         table: Arc<AddrTable<MacAddr>>,
+        self_rk_id: Ident32,
     ) -> Result<Arc<Self>, Box<dyn Error>> {
         let (tx, rx) = match channel(&iface, Default::default()) {
             Ok(Channel::Ethernet(tx, rx)) => (tx, rx),
@@ -49,13 +54,14 @@ impl Socket {
 
         let arc = Arc::new(Self {
             iface,
+            self_rk_id,
             tx: Arc::new(Mutex::new(tx)),
             rx: Arc::new(Mutex::new(rx)),
             inbox: Default::default(),
         });
 
         Self::incoming_handle(Arc::clone(&arc), table);
-        arc.multicast(&Envelope::Announce).await;
+        arc.multicast(&Envelope::Announce(arc.self_rk_id)).await;
         info!("Sent multicast announcement");
         Ok(arc)
     }
@@ -71,7 +77,7 @@ impl Socket {
     }
 
     pub(crate) async fn send_multiple(&self, env: &Envelope, peers: &Vec<MacAddr>) {
-        let mut tx = self.tx.lock_arc().await;
+        let mut tx = self.tx.lock().await;
 
         let payload = env.as_bytes();
         let packet_size = payload.len() + EthernetPacket::minimum_packet_size();
@@ -91,7 +97,7 @@ impl Socket {
     }
 
     async fn send_inner(&self, env: &Envelope, peer: MacAddr) {
-        let mut tx = self.tx.lock_arc().await;
+        let mut tx = self.tx.lock().await;
 
         let payload = env.as_bytes();
         let packet_size = payload.len() + EthernetPacket::minimum_packet_size();
@@ -126,9 +132,9 @@ impl Socket {
 
     #[instrument(skip(arc, table), level = "trace")]
     fn incoming_handle(arc: Arc<Self>, table: Arc<AddrTable<MacAddr>>) {
-        task::spawn_blocking(move || {
+        spawn_local(async move {
             loop {
-                let mut rx = task::block_on(async { arc.rx.lock_arc().await });
+                let mut rx = arc.rx.lock().await;
 
                 match rx.next() {
                     Ok(packet) => {
@@ -147,37 +153,33 @@ impl Socket {
                         let buf = packet.payload().to_owned();
 
                         let env = Envelope::from_bytes(&buf);
-                        task::block_on(async {
-                            match env {
-                                Envelope::Announce => {
-                                    trace!("Receiving announce");
-                                    table.set(peer).await;
-                                    arc.multicast(&Envelope::Reply).await;
-                                }
-                                Envelope::Reply => {
-                                    trace!("Receiving announce reply");
-                                    table.set(peer).await;
-                                }
-                                Envelope::Data(buffer) => {
-                                    trace!("Received data frame");
-                                    let envelope = match InMemoryEnvelope::parse_from_buffer(buffer)
-                                    {
-                                        Ok(m) => m,
-                                        Err(e) => {
-                                            error!("failed to parse CarrierFrame header: {}", e);
-                                            return;
-                                        }
-                                    };
+                        match env {
+                            Envelope::Announce(peer_key_id) => {
+                                trace!("Receiving announce");
+                                table.set(peer, peer_key_id).await;
+                                arc.multicast(&Envelope::Reply(arc.self_rk_id)).await;
+                            }
+                            Envelope::Reply(peer_key_id) => {
+                                trace!("Receiving announce reply");
+                                table.set(peer, peer_key_id).await;
+                            }
+                            Envelope::Data(buffer) => {
+                                trace!("Received data frame");
+                                let (buffer, header) = CarrierFrameHeader::parse(&buffer).unwrap();
 
-                                    if let Some(id) = table.id(peer).await {
-                                        // Append to the inbox and wake
-                                        let mut inbox = arc.inbox.write().await;
-                                        inbox.push_back(FrameExt(envelope, Neighbour::Single(id)));
-                                        Notify::wake(&mut inbox);
-                                    }
+                                let envelope = InMemoryEnvelope {
+                                    header: header.unwrap(),
+                                    buffer: buffer.to_vec(),
+                                };
+
+                                if let Some(id) = table.id(peer).await {
+                                    // Append to the inbox and wake
+                                    let mut inbox = arc.inbox.write().await;
+                                    inbox.push_back(FrameExt(envelope, Neighbour::Single(id)));
+                                    Notify::wake(&mut inbox);
                                 }
                             }
-                        })
+                        }
                     }
                     Err(error) => {
                         //NOTE: See issue #86442. Nix hopefully won't be necessary for most of this

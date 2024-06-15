@@ -4,20 +4,18 @@
 
 //! Socket handler module
 
-use crate::{framing::Handshake, AddrTable, MemoryEnvelopeExt};
-use async_std::{
-    future::{self, Future},
-    net::{Ipv6Addr, SocketAddr, SocketAddrV6, UdpSocket},
-    pin::Pin,
-    sync::{Arc, RwLock},
-    task::{self, Poll},
-};
+use crate::{framing::HandshakeV1, AddrTable, MemoryEnvelopeExt};
+use libratman::futures::future::{self, Future};
+use libratman::tokio::task::spawn_local;
+use libratman::tokio::{net::UdpSocket, sync::RwLock, task};
 use libratman::{
     frame::carrier::{modes, CarrierFrameHeader},
-    types::{InMemoryEnvelope, Neighbour},
+    types::{Ident32, InMemoryEnvelope, Neighbour},
 };
 use std::collections::VecDeque;
 use std::ffi::CString;
+use std::net::{Ipv6Addr, SocketAddr, SocketAddrV6};
+use std::{pin::Pin, sync::Arc, task::Poll};
 use task_notify::Notify;
 
 const MULTI: Ipv6Addr = Ipv6Addr::new(0xFF02, 0, 0, 0, 0, 0, 0, 0x1312);
@@ -27,6 +25,7 @@ const SELF: Ipv6Addr = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0);
 pub(crate) struct Socket {
     port: u16,
     scope: u32,
+    self_rk_id: Ident32,
     sock: Arc<UdpSocket>,
     inbox: Arc<RwLock<Notify<VecDeque<MemoryEnvelopeExt>>>>,
 }
@@ -53,7 +52,12 @@ fn if_nametoindex(name: &str) -> std::io::Result<u32> {
 
 impl Socket {
     /// Create a new socket handler and return a management reference
-    pub(crate) async fn new(iface: &str, port: u16, table: Arc<AddrTable>) -> Arc<Self> {
+    pub(crate) async fn new(
+        iface: &str,
+        port: u16,
+        table: Arc<AddrTable>,
+        r_key_id: Ident32,
+    ) -> Arc<Self> {
         // FIXME: is this blocking?
         let scope = if_nametoindex(iface).expect("failed to turn interface name into index");
         let sock = UdpSocket::bind((SELF, port)).await.unwrap();
@@ -65,12 +69,13 @@ impl Socket {
         let arc = Arc::new(Self {
             port,
             scope,
+            self_rk_id: r_key_id,
             sock: Arc::new(sock),
             inbox: Default::default(),
         });
 
         Self::incoming_handle(Arc::clone(&arc), table);
-        arc.multicast(&Handshake::Announce.to_carrier().unwrap())
+        arc.multicast(&HandshakeV1::Announce(arc.self_rk_id).to_carrier().unwrap())
             .await;
 
         arc
@@ -119,7 +124,7 @@ impl Socket {
 
     #[instrument(skip(arc, table), level = "trace")]
     fn incoming_handle(arc: Arc<Self>, table: Arc<AddrTable>) {
-        task::spawn(async move {
+        spawn_local(async move {
             loop {
                 // fixme: aaaaaaaaaaaaaaaaaaaaaaaaaah
                 let mut buf = vec![0; 1024 * 16];
@@ -148,13 +153,21 @@ impl Socket {
                         let env = InMemoryEnvelope::parse_from_buffer(buf).unwrap();
                         match env.header.get_modes() {
                             crate::framing::modes::HANDSHAKE_ANNOUNCE => {
+                                let hshake: HandshakeV1 =
+                                    bincode::deserialize(&env.buffer).unwrap();
+
                                 trace!("Recieving announce");
-                                table.set(peer).await;
-                                arc.multicast(&Handshake::Reply.to_carrier().unwrap()).await;
+                                table.set(peer, hshake.r_key_id()).await;
+                                arc.multicast(
+                                    &HandshakeV1::Reply(arc.self_rk_id).to_carrier().unwrap(),
+                                )
+                                .await;
                             }
                             crate::framing::modes::HANDSHAKE_REPLY => {
                                 trace!("Recieving announce reply");
-                                table.set(peer).await;
+                                let hshake: HandshakeV1 =
+                                    bincode::deserialize(&env.buffer).unwrap();
+                                table.set(peer, hshake.r_key_id()).await;
                             }
                             _ => {
                                 trace!("(Most likely) received data frame");
@@ -185,7 +198,7 @@ fn test_init() {
         let table = Arc::new(AddrTable::new());
         let sock = Socket::new("br42", 12322, table).await;
         println!("Multicasting");
-        sock.multicast(&Handshake::Announce.to_carrier().unwrap())
+        sock.multicast(&HandshakeV1::Announce.to_carrier().unwrap())
             .await;
     });
 }

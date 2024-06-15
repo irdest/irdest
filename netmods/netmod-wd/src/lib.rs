@@ -8,7 +8,7 @@ use async_std::{
 use async_trait::async_trait;
 use libratman::{
     endpoint::EndpointExt,
-    types::{InMemoryEnvelope, Neighbour},
+    types::{Ident32, InMemoryEnvelope, Neighbour},
     Result,
 };
 
@@ -54,7 +54,7 @@ impl EndpointExt for WdMod {
         0
     }
 
-    async fn send(&self, frame: InMemoryEnvelope, t: Neighbour, _: Option<u16>) -> Result<()> {
+    async fn send(&self, frame: InMemoryEnvelope, t: Neighbour, _: Option<Ident32>) -> Result<()> {
         self.send_queue.0.send((frame, t)).await.unwrap();
         Ok(())
     }

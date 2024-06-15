@@ -3,17 +3,23 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use crate::{
-    dispatch,
     journal::{self, Journal},
     links::{GenericEndpoint, LinksMap},
-    procedures::BlockCollector,
-    routes::{RouteTable, RouteType},
+    procedures::{self, BlockCollector},
+    routes::{EpNeighbourPair, RouteTable, RouteType},
+    storage::route::RouteState,
 };
-use libratman::tokio::{select, sync::mpsc::Sender, task::spawn_local};
 use libratman::{
-    frame::carrier::modes::{self as fmodes, DATA, MANIFEST},
+    frame::carrier::{
+        modes::{self as fmodes, DATA, MANIFEST},
+        AnnounceFrameV1,
+    },
     types::{InMemoryEnvelope, Recipient},
     NetmodError, RatmanError,
+};
+use libratman::{
+    frame::{carrier::AnnounceFrame, FrameParser},
+    tokio::{select, sync::mpsc::Sender, task::spawn_local},
 };
 use std::sync::Arc;
 use tripwire::Tripwire;
@@ -38,15 +44,11 @@ pub(crate) async fn exec_switching_batch(
     // The switch needs access to the central state manager for blocks
     // and frames
     journal: &Arc<Journal>,
-    // The switch dispatches locally addressed frames into the block
-    // collector
-    collector: &Arc<BlockCollector>,
     // Allow the switch to shut down gracefully
     tripwire: Tripwire,
     // The netmod driver endpoint to switch messages for
     (ep_name, ep): (&String, &Arc<GenericEndpoint>),
-    // Control flow endpoint to send signals to this switch between
-    // batches
+    // Control flow endpoint to send signals to this switch between batches
     ingress_tx: Sender<MessageNotifier>,
     collector_tx: Sender<InMemoryEnvelope>,
     // Metrics collector state to allow diagnostic analysis of this
@@ -54,7 +56,7 @@ pub(crate) async fn exec_switching_batch(
     // #[cfg(feature = "dashboard")] metrics: &Arc<metrics::Metrics>,
 ) {
     for _ in 0..batch_size {
-        let (InMemoryEnvelope { header, buffer }, t) = select! {
+        let (InMemoryEnvelope { header, buffer }, neighbour) = select! {
             biased;
             _ = tripwire.clone() => break,
             item = ep.next() => {
@@ -72,7 +74,7 @@ pub(crate) async fn exec_switching_batch(
                 None => format!("<???>"),
             },
             ep_name,
-            t
+            neighbour,
         );
 
         // If the dashboard feature is enabled we first update the
@@ -126,24 +128,40 @@ pub(crate) async fn exec_switching_batch(
                     }
                 };
 
-                // Check that we haven't seen this frame/ message
-                // ID before.  This prevents infinite replication
-                // of any flooded frame.
+                // Check that we haven't seen this frame/ message ID before.
+                // This prevents infinite replication of any flooded frame.
                 if journal.is_unknown(&announce_id).is_ok() {
                     journal.save_as_known(&announce_id).unwrap();
                     debug!("Received announcement for {}", header.get_sender());
 
-                    // Update the routing table and re-flood the announcement
-                    routes.update(id as u8, t, header.get_sender()).await;
-                    if let Err(e) = dispatch::flood_frame(
-                        &routes,
-                        &links,
-                        InMemoryEnvelope { header, buffer },
-                        Some((ep_name.clone(), t)),
-                    )
-                    .await
+                    if let Ok((remainder, Ok(announce_frame))) =
+                        AnnounceFrame::parse(buffer.as_slice())
                     {
-                        error!("failed to flood announcement frame: {e:?}");
+                        // fail softly ;-;
+                        assert!(remainder.len() == 0);
+
+                        // Update the routing table and re-flood the announcement
+                        routes
+                            .update(
+                                EpNeighbourPair(id, neighbour.assume_single()),
+                                header.get_sender(),
+                                match announce_frame {
+                                    AnnounceFrame::V1(v1) => v1,
+                                },
+                            )
+                            .await;
+                        if let Err(e) = procedures::flood_frame(
+                            &routes,
+                            &links,
+                            InMemoryEnvelope { header, buffer },
+                            Some((ep_name.clone(), neighbour)),
+                        )
+                        .await
+                        {
+                            error!("failed to flood announcement frame: {e:?}");
+                        }
+                    } else {
+                        warn!("Received invalid AnnounceFrame: ignoring route update");
                     }
                 }
             }
@@ -153,7 +171,7 @@ pub(crate) async fn exec_switching_batch(
                 // Check if the target address is "reachable"
                 match routes.reachable(address).await {
                     // A locally addressed data frame is queued on the collector
-                    Some(RouteType::Local) if mode == DATA => {
+                    Some(RouteState::Active) if mode == DATA => {
                         if let Err(_e) =
                             collector_tx.send(InMemoryEnvelope { header, buffer }).await
                         {
@@ -167,7 +185,7 @@ pub(crate) async fn exec_switching_batch(
                     // Locally addressed manifest is cached in the journal, then
                     // we notify the ingress system to start collecting the full
                     // message stream.
-                    Some(RouteType::Local) if mode == MANIFEST => {
+                    Some(RouteState::Active) if mode == MANIFEST => {
                         let journal = Arc::clone(&journal);
                         let ingress_tx = ingress_tx.clone();
                         spawn_local(async move {
@@ -181,14 +199,9 @@ pub(crate) async fn exec_switching_batch(
                             }
                         }).await.unwrap();
                     }
-                    // Any other frame types are currently ignored
-                    Some(RouteType::Local) => {
-                        warn!("Received invalid frame type: {}", mode);
-                        continue;
-                    }
                     // Any frame for a reachable remote address will be forwarded
-                    Some(RouteType::Remote(_)) => {
-                        match dispatch::dispatch_frame(
+                    Some(RouteState::Active) => {
+                        match procedures::dispatch_frame(
                             routes,
                             links,
                             InMemoryEnvelope { header, buffer },
@@ -207,6 +220,9 @@ pub(crate) async fn exec_switching_batch(
                             }
                             _ => continue,
                         }
+                    }
+                    Some(RouteState::Idle) | Some(RouteState::Lost) => {
+                        warn!("offline buffering not yet implemented >_<");
                     }
                     // A frame for an unreachable address (either
                     // local or remote) will be queued in the
@@ -241,7 +257,7 @@ pub(crate) async fn exec_switching_batch(
                 // network.
                 if journal.is_unknown(&announce_id).unwrap() {
                     journal.save_as_known(&announce_id).unwrap();
-                    if let Err(e) = dispatch::flood_frame(
+                    if let Err(e) = procedures::flood_frame(
                         routes,
                         links,
                         InMemoryEnvelope { header, buffer },

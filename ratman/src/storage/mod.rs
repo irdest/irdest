@@ -17,7 +17,10 @@ use crate::{
     },
 };
 use fjall::{Keyspace, PartitionCreateOptions};
-use libratman::{types::LetterheadV1, Result};
+use libratman::{
+    types::{Ident32, LetterheadV1},
+    Result,
+};
 use std::marker::PhantomData;
 
 pub mod addr_key;
@@ -53,6 +56,21 @@ pub struct MetadataDb {
 }
 
 impl MetadataDb {
+    pub fn router_id(&self) -> Ident32 {
+        let part = self
+            .db
+            .open_partition("meta_meta", PartitionCreateOptions::default())
+            .expect("failed to open meta_meta partition; can't generate router id key! :(");
+
+        if let Some(router_key_id) = part.get("router.key_id").unwrap() {
+            Ident32::from_bytes(&*router_key_id)
+        } else {
+            let router_key_id = Ident32::random();
+            part.insert("router.key_id", router_key_id.as_bytes());
+            router_key_id
+        }
+    }
+
     pub fn new(db: Keyspace) -> Result<Self> {
         let addrs = CachePage(
             db.open_partition("meta_addrs", PartitionCreateOptions::default())?,

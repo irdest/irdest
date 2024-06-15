@@ -5,11 +5,9 @@
 
 //! Address resolution table module
 
-use async_std::{
-    net::SocketAddrV6,
-    sync::{Arc, RwLock},
-};
-use std::collections::BTreeMap;
+use libratman::tokio::sync::RwLock;
+use libratman::types::Ident32;
+use std::{collections::BTreeMap, net::SocketAddrV6, sync::Arc};
 
 /// A small utility that creates sequential IDs
 struct IdMaker {
@@ -28,18 +26,14 @@ impl IdMaker {
 }
 
 pub(crate) struct AddrTable {
-    factory: IdMaker,
-    ips: Arc<RwLock<BTreeMap<u16, SocketAddrV6>>>,
-    ids: Arc<RwLock<BTreeMap<SocketAddrV6, u16>>>,
+    ips: Arc<RwLock<BTreeMap<Ident32, SocketAddrV6>>>,
+    ids: Arc<RwLock<BTreeMap<SocketAddrV6, Ident32>>>,
 }
 
 impl AddrTable {
     /// Create a new address lookup table
     pub(crate) fn new() -> Self {
         Self {
-            factory: IdMaker {
-                last: Default::default(),
-            },
             ips: Default::default(),
             ids: Default::default(),
         }
@@ -51,21 +45,19 @@ impl AddrTable {
     /// possible to find out what previous IP a node had, without
     /// performing deep packet inspection and looking at certain
     /// Identity information.  As such, this table can only grow.
-    pub(crate) async fn set(&self, i: SocketAddrV6) -> u16 {
-        let id = self.factory.incr().await.curr().await;
+    pub(crate) async fn set(&self, i: SocketAddrV6, peer_rk_id: Ident32) {
         let peer = i.into();
-        self.ips.write().await.insert(id, peer);
-        self.ids.write().await.insert(peer, id);
-        id
+        self.ips.write().await.insert(peer_rk_id, peer);
+        self.ids.write().await.insert(peer, peer_rk_id);
     }
 
     /// Get the ID for a given Peer address
-    pub(crate) async fn id(&self, peer: SocketAddrV6) -> Option<u16> {
+    pub(crate) async fn id(&self, peer: SocketAddrV6) -> Option<Ident32> {
         self.ids.read().await.get(&peer).cloned()
     }
 
     /// Get the Peer for a given internal ID
-    pub(crate) async fn ip(&self, id: u16) -> Option<SocketAddrV6> {
+    pub(crate) async fn ip(&self, id: Ident32) -> Option<SocketAddrV6> {
         self.ips.read().await.get(&id).cloned()
     }
 

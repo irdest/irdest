@@ -1,7 +1,7 @@
 //! Endpoint abstraction module
 
 use crate::{
-    types::{CurrentStatus, InMemoryEnvelope, Neighbour},
+    types::{CurrentStatus, Ident32, InMemoryEnvelope, Neighbour},
     Result,
 };
 use async_trait::async_trait;
@@ -23,10 +23,9 @@ use std::sync::Arc;
 /// this interface is immutable by default.
 #[async_trait]
 pub trait EndpointExt {
-    /// Return a string identifier for this netmodk instance
+    /// Return a string identifier for this netmod instance
     ///
-    /// The identifier logic MUST handle multi-instancing, if it
-    /// supports this.
+    /// The identifier logic MUST handle multi-instancing, if it supports this.
     fn identifier(&self) -> String {
         "<unknown>".into()
     }
@@ -88,7 +87,7 @@ pub trait EndpointExt {
         &self,
         envelope: InMemoryEnvelope,
         target: Neighbour,
-        exclude: Option<u16>,
+        exclude: Option<Ident32>,
     ) -> Result<()>;
 
     /// Poll for the next available Frame from this interface
@@ -115,7 +114,7 @@ impl<T: EndpointExt + Send + Sync> EndpointExt for Arc<T> {
         &self,
         envelope: InMemoryEnvelope,
         target: Neighbour,
-        exclude: Option<u16>,
+        exclude: Option<Ident32>,
     ) -> Result<()> {
         T::send(self, envelope, target, exclude).await
     }

@@ -17,7 +17,7 @@ use async_std::{
 use async_trait::async_trait;
 use libratman::{
     endpoint::EndpointExt,
-    types::{InMemoryEnvelope, Neighbour},
+    types::{Ident32, InMemoryEnvelope, Neighbour},
     NetmodError, RatmanError, Result as RatResult,
 };
 
@@ -31,19 +31,24 @@ pub(crate) mod io;
 pub struct MemMod {
     /// Internal memory access to send/receive
     io: Arc<RwLock<Option<io::Io>>>,
+    self_rk_id: Ident32,
 }
 
 impl MemMod {
     /// Create a new, unpaired `MemMod`.
-    pub fn new() -> Arc<Self> {
+    pub fn new(self_rk_id: Ident32) -> Arc<Self> {
         Arc::new(Self {
             io: Default::default(),
+            self_rk_id,
         })
     }
 
     /// Create two already-paired `MemMod`s, ready for use.
     pub fn make_pair() -> (Arc<Self>, Arc<Self>) {
-        let (a, b) = (MemMod::new(), MemMod::new());
+        let (a, b) = (
+            MemMod::new(Ident32::random()),
+            MemMod::new(Ident32::random()),
+        );
         a.link(&b);
         (a, b)
     }
@@ -98,7 +103,7 @@ impl EndpointExt for MemMod {
         &self,
         frame: InMemoryEnvelope,
         _: Neighbour,
-        exclude: Option<u16>,
+        exclude: Option<Ident32>,
     ) -> RatResult<()> {
         let io = self.io.read().await;
         match *io {
@@ -113,7 +118,7 @@ impl EndpointExt for MemMod {
         match *io {
             None => Err(RatmanError::Netmod(NetmodError::NotSupported)),
             Some(ref io) => match io.inc.recv().await {
-                Ok(f) => Ok((f, Neighbour::Single(0))),
+                Ok(f) => Ok((f, Neighbour::Single(self.self_rk_id))),
                 Err(_) => Err(RatmanError::Netmod(NetmodError::RecvSocketClosed)),
             },
         }

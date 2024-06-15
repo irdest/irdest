@@ -9,14 +9,15 @@ use crate::{proto, routes::Target};
 use libratman::tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use libratman::tokio::sync::Mutex;
 use libratman::tokio::task::yield_now;
+use libratman::types::Ident32;
 use libratman::{
     tokio::sync::mpsc::{Receiver, Sender},
     types::InMemoryEnvelope,
     EncodingError, RatmanError,
 };
 
-pub(crate) type FrameReceiver = Receiver<(Target, InMemoryEnvelope)>;
-pub(crate) type FrameSender = Sender<(Target, InMemoryEnvelope)>;
+pub(crate) type FrameReceiver = Receiver<(Ident32, InMemoryEnvelope)>;
+pub(crate) type FrameSender = Sender<(Ident32, InMemoryEnvelope)>;
 
 /// Represent another node running netmod-inet
 ///
@@ -173,7 +174,7 @@ impl Peer {
 
             // If we received a correct frame we forward it to the receiver
             self.receiver
-                .send((self.session.id, envelope))
+                .send((self.session.peer_router_key_id, envelope))
                 .await
                 .unwrap();
         }

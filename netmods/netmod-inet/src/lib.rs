@@ -28,7 +28,7 @@ use libratman::{
         sync::{mpsc::channel, Mutex},
         task::spawn_local,
     },
-    types::{InMemoryEnvelope, Neighbour},
+    types::{Ident32, InMemoryEnvelope, Neighbour},
     NetmodError, RatmanError, Result,
 };
 use serde::{Deserialize, Serialize};
@@ -53,14 +53,15 @@ pub(crate) enum Direction {
 /// Internet overlay endpoint for Ratman
 pub struct InetEndpoint {
     port: u16,
+    self_router_key_id: Ident32,
     routes: Arc<Routes>,
     channel: (FrameSender, Mutex<FrameReceiver>),
 }
 
 impl InetEndpoint {
     /// Start a basic inet endpoint on a particular bind address
-    pub async fn start(bind: &str) -> Result<Arc<Self>> {
-        let server = Server::bind(bind).await?;
+    pub async fn start(bind: &str, self_router_key_id: Ident32) -> Result<Arc<Self>> {
+        let server = Server::bind(bind, self_router_key_id).await?;
         let routes = Routes::new();
         let channel = channel(64); // TODO: constraint the channel?
         let port = server.port(); // we don't store the server
@@ -73,6 +74,7 @@ impl InetEndpoint {
 
         Ok(Arc::new(Self {
             port,
+            self_router_key_id,
             routes,
             channel: (channel.0, Mutex::new(channel.1)),
         }))
@@ -105,6 +107,8 @@ impl InetEndpoint {
         let id = self.routes.next_target();
         let session_data = SessionData {
             id,
+            self_router_key_id: self.self_router_key_id,
+            peer_router_key_id: Ident32::uninit(),
             tt: PeerType::Standard,
             addr: peer,
             self_port: 0, // not used
@@ -129,7 +133,7 @@ impl InetEndpoint {
     /// to it, or it is currently being restarted, and we queue
     /// something for it.
     ///
-    pub async fn send_one(&self, target: Target, envelope: InMemoryEnvelope) -> Result<()> {
+    pub async fn send_one(&self, target: Ident32, envelope: InMemoryEnvelope) -> Result<()> {
         let valid = self.routes.exists(target).await;
         if valid {
             trace!("Target {} exists {}", target, valid);
@@ -138,6 +142,9 @@ impl InetEndpoint {
                 // In case the connection was dropped, we remove the peer from the routing table
                 Err(_) => {
                     let peer = self.routes.remove_peer(target).await;
+                    if let Err(e) = peer.send(&envelope).await {
+                        error!("failed to send frame to peer {}: {}", peer.id(), e);
+                    }
                 }
                 _ => {}
             };
@@ -151,7 +158,7 @@ impl InetEndpoint {
     pub async fn send_all(
         &self,
         envelope: InMemoryEnvelope,
-        exclude: Option<Target>,
+        exclude: Option<Ident32>,
     ) -> Result<()> {
         let all = self.routes.get_all_valid().await;
         for (peer, id) in all {
@@ -162,7 +169,6 @@ impl InetEndpoint {
 
             if let Err(e) = peer.send(&envelope).await {
                 error!("failed to send frame to peer {}: {}", peer.id(), e);
-                self.routes.remove_peer(peer.id()).await;
             }
         }
 
@@ -171,7 +177,7 @@ impl InetEndpoint {
 
     /// Get the next (Target, Frame) tuple from this endpoint
     // TODO: properly map error here
-    pub async fn next(&self) -> Option<(Target, InMemoryEnvelope)> {
+    pub async fn next(&self) -> Option<(Ident32, InMemoryEnvelope)> {
         let mut r = self.channel.1.lock().await;
         r.recv().await
     }
@@ -210,7 +216,7 @@ impl EndpointExt for InetEndpoint {
         &self,
         envelope: InMemoryEnvelope,
         target: Neighbour,
-        exclude: Option<u16>,
+        exclude: Option<Ident32>,
     ) -> Result<()> {
         trace!("Sending message to {:?}", target);
         match target {

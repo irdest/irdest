@@ -6,7 +6,7 @@
 //!
 //!
 
-use crate::{config::ConfigTree, links::LinksMap};
+use crate::{config::ConfigTree, links::LinksMap, storage::MetadataDb};
 use std::sync::Arc;
 
 #[cfg(feature = "datalink")]
@@ -26,7 +26,13 @@ use netmod_lora::LoraEndpoint;
 /// upwards ?  For now, errors and warnings are logged to the user, so
 /// even if every netmod fails to initialise, the router will come up,
 /// which allows the web dashboard to also display the same errors.
-pub(crate) async fn initialise_netmods(cfg: &ConfigTree, links: &Arc<LinksMap>) {
+pub(crate) async fn initialise_netmods(
+    cfg: &ConfigTree,
+    links: &Arc<LinksMap>,
+    meta_db: &Arc<MetadataDb>,
+) {
+    let router_pk_id = meta_db.router_id();
+
     //// If the 'inet' config tree exists...
     #[cfg(feature = "inet")]
     if let Some(tree) = cfg.get_subtree("inet") {
@@ -40,18 +46,20 @@ pub(crate) async fn initialise_netmods(cfg: &ConfigTree, links: &Arc<LinksMap>) 
 
         match (enable, bind) {
             // If enable is true and a bind address was provided
-            (Some(true), Some(bind)) => match InetEndpoint::start(bind.as_str()).await {
-                Ok(inet) => {
-                    let id = links.add("inet".into(), inet).await;
-                    info!("Initialised inet driver as id:{id}");
+            (Some(true), Some(bind)) => {
+                match InetEndpoint::start(bind.as_str(), router_pk_id).await {
+                    Ok(inet) => {
+                        let id = links.add("inet".into(), inet).await;
+                        info!("Initialised inet driver as id:{id}");
+                    }
+                    Err(e) => {
+                        error!(
+                            "Netmod 'inet' failed to initialise, because of {}. skipping...",
+                            e
+                        );
+                    }
                 }
-                Err(e) => {
-                    error!(
-                        "Netmod 'inet' failed to initialise, because of {}. skipping...",
-                        e
-                    );
-                }
-            },
+            }
             // If enable is true, but no (valid utf-8) bind address was provided
             (Some(true), None) => {
                 error!("Netmod 'inet' requires configuration field 'bind' to start!");
@@ -71,15 +79,17 @@ pub(crate) async fn initialise_netmods(cfg: &ConfigTree, links: &Arc<LinksMap>) 
 
         match (enable, port) {
             // If enable is true and a port was provided (in principle)
-            (Some(true), Some(port)) => match LanEndpoint::spawn(iface, port as u16) {
-                Ok(lan) => {
-                    let id = links.add("lan".into(), lan).await;
-                    info!("Initialised lan driver as id:{id}");
+            (Some(true), Some(port)) => {
+                match LanEndpoint::spawn(iface, port as u16, router_pk_id).await {
+                    Ok(lan) => {
+                        let id = links.add("lan".into(), lan).await;
+                        info!("Initialised lan driver as id:{id}");
+                    }
+                    Err(e) => {
+                        error!("Netmod 'lan' failed to initialise: {}. skipping...", e);
+                    }
                 }
-                Err(e) => {
-                    error!("Netmod 'lan' failed to initialise: {}. skipping...", e);
-                }
-            },
+            }
             // If enable is true, but no port was provided
             (Some(true), None) => {
                 warn!("Netmod 'lan' requires configuration field 'port' to start!");
@@ -98,7 +108,7 @@ pub(crate) async fn initialise_netmods(cfg: &ConfigTree, links: &Arc<LinksMap>) 
 
         match (enable, port, baud) {
             (Some(true), Some(port), Some(baud)) => {
-                let lora = LoraEndpoint::spawn(&port, baud as u32);
+                let lora = LoraEndpoint::spawn(&port, baud as u32, router_pk_id);
                 let id = links.add("lora".into(), lora).await;
                 info!("Initialised lora driver as id:{id}");
             }
@@ -124,7 +134,8 @@ pub(crate) async fn initialise_netmods(cfg: &ConfigTree, links: &Arc<LinksMap>) 
                 let id = links
                     .add(
                         "datalink".into(),
-                        DatalinkEndpoint::spawn(iface.as_deref(), ssid.as_deref()),
+                        DatalinkEndpoint::spawn(iface.as_deref(), ssid.as_deref(), router_pk_id)
+                            .await,
                     )
                     .await;
                 info!("Initialised datalink driver as id:{id}");

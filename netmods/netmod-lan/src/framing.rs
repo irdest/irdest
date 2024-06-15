@@ -24,11 +24,11 @@ use serde::{Deserialize, Serialize};
 /// then done via Ratman and the netmod API which considers target
 /// state.
 #[derive(Debug, Serialize, Deserialize)]
-pub(crate) enum Handshake {
+pub(crate) enum HandshakeV1 {
     /// Announcing an endpoint via multicast
-    Announce,
+    Announce(Ident32),
     /// Reply to an announce
-    Reply,
+    Reply(Ident32),
 }
 
 pub(crate) mod modes {
@@ -36,7 +36,14 @@ pub(crate) mod modes {
     pub const HANDSHAKE_REPLY: u16 = 33;
 }
 
-impl Handshake {
+impl HandshakeV1 {
+    pub fn r_key_id(&self) -> Ident32 {
+        match self {
+            Self::Announce(id) => *id,
+            Self::Reply(id) => *id,
+        }
+    }
+
     pub(crate) fn from_carrier(env: &InMemoryEnvelope) -> Result<Self> {
         match env.header.get_modes() {
             modes::HANDSHAKE_ANNOUNCE | modes::HANDSHAKE_REPLY => {
@@ -49,11 +56,11 @@ impl Handshake {
 
     pub(crate) fn to_carrier(self) -> Result<InMemoryEnvelope> {
         let (mut payload, modes) = match self {
-            ref hello @ Self::Announce => (
+            ref hello @ Self::Announce { .. } => (
                 bincode::serialize(hello).expect("failed to encode Handshake::Hello"),
                 modes::HANDSHAKE_ANNOUNCE,
             ),
-            ref ack @ Self::Reply => (
+            ref ack @ Self::Reply { .. } => (
                 bincode::serialize(ack).expect("failed to encode Handshake::Ack"),
                 modes::HANDSHAKE_REPLY,
             ),

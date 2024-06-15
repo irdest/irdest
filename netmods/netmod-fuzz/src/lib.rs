@@ -5,7 +5,7 @@
 use async_std::channel::{unbounded, Receiver, Sender};
 use libratman::{
     endpoint::EndpointExt,
-    types::{InMemoryEnvelope, Neighbour},
+    types::{Ident32, InMemoryEnvelope, Neighbour},
     RatmanError,
 };
 
@@ -22,7 +22,10 @@ impl FuzzEndpoint {
 
     pub async fn recv(&self, buf: &[u8]) {
         if let Ok(env) = InMemoryEnvelope::parse_from_buffer(buf.to_vec()) {
-            let _ = self.tx.send((env, Neighbour::Single(0))).await;
+            let _ = self
+                .tx
+                .send((env, Neighbour::Single(Ident32::random())))
+                .await;
         }
     }
 }
@@ -37,7 +40,7 @@ impl EndpointExt for FuzzEndpoint {
         &self,
         _: InMemoryEnvelope,
         _: Neighbour,
-        _: Option<u16>,
+        _: Option<Ident32>,
     ) -> Result<(), RatmanError> {
         Ok(())
     }
