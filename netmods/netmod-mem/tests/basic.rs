@@ -2,22 +2,25 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use async_std;
 use libratman::{
     endpoint::EndpointExt,
-    types::{InMemoryEnvelope, Neighbour},
+    tokio,
+    types::{Ident32, InMemoryEnvelope, Neighbour},
 };
 use netmod_mem::MemMod;
 
-#[async_std::test]
+#[tokio::test]
 async fn ping_pong() {
-    let a = MemMod::new();
-    let b = MemMod::new();
-    a.link(&b);
+    let a_kid = Ident32::random();
+    let a = MemMod::new(a_kid);
+
+    let b_kid = Ident32::random();
+    let b = MemMod::new(b_kid);
+    a.link(&b).await;
 
     a.send(
         InMemoryEnvelope::test_envelope(),
-        Neighbour::Single(0),
+        Neighbour::Single(b_kid),
         None,
     )
     .await
@@ -26,7 +29,7 @@ async fn ping_pong() {
 
     b.send(
         InMemoryEnvelope::test_envelope(),
-        Neighbour::Single(0),
+        Neighbour::Single(a_kid),
         None,
     )
     .await
@@ -34,20 +37,23 @@ async fn ping_pong() {
     a.next().await.expect("Failed to get message at a. Error");
 }
 
-#[async_std::test]
+#[tokio::test]
 async fn split() {
-    let a = MemMod::new();
-    let b = MemMod::new();
-    a.link(&b);
+    let a_kid = Ident32::random();
+    let a = MemMod::new(a_kid);
+
+    let b_kid = Ident32::random();
+    let b = MemMod::new(b_kid);
+    a.link(&b).await;
     a.send(
         InMemoryEnvelope::test_envelope(),
-        Neighbour::Single(0),
+        Neighbour::Single(b_kid),
         None,
     )
     .await
     .expect("Failed to send message from a. Error");
     // Disconnect the two interfaces, so the message sent by A will never be
     // received by B.
-    b.split();
+    b.split().await;
     assert!(b.next().await.is_err());
 }

@@ -2440,7 +2440,6 @@ dependencies = [
 name = "netmod-mem"
 version = "0.4.0"
 dependencies = [
- "async-std",
  "async-trait",
  "libratman",
 ]

@@ -271,18 +271,20 @@ async fn simple_transmission() -> Result<()> {
 
     setup_logging();
 
-    let server = InetEndpoint::start("[::]:12000").await.unwrap();
+    let server_kid = Ident32::random();
+    let server = InetEndpoint::start("[::]:12000", server_kid).await.unwrap();
 
-    let client = InetEndpoint::start("[::]:13000").await.unwrap();
+    let client_kid = Ident32::random();
+    let client = InetEndpoint::start("[::]:13000", client_kid).await.unwrap();
     client.add_peer("[::1]:12000".into()).await.unwrap();
 
-    libratman::tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
+    libratman::tokio::time::sleep(std::time::Duration::from_millis(666)).await;
     info!("Waited for 1000ms, sending some data now");
 
     let data = InMemoryEnvelope::test_envelope();
     info!("============= SENDING =============");
     client
-        .send(data.clone(), Neighbour::Single(0), None)
+        .send(data.clone(), Neighbour::Single(server_kid), None)
         .await
         .unwrap();
     info!("Data sent");

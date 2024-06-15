@@ -10,16 +10,14 @@
 #![doc(html_favicon_url = "https://irde.st/favicon.ico")]
 #![doc(html_logo_url = "https://irde.st/img/logo.png")]
 
-use async_std::{
-    sync::{Arc, RwLock},
-    task,
-};
 use async_trait::async_trait;
 use libratman::{
     endpoint::EndpointExt,
+    tokio::{sync::RwLock, task},
     types::{Ident32, InMemoryEnvelope, Neighbour},
     NetmodError, RatmanError, Result as RatResult,
 };
+use std::sync::Arc;
 
 /// An input/output pair of `mpsc::channel`s.
 ///
@@ -44,19 +42,19 @@ impl MemMod {
     }
 
     /// Create two already-paired `MemMod`s, ready for use.
-    pub fn make_pair() -> (Arc<Self>, Arc<Self>) {
+    pub async fn make_pair() -> (Arc<Self>, Arc<Self>) {
         let (a, b) = (
             MemMod::new(Ident32::random()),
             MemMod::new(Ident32::random()),
         );
-        a.link(&b);
+        a.link(&b).await;
         (a, b)
     }
 
     /// Return `true` if the MemMod is linked to another one or
     /// `false` otherwise.
-    pub fn linked(&self) -> bool {
-        task::block_on(async { self.io.read().await.is_some() })
+    pub async fn linked(&self) -> bool {
+        self.io.read().await.is_some()
     }
 
     /// Establish a 1-to-1 link between two `MemMod`s.
@@ -64,25 +62,25 @@ impl MemMod {
     /// # Panics
     ///
     /// Panics if this MemMod, or the other one, is already linked.
-    pub fn link(&self, pair: &MemMod) {
-        if self.linked() || pair.linked() {
+    pub async fn link(&self, pair: &MemMod) {
+        if self.linked().await || pair.linked().await {
             panic!("Attempted to link an already linked MemMod.");
         }
         let (my_io, their_io) = io::Io::make_pair();
 
-        self.set_io_async(my_io);
-        pair.set_io_async(their_io);
+        self.set_io_async(my_io).await;
+        pair.set_io_async(their_io).await;
     }
 
     /// Remove the connection between MemMods.
-    pub fn split(&self) {
+    pub async fn split(&self) {
         // The previous value in here will now be dropped,
         // so future messages will fail.
-        self.set_io_async(None);
+        self.set_io_async(None).await;
     }
 
-    fn set_io_async<I: Into<Option<io::Io>>>(&self, val: I) {
-        task::block_on(async { *self.io.write().await = val.into() });
+    async fn set_io_async<I: Into<Option<io::Io>>>(&self, val: I) {
+        *self.io.write().await = val.into();
     }
 }
 
@@ -114,12 +112,12 @@ impl EndpointExt for MemMod {
     }
 
     async fn next(&self) -> RatResult<(InMemoryEnvelope, Neighbour)> {
-        let io = self.io.read().await;
+        let mut io = self.io.write().await;
         match *io {
             None => Err(RatmanError::Netmod(NetmodError::NotSupported)),
-            Some(ref io) => match io.inc.recv().await {
-                Ok(f) => Ok((f, Neighbour::Single(self.self_rk_id))),
-                Err(_) => Err(RatmanError::Netmod(NetmodError::RecvSocketClosed)),
+            Some(ref mut io) => match io.inc.recv().await {
+                Some(f) => Ok((f, Neighbour::Single(self.self_rk_id))),
+                None => Err(RatmanError::Netmod(NetmodError::RecvSocketClosed)),
             },
         }
     }

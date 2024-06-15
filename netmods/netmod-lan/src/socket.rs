@@ -191,14 +191,16 @@ impl Socket {
     }
 }
 
+#[cfg(test)]
+use libratman::tokio;
+
 #[ignore]
-#[test]
-fn test_init() {
-    task::block_on(async move {
-        let table = Arc::new(AddrTable::new());
-        let sock = Socket::new("br42", 12322, table).await;
-        println!("Multicasting");
-        sock.multicast(&HandshakeV1::Announce.to_carrier().unwrap())
-            .await;
-    });
+#[libratman::tokio::test]
+async fn test_init() {
+    let table = Arc::new(AddrTable::new());
+    let kid = Ident32::random();
+    let sock = Socket::new("br42", 12322, table, kid).await;
+    println!("Multicasting");
+    sock.multicast(&HandshakeV1::Announce(kid).to_carrier().unwrap())
+        .await;
 }
