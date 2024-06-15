@@ -7,7 +7,7 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::sync::atomic::AtomicU64;
 use std::{fs::File, io::Read, path::Path};
 
@@ -55,7 +55,7 @@ pub struct TestVectorContent {
 
 impl TestVectorContent {
     pub async fn blocks_to_blocks(&self) -> Result<MemoryStorage, crate::Error> {
-        let mut store = MemoryStorage::new();
+        let locked = MemoryStorage::new(HashMap::new());
 
         for (block_id, block) in self.blocks.iter() {
             let block_ref = BlockReference::try_from(block_id)?;
@@ -63,18 +63,18 @@ impl TestVectorContent {
                 1024 => {
                     let block = Block::<1024>::try_from(block)?;
                     assert_eq!(block_ref, block.reference());
-                    store.store(&block).await.unwrap();
+                    locked.store(&block).await.unwrap();
                 }
                 32768 => {
                     let block = Block::<32768>::try_from(block)?;
                     assert_eq!(block_ref, block.reference());
-                    store.store(&block).await.unwrap();
+                    locked.store(&block).await.unwrap();
                 }
                 _ => panic!("Unsupported block size!"),
             };
         }
 
-        Ok(store)
+        Ok(locked)
     }
 }
 
@@ -119,7 +119,7 @@ async fn verify_input_content(harness: &TestHarness) -> bool {
         32768 => BlockSize::_32K,
         _ => unreachable!(),
     };
-    let mut new_store = MemoryStorage::new();
+    let mut new_store = MemoryStorage::new(HashMap::new());
 
     let new_read_cap = crate::encode(
         &mut input_content.as_slice(),
@@ -130,7 +130,8 @@ async fn verify_input_content(harness: &TestHarness) -> bool {
     .await
     .unwrap();
 
-    harness.blocks == new_store && harness.read_cap.root_reference == new_read_cap.root_reference
+    *harness.blocks.read().unwrap() == *new_store.read().unwrap()
+        && harness.read_cap.root_reference == new_read_cap.root_reference
 }
 
 async fn run_test_for_vector(path: &Path, tx: tokio::sync::mpsc::Sender<()>) {
@@ -148,7 +149,7 @@ async fn run_test_for_vector(path: &Path, tx: tokio::sync::mpsc::Sender<()>) {
     println!(
         "Loading file: {:?} has resulted in {} blocks",
         path,
-        harness.blocks.len()
+        harness.blocks.read().unwrap().len()
     );
 
     // Decode input content and verify that this results in the same
@@ -197,7 +198,7 @@ async fn big_message() {
 
     println!("Taking {} bytes of content...", content.len());
 
-    let mut blocks = MemoryStorage::new();
+    let mut blocks = MemoryStorage::new(HashMap::new());
     // Randomly chosen key :)
     let key = [
         93, 72, 136, 16, 3, 194, 107, 102, 20, 11, 42, 105, 193, 208, 47, 23, 135, 76, 154, 63, 41,
@@ -239,7 +240,7 @@ async fn serde_enc_dec() {
 
     println!("Taking {} bytes of content...", content.len());
 
-    let mut blocks = MemoryStorage::new();
+    let mut blocks = MemoryStorage::new(HashMap::new());
     // Randomly chosen key :)
     let key = [
         84, 85, 108, 86, 0, 90, 58, 6, 112, 22, 4, 93, 72, 136, 16, 3, 194, 107, 102, 20, 11, 42,
@@ -256,6 +257,8 @@ async fn serde_enc_dec() {
     /////// THE ACTUAL TEST ///////
 
     let bincode_serde = blocks
+        .read()
+        .unwrap()
         .iter()
         .map(|(_ref, block)| serde_json::to_string(&block).unwrap())
         .collect::<Vec<_>>();
@@ -267,7 +270,7 @@ async fn serde_enc_dec() {
         bincode_serde.len()
     );
 
-    let mut blocks2 = MemoryStorage::new();
+    let mut blocks2 = MemoryStorage::new(HashMap::new());
 
     for json_block in bincode_serde.into_iter() {
         let block: Block<1024> = serde_json::from_str(&json_block).unwrap();

@@ -4,6 +4,7 @@
 
 use async_eris as eris;
 use eris::{BlockSize, MemoryStorage};
+use std::collections::HashMap;
 
 #[tokio::main]
 async fn main() {
@@ -11,13 +12,13 @@ async fn main() {
 
     for content in examples {
         let key = [0; 32];
-        let mut blocks = MemoryStorage::new();
-        let read_capability = eris::encode(&mut &*content, &key, BlockSize::_1K, &mut blocks)
+        let blocks = MemoryStorage::new(HashMap::new());
+        let read_capability = eris::encode(&mut &*content, &key, BlockSize::_1K, &blocks)
             .await
             .unwrap();
         println!("{}", read_capability.urn());
         println!("{:?}", read_capability);
-        for (reference, block) in &blocks {
+        for (reference, block) in &*blocks.read().unwrap() {
             println!(
                 "{}: {}",
                 base32::encode(base32::Alphabet::RFC4648 { padding: false }, &**reference),

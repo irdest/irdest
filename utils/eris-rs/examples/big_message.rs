@@ -5,6 +5,7 @@
 use async_eris as eris;
 use eris::{BlockSize, MemoryStorage};
 use rand::{rngs::OsRng, RngCore};
+use std::collections::HashMap;
 
 #[tokio::main]
 async fn main() {
@@ -13,14 +14,14 @@ async fn main() {
 
     println!("Taking {} bytes of content...", content.len());
 
-    let mut blocks = MemoryStorage::new();
+    let blocks = MemoryStorage::new(HashMap::new());
     // Randomly chosen key :)
     let key = [
         93, 72, 136, 16, 3, 194, 107, 102, 20, 11, 42, 105, 193, 208, 47, 23, 135, 76, 154, 63, 41,
         84, 85, 108, 86, 0, 90, 58, 6, 112, 22, 4,
     ];
 
-    let read_capability = eris::encode(&mut &*content, &key, BlockSize::_1K, &mut blocks)
+    let read_capability = eris::encode(&mut &*content, &key, BlockSize::_1K, &blocks)
         .await
         .unwrap();
 

@@ -28,25 +28,22 @@
 //! behaviour can be disabled via the `RatmanIpc` API.
 
 mod _trait;
-pub mod socket_v2;
+pub use _trait::{RatmanIpcExtV1, RatmanStreamExtV1, ReadStream};
 
 mod subscriber;
 pub use subscriber::SubscriptionHandle;
 
+pub mod socket_v2;
 pub mod types;
-use types as ty;
 
 #[cfg(test)]
 mod test;
 
+use self::types as ty;
 use crate::{
     api::{
-        _trait::{RatmanIpcExtV1, RatmanStreamExtV1, ReadStream},
         socket_v2::RawSocketHandle,
-        types::{
-            Handshake, RecvMany, RecvOne, SendMany, SendTo, ServerPing, SubsCreate, SubsDelete,
-            SubsRestore,
-        },
+        types::{Handshake, RecvOne, SendTo, ServerPing, SubsCreate, SubsDelete, SubsRestore},
     },
     frame::micro::{client_modes as cm, MicroframeHeader},
     types::{Address, LetterheadV1},
@@ -59,12 +56,7 @@ use std::{
     net::{Ipv4Addr, SocketAddr, SocketAddrV4},
     sync::Arc,
 };
-use tokio::{
-    io::{AsyncRead, AsyncWrite},
-    net::TcpStream,
-    sync::Mutex,
-    task::{spawn_local, JoinHandle},
-};
+use tokio::{io::AsyncRead, net::TcpStream, sync::Mutex};
 
 /// Indicate the current version of this library.
 ///

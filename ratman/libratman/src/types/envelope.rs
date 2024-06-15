@@ -11,7 +11,7 @@ pub struct InMemoryEnvelope {
 }
 
 impl InMemoryEnvelope {
-    #[cfg(tests)]
+    #[doc(hidden)]
     pub fn test_envelope() -> Self {
         let header = CarrierFrameHeader::new_announce_frame(crate::types::Address::random(), 0);
         let mut buffer = vec![];
