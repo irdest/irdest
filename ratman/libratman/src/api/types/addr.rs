@@ -1,9 +1,10 @@
 use crate::{
     frame::{
         micro::parse::{cstring, maybe},
-        parse, FrameGenerator, FrameParser,
+        parse::{self, maybe_cstring, maybe_id, take_id},
+        FrameGenerator, FrameParser,
     },
-    types::Address,
+    types::{Address, Ident32},
     MicroframeError, RatmanError, Result,
 };
 use nom::IResult;
@@ -11,6 +12,7 @@ use std::ffi::CString;
 
 pub struct AddrCreate {
     pub name: Option<CString>,
+    pub namespace_data: Option<Ident32>,
     // pub auto_up: bool,
 }
 
@@ -20,26 +22,33 @@ impl FrameGenerator for AddrCreate {
             Some(n) => buf.extend_from_slice(n.as_bytes()),
             None => buf.push(0),
         };
+        match self.namespace_data {
+            Some(sd) => buf.extend_from_slice(sd.as_bytes()),
+            None => buf.push(0),
+        };
         Ok(())
     }
 }
 
 impl FrameParser for AddrCreate {
-    type Output = Result<Self>;
+    type Output = Self;
     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
-        let (input, res) = match maybe(cstring, input) {
-            Ok((input, Some(maybe_valid))) => Ok((
-                input,
-                maybe_valid.map_or_else(
-                    || Err(RatmanError::Microframe(MicroframeError::InvalidString)),
-                    |name| Ok(Self { name: Some(name) }),
-                ),
-            ))?,
-            Ok((input, None)) => Ok((input, Ok(Self { name: None })))?,
-            Err(e) => Err(e)?,
+        let (input, maybe_name) = maybe_cstring(input).unwrap();
+
+        let name: Option<CString> = match maybe_name {
+            Ok(Some(name)) => Some(name),
+            _ => None,
         };
 
-        Ok((input, res))
+        let (input, namespace_data) = maybe_id(input)?;
+
+        Ok((
+            input,
+            Self {
+                name,
+                namespace_data,
+            },
+        ))
     }
 }
 

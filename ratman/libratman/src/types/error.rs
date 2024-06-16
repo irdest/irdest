@@ -100,6 +100,8 @@ pub enum EncodingError {
     InvalidVersion(u8),
     #[error("incoming stream could not be parsed because {0}")]
     Parsing(String),
+    #[error("encryption encoding/decoding failed because {0}")]
+    Encryption(String),
     #[error("internal encoding/decoding failed because {0}")]
     Internal(String),
     #[error(

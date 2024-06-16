@@ -113,6 +113,17 @@ impl Ident32 {
         )
     }
 
+    pub fn pretty_string(&self) -> String {
+        let base = self.to_string();
+
+        let sections = base.split(|c| c == '-').into_iter().collect::<Vec<&str>>();
+
+        let head = &sections[0..2];
+        let tail = &sections[14..16];
+
+        format!("[{}:{}::  ::{}:{}]", head[0], head[1], tail[0], tail[1])
+    }
+
     pub fn from_string(s: &String) -> Self {
         let v: Vec<u8> = s
             .split("-")

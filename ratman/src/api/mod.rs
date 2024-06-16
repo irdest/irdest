@@ -26,7 +26,7 @@ use libratman::{
     },
     RatmanError,
 };
-use std::{collections::BTreeMap, future::IntoFuture, net::SocketAddr, sync::Arc};
+use std::{future::IntoFuture, net::SocketAddr, sync::Arc};
 
 /// Start a new thread to run the client API socket
 pub async fn start_api_thread(
@@ -66,7 +66,6 @@ pub async fn run_client_handler(
     stream: TcpStream,
 ) -> Result<()> {
     let mut raw_socket = handshake(stream).await?;
-    let mut active_auth = BTreeMap::new();
     let client_id = Ident32::random();
 
     // Add a new client entry for this session
@@ -76,10 +75,14 @@ pub async fn run_client_handler(
         .insert(client_id, Default::default());
 
     loop {
-        match single_session_exchange(&ctx, client_id, &mut active_auth, &mut raw_socket, &senders)
+        let mut auth_guard = ctx.clients.lock_active_auth().await;
+        match single_session_exchange(&ctx, client_id, &mut auth_guard, &mut raw_socket, &senders)
             .await
         {
-            Ok(SessionResult::Next) => yield_now().await,
+            Ok(SessionResult::Next) => {
+                drop(auth_guard);
+                yield_now().await;
+            }
             Ok(SessionResult::Drop) => break,
             Err(RatmanError::TokioIo(io_err))
                 if io_err.kind() == TokioIoErrorKind::UnexpectedEof =>
@@ -87,7 +90,7 @@ pub async fn run_client_handler(
                 debug!("Unexpected end of file but we were probably expecting this");
             }
             Err(RatmanError::ClientApi(client_err)) => {
-                debug!("Client {client_id} invoked an operation with invalid authentication");
+                debug!("Client {client_id} failed authentication: {client_err}");
                 raw_socket
                     .write_microframe(
                         MicroframeHeader::intrinsic_noauth(),
@@ -109,8 +112,6 @@ pub async fn run_client_handler(
         }
     }
 
-    info!("Shutting down client socket {client_id}!");
     ctx.clients.lock_inner().await.remove(&client_id);
-
     Ok(())
 }

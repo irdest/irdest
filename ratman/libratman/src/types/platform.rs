@@ -4,9 +4,8 @@
 
 //! Various platform abstractions
 
-use crate::util::{env_xdg_config, env_xdg_data};
 use directories::ProjectDirs;
-use libratman::{tokio::fs::File, RatmanError, Result};
+use crate::{tokio::fs::File, RatmanError, Result, env_xdg_config, env_xdg_data};
 use std::{os::fd::AsRawFd, path::PathBuf};
 
 /// OS specific support
@@ -43,6 +42,7 @@ impl Os {
             let path: PathBuf = path.unwrap_or_else(|| Self::match_os().data_path());
             let f = File::open(&path).await?;
             match nix::fcntl::flock(f.as_raw_fd(), nix::fcntl::FlockArg::LockExclusiveNonblock)
+
                 .map(|_| Some(StateDirectoryLock(f)))
             {
                 Ok(lock) => Ok(lock),

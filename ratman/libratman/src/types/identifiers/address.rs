@@ -7,7 +7,8 @@ use crate::{
     types::identifiers::{id::Ident32, ID_LEN},
     Result,
 };
-use nom::IResult;
+use itertools::Itertools;
+use nom::{error::ParseError, IResult};
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Display};
 
@@ -41,7 +42,11 @@ impl Address {
         Self(Ident32::from_string(s))
     }
 
-    /// Create an address from a byte slice
+    pub fn pretty_string(&self) -> String {
+        self.0.pretty_string()
+    }
+
+    /// create an address from a byte slice
     ///
     /// If the slice is not long enough (or too long), an appropriate
     /// error will be returned, instead of panicking.

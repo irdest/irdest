@@ -99,7 +99,7 @@ impl Socket {
             )
             .await
         {
-            Ok(_) => info!("Sent multicast announcement"),
+            Ok(_) => trace!("Sent multicast announcement"),
             Err(e) => error!("failed to multicast frame: {}", e),
         }
     }

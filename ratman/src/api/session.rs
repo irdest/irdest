@@ -30,6 +30,8 @@ use libratman::{
 };
 use std::{collections::BTreeMap, ffi::CString, sync::Arc, time::Duration};
 
+use super::clients::AuthGuard;
+
 /// Initiate a new client connection
 pub(super) async fn handshake(stream: TcpStream) -> Result<RawSocketHandle> {
     // Wrap the TcpStream to bring its API into scope
@@ -73,14 +75,14 @@ pub(super) enum SessionResult {
     Drop,
 }
 
-fn check_auth(
+fn check_auth<'a>(
     header: &MicroframeHeader,
     address: Address,
-    expected_auth: &mut BTreeMap<AddrAuth, Address>,
+    expected_auth: &mut AuthGuard<'a>,
 ) -> Result<AddrAuth> {
     header
         .auth
-        .ok_or(RatmanError::ClientApi(ClientError::InvalidAuth))
+        .ok_or_else(|| RatmanError::ClientApi(ClientError::InvalidAuth))
         .and_then(|given_auth| match expected_auth.get(&given_auth) {
             Some(addr) if addr == &address => Ok(given_auth),
             _ => Err(RatmanError::ClientApi(ClientError::InvalidAuth)),
@@ -93,10 +95,10 @@ async fn reply_ok(raw_socket: &mut RawSocketHandle, auth: AddrAuth) -> Result<()
         .await
 }
 
-pub(super) async fn single_session_exchange(
+pub(super) async fn single_session_exchange<'a>(
     ctx: &Arc<RatmanContext>,
     client_id: Ident32,
-    expected_auth: &mut BTreeMap<AddrAuth, Address>,
+    expected_auth: &mut AuthGuard<'a>,
     raw_socket: &mut RawSocketHandle,
     senders: &Arc<SenderSystem>,
 ) -> Result<SessionResult> {
@@ -129,7 +131,7 @@ pub(super) async fn single_session_exchange(
             return Err(e);
         }
         Err(_) => {
-            info!("Connection {client_id} timed out!");
+            info!("Connection {} timed out!", client_id.pretty_string());
             // We ignore the error here in case the timeout send fails
             let _ = raw_socket
                 .write_microframe(MicroframeHeader::intrinsic_noauth(), ServerPing::Timeout)
@@ -141,6 +143,18 @@ pub(super) async fn single_session_exchange(
     };
 
     ////////////////////////////////////////////////
+
+    trace!(
+        "given_auth: {} // expected_auth={:?}",
+        header
+            .auth
+            .map(|auth| auth.token.pretty_string())
+            .unwrap_or_else(|| "None".to_string()),
+        expected_auth
+            .iter()
+            .map(|(k, v)| (k.token.pretty_string(), v.pretty_string()))
+            .collect::<Vec<_>>()
+    );
 
     match header.modes {
         //
@@ -163,10 +177,15 @@ pub(super) async fn single_session_exchange(
         //
         // ^-^ Creating a new address key and client auth token
         m if m == cm::make(cm::ADDR, cm::CREATE) => {
-            let _payload = raw_socket
+            let addr_create = raw_socket
                 .read_payload::<AddrCreate>(header.payload_size)
-                .await??;
-            let (addr, client_auth) = crypto::insert_addr_key(&ctx.meta_db)?;
+                .await
+                .unwrap();
+            let (addr, client_auth) = crypto::insert_addr_key(
+                &ctx.meta_db,
+                addr_create.name,
+                addr_create.namespace_data,
+            )?;
 
             ctx.clients
                 .lock_inner()
@@ -201,23 +220,40 @@ pub(super) async fn single_session_exchange(
                 .read_payload::<AddrUp>(header.payload_size)
                 .await??;
 
+            let auth = header
+                .auth
+                .ok_or(RatmanError::ClientApi(ClientError::InvalidAuth))?;
+
+            // If we can decrypt the adress key the token passed authentication
+            let _ = crypto::get_addr_key(&ctx.meta_db, addr_up.addr, auth)?;
+
+            debug!(
+                "Client {} provided valid authentication for address '{}'",
+                client_id.pretty_string(),
+                addr_up.addr.pretty_string()
+            );
+
             // Use the provided auth to open the stored address key.  If this
             // works then we store the provided authentication object in
             // "expected auth"
-            crypto::open_addr_key(
-                &ctx.meta_db,
-                addr_up.addr,
-                header
-                    .auth
-                    .ok_or(RatmanError::ClientApi(ClientError::InvalidAuth))?,
-                client_id,
-            )?;
+            expected_auth.insert(auth, addr_up.addr);
+            debug!(
+                "expected_auth={:?}",
+                expected_auth
+                    .iter()
+                    .map(|(k, v)| (k.token.pretty_string(), v.pretty_string()))
+                    .collect::<Vec<_>>()
+            );
 
-            let auth = check_auth(&header, addr_up.addr, expected_auth)?;
-
-            Arc::clone(&ctx.protocol)
-                .online(addr_up.addr, auth, client_id, Arc::clone(&ctx))
-                .await?;
+            let ctx2 = Arc::clone(&ctx);
+            spawn_local(async move {
+                if let Err(e) = Arc::clone(&ctx2.protocol)
+                    .online(addr_up.addr, auth, client_id, ctx2)
+                    .await
+                {
+                    error!("failed to spawn address announcer: {e}");
+                }
+            });
 
             reply_ok(raw_socket, auth).await?;
         }
@@ -238,8 +274,8 @@ pub(super) async fn single_session_exchange(
         }
         //
         //
-        // ^-^ Create a new subscription
-        m if m == cm::make(cm::SUB, cm::CREATE) => {
+        // ^-^ Create a new stream subscription
+        m if m == cm::make(cm::STREAM, cm::SUB) => {
             let subs_create = raw_socket
                 .read_payload::<SubsCreate>(header.payload_size)
                 .await?;
@@ -253,13 +289,20 @@ pub(super) async fn single_session_exchange(
 
             let sub_listen = TcpListener::bind("127.0.0.1:0").await?;
             let bind = sub_listen.local_addr()?.to_string();
+            info!(
+                "Starting new subscription {} on socket {}",
+                sub_id.pretty_string(),
+                bind
+            );
 
             let stream_ctx = Arc::clone(ctx);
             spawn_local(async move {
+                debug!("Starting subscription one-shot socket");
                 if let Ok((stream, _)) = sub_listen.accept().await {
                     let raw_socket = RawSocketHandle::new(stream);
                     handle_subscription_socket(stream_ctx, rx, raw_socket, auth, sub_id).await;
                 }
+                debug!("Subscription one-shot has completed");
             });
 
             raw_socket
@@ -274,8 +317,8 @@ pub(super) async fn single_session_exchange(
         }
         //
         //
-        // ^-^ Destroy an existing subscription
-        m if m == cm::make(cm::SUB, cm::DELETE) => {
+        // ^-^ Destroy an existing stream subscription
+        m if m == cm::make(cm::STREAM, cm::UNSUB) => {
             let subs_delete = raw_socket
                 .read_payload::<SubsDelete>(header.payload_size)
                 .await?;
@@ -290,12 +333,49 @@ pub(super) async fn single_session_exchange(
         }
         //
         //
-        // ^-^ List available subscriptions
-        m if m == cm::make(cm::SUB, cm::LIST) => {}
+        // ^-^ List all available subscriptions
+        m if m == cm::make(cm::STREAM, cm::LIST) => {
+            let addr = raw_socket
+                .read_payload::<Address>(header.payload_size)
+                .await?;
+            let available_subscriptions = ctx
+                .subs
+                .available_subscriptions(libratman::types::Recipient::Address(addr));
+            debug!("ctx.subs() says there are {:?}", available_subscriptions);
+            raw_socket
+                .write_microframe(
+                    match header.auth {
+                        Some(auth) => MicroframeHeader::intrinsic_auth(auth),
+                        None => MicroframeHeader::intrinsic_noauth(),
+                    },
+                    ServerPing::Update {
+                        available_subscriptions,
+                    },
+                )
+                .await?;
+        }
+        //
+        //
+        // ^-^ Subscribe to new address events
+        m if m == cm::make(cm::ADDR, cm::SUB) => {
+            todo!()
+        }
+        //
+        //
+        // ^-^ Unsubscribe from new address events
+        m if m == cm::make(cm::ADDR, cm::UNSUB) => {
+            todo!()
+        }
+        //
+        //
+        // ^-^ Resubscribe from new address events
+        m if m == cm::make(cm::ADDR, cm::RESUB) => {
+            todo!()
+        }
         //
         //
         // ^-^ Restore an existing subscription
-        m if m == cm::make(cm::SUB, cm::UP) => {
+        m if m == cm::make(cm::STREAM, cm::RESUB) => {
             let subs_restore = raw_socket
                 .read_payload::<SubsRestore>(header.payload_size)
                 .await?;
@@ -306,6 +386,8 @@ pub(super) async fn single_session_exchange(
                 .subs
                 .restore_subscription(subs_restore.addr, subs_restore.sub_id)
                 .await?;
+
+            // crypto::open_space_key(subs_restore.addr, auth);
 
             let sub_listen = TcpListener::bind("127.0.0.1:0").await?;
             let bind = sub_listen.local_addr()?.to_string();
@@ -468,10 +550,11 @@ pub(super) async fn single_session_exchange(
                 letterhead.to.inner_address(),
                 auth,
                 client_id,
-            )?;
+            )
+            .await?;
 
             let shared_key =
-                crypto::stream_diffie_hellman(letterhead.from, letterhead.to.inner_address());
+                crypto::stream_diffie_hellman(letterhead.from, letterhead.to.inner_address()).await;
 
             let chosen_block_size = match letterhead.payload_length {
                 m if m < (16 * 1024) => async_eris::BlockSize::_1K,
@@ -487,7 +570,7 @@ pub(super) async fn single_session_exchange(
             )
             .await?;
             raw_socket.from_compat(compat_socket);
-            crypto::end_stream(&ctx.meta_db, letterhead.from, letterhead.to.inner_address());
+            crypto::end_stream(&ctx.meta_db, letterhead.from, letterhead.to.inner_address()).await;
 
             match chosen_block_size {
                 BlockSize::_1K => {
@@ -532,9 +615,11 @@ pub(super) async fn single_session_exchange(
                     lh.to.inner_address(),
                     auth,
                     client_id,
-                )?;
+                )
+                .await?;
 
-                let shared_key = crypto::stream_diffie_hellman(lh.from, lh.to.inner_address());
+                let shared_key =
+                    crypto::stream_diffie_hellman(lh.from, lh.to.inner_address()).await;
 
                 let chosen_block_size = match lh.payload_length {
                     m if m < (16 * 1024) => async_eris::BlockSize::_1K,
@@ -550,7 +635,7 @@ pub(super) async fn single_session_exchange(
                 )
                 .await?;
                 raw_socket.from_compat(compat_socket);
-                crypto::end_stream(&ctx.meta_db, lh.from, lh.to.inner_address());
+                crypto::end_stream(&ctx.meta_db, lh.from, lh.to.inner_address()).await;
 
                 match chosen_block_size {
                     BlockSize::_1K => {

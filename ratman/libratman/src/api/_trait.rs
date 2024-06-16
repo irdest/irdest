@@ -30,7 +30,19 @@ pub trait RatmanIpcExtV1 {
     /// Optionally you may give this address a name.  It won't be
     /// shared with any other network participant or client and purely
     /// serves as a human identifier.
-    async fn addr_create(self: &Arc<Self>, name: Option<String>) -> Result<(Address, AddrAuth)>;
+    ///
+    /// A WEIRD QUIRK in this API: to limit scope I didn't implement a namespace
+    /// management API yet, which means listening to messages addressed to a
+    /// namespace becomes very hard.  To deal with this and to make namespaces
+    /// (for subscriptions!) persistent between restarts you can optionally
+    /// supply the namespace private key material.  It's suggested to include a
+    /// copy of this key in your application's source code rather than
+    /// configuration.
+    async fn addr_create<'n>(
+        self: &Arc<Self>,
+        name: Option<&'n String>,
+        space_private_key: Option<Ident32>,
+    ) -> Result<(Address, AddrAuth)>;
 
     /// Delete an address, optionally including all its linked data
     async fn addr_destroy(
@@ -86,7 +98,11 @@ pub trait RatmanIpcExtV1 {
     //
 
     /// Check which subscriptions are currently available on the router
-    async fn subs_available(self: &Arc<Self>, auth: AddrAuth) -> Result<Vec<Ident32>>;
+    async fn subs_available(
+        self: &Arc<Self>,
+        auth: AddrAuth,
+        addr: Address,
+    ) -> Result<Vec<Ident32>>;
 
     /// Create a new subscription for a specific Recipient type
     ///

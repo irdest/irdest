@@ -75,7 +75,6 @@ impl RawSocketHandle {
         let payload_buf = self.read_buffer(header.payload_size as usize).await?;
         let (_remainder, payload) =
             T::parse(payload_buf.as_slice()).map_err(|p| EncodingError::Parsing(p.to_string()))?;
-        assert_eq!(_remainder.len(), 0); // todo: don't crash here :(
         Ok((header, payload))
     }
 
@@ -180,10 +179,13 @@ impl RawSocketHandle {
         header.generate(&mut header_buf)?;
 
         // Write a header length first, then the rest
+        println!("<Write(4)> {:?}", header_buf.len().to_be_bytes());
         write_u32(self.stream(), header_buf.len() as u32).await?;
+        println!("<Write({})> {:?}", header_buf.len(), header_buf);
         AsyncWriter::new(header_buf.as_slice(), self.stream())
             .write_buffer()
             .await?;
+        println!("<Write({})> {:?}", payload_buf.len(), payload_buf);
         AsyncWriter::new(payload_buf.as_slice(), self.stream())
             .write_buffer()
             .await?;

@@ -18,7 +18,11 @@ mod announce;
 use crate::{context::RatmanContext, protocol::announce::AddressAnnouncer};
 use libratman::{
     frame::carrier::{modes as fmodes, CarrierFrameHeader},
-    tokio::{select, sync::Mutex, task},
+    tokio::{
+        select,
+        sync::{oneshot, Mutex},
+        task::{self, spawn_local},
+    },
     types::{AddrAuth, Address, Ident32},
     RatmanError, Result,
 };
@@ -39,7 +43,7 @@ enum ProtoPayload {
 /// Provide a builder API to construct different types of Messages
 #[derive(Default)]
 pub(crate) struct Protocol {
-    online: Mutex<BTreeMap<Address, Arc<AtomicBool>>>,
+    online: Mutex<BTreeMap<Address, oneshot::Sender<()>>>,
     #[cfg(feature = "dashboard")]
     metrics: metrics::Metrics,
 }
@@ -63,18 +67,10 @@ impl Protocol {
         ctx: Arc<RatmanContext>,
     ) -> Result<()> {
         let mut map = self.online.lock().await;
-        if map.get(&address).map(|arc| arc.load(Ordering::Relaxed)) == Some(true) {
-            // If a user is already online we don't have to do anything
-            return Ok(());
-        }
 
-        info!("Setting address {} to 'online'", address);
-
-        let b = Arc::new(AtomicBool::new(true));
-        map.insert(address, Arc::clone(&b));
-        drop(map);
-
-        let announce_delay = ctx
+        let (tx, mut rx) = oneshot::channel::<()>();
+        map.insert(address, tx);
+        let announce_delay = (&ctx)
             .config
             .get_subtree("ratmand")
             .and_then(|subtree| subtree.get_number_value("announce_delay"))
@@ -83,28 +79,49 @@ impl Protocol {
                 2
             }) as u16;
 
-        let tripwire = ctx.tripwire.clone();
-        task::spawn(async move {
-            select! {
-                biased;
-                _ = tripwire => {
+        spawn_local(async move {
+            // Split into a separate function to make tracing it easier
+            info!("Starting announcer task for {}", address.pretty_string());
+            let anon = match AddressAnnouncer::new(address, auth, client_id, &ctx).await {
+                Ok(an) => an,
+                Err(e) => {
+                    error!("failed to start address announcer task: {e}");
                     return;
                 }
-                _ = AddressAnnouncer::new(address, auth, client_id, &ctx).run(b, announce_delay, ctx) => {}
+            };
+
+            loop {
+                let ctx = Arc::clone(&ctx);
+                select! {
+                    biased;
+                    _ = ctx.tripwire.clone() => break,
+                    _ = &mut rx => break,
+                    res = anon.run(announce_delay, &ctx) => {
+                        match res {
+                            Ok(_) => {},
+                            Err(e) => {
+                                error!("failed to send announcement: {e}");
+                                break;
+                            }
+                        }
+                    }
+                }
             }
+
+            info!("Address announcer {} shut down!", address.pretty_string());
         });
 
         Ok(())
     }
 
-    pub(crate) async fn offline(&self, id: Address) -> Result<()> {
-        info!("Setting address {} to 'offline'", id);
+    pub(crate) async fn offline(&self, addr: Address) -> Result<()> {
+        info!("Setting address {} to 'offline'", addr.pretty_string());
         self.online
             .lock()
             .await
-            .get(&id)
-            .map(|b| b.swap(false, Ordering::Relaxed))
-            .map_or(Err(RatmanError::NoSuchAddress(id)), |_| Ok(()))
+            .remove(&addr)
+            .map_or(Err(RatmanError::NoSuchAddress(addr)), |_| Ok(()))?;
+        Ok(())
     }
 }
 

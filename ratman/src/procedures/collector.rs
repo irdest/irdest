@@ -39,7 +39,7 @@ pub async fn exec_block_collector_system(
         let tripwire = ctx.tripwire.clone();
         select! {
             biased;
-            _ = tripwire => {},
+            _ = tripwire => break,
             env = rx.recv() => {
                 if env.is_none() {
                     debug!("Reached the end of frame envelope stream");

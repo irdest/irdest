@@ -2,10 +2,6 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-mod platform;
-pub use platform::Os;
-pub(crate) use platform::StateDirectoryLock;
-
 pub mod cli;
 pub mod codes;
 pub mod fork;
@@ -22,23 +18,6 @@ use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter};
 /// A convevient Sender/Receiver pair for a type
 pub(crate) type IoPair<T> = (Sender<T>, Receiver<T>);
 
-/// Print a log message and exit
-// TODO: turn into macro
-pub fn elog<S: Into<String>>(msg: S, code: u16) -> ! {
-    error!("{}", msg.into());
-    std::process::exit(code.into());
-}
-
-/// Get XDG_DATA_HOME from the environment
-pub(crate) fn env_xdg_data() -> Option<String> {
-    std::env::var("XDG_DATA_HOME").ok()
-}
-
-/// Get XDG_CONFIG_HOME from the environment
-pub(crate) fn env_xdg_config() -> Option<String> {
-    std::env::var("XDG_CONFIG_HOME").ok()
-}
-
 /// Setup a very verbose output for test environments
 pub fn setup_test_logging() {
     let cfg = ConfigTree::default_in_memory().patch("ratmand/verbosity", "trace");
@@ -52,8 +31,13 @@ pub fn setup_logging(ratmand_config: &SubConfig) {
         .unwrap_or_else(|| "debug".into());
     let syslog = ratmand_config.get_bool_value("use_syslog").unwrap_or(false);
 
-    let filter = EnvFilter::default()
-        .add_directive(match lvl.as_str() {
+    let filter = if lvl.contains(|x| x == ',') {
+        lvl.split(|x| x == ',')
+            .fold(EnvFilter::default(), |filter, lvl| {
+                filter.add_directive(lvl.parse().unwrap())
+            })
+    } else {
+        EnvFilter::default().add_directive(match lvl.as_str() {
             "trace" => LevelFilter::TRACE.into(),
             "debug" => LevelFilter::DEBUG.into(),
             "info" => LevelFilter::INFO.into(),
@@ -61,11 +45,12 @@ pub fn setup_logging(ratmand_config: &SubConfig) {
             "error" => LevelFilter::ERROR.into(),
             _ => unreachable!(),
         })
-        .add_directive("tokio=error".parse().unwrap())
-        .add_directive("mio=error".parse().unwrap())
-        .add_directive("polling=error".parse().unwrap())
-        .add_directive("trust_dns_proto=error".parse().unwrap())
-        .add_directive("trust_dns_resolver=warn".parse().unwrap());
+    }
+    .add_directive("tokio=error".parse().unwrap())
+    .add_directive("mio=error".parse().unwrap())
+    .add_directive("polling=error".parse().unwrap())
+    .add_directive("trust_dns_proto=error".parse().unwrap())
+    .add_directive("trust_dns_resolver=warn".parse().unwrap());
 
     // Initialise the logger
     if syslog {

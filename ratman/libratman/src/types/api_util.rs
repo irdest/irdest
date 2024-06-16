@@ -38,6 +38,16 @@ impl AddrAuth {
             token: Ident32::random(),
         }
     }
+
+    pub fn from_string(s: &String) -> Self {
+        Self {
+            token: Ident32::from_string(s),
+        }
+    }
+
+    pub fn to_string(&self) -> String {
+        format!("{}", self.token)
+    }
 }
 
 impl Debug for AddrAuth {

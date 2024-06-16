@@ -1,3 +1,4 @@
+use byteorder::{BigEndian, ByteOrder};
 use nom::{
     bytes::complete::{take, take_till},
     combinator::peek,
@@ -33,9 +34,11 @@ pub fn vec_of<'a, O, F>(mut child: F, input: &'a [u8]) -> IResult<&'a [u8], Vec<
 where
     F: FnMut(&'a [u8]) -> IResult<&'a [u8], O>,
 {
-    let (mut input, count) = take(1 as usize)(input)?;
-    let mut buf = Vec::with_capacity(count[0] as usize);
-    for _ in 0..count[0] {
+    let (mut input, count) = take(2 as usize)(input)?;
+    let count = u16::from_be_bytes([count[0], count[1]]);
+
+    let mut buf = Vec::with_capacity(count as usize);
+    for _ in 0..count as usize {
         let (new_input, item) = child(input)?;
         input = new_input;
         buf.push(item);

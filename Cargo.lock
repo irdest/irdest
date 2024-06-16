@@ -973,7 +973,7 @@ dependencies = [
  "ciborium",
  "clap 3.2.25",
  "criterion-plot",
- "itertools",
+ "itertools 0.10.5",
  "lazy_static",
  "num-traits",
  "oorandom",
@@ -994,7 +994,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6b50826342786a51a89e2da3a28f1c32b06e387201bc2d19791f622c673706b1"
 dependencies = [
  "cast",
- "itertools",
+ "itertools 0.10.5",
 ]
 
 [[package]]
@@ -2077,6 +2077,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2135,14 +2144,16 @@ dependencies = [
  "bytes",
  "cfg-if 1.0.0",
  "chrono",
+ "directories",
  "ed25519-dalek",
  "fjall",
  "flate2",
  "futures",
  "hex",
- "lazy_static",
+ "itertools 0.13.0",
  "nix 0.23.2",
  "nom",
+ "once_cell",
  "prometheus-client",
  "rand 0.7.3",
  "regex",
@@ -3205,6 +3216,7 @@ dependencies = [
  "netmod-lora",
  "netmod-mem",
  "nix 0.23.2",
+ "once_cell",
  "openapi_type",
  "pnet 0.35.0",
  "prometheus-client",

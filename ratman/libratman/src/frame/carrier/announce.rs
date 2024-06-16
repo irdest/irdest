@@ -46,24 +46,17 @@ pub struct AnnounceFrameV1 {
     /// Mandatory origin announce data
     ///
     /// This field, combined with the signature is used to verify that
-    /// an announcement originated from the real address key.  Replay
-    /// attacks are _somewhat_ possible, but since every router MUST
-    /// keep track of announcement timestamps that have been seen
-    /// before, only parts of the networks that didn't see the
-    /// original announcement can be fooled by a maliciously crafted
-    /// announcement frame.
+    /// an announcement originated from the real address key.
     pub origin: OriginDataV1,
     /// Corresponding origin data signature
     pub origin_signature: [u8; 64],
 
     /// Mandatory route announcement data
     ///
-    /// This field is not signed since any network participant between
-    /// receiving the announcemend and re-broadcasting it MUST update
-    /// the corresponding fields with data for the receiving channel.
+    /// This field is not signed since the field must be updated after every
+    /// re-dispatch with valuesfor the new receiving channel.
     ///
-    /// This means that the data can't be relied on to be
-    /// cryptigraphically correct.
+    /// Thus the data can't be relied on to be cryptigraphically correct.
     pub route: RouteDataV1,
 }
 

@@ -46,7 +46,7 @@ use crate::{
         types::{Handshake, RecvOne, SendTo, ServerPing, SubsCreate, SubsDelete, SubsRestore},
     },
     frame::micro::{client_modes as cm, MicroframeHeader},
-    types::{Address, LetterheadV1},
+    types::{Address, Ident32, LetterheadV1},
     ClientError, EncodingError, Result,
 };
 use async_trait::async_trait;
@@ -143,9 +143,10 @@ impl RatmanIpcExtV1 for RatmanIpc {
         Ok(addrs)
     }
 
-    async fn addr_create(
+    async fn addr_create<'n>(
         self: &Arc<Self>,
-        name: Option<String>,
+        name: Option<&'n String>,
+        space_private_key: Option<Ident32>,
     ) -> crate::Result<(crate::types::Address, crate::types::AddrAuth)> {
         let mut socket = self.socket().lock().await;
 
@@ -158,14 +159,28 @@ impl RatmanIpcExtV1 for RatmanIpc {
                 },
                 ty::AddrCreate {
                     name: name.map(|n| {
-                        CString::new(n.as_bytes()).expect("Failed to encode String to CString")
+                        CString::new(n.as_bytes()).expect("failed to encode String to CString")
                     }),
+                    namespace_data: space_private_key,
                 },
             )
             .await?;
 
         let (header, addr) = socket.read_microframe::<Address>().await?;
-        Ok((addr, header.auth.unwrap()))
+
+        if let Some(auth) = header.auth {
+            eprintln!(
+                "Got Address({}) AddrAuth({})",
+                addr.pretty_string(),
+                auth.token.pretty_string()
+            );
+
+            Ok((addr, auth))
+        } else {
+            Err(crate::RatmanError::ClientApi(ClientError::Internal(
+                "address registration failed!".to_string(),
+            )))
+        }
     }
 
     async fn addr_destroy(
@@ -297,16 +312,17 @@ impl RatmanIpcExtV1 for RatmanIpc {
     async fn subs_available(
         self: &Arc<Self>,
         auth: crate::types::AddrAuth,
+        addr: crate::types::Address,
     ) -> crate::Result<Vec<crate::types::Ident32>> {
         let mut socket = self.socket().lock().await;
         socket
             .write_microframe(
                 MicroframeHeader {
-                    modes: cm::make(cm::SUB, cm::LIST),
+                    modes: cm::make(cm::STREAM, cm::LIST),
                     auth: Some(auth),
                     ..Default::default()
                 },
-                (), // no payload needed
+                addr,
             )
             .await?;
 
@@ -331,7 +347,7 @@ impl RatmanIpcExtV1 for RatmanIpc {
         socket
             .write_microframe(
                 MicroframeHeader {
-                    modes: cm::make(cm::SUB, cm::CREATE),
+                    modes: cm::make(cm::STREAM, cm::SUB),
                     auth: Some(auth),
                     ..Default::default()
                 },
@@ -369,7 +385,7 @@ impl RatmanIpcExtV1 for RatmanIpc {
         socket
             .write_microframe(
                 MicroframeHeader {
-                    modes: cm::make(cm::SUB, cm::UP),
+                    modes: cm::make(cm::STREAM, cm::RESUB),
                     auth: Some(auth),
                     ..Default::default()
                 },
@@ -415,7 +431,7 @@ impl RatmanIpcExtV1 for RatmanIpc {
         socket
             .write_microframe(
                 MicroframeHeader {
-                    modes: cm::make(cm::SUB, cm::CREATE),
+                    modes: cm::make(cm::STREAM, cm::UNSUB),
                     auth: Some(auth),
                     ..Default::default()
                 },

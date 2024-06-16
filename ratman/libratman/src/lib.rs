@@ -40,3 +40,20 @@ pub use futures;
 pub use tokio;
 pub use tokio_stream;
 pub use tokio_util;
+
+/// Print a log message and exit
+// TODO: turn into macro
+pub fn elog<S: Into<String>>(msg: S, code: u16) -> ! {
+    error!("{}", msg.into());
+    std::process::exit(code.into());
+}
+
+/// Get XDG_DATA_HOME from the environment
+pub fn env_xdg_data() -> Option<String> {
+    std::env::var("XDG_DATA_HOME").ok()
+}
+
+/// Get XDG_CONFIG_HOME from the environment
+pub fn env_xdg_config() -> Option<String> {
+    std::env::var("XDG_CONFIG_HOME").ok()
+}

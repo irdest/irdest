@@ -1,13 +1,20 @@
+use std::ffi::CString;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum AddressData {
-    /// A full local address keypair
+    /// A local address keypair
     ///
     /// The private key is encrypted with the associated ClientAuth token which
     /// is generated when the address is generated.  The public key is used as
     /// an index.
-    Local(EncryptedKey),
+    Local(EncryptedKey, Option<CString>),
+    /// A local namespace keypair
+    ///
+    /// The private key is encrypted with the router identity key.  This will
+    /// change in future, probably.
+    Space(EncryptedKey, Option<CString>),
+    ///
     /// A remote address marker, where the db index is the public key/ address
     Remote,
 }

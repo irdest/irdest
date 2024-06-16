@@ -6,16 +6,21 @@ use async_eris::ReadCapability;
 use chrono::{DateTime, Utc};
 use libratman::{
     tokio::sync::{broadcast::Sender as BcastSender, Mutex, MutexGuard},
-    types::{Address, Ident32, LetterheadV1, Recipient},
+    types::{AddrAuth, Address, Ident32, LetterheadV1, Recipient},
     NonfatalError, RatmanError, Result,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
+pub type ActiveAuth = Mutex<BTreeMap<AddrAuth, Address>>;
+
+pub type AuthGuard<'a> = MutexGuard<'a, BTreeMap<AddrAuth, Address>>;
+
 pub(crate) struct ConnectionManager {
     /// A map of client_id -> client metadata
     inner: Mutex<BTreeMap<Ident32, RouterClient>>,
     sync_listeners: Mutex<BTreeMap<Recipient, BcastSender<(LetterheadV1, ReadCapability)>>>,
+    active_auth: Mutex<BTreeMap<AddrAuth, Address>>,
 }
 
 impl ConnectionManager {
@@ -23,11 +28,16 @@ impl ConnectionManager {
         Self {
             inner: Mutex::new(BTreeMap::default()),
             sync_listeners: Mutex::new(BTreeMap::default()),
+            active_auth: Mutex::new(BTreeMap::default()),
         }
     }
 
     pub async fn lock_inner<'a>(&'a self) -> MutexGuard<'a, BTreeMap<Ident32, RouterClient>> {
         self.inner.lock().await
+    }
+
+    pub async fn lock_active_auth<'a>(&'a self) -> MutexGuard<'a, BTreeMap<AddrAuth, Address>> {
+        self.active_auth.lock().await
     }
 
     pub async fn insert_sync_listener(

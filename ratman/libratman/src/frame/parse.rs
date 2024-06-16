@@ -58,8 +58,8 @@ pub fn take_cstring(input: &[u8]) -> IResult<&[u8], Result<CString>> {
 }
 
 pub fn maybe_cstring(input: &[u8]) -> IResult<&[u8], Result<Option<CString>>> {
-    let (input, first) = peek(take(1 as usize))(input)?;
-    if first == &[0] {
+    let (input, first) = peek(take_byte)(input)?;
+    if first != 0 {
         let (input, cstr) = take_cstring(input)?;
         Ok((input, cstr.map(|c| Some(c))))
     } else {

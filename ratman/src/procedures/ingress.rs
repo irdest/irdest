@@ -53,7 +53,7 @@ pub async fn exec_ingress_system(
         let block_notifier = block_notifier.clone();
         select! {
             biased;
-            _ = tripwire => {},
+            _ = tripwire => break,
             manifest_notifier = rx.recv() => {
                 if manifest_notifier.is_none() {
                     break;

@@ -8,16 +8,21 @@
 //! Most likely you will want to simply call `new_async_thread(...)`
 
 use crate::Result;
+use once_cell::sync::Lazy;
 use std::{
+    collections::VecDeque,
     future::Future,
     sync::{
         mpsc::{sync_channel, Receiver as SyncReceiver, SyncSender},
-        Arc,
+        Arc, Mutex,
     },
+    thread::JoinHandle,
+    time::Duration,
 };
 use tokio::{
     runtime::{Builder, Runtime},
-    task::LocalSet,
+    task::{spawn_blocking, spawn_local, LocalSet},
+    time::timeout,
 };
 
 pub mod reader;
@@ -75,6 +80,9 @@ impl AsyncSystem {
     }
 }
 
+// static THREAD_JOIN_MAP: Lazy<Arc<Mutex<Vec<JoinHandle<()>>>>> =
+//     Lazy::new(|| Arc::new(Mutex::new(vec![])));
+
 /// Spawn new worker thread with an async system launcher
 pub fn new_async_thread<S, F, O>(label: S, stack_mb: usize, f: F)
 where
@@ -83,7 +91,7 @@ where
     O: Sized + Send + 'static,
 {
     let label = label.into();
-    std::thread::spawn(move || {
+    let join_handle = std::thread::spawn(move || {
         debug!("Starting new async thread system: {label}");
         let system = AsyncSystem::new(label, stack_mb);
         let res = system.exec(f);

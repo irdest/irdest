@@ -10,6 +10,7 @@ mod recv;
 mod send;
 
 pub use addr::*;
+use byteorder::{BigEndian, ByteOrder};
 pub use contact::*;
 pub use link::*;
 pub use peer::*;
@@ -98,6 +99,7 @@ pub enum ServerPing {
 }
 
 impl FrameGenerator for ServerPing {
+    #[tracing::instrument]
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         match self {
             Self::Ok => buf.push(1),
@@ -110,8 +112,13 @@ impl FrameGenerator for ServerPing {
             Self::Error(error) => {
                 buf.push(3);
                 let mut err_buf = bincode::serialize(&error)?;
-                let mut len_buf = vec![];
-                (buf.len() as u32).generate(&mut len_buf)?;
+
+                let mut len_buf = vec![0; 4];
+                BigEndian::write_u32(len_buf.as_mut_slice(), err_buf.len() as u32);
+
+                trace!("Ping::Error(len_buf) = {:?}", len_buf);
+                trace!("Ping::Error(err_buf) = {:?}", err_buf);
+
                 buf.append(&mut len_buf);
                 buf.append(&mut err_buf);
             }
@@ -144,38 +151,42 @@ impl FrameParser for ServerPing {
         let output = match tt {
             1 => Ok(Self::Ok),
             2 => {
-                let (_input, available_subscriptions) = vec_of(take_id, input)?;
-                input = _input; // wish we didn't need this weirdness
+                let (input_, available_subscriptions) = vec_of(take_id, input)?;
+                input = input_; // wish we didn't need this weirdness
                 Ok(Self::Update {
                     available_subscriptions,
                 })
             }
             3 => {
-                let (_input, err_len) = take_u32(input)?;
-                let (_input, err_buf) = take(err_len as usize)(input)?;
+                let (input_, err_len) = take_u32(input)?;
+                let (input_, err_buf) = take(err_len as usize)(input_)?;
+
+                // println!("Ping::Error(len_buf) = {:?}", err_len);
+                // println!("Ping::Error(err_buf) = {:?}", err_buf);
+
                 let err = bincode::deserialize(&err_buf).unwrap();
-                input = _input;
+                input = input_;
                 Ok(Self::Error(err))
             }
             4 => Ok(Self::Timeout),
             5 => {
-                let (_input, router) = take_cstring(input)?;
-                let (_input, client) = take_cstring(_input)?;
-                input = _input;
+                let (input_, router) = take_cstring(input)?;
+                let (input_, client) = take_cstring(input_)?;
+                input = input_;
                 Ok(Self::IncompatibleVersion {
                     router: router.expect("failed to decode version string"),
                     client: client.expect("failed to decode version string"),
                 })
             }
             6 => {
-                let (_input, sub_id) = take_id(input)?;
-                let (_input, sub_bind) = take_cstring(input)?;
-                input = _input;
+                let (input_, sub_id) = take_id(input)?;
+                let (input_, sub_bind) = take_cstring(input_)?;
+                input = input_;
                 sub_bind.map(|sub_bind| Self::Subscription { sub_id, sub_bind })
             }
             7 => {
-                let (_input, list) = Vec::<Address>::parse(input)?;
-                input = _input;
+                let (input_, list) = Vec::<Address>::parse(input)?;
+                input = input_;
                 Ok(Self::AddrList(list))
             }
             _ => Err(EncodingError::Parsing(format!("Invalid ServerPing type={}", tt)).into()),

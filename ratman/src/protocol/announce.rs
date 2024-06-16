@@ -1,11 +1,13 @@
 use crate::{context::RatmanContext, crypto, procedures, storage::MetadataDb};
+use ed25519_dalek::ed25519::signature::SignerMut;
 use libratman::{
     frame::{
         carrier::{AnnounceFrame, AnnounceFrameV1, CarrierFrameHeader, OriginDataV1, RouteDataV1},
         FrameGenerator,
     },
-    tokio::time,
+    tokio::{sync::oneshot, task::spawn_local, time},
     types::{AddrAuth, Address, Ident32, InMemoryEnvelope},
+    RatmanError, Result,
 };
 use std::{
     sync::{
@@ -27,95 +29,77 @@ impl AddressAnnouncer {
     /// Start a new address announcer with a client authenticator.  Even when
     /// the starting client goes away, this is used to keep the thread local key
     /// cache session alive
-    pub fn new(
+    pub async fn new(
         addr: Address,
         auth: AddrAuth,
         client_id: Ident32,
         ctx: &Arc<RatmanContext>,
-    ) -> Self {
-        crypto::open_addr_key(&ctx.meta_db, addr, auth, client_id).unwrap();
-        Self {
+    ) -> Result<Self> {
+        Ok(Self {
             addr,
             auth,
             client_id,
             db: Arc::clone(&ctx.meta_db),
-        }
-    }
-}
-
-// Drop the cached address key from the thread cache when the announcer goes out
-// of scope.  This means that the address has been taken offline and all cached
-// keys need to be wiped.
-impl Drop for AddressAnnouncer {
-    fn drop(&mut self) {
-        crypto::close_addr_key(&self.db, self.auth, self.client_id);
+        })
     }
 }
 
 impl AddressAnnouncer {
-    pub(crate) async fn generate_announce(&self) -> AnnounceFrame {
+    pub(crate) async fn generate_announce(&self) -> Result<AnnounceFrame> {
         let origin = OriginDataV1::now();
         let origin_signature = {
             let mut origin_buf = vec![];
             origin.clone().generate(&mut origin_buf).unwrap();
-            crypto::sign_message(self.auth, origin_buf.as_slice()).unwrap()
+            let mut key = crypto::get_addr_key(&self.db, self.addr, self.auth)?;
+
+            // return signature
+            key.inner.sign(origin_buf.as_slice())
         };
 
         // Create a full announcement and encode it
-        AnnounceFrame::V1(AnnounceFrameV1 {
+        Ok(AnnounceFrame::V1(AnnounceFrameV1 {
             origin,
             origin_signature: origin_signature.to_bytes(),
             route: RouteDataV1 {
                 mtu: 0,
                 size_hint: 0,
             },
-        })
+        }))
     }
 
-    pub(crate) async fn run(
-        self,
-        online: Arc<AtomicBool>,
-        announce_delay: u16,
-        ctx: Arc<RatmanContext>,
-    ) {
-        while online.load(Ordering::Acquire) {
-            // Create a new announcement
-            let announce = self.generate_announce().await;
-            let announce_buffer = {
-                let mut buf = vec![];
-                announce
-                    .generate(&mut buf)
-                    .expect("failed to generate announcement!");
-                buf
-            };
+    pub(crate) async fn run(&self, announce_delay: u16, ctx: &Arc<RatmanContext>) -> Result<()> {
+        // Create a new announcement
+        let announce = self.generate_announce().await?;
 
-            // Pack it into a carrier and handle the nested encoding
-            let header =
-                CarrierFrameHeader::new_announce_frame(self.addr, announce_buffer.len() as u16);
+        let announce_buffer = {
+            let mut buf = vec![];
+            announce.generate(&mut buf)?;
+            buf
+        };
 
-            // Pre-maturely mark this announcement as "known", so that
-            // the switch locally will ignore it when it is inevitably
-            // sent back to us.
-            ctx.journal
-                .save_as_known(&header.get_seq_id().unwrap().hash)
-                .unwrap();
+        // Pack it into a carrier and handle the nested encoding
+        let header =
+            CarrierFrameHeader::new_announce_frame(self.addr, announce_buffer.len() as u16);
 
-            // Send it into the network
-            if let Err(e) = procedures::flood_frame(
-                &ctx.routes,
-                &ctx.links,
-                InMemoryEnvelope::from_header_and_payload(header, announce_buffer).unwrap(),
-                None,
-            )
-            .await
-            {
-                error!("failed to flood announcement: {}", e)
-            }
+        // Pre-maturely mark this announcement as "known", so that
+        // the switch locally will ignore it when it is inevitably
+        // sent back to us.
+        ctx.journal
+            .save_as_known(&header.get_seq_id().unwrap().hash)
+            .unwrap();
 
-            trace!("Sent address announcement for {}", self.addr);
+        // Send it into the network
+        procedures::flood_frame(
+            &ctx.routes,
+            &ctx.links,
+            InMemoryEnvelope::from_header_and_payload(header, announce_buffer).unwrap(),
+            None,
+        )
+        .await?;
 
-            // Wait some amount of time
-            time::sleep(Duration::from_secs(announce_delay as u64)).await;
-        }
+        // Wait some amount of time
+        time::sleep(Duration::from_secs(announce_delay as u64)).await;
+
+        Ok(())
     }
 }

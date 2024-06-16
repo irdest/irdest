@@ -4,13 +4,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 //! Ratman daemon entrypoint
-use libratman::rt::AsyncSystem;
+use libratman::{rt::AsyncSystem, types::Os};
 use ratmand::{
     config::ConfigTree,
     start_with_configuration,
-    util::{cli, codes, fork::sysv_daemonize_app, Os},
+    util::{cli, codes, fork::sysv_daemonize_app},
 };
-use std::path::PathBuf;
+use std::{env, path::PathBuf};
 
 async fn generate_default_config(_path: &PathBuf) {
     let _cfg = ConfigTree::default_in_memory();
@@ -99,7 +99,12 @@ fn main() {
 
     // Override the config verbosity value with the CLI value if desired
     if let Some(verbosity) = arg_matches.value_of("VERBOSE") {
-        config = config.patch("ratmand/verbosity", verbosity);
+        if let Ok(rust_log_env) = env::var("RUST_LOG") {
+            let full_verbose = format!("{rust_log_env},{verbosity}");
+            config = config.patch("ratmand/verbosity", full_verbose.as_str());
+        } else {
+            config = config.patch("ratmand/verbosity", verbosity);
+        }
     }
 
     let ratmand_tree = match config.get_subtree("ratmand") {

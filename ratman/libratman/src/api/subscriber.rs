@@ -21,6 +21,16 @@ fn zero_buf(array: &mut [u8]) {
 }
 
 impl SubscriptionHandle {
+    pub fn peer_info(&mut self) -> String {
+        let peer_addr = self.socket.stream().peer_addr().unwrap();
+
+        format!("{}:{}", peer_addr.ip(), peer_addr.port())
+    }
+
+    pub fn sub_id(&self) -> Ident32 {
+        self.id
+    }
+
     /// Wait for a stream letterhead which indicates an incoming stream
     ///
     /// When calling this function before a previous stream has completed it

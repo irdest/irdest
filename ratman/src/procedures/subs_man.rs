@@ -23,7 +23,9 @@ impl SubsManager {
         let mut recipients = BTreeMap::new();
 
         meta_db.subscriptions.iter().for_each(|(sub_id, sub_data)| {
-            recipients.insert(sub_data.recipient, Ident32::from_string(&sub_id));
+            let id = Ident32::from_string(&sub_id);
+            info!("Restore subscription {} from disk", id.pretty_string());
+            recipients.insert(sub_data.recipient, id);
         });
 
         Arc::new(Self {
@@ -42,6 +44,14 @@ impl SubsManager {
             .clone()
     }
 
+    pub fn available_subscriptions(&self, _recipient: Recipient) -> Vec<Ident32> {
+        self.meta_db
+            .subscriptions
+            .iter()
+            .map(|(sub_id, _)| Ident32::from_string(&sub_id))
+            .collect()
+    }
+
     pub async fn create_subscription(
         &self,
         addr: Address,
@@ -58,6 +68,8 @@ impl SubsManager {
 
                 // Update the existing subscription
                 sub_val.listeners.insert(addr);
+
+                debug!("Previous subscription found and updated: {sub_val:?}");
                 self.meta_db
                     .subscriptions
                     .insert(sub_key.clone(), &sub_val)?;
@@ -68,6 +80,7 @@ impl SubsManager {
             }
             None => {
                 let sub_id = Ident32::random();
+                debug!("Insert brand new subscription: {}", sub_id.pretty_string());
                 self.meta_db.subscriptions.insert(
                     sub_id.to_string(),
                     &SubscriptionData {
@@ -76,6 +89,15 @@ impl SubsManager {
                         missed_items: Default::default(),
                     },
                 )?;
+
+                debug!(
+                    "{:?}",
+                    self.meta_db
+                        .subscriptions
+                        .iter()
+                        .map(|(k, v)| (k, v.recipient.inner_address()))
+                        .collect::<Vec<(String, Address)>>()
+                );
 
                 // Update in-memory state for stream listener lookup
                 self.recipients.lock().await.insert(recipient, sub_id);

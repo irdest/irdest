@@ -14,7 +14,7 @@ use crate::{
     protocol::Protocol,
     routes::RouteTable,
     storage::MetadataDb,
-    util::{self, codes, setup_logging, Os, StateDirectoryLock},
+    util::{self, codes, setup_logging},
 };
 use async_eris::ReadCapability;
 use libratman::{
@@ -26,7 +26,7 @@ use libratman::{
         },
         task::spawn_local,
     },
-    types::{Ident32, LetterheadV1, Recipient},
+    types::{Ident32, LetterheadV1, Os, Recipient, StateDirectoryLock},
     RatmanError, Result,
 };
 
@@ -83,8 +83,12 @@ impl RatmanContext {
         spawn_local(tw_worker);
 
         // Initialise storage systems
-        let journal_fjall = Config::new(Os::match_os().data_path().join("journal.fjall")).open()?;
-        let meta_fjall = Config::new(Os::match_os().data_path().join("metadata.fjall")).open()?;
+        let journal_fjall = Config::new(Os::match_os().data_path().join("journal.fjall"))
+            .fsync_ms(Some(25))
+            .open()?;
+        let meta_fjall = Config::new(Os::match_os().data_path().join("metadata.fjall"))
+            .fsync_ms(Some(25))
+            .open()?;
         let journal = Arc::new(Journal::new(journal_fjall)?);
         let meta_db = Arc::new(MetadataDb::new(meta_fjall)?);
 
@@ -125,7 +129,7 @@ impl RatmanContext {
         // Initialise in-memory state and restore any existing state from disk
         let this = match Self::new(cfg, collector_notify_tx.clone()).await {
             Ok(t) => t,
-            Err(e) => util::elog(
+            Err(e) => libratman::elog(
                 format!("failed to initialise/ restore journal state: {e:?}"),
                 codes::FATAL,
             ),
@@ -154,7 +158,7 @@ impl RatmanContext {
                 }
                 Ok(None) => {}
                 Err(_) => {
-                    util::elog(
+                    libratman::elog(
                         "failed to acquire state directory lock!  Is another ratmand instance running?",
                         codes::FATAL,
                     );
@@ -242,7 +246,7 @@ impl RatmanContext {
         let api_bind_addr: SocketAddr = match api_bind.parse() {
             Ok(bind) => bind,
             Err(e) => {
-                util::elog(
+                libratman::elog(
                     format!("failed to parse API bind address '{}': {}", api_bind, e),
                     util::codes::INVALID_PARAM,
                 );
@@ -341,7 +345,7 @@ impl RatmanContext {
         .await
         {
             // todo: setup tripwire here
-            util::elog(
+            libratman::elog(
                 format!("failed to start client handler: {e}"),
                 util::codes::FATAL,
             );

@@ -39,14 +39,20 @@ pub mod client_modes {
     pub const SEND: u8      = 0x6;
     /// General status queries
     pub const STATUS: u8    = 0x7;
-    /// Stream and namespace subscriptions
-    pub const SUB: u8       = 0x8;
+    /// Incoming message streams
+    pub const STREAM: u8    = 0x8;
+    
 
     //// Creating new data or destroying it permanently
     pub const CREATE: u8    = 0x1;
     pub const DESTROY: u8   = 0x2;
 
-    //// Changing the uptime state of a component
+    //// Subscribe or unsubscribe from a resource
+    pub const SUB: u8       = 0x3;
+    pub const RESUB: u8     = 0x4;
+    pub const UNSUB: u8     = 0x5;
+
+    //// Changing the uptime state of a resource
     pub const UP: u8        = 0x10;
     pub const DOWN: u8      = 0x11;
 

@@ -45,6 +45,7 @@ serde = { version = "1.0", features = ["derive"] }
 thiserror = "1.0"
 tripwire = "0.1.0-alpha.0"
 twox-hash = "1.5"
+once_cell = "1.0"
 
 ## Cryptography stuff
 curve25519-dalek = "3.0.0"
