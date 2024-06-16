@@ -39,7 +39,7 @@ pub mod types;
 #[cfg(test)]
 mod test;
 
-use self::types as ty;
+use self::types::{self as ty, AddrList};
 use crate::{
     api::{
         socket_v2::RawSocketHandle,
@@ -138,9 +138,9 @@ impl RatmanIpcExtV1 for RatmanIpc {
             )
             .await?;
 
-        let (_header, addrs) = socket.read_microframe::<Vec<Address>>().await?;
+        let (_header, addrs) = socket.read_microframe::<AddrList>().await?;
 
-        Ok(addrs)
+        addrs.map(|addrs| addrs.list)
     }
 
     async fn addr_create<'n>(

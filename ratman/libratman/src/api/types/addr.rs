@@ -1,6 +1,6 @@
 use crate::{
     frame::{
-        micro::parse::{cstring, maybe},
+        micro::parse::{cstring, maybe, vec_of},
         parse::{self, maybe_cstring, maybe_id, take_id},
         FrameGenerator, FrameParser,
     },
@@ -133,5 +133,24 @@ impl FrameParser for AddrDown {
         .map_err(|e| RatmanError::Microframe(e));
 
         Ok((input, res))
+    }
+}
+
+pub struct AddrList {
+    pub list: Vec<Address>,
+}
+
+impl FrameGenerator for AddrList {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        self.list.generate(buf)?;
+        Ok(())
+    }
+}
+
+impl FrameParser for AddrList {
+    type Output = Result<Self>;
+    fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
+        let (input, list) = vec_of(parse::take_address, input)?;
+        Ok((input, Ok(Self { list })))
     }
 }

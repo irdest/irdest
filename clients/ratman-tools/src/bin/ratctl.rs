@@ -9,7 +9,7 @@ use libratman::{
     api::{RatmanIpc, RatmanIpcExtV1},
     tokio::{self, fs::read_to_string},
     types::{AddrAuth, Address, Ident32},
-    Result,
+    ClientError, EncodingError, RatmanError, Result,
 };
 use serde::{Deserialize, Serialize};
 // use libratman::client::{Address, RatmanIpc};
@@ -90,6 +90,8 @@ fn setup_cli() -> Command {
                                 .long("force")
                                 .short('f')
                         ]),
+                    Command::new("list")
+                        .about("List available local addresses")
                 ]),
             //// \^-^/ Contact management commands
             ////
@@ -179,6 +181,9 @@ fn setup_cli() -> Command {
                         .about("List available subscriptions for the currently selected address"),
                     Command::new("unsub")
                         .alias("del")
+                        .arg(Arg::new("sub_id")
+                             .help("Provide the subscription ID to unsubscribe from")
+                             .action(ArgAction::Set))
                         .about("Delete an existing subscription"),
                     Command::new("resub")
                         .about("Restore an existing subscription")
@@ -326,7 +331,7 @@ async fn run_command(
                                 )?);
                             }
                             OutputFormat::Lines => {
-                                return Ok(format!("{}\n{}", addr, auth.to_string()));
+                                return Ok(format!("addr={}\nauth={}", addr, auth.to_string()));
                             }
                         }
                     }
@@ -344,6 +349,24 @@ async fn run_command(
                         let (addr, auth) = identity_data.unwrap();
                         ipc.addr_destroy(auth, addr, true).await?;
                         return Ok(reply_ok(&output_format));
+                    }
+                    "list" => {
+                        let addrs_list = ipc.addr_list().await?;
+                        match output_format {
+                            OutputFormat::Json => {
+                                return Ok(serde_json::to_string(&addrs_list)?);
+                            }
+                            OutputFormat::Lines => {
+                                return Ok(format!(
+                                    "{}",
+                                    addrs_list
+                                        .into_iter()
+                                        .map(|x| x.pretty_string())
+                                        .collect::<Vec<_>>()
+                                        .join("\n")
+                                ));
+                            }
+                        }
                     }
                     _ => {}
                 }
@@ -407,11 +430,15 @@ async fn run_command(
                                 ));
                             }
                             OutputFormat::Lines => {
-                                return Ok(format!("{}\n{}", sub_id.to_string(), sub_socket));
+                                return Ok(format!(
+                                    "sub_id={}\nsub_socket={}",
+                                    sub_id.to_string(),
+                                    sub_socket
+                                ));
                             }
                         }
                     }
-                    "list" => {
+                    "list" if identity_data.is_some() => {
                         let (addr, auth) = identity_data.unwrap();
                         let subs = ipc.subs_available(auth, addr).await?;
                         match output_format {
@@ -436,8 +463,54 @@ async fn run_command(
                             }
                         }
                     }
-                    "unsub" => {}
-                    "resub" => {}
+                    "unsub" if identity_data.is_some() => {
+                        let (addr, auth) = identity_data.unwrap();
+                        let sub_id = submatches
+                            .get_one::<String>("sub_id")
+                            .ok_or(RatmanError::Encoding(EncodingError::NoData))?;
+                        ipc.subs_delete(auth, addr, Ident32::from_string(sub_id))
+                            .await?;
+                        return Ok(reply_ok(&output_format));
+                    }
+                    "resub" if identity_data.is_some() => {
+                        let (addr, auth) = identity_data.unwrap();
+                        let sub_id = submatches
+                            .get_one::<String>("sub_id")
+                            .ok_or(RatmanError::Encoding(EncodingError::NoData))?;
+
+                        let mut subs_handle = ipc
+                            .subs_restore(auth, addr, Ident32::from_string(sub_id))
+                            .await?;
+
+                        // Since this program is about to shut down, we must
+                        // print enough information so the user can spawn their
+                        // own subscriber.
+                        let sub_socket = subs_handle.peer_info();
+                        let sub_id = subs_handle.sub_id();
+                        match output_format {
+                            OutputFormat::Json => {
+                                return Ok(format!(
+                                    "{}",
+                                    serde_json::to_string(
+                                        &vec![
+                                            ("sub_id", sub_id.to_string()),
+                                            ("socket", sub_socket)
+                                        ]
+                                        .into_iter()
+                                        .collect::<BTreeMap<&'static str, String>>(),
+                                    )
+                                    .unwrap()
+                                ));
+                            }
+                            OutputFormat::Lines => {
+                                return Ok(format!(
+                                    "sub_id={}\nsocket={}",
+                                    sub_id.to_string(),
+                                    sub_socket
+                                ));
+                            }
+                        }
+                    }
                     _ => {}
                 }
             }
@@ -530,8 +603,4 @@ async fn main() {
             }
         }
     }
-
-    // if let Err(e) = ratman_tools::command_filter(m).await {
-    //     eprintln!("Operation failed, an Error occurred:\n{}", e);
-    // }
 }

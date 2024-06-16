@@ -12,8 +12,8 @@ use libratman::{
     api::{
         socket_v2::RawSocketHandle,
         types::{
-            AddrCreate, AddrDestroy, AddrDown, AddrUp, Handshake, RecvMany, RecvOne, SendMany,
-            SendTo, ServerPing, SubsCreate, SubsDelete, SubsRestore,
+            AddrCreate, AddrDestroy, AddrDown, AddrList, AddrUp, Handshake, RecvMany, RecvOne,
+            SendMany, SendTo, ServerPing, SubsCreate, SubsDelete, SubsRestore,
         },
         version_str, versions_compatible,
     },
@@ -271,6 +271,26 @@ pub(super) async fn single_session_exchange<'a>(
             expected_auth.remove(&auth);
 
             reply_ok(raw_socket, auth).await?;
+        }
+        //
+        //
+        // ^-^ List all available local addresses
+        m if m == cm::make(cm::ADDR, cm::LIST) => {
+            let available_addrs = ctx
+                .meta_db
+                .addrs
+                .iter()
+                .map(|(ref addr, _)| Address::from_string(addr))
+                .collect::<Vec<Address>>();
+
+            raw_socket
+                .write_microframe(
+                    MicroframeHeader::intrinsic_noauth(),
+                    AddrList {
+                        list: available_addrs,
+                    },
+                )
+                .await?;
         }
         //
         //
