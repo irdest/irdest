@@ -5,15 +5,15 @@
 use crate::{
     context::RatmanContext,
     crypto,
-    procedures::{handle_subscription_socket, BlockWorker},
+    procedures::{handle_subscription_socket, SenderSystem},
 };
 use async_eris::BlockSize;
 use libratman::{
     api::{
         socket_v2::RawSocketHandle,
         types::{
-            AddrCreate, AddrDestroy, AddrDown, AddrUp, Handshake, RecvMany, RecvOne, SendTo,
-            ServerPing, SubsCreate, SubsDelete, SubsRestore,
+            AddrCreate, AddrDestroy, AddrDown, AddrUp, Handshake, RecvMany, RecvOne, SendMany,
+            SendTo, ServerPing, SubsCreate, SubsDelete, SubsRestore,
         },
         version_str, versions_compatible,
     },
@@ -21,7 +21,7 @@ use libratman::{
     tokio::{
         io::ErrorKind,
         net::{TcpListener, TcpStream},
-        sync::{broadcast::channel as bcast_channel, mpsc::channel},
+        sync::broadcast::channel as bcast_channel,
         task::spawn_local,
         time::timeout,
     },
@@ -98,6 +98,7 @@ pub(super) async fn single_session_exchange(
     client_id: Ident32,
     expected_auth: &mut BTreeMap<AddrAuth, Address>,
     raw_socket: &mut RawSocketHandle,
+    senders: &Arc<SenderSystem>,
 ) -> Result<SessionResult> {
     let header = match timeout(
         Duration::from_secs(/* 2 minute timeout */ 2 * 60),
@@ -488,26 +489,88 @@ pub(super) async fn single_session_exchange(
             raw_socket.from_compat(compat_socket);
             crypto::end_stream(&ctx.meta_db, letterhead.from, letterhead.to.inner_address());
 
-            let (tx_1k, rx) = channel(17);
-            let (tx_32k, rx) = channel(17);
-
             match chosen_block_size {
                 BlockSize::_1K => {
-                    BlockWorker { read_cap }
-                        .traverse_block_tree::<1024>(&ctx, tx_1k)
-                        .await?
+                    senders
+                        .tx_1k
+                        .send((read_cap, letterhead))
+                        .await
+                        .map_err(|e| {
+                            RatmanError::Schedule(libratman::ScheduleError::Contention(
+                                e.to_string(),
+                            ))
+                        })?;
                 }
                 BlockSize::_32K => {
-                    BlockWorker { read_cap }
-                        .traverse_block_tree::<32768>(&ctx, tx_32k)
-                        .await?
+                    senders
+                        .tx_32k
+                        .send((read_cap, letterhead))
+                        .await
+                        .map_err(|e| {
+                            RatmanError::Schedule(libratman::ScheduleError::Contention(
+                                e.to_string(),
+                            ))
+                        })?;
                 }
             }
+
+            reply_ok(raw_socket, auth).await?;
         }
         //
         //
         // ^-^ Client wants to send a message to many recipients
-        m if m == cm::make(cm::SEND, cm::MANY) => {}
+        m if m == cm::make(cm::SEND, cm::MANY) => {
+            let SendMany { letterheads } = raw_socket
+                .read_payload::<SendMany>(header.payload_size)
+                .await??;
+
+            for lh in letterheads {
+                let auth = check_auth(&header, lh.from, expected_auth)?;
+                crypto::start_stream(
+                    &ctx.meta_db,
+                    lh.from,
+                    lh.to.inner_address(),
+                    auth,
+                    client_id,
+                )?;
+
+                let shared_key = crypto::stream_diffie_hellman(lh.from, lh.to.inner_address());
+
+                let chosen_block_size = match lh.payload_length {
+                    m if m < (16 * 1024) => async_eris::BlockSize::_1K,
+                    _ => async_eris::BlockSize::_32K,
+                };
+
+                let mut compat_socket = raw_socket.to_compat();
+                let read_cap = async_eris::encode(
+                    &mut compat_socket,
+                    &shared_key,
+                    chosen_block_size,
+                    &ctx.journal.blocks,
+                )
+                .await?;
+                raw_socket.from_compat(compat_socket);
+                crypto::end_stream(&ctx.meta_db, lh.from, lh.to.inner_address());
+
+                match chosen_block_size {
+                    BlockSize::_1K => {
+                        senders.tx_1k.send((read_cap, lh)).await.map_err(|e| {
+                            RatmanError::Schedule(libratman::ScheduleError::Contention(
+                                e.to_string(),
+                            ))
+                        })?;
+                    }
+                    BlockSize::_32K => {
+                        senders.tx_32k.send((read_cap, lh)).await.map_err(|e| {
+                            RatmanError::Schedule(libratman::ScheduleError::Contention(
+                                e.to_string(),
+                            ))
+                        })?;
+                    }
+                }
+                reply_ok(raw_socket, auth).await?;
+            }
+        }
         //
         //
         // u-u Don't know what to do with this
@@ -515,7 +578,9 @@ pub(super) async fn single_session_exchange(
             raw_socket
                 .write_microframe(
                     MicroframeHeader::intrinsic_noauth(),
-                    ServerPing::Error(ClientError::Internal(format!("Invalid frame mode: {mode}"))),
+                    ServerPing::Error(ClientError::Internal(format!(
+                        "Unsupported frame mode: {mode:b}"
+                    ))),
                 )
                 .await?;
 

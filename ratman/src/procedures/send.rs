@@ -7,16 +7,30 @@
 //! Asynchronous Ratman routing core
 
 use crate::{
-    context::RatmanContext,
+    journal::Journal,
     links::LinksMap,
     routes::{EpNeighbourPair, RouteTable},
 };
-use async_eris::ReadCapability;
+use async_eris::{Block, ReadCapability};
 use libratman::{
-    types::{InMemoryEnvelope, LetterheadV1, Neighbour, Recipient},
+    rt::new_async_thread,
+    tokio::{
+        select,
+        sync::mpsc::{channel, Sender},
+        task::spawn_local,
+    },
+    types::{Ident32, InMemoryEnvelope, LetterheadV1, Neighbour, Recipient},
     RatmanError, Result,
 };
 use std::sync::Arc;
+use tripwire::Tripwire;
+
+use super::{slicer::BlockSlicer, BlockWorker};
+
+pub struct SenderSystem {
+    pub tx_1k: Sender<(ReadCapability, LetterheadV1)>,
+    pub tx_32k: Sender<(ReadCapability, LetterheadV1)>,
+}
 
 /// Start a new async sender system based on an existing reader stream
 ///
@@ -55,44 +69,76 @@ use std::sync::Arc;
 /// created sequences MUST be marked with `incomplete=?` in the
 /// journal tagging system
 pub(crate) async fn exec_sender_system<const L: usize>(
-    context: &Arc<RatmanContext>,
-    read_cap: ReadCapability,
-    letterhead: LetterheadV1,
-) -> Result<()> {
-    // let (tx, rx) = mpsc::channel(size_commonbuf_t::<L>());
-    // let socket = RawSocketHandle::new(reader);
+    journal: &Arc<Journal>,
+    routes: &Arc<RouteTable>,
+    drivers: &Arc<LinksMap>,
+    tripwire: Tripwire,
+) -> Sender<(ReadCapability, LetterheadV1)> {
+    let (tx_l, mut rx_l) = channel(32);
+    {
+        let journal = Arc::clone(journal);
+        let routes = Arc::clone(routes);
+        let drivers = Arc::clone(drivers);
+        new_async_thread(
+            format!("sender-system-{}k", L / 1024),
+            1024 * 8,
+            async move {
+                loop {
+                    let tw = tripwire.clone();
+                    let (read_cap, letterhead) = select! {
+                        _ = tw => break,
+                        i = rx_l.recv() => {
+                            match i {
+                                Some(i) => i,
+                                None => break,
+                            }
+                        }
+                    };
 
-    // Setup the block slicer
-    // let (_iter_tx, chunk_iter) = ChunkIter::<L>::new();
-    // let read_cap_f = spawn_local(block_slicer_task(journal, chunk_iter));
+                    let (local_tx, mut local_rx) = channel::<(Block<L>, LetterheadV1)>(4);
+                    spawn_local(BlockWorker { read_cap }.traverse_block_tree::<L>(
+                        Arc::clone(&journal),
+                        letterhead,
+                        local_tx,
+                    ));
 
-    // Read from the socket until we have reached the upper message limit
-    // while socket.read_counter() < total_message_size {
-    // We read a chunk from disk and handle content encryption
-    // first, then write out the encrypted chunk and resulting
-    // nonce into the outer block to handle.
-    // let (encrypted_chunk, chunk_nonce) = {
-    //     let mut raw_data = socket.read_chunk::<L>().await?;
-    //     if raw_data.1 < L {
-    //         debug!("Reached the last chunk in the data stream");
-    //     }
+                    let routes = Arc::clone(&routes);
+                    let drivers = Arc::clone(&drivers);
+                    spawn_local(async move {
+                        while let Some((block, letterhead)) = local_rx.recv().await {
+                            let frame_buf = match BlockSlicer
+                                .produce_frames(block, letterhead.from, letterhead.to)
+                                .await
+                            {
+                                Ok(buf) => buf,
+                                Err(e) => {
+                                    error!("failed to slice block to frames: {e}");
+                                    continue;
+                                }
+                            };
 
-    // // Encrypt the data before doing anything else!
-    // let shared_key = context.keys.diffie_hellman(from, to).await.expect(&format!(
-    //     "Diffie-Hellman key-exchange failed between {} and {}",
-    //     from, to,
-    // ));
-    // let nonce = crypto::encrypt_chunk(&shared_key, &mut raw_data.0);
-    // (raw_data, nonce) // data no longer raw!
-    // };
+                            let routes = Arc::clone(&routes);
+                            let drivers = Arc::clone(&drivers);
+                            spawn_local(async move {
+                                for envelope in frame_buf {
+                                    if let Err(e) =
+                                        dispatch_frame(&routes, &drivers, envelope).await
+                                    {
+                                        error!("failed to dispatch frame: {e}");
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
 
-    // }
+                //
+                Ok(())
+            },
+        );
+    }
 
-    // let _read_cap = read_cap_f
-    //     .await
-    //     .expect("failed to produce message manifest")?;
-
-    Ok(())
+    tx_l
 }
 
 /// Resolve the target address and dispatch the frame
@@ -131,12 +177,12 @@ pub(crate) async fn flood_frame(
     _routes: &Arc<RouteTable>,
     drivers: &Arc<LinksMap>,
     envelope: InMemoryEnvelope,
-    _except: Option<(String, Neighbour)>,
+    except: Option<Ident32>,
 ) -> Result<()> {
     // Loop over every driver and send a version of the envelope to it
     for (ep_name, ep) in drivers.get_all().await.into_iter() {
         let env = envelope.clone();
-        if let Err(e) = ep.send(env, Neighbour::Flood, None).await {
+        if let Err(e) = ep.send(env, Neighbour::Flood, except).await {
             error!(
                 "failed to flood frame {:?} on endpoint {}: {}",
                 envelope.header.get_seq_id(),

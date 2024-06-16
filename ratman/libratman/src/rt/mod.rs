@@ -84,6 +84,7 @@ where
 {
     let label = label.into();
     std::thread::spawn(move || {
+        debug!("Starting new async thread system: {label}");
         let system = AsyncSystem::new(label, stack_mb);
         let res = system.exec(f);
         let label = system.label.clone();

@@ -53,11 +53,23 @@ fn decode_base32<const BS: usize>(s: &str) -> Result<[u8; BS]> {
 
 /// A 32 byte block reference identifier
 #[derive(
-    Clone, Copy, PartialEq, Eq, Hash, Deref, From, Display, DebugCustom, Serialize, Deserialize,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    Deref,
+    PartialOrd,
+    Ord,
+    From,
+    Display,
+    DebugCustom,
+    Serialize,
+    Deserialize,
 )]
 #[display(fmt = "{}", "display_base32(&self.0)")]
 #[debug(fmt = "{}", "self")]
-pub struct BlockReference([u8; 32]);
+pub struct BlockReference(pub [u8; 32]);
 
 impl BlockReference {
     pub fn as_slice(&self) -> &[u8] {
@@ -81,10 +93,24 @@ impl TryFrom<&String> for BlockReference {
 }
 
 /// Represents a 32 byte ChaCha20 key for encryption
-#[derive(Clone, Copy, Deref, From, Display, DebugCustom, Serialize, Deserialize)]
+#[derive(
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    Deref,
+    PartialOrd,
+    Ord,
+    From,
+    Display,
+    DebugCustom,
+    Serialize,
+    Deserialize,
+)]
 #[display(fmt = "{}", "display_base32(&self.0)")]
 #[debug(fmt = "{}", "self")]
-pub struct BlockKey([u8; 32]);
+pub struct BlockKey(pub [u8; 32]);
 
 impl BlockKey {
     pub fn as_slice(&self) -> &[u8] {
@@ -175,7 +201,7 @@ fn log_2(x: usize) -> u32 {
     num_bits::<usize>() as u32 - x.leading_zeros() - 1
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ReadCapability {
     pub root_reference: BlockReference,
     pub root_key: BlockKey,
@@ -184,7 +210,7 @@ pub struct ReadCapability {
 }
 
 impl ReadCapability {
-    pub(crate) fn from_rk_pair(rk_pair: RKPair, level: u8, block_size: usize) -> ReadCapability {
+    pub fn from_rk_pair(rk_pair: RKPair, level: u8, block_size: usize) -> ReadCapability {
         ReadCapability {
             root_reference: rk_pair.0,
             root_key: rk_pair.1,
@@ -232,7 +258,7 @@ impl<const BS: usize> Block<BS> {
         BlockReference(hasher.finalize().into())
     }
 
-    pub(crate) fn chacha20(&mut self, key: &BlockKey) {
+    pub fn chacha20(&mut self, key: &BlockKey) {
         // audit(security): is this correct?  This doesn't seem correct
         let nonce = [0; 12];
         let mut cipher = ChaCha20::new(&(**key).into(), &nonce.into());

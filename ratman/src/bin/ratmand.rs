@@ -98,7 +98,7 @@ fn main() {
     }
 
     // Override the config verbosity value with the CLI value if desired
-    if let Some(verbosity) = arg_matches.value_of("VERBOSITY") {
+    if let Some(verbosity) = arg_matches.value_of("VERBOSE") {
         config = config.patch("ratmand/verbosity", verbosity);
     }
 

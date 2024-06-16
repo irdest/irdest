@@ -29,6 +29,12 @@ pub enum Neighbour {
 }
 
 impl Neighbour {
+    pub fn maybe_single(&self) -> Option<Ident32> {
+        match self {
+            Self::Single(id) => Some(*id),
+            _ => None,
+        }
+    }
     pub fn assume_single(&self) -> Ident32 {
         match self {
             Self::Single(id) => *id,

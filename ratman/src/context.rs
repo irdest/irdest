@@ -10,7 +10,7 @@ use crate::{
     },
     journal::Journal,
     links::LinksMap,
-    procedures::{self, BlockCollector, BlockNotifier, SubsManager},
+    procedures::{self, BlockCollector, BlockNotifier, SenderSystem, SubsManager},
     protocol::Protocol,
     routes::RouteTable,
     storage::MetadataDb,
@@ -277,6 +277,21 @@ impl RatmanContext {
             });
         }
 
+        let sender1k_tx = procedures::exec_sender_system::<1024>(
+            &this.journal,
+            &this.routes,
+            &this.links,
+            this.tripwire.clone(),
+        )
+        .await;
+        let sender32k_tx = procedures::exec_sender_system::<32768>(
+            &this.journal,
+            &this.routes,
+            &this.links,
+            this.tripwire.clone(),
+        )
+        .await;
+
         // Start the switches and off we go
         {
             let links = Arc::clone(&this.links);
@@ -315,7 +330,16 @@ impl RatmanContext {
         }
 
         // todo: setup management machinery to handle result events
-        if let Err(e) = api::start_api_thread(Arc::clone(&this), api_bind_addr).await {
+        if let Err(e) = api::start_api_thread(
+            Arc::clone(&this),
+            api_bind_addr,
+            Arc::new(SenderSystem {
+                tx_1k: sender1k_tx,
+                tx_32k: sender32k_tx,
+            }),
+        )
+        .await
+        {
             // todo: setup tripwire here
             util::elog(
                 format!("failed to start client handler: {e}"),

@@ -12,6 +12,7 @@ mod session;
 use crate::{
     api::session::{handshake, single_session_exchange, SessionResult},
     context::RatmanContext,
+    procedures::SenderSystem,
 };
 use libratman::{
     api::types::ServerPing, frame::micro::MicroframeHeader, rt::new_async_thread, types::Ident32,
@@ -31,13 +32,17 @@ use std::{collections::BTreeMap, future::IntoFuture, net::SocketAddr, sync::Arc}
 pub async fn start_api_thread(
     context: Arc<RatmanContext>,
     addr: SocketAddr,
-    // config: &ConfigTree,
+    senders: Arc<SenderSystem>,
 ) -> Result<()> {
     new_async_thread("ratmand-api-acceptor", 1024, async move {
         let l = TcpListener::bind(addr).await?;
 
         while let Ok((stream, client_addr)) = l.accept().await {
-            let jh = spawn_local(run_client_handler(Arc::clone(&context), stream));
+            let jh = spawn_local(run_client_handler(
+                Arc::clone(&context),
+                Arc::clone(&senders),
+                stream,
+            ));
             spawn_local(async move {
                 let res = jh
                     .into_future()
@@ -55,7 +60,11 @@ pub async fn start_api_thread(
     Ok(())
 }
 
-pub async fn run_client_handler(ctx: Arc<RatmanContext>, stream: TcpStream) -> Result<()> {
+pub async fn run_client_handler(
+    ctx: Arc<RatmanContext>,
+    senders: Arc<SenderSystem>,
+    stream: TcpStream,
+) -> Result<()> {
     let mut raw_socket = handshake(stream).await?;
     let mut active_auth = BTreeMap::new();
     let client_id = Ident32::random();
@@ -67,7 +76,7 @@ pub async fn run_client_handler(ctx: Arc<RatmanContext>, stream: TcpStream) -> R
         .insert(client_id, Default::default());
 
     loop {
-        match single_session_exchange(&ctx, client_id, &mut active_auth, &mut raw_socket).await {
+        match single_session_exchange(&ctx, client_id, &mut active_auth, &mut raw_socket, &senders).await {
             Ok(SessionResult::Next) => yield_now().await,
             Ok(SessionResult::Drop) => break,
             Err(RatmanError::TokioIo(io_err))

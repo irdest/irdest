@@ -154,7 +154,7 @@ pub(crate) async fn exec_switching_batch(
                             &routes,
                             &links,
                             InMemoryEnvelope { header, buffer },
-                            Some((ep_name.clone(), neighbour)),
+                            neighbour.maybe_single()
                         )
                         .await
                         {

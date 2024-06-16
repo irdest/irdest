@@ -33,7 +33,7 @@ If you encounter a reproducible issue, \
                 )
         )
         .arg(
-            Arg::with_name("VERBOSITY")
+            Arg::with_name("VERBOSE")
                 .takes_value(true)
                 .short("v")
                 .long("verbosity")
