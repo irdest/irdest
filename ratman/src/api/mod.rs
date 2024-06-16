@@ -76,7 +76,9 @@ pub async fn run_client_handler(
         .insert(client_id, Default::default());
 
     loop {
-        match single_session_exchange(&ctx, client_id, &mut active_auth, &mut raw_socket, &senders).await {
+        match single_session_exchange(&ctx, client_id, &mut active_auth, &mut raw_socket, &senders)
+            .await
+        {
             Ok(SessionResult::Next) => yield_now().await,
             Ok(SessionResult::Drop) => break,
             Err(RatmanError::TokioIo(io_err))
