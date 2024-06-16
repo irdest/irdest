@@ -7,8 +7,7 @@ use crate::{
     types::identifiers::{id::Ident32, ID_LEN},
     Result,
 };
-use itertools::Itertools;
-use nom::{error::ParseError, IResult};
+use nom::IResult;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Display};
 

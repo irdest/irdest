@@ -62,9 +62,9 @@ impl FrameParser for Option<Recipient> {
                 let (input, addr) = take_address(input)?;
                 Ok((input, Some(Recipient::Namespace(addr))))
             }
-            _ => {
+            mode => {
                 unreachable!(
-                    "this is definitely reachable but you've
+                    "(mode: {mode}) can definitely reachable but you've
             been naughty with your data"
                 )
             }

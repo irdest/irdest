@@ -159,21 +159,21 @@ pub trait RatmanStreamExtV1: RatmanIpcExtV1 {
     /// Optionally you can call `.add_send_time()` on the letterhead before
     /// passing it to this function to include the current time in the stream
     /// for the receiving client.
-    async fn send_to<I: AsyncRead>(
+    async fn send_to<I: AsyncRead + Unpin + Send>(
         self: &Arc<Self>,
         auth: AddrAuth,
         letterhead: LetterheadV1,
-        data_reader: &I,
+        data_reader: I,
     ) -> Result<()>;
 
     /// Send the same message stream to multiple recipients
     ///
     /// Most of the Letterhead
-    async fn send_many<I: AsyncRead>(
+    async fn send_many<I: AsyncRead + Unpin + Send>(
         self: &Arc<Self>,
         auth: AddrAuth,
         letterheads: Vec<LetterheadV1>,
-        data_reader: &I,
+        data_reader: I,
     ) -> Result<()>;
 
     /// Block this task/ socket to wait for a single incoming message stream

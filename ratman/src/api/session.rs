@@ -563,7 +563,7 @@ pub(super) async fn single_session_exchange<'a>(
                 .await??;
 
             let auth = check_auth(&header, letterhead.from, expected_auth)?;
-
+            debug!("Passed authentication on send-stream");
             crypto::start_stream(
                 &ctx.meta_db,
                 letterhead.from,
@@ -592,6 +592,8 @@ pub(super) async fn single_session_exchange<'a>(
             raw_socket.from_compat(compat_socket);
             crypto::end_stream(&ctx.meta_db, letterhead.from, letterhead.to.inner_address()).await;
 
+            debug!("Block encoding complete");
+            
             match chosen_block_size {
                 BlockSize::_1K => {
                     senders

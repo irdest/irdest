@@ -31,6 +31,8 @@ mod _trait;
 pub use _trait::{RatmanIpcExtV1, RatmanStreamExtV1, ReadStream};
 
 mod subscriber;
+use chrono::format::parse_and_remainder;
+use nix::libc::NFT_DATA_RESERVED_MASK;
 pub use subscriber::SubscriptionHandle;
 
 pub mod socket_v2;
@@ -45,7 +47,9 @@ use crate::{
         socket_v2::RawSocketHandle,
         types::{Handshake, RecvOne, SendTo, ServerPing, SubsCreate, SubsDelete, SubsRestore},
     },
+    chunk::{self, Chunk, ChunkIter},
     frame::micro::{client_modes as cm, MicroframeHeader},
+    rt::reader::AsyncReader,
     types::{Address, Ident32, LetterheadV1},
     ClientError, EncodingError, Result,
 };
@@ -56,7 +60,12 @@ use std::{
     net::{Ipv4Addr, SocketAddr, SocketAddrV4},
     sync::Arc,
 };
-use tokio::{io::AsyncRead, net::TcpStream, sync::Mutex};
+use tokio::{
+    io::{AsyncRead, AsyncReadExt},
+    net::TcpStream,
+    sync::Mutex,
+    task::spawn_local,
+};
 
 /// Indicate the current version of this library.
 ///
@@ -500,12 +509,21 @@ impl RatmanStreamExtV1 for RatmanIpc {
     /// Optionally you can call `.add_send_time()` on the letterhead before
     /// passing it to this function to include the current time in the stream
     /// for the receiving client.
-    async fn send_to<I: AsyncRead>(
+    async fn send_to<I: AsyncRead + Unpin + Send>(
         self: &Arc<Self>,
         auth: crate::types::AddrAuth,
         letterhead: crate::types::LetterheadV1,
-        data_reader: &I,
+        data_reader: I,
     ) -> crate::Result<()> {
+        let plen = letterhead.payload_length;
+        let chunk_size = if plen < 1024 {
+            plen
+        } else if plen > 1024 && plen < (1024 * 32) {
+            4 * 1024
+        } else {
+            16 * 1025
+        };
+
         let mut socket = self.socket().lock().await;
         socket
             .write_microframe(
@@ -518,17 +536,33 @@ impl RatmanStreamExtV1 for RatmanIpc {
             )
             .await?;
 
+        let mut reader = Box::pin(data_reader);
+
+        let mut remaining = plen;
+        loop {
+            let mut buf = vec![0_u8; chunk_size.min(remaining) as usize];
+            reader.read_exact(&mut buf).await?;
+            remaining -= buf.len() as u64;
+
+            println!("Writing chunk to router socket {buf:?}");
+            socket.write_buffer(buf).await?;
+
+            if remaining == 0 {
+                break;
+            }
+        }
+
         Ok(())
     }
 
     /// Send the same message stream to multiple recipients
     ///
     /// Most of the Letterhead
-    async fn send_many<I: AsyncRead>(
+    async fn send_many<I: AsyncRead + Unpin + Send>(
         self: &Arc<Self>,
         auth: crate::types::AddrAuth,
         letterheads: Vec<crate::types::LetterheadV1>,
-        data_reader: &I,
+        data_reader: I,
     ) -> crate::Result<()> {
         Ok(())
     }

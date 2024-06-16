@@ -1,5 +1,10 @@
 use crate::{
-    frame::{generate::generate_cstring_tuple_vec, parse, FrameGenerator, FrameParser},
+    frame::{
+        generate::generate_cstring_tuple_vec,
+        micro::parse::vec_of,
+        parse::{self, take_cstring_tuple_vec},
+        FrameGenerator, FrameParser,
+    },
     types::{Address, Recipient},
     Result,
 };
@@ -7,6 +12,8 @@ use chrono::Utc;
 use nom::IResult;
 use serde::{Deserialize, Serialize};
 use std::ffi::CString;
+
+use super::Ident32;
 
 /// Message stream letterhead
 ///
@@ -43,6 +50,37 @@ impl LetterheadV1 {
             payload_length,
             auxiliary_data: vec![],
         }
+    }
+
+    pub fn digest(&self) -> Ident32 {
+        let mut plen_buf = vec![];
+        self.payload_length.generate(&mut plen_buf).unwrap();
+
+        let pl_len: &[u8] = plen_buf.as_slice();
+
+        // let v: Vec<(String, String)> = self
+        //     .auxiliary_data
+        //     .iter()
+        //     .map(|(k, v)| (k.into_string().unwrap(), v.into_string().unwrap()))
+        //     .collect();
+
+        let inner_addr = self.to.inner_address();
+        let digest_input = vec![self.from.as_bytes(), inner_addr.as_bytes(), pl_len];
+
+        // digest_input.append(&mut v.into_iter().fold(vec![], |mut vec, (k, v)| {
+        //     vec.push(k.as_bytes());
+        //     vec.push(v.as_bytes());
+        //     vec
+        // }));
+
+        let mut vec = vec![];
+        for buf in digest_input {
+            buf.into_iter().for_each(|x| {
+                vec.push(*x);
+            });
+        }
+
+        Ident32::with_digest(&vec)
     }
 
     pub fn add_send_time(mut self) -> Self {
