@@ -2,13 +2,16 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use crate::{types::identifiers::ID_LEN, RatmanError};
+use crate::{
+    types::{error::UserError, identifiers::ID_LEN},
+    RatmanError,
+};
 use serde::{
     de::{Deserializer, SeqAccess, Visitor},
     Deserialize, Serialize, Serializer,
 };
 use std::{
-    fmt::{self, Debug, Display, Formatter},
+    fmt::{self, format, Debug, Display, Formatter},
     string::ToString,
 };
 
@@ -90,7 +93,11 @@ impl Ident32 {
     /// error will be returned, instead of panicking.
     pub fn try_from_bytes(buf: &[u8]) -> crate::Result<Self> {
         if buf.len() != ID_LEN {
-            return Err(RatmanError::WrongIdentifierLength(ID_LEN, buf.len()));
+            return Err(RatmanError::User(UserError::InvalidInput(
+                format!("Wrong identifier length {}", buf.len()),
+                Some(format!("{ID_LEN}")),
+            ))
+            .into());
         }
 
         Ok(Self::from_bytes(buf))

@@ -59,14 +59,16 @@ pub enum RatmanError {
     // UnixSystem(#[from] nix::errno::Errno),
     #[error("failed to acquire state directory lock")]
     StateDirectoryAlreadyLocked,
-    #[error("failed to de-sequence a series of frames")]
-    DesequenceFault,
-    #[error("the given address '{0}' is unknown to this router!")]
-    NoSuchAddress(Address),
-    #[error("the address '{0}' already exists!")]
-    DuplicateAddress(Address),
-    #[error("the identifier data provided was not the correct length.  Expected {0}, got {1}")]
-    WrongIdentifierLength(usize, usize),
+    #[error("User input was invalid: {0}")]
+    User(#[from] UserError),
+    // #[error("failed to de-sequence a series of frames")]
+    // DesequenceFault,
+    // #[error("the given address '{0}' is unknown to this router!")]
+    // NoSuchAddress(Address),
+    // #[error("the address '{0}' already exists!")]
+    // DuplicateAddress(Address),
+    // #[error("the identifier data provided was not the correct length.  Expected {0}, got {1}")]
+    // WrongIdentifierLength(usize, usize),
 }
 
 impl From<RatmanError> for io::Error {
@@ -219,4 +221,10 @@ pub enum MicroframeError {
     InvalidString,
     #[error("failed to parse type because of missing fields: {:?}", 0)]
     MissingFields(&'static [&'static str]),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum UserError {
+    #[error("invalid input '{0:?}', expected '{1:?}'")]
+    InvalidInput(String, Option<String>),
 }

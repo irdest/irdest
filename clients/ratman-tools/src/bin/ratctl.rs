@@ -284,26 +284,6 @@ fn setup_cli() -> Command {
 //     Ok(ipc.get_peers().await?)
 // }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-enum OutputFormat {
-    Lines,
-    Json,
-}
-
-fn reply_ok(output_format: &OutputFormat) -> String {
-    match output_format {
-        OutputFormat::Json => serde_json::to_string(
-            &vec![("ok", true)]
-                .into_iter()
-                .collect::<BTreeMap<&'static str, bool>>(),
-        )
-        .unwrap(),
-        OutputFormat::Lines => {
-            format!("ok")
-        }
-    }
-}
-
 async fn run_command(
     ipc: Arc<RatmanIpc>,
     identity_data: Option<(Address, AddrAuth)>,
@@ -316,25 +296,11 @@ async fn run_command(
             if let Some((subsub, matches)) = args.subcommand() {
                 match subsub {
                     "create" => {
-                        let space_data = matches
-                            .get_one("namespace")
-                            .map(|s| Ident32::from_string(s));
-                        let name = matches.get_one::<String>("priv-name");
+                        
 
-                        let (addr, auth) = ipc.addr_create(name, space_data).await?;
+                        
 
-                        match output_format {
-                            OutputFormat::Json => {
-                                return Ok(serde_json::to_string(
-                                    &vec![("addr", addr.to_string()), ("auth", auth.to_string())]
-                                        .into_iter()
-                                        .collect::<BTreeMap<&'static str, String>>(),
-                                )?);
-                            }
-                            OutputFormat::Lines => {
-                                return Ok(format!("addr={}\nauth={}", addr, auth.to_string()));
-                            }
-                        }
+
                     }
                     "up" if identity_data.is_some() => {
                         let (addr, auth) = identity_data.unwrap();

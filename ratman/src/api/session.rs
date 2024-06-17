@@ -563,7 +563,7 @@ pub(super) async fn single_session_exchange<'a>(
                 .await??;
 
             let auth = check_auth(&header, letterhead.from, expected_auth)?;
-            debug!("Passed authentication on send-stream");
+            debug!("Passed authentication on [send : one]");
             crypto::start_stream(
                 &ctx.meta_db,
                 letterhead.from,

@@ -1,17 +1,11 @@
 use crate::{
-    api::SubscriptionHandle,
+    api::{socket_v2::RawSocketHandle, SubscriptionHandle},
     types::{AddrAuth, Address, Ident32, LetterheadV1, Modify, Recipient},
     Result,
 };
 use async_trait::async_trait;
 use std::{collections::BTreeMap, net::SocketAddr, sync::Arc};
-use tokio::{
-    io::{AsyncRead, AsyncWrite},
-    net::TcpStream,
-    sync::MutexGuard,
-};
-
-use super::socket_v2::RawSocketHandle;
+use tokio::{io::AsyncRead, sync::MutexGuard};
 
 #[async_trait]
 pub trait RatmanIpcExtV1 {

@@ -31,8 +31,6 @@ mod _trait;
 pub use _trait::{RatmanIpcExtV1, RatmanStreamExtV1, ReadStream};
 
 mod subscriber;
-use chrono::format::parse_and_remainder;
-use nix::libc::NFT_DATA_RESERVED_MASK;
 pub use subscriber::SubscriptionHandle;
 
 pub mod socket_v2;
@@ -47,10 +45,8 @@ use crate::{
         socket_v2::RawSocketHandle,
         types::{Handshake, RecvOne, SendTo, ServerPing, SubsCreate, SubsDelete, SubsRestore},
     },
-    chunk::{self, Chunk, ChunkIter},
     frame::micro::{client_modes as cm, MicroframeHeader},
-    rt::reader::AsyncReader,
-    types::{Address, Ident32, LetterheadV1},
+    types::{AddrAuth, Address, Ident32, LetterheadV1, Modify, Recipient},
     ClientError, EncodingError, Result,
 };
 use async_trait::async_trait;
@@ -64,7 +60,6 @@ use tokio::{
     io::{AsyncRead, AsyncReadExt},
     net::TcpStream,
     sync::Mutex,
-    task::spawn_local,
 };
 
 /// Indicate the current version of this library.
@@ -133,7 +128,7 @@ impl RatmanIpcExtV1 for RatmanIpc {
         }
     }
 
-    async fn addr_list(self: &Arc<Self>) -> crate::Result<Vec<crate::types::Address>> {
+    async fn addr_list(self: &Arc<Self>) -> crate::Result<Vec<Address>> {
         let mut socket = self.socket().lock().await;
 
         socket
@@ -156,7 +151,7 @@ impl RatmanIpcExtV1 for RatmanIpc {
         self: &Arc<Self>,
         name: Option<&'n String>,
         space_private_key: Option<Ident32>,
-    ) -> crate::Result<(crate::types::Address, crate::types::AddrAuth)> {
+    ) -> crate::Result<(Address, AddrAuth)> {
         let mut socket = self.socket().lock().await;
 
         socket
@@ -194,8 +189,8 @@ impl RatmanIpcExtV1 for RatmanIpc {
 
     async fn addr_destroy(
         self: &Arc<Self>,
-        auth: crate::types::AddrAuth,
-        addr: crate::types::Address,
+        auth: AddrAuth,
+        addr: Address,
         force: bool,
     ) -> crate::Result<()> {
         let mut socket = self.socket().lock().await;
@@ -220,11 +215,7 @@ impl RatmanIpcExtV1 for RatmanIpc {
         }
     }
 
-    async fn addr_up(
-        self: &Arc<Self>,
-        auth: crate::types::AddrAuth,
-        addr: crate::types::Address,
-    ) -> crate::Result<()> {
+    async fn addr_up(self: &Arc<Self>, auth: AddrAuth, addr: Address) -> crate::Result<()> {
         let mut socket = self.socket().lock().await;
 
         socket
@@ -247,11 +238,7 @@ impl RatmanIpcExtV1 for RatmanIpc {
         }
     }
 
-    async fn addr_down(
-        self: &Arc<Self>,
-        auth: crate::types::AddrAuth,
-        addr: crate::types::Address,
-    ) -> crate::Result<()> {
+    async fn addr_down(self: &Arc<Self>, auth: AddrAuth, addr: Address) -> crate::Result<()> {
         let mut socket = self.socket().lock().await;
 
         socket
@@ -276,12 +263,12 @@ impl RatmanIpcExtV1 for RatmanIpc {
 
     async fn contact_add(
         self: &Arc<Self>,
-        _auth: crate::types::AddrAuth,
-        _addr: crate::types::Address,
+        _auth: AddrAuth,
+        _addr: Address,
         _note: Option<String>,
         _tags: BTreeMap<String, String>,
         _trust: u8,
-    ) -> crate::Result<crate::types::Ident32> {
+    ) -> crate::Result<Ident32> {
         todo!(
             "This API endpoint is unimplemented in {}",
             version_str(&crate::api::VERSION)
@@ -290,17 +277,17 @@ impl RatmanIpcExtV1 for RatmanIpc {
 
     async fn contact_modify(
         self: &Arc<Self>,
-        _auth: crate::types::AddrAuth,
+        _auth: AddrAuth,
 
         // Selection filter section
-        _addr_filter: Vec<crate::types::Address>,
+        _addr_filter: Vec<Address>,
         _note_filter: Option<String>,
         _tags_filter: BTreeMap<String, String>,
 
         // Modification section
-        _note_modify: crate::types::Modify<String>,
-        _tags_modify: crate::types::Modify<(String, String)>,
-    ) -> crate::Result<Vec<crate::types::Ident32>> {
+        _note_modify: Modify<String>,
+        _tags_modify: Modify<(String, String)>,
+    ) -> crate::Result<Vec<Ident32>> {
         todo!(
             "This API endpoint is unimplemented in {}",
             version_str(&crate::api::VERSION)
@@ -309,8 +296,8 @@ impl RatmanIpcExtV1 for RatmanIpc {
 
     async fn contact_delete(
         self: &Arc<Self>,
-        _auth: crate::types::AddrAuth,
-        _addr: crate::types::Address,
+        _auth: AddrAuth,
+        _addr: Address,
     ) -> crate::Result<()> {
         todo!(
             "This API endpoint is unimplemented in {}",
@@ -320,9 +307,9 @@ impl RatmanIpcExtV1 for RatmanIpc {
 
     async fn subs_available(
         self: &Arc<Self>,
-        auth: crate::types::AddrAuth,
-        addr: crate::types::Address,
-    ) -> crate::Result<Vec<crate::types::Ident32>> {
+        auth: AddrAuth,
+        addr: Address,
+    ) -> crate::Result<Vec<Ident32>> {
         let mut socket = self.socket().lock().await;
         socket
             .write_microframe(
@@ -348,9 +335,9 @@ impl RatmanIpcExtV1 for RatmanIpc {
 
     async fn subs_create(
         self: &Arc<Self>,
-        auth: crate::types::AddrAuth,
-        addr: crate::types::Address,
-        recipient: crate::types::Recipient,
+        auth: AddrAuth,
+        addr: Address,
+        recipient: Recipient,
     ) -> crate::Result<crate::api::SubscriptionHandle> {
         let mut socket = self.socket().lock().await;
         socket
@@ -386,9 +373,9 @@ impl RatmanIpcExtV1 for RatmanIpc {
 
     async fn subs_restore(
         self: &Arc<Self>,
-        auth: crate::types::AddrAuth,
-        addr: crate::types::Address,
-        req_sub_id: crate::types::Ident32,
+        auth: AddrAuth,
+        addr: Address,
+        req_sub_id: Ident32,
     ) -> crate::Result<SubscriptionHandle> {
         let mut socket = self.socket().lock().await;
         socket
@@ -432,9 +419,9 @@ impl RatmanIpcExtV1 for RatmanIpc {
 
     async fn subs_delete(
         self: &Arc<Self>,
-        auth: crate::types::AddrAuth,
-        addr: crate::types::Address,
-        sub_id: crate::types::Ident32,
+        auth: AddrAuth,
+        addr: Address,
+        sub_id: Ident32,
     ) -> crate::Result<()> {
         let mut socket = self.socket().lock().await;
         socket
@@ -511,8 +498,8 @@ impl RatmanStreamExtV1 for RatmanIpc {
     /// for the receiving client.
     async fn send_to<I: AsyncRead + Unpin + Send>(
         self: &Arc<Self>,
-        auth: crate::types::AddrAuth,
-        letterhead: crate::types::LetterheadV1,
+        auth: AddrAuth,
+        letterhead: LetterheadV1,
         data_reader: I,
     ) -> crate::Result<()> {
         let plen = letterhead.payload_length;
@@ -560,8 +547,8 @@ impl RatmanStreamExtV1 for RatmanIpc {
     /// Most of the Letterhead
     async fn send_many<I: AsyncRead + Unpin + Send>(
         self: &Arc<Self>,
-        auth: crate::types::AddrAuth,
-        letterheads: Vec<crate::types::LetterheadV1>,
+        auth: AddrAuth,
+        letterheads: Vec<LetterheadV1>,
         data_reader: I,
     ) -> crate::Result<()> {
         Ok(())
@@ -570,10 +557,10 @@ impl RatmanStreamExtV1 for RatmanIpc {
     /// Block this task/ socket to wait for a single incoming message stream
     async fn recv_one<'s>(
         self: &'s Arc<Self>,
-        auth: crate::types::AddrAuth,
-        addr: crate::types::Address,
-        to: crate::types::Recipient,
-    ) -> crate::Result<(crate::types::LetterheadV1, ReadStream<'s>)> {
+        auth: AddrAuth,
+        addr: Address,
+        to: Recipient,
+    ) -> crate::Result<(LetterheadV1, ReadStream<'s>)> {
         let mut socket = self.socket().lock().await;
         socket
             .write_microframe(
@@ -593,13 +580,13 @@ impl RatmanStreamExtV1 for RatmanIpc {
     /// Return an iterator over a stream of letterheads and read streams
     async fn recv_many<'s, I>(
         self: &'s Arc<Self>,
-        auth: crate::types::AddrAuth,
-        addr: crate::types::Address,
-        to: crate::types::Recipient,
+        auth: AddrAuth,
+        addr: Address,
+        to: Recipient,
         num: u32,
     ) -> crate::Result<I>
     where
-        I: Iterator<Item = (crate::types::LetterheadV1, ReadStream<'s>)>,
+        I: Iterator<Item = (LetterheadV1, ReadStream<'s>)>,
     {
         // let mut socket = self.socket().lock().await;
         // socket
