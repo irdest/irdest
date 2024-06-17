@@ -7,6 +7,7 @@ use libratman::{
 use std::{collections::BTreeMap, env, path::PathBuf};
 
 pub struct BaseArgs {
+    pub identity_path: String,
     pub identity_data: Result<(Address, AddrAuth)>,
     pub out_fmt: OutputFormat,
     pub profile: Result<String>,
@@ -51,10 +52,11 @@ pub fn parse_base_args(m: &ArgMatches) -> BaseArgs {
         match out_fmt {
             OutputFormat::Lines => {
                 let mut lines = s.lines();
-                Ok((
-                    Address::from_string(&lines.next().unwrap().to_string()),
-                    AddrAuth::from_string(&lines.next().unwrap().to_string()),
-                ))
+
+                let addr = lines.next().unwrap().split("=").last().unwrap().to_string();
+                let auth = lines.next().unwrap().split("=").last().unwrap().to_string();
+
+                Ok((Address::from_string(&addr), AddrAuth::from_string(&auth)))
             }
             OutputFormat::Json => {
                 let mut map: BTreeMap<String, String> = serde_json::from_str(s.as_str()).unwrap();
@@ -76,9 +78,19 @@ pub fn parse_base_args(m: &ArgMatches) -> BaseArgs {
     let quiet = m.contains_id("quiet");
 
     BaseArgs {
+        identity_path: identity_file_path,
         identity_data,
         out_fmt,
         profile,
         quiet,
     }
+}
+
+pub struct IdentityFile {
+    addr: Address,
+    auth: AddrAuth,
+}
+
+pub async fn write_new_identity(new_id: IdentityFile) -> Result<()> {
+    Ok(())
 }

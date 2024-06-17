@@ -23,13 +23,13 @@ fn setup_cli() -> Command {
         .subcommand_required(true)
         .args(
             [
-                Arg::new("api_bind")
+                Arg::new("api-bind")
                     .action(ArgAction::Set)
                     .help("Override the default client API socket address")
                     .short('b')
                     .long("bind")
                     .default_value("127.0.0.1:5852"),
-                Arg::new("cid")
+                Arg::new("curr-id")
                     .action(ArgAction::Set)
                     .help("Specify the path for the current identity")
                     .short('i')
