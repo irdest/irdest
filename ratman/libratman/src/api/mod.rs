@@ -502,7 +502,7 @@ impl RatmanStreamExtV1 for RatmanIpc {
         letterhead: LetterheadV1,
         data_reader: I,
     ) -> crate::Result<()> {
-        let plen = letterhead.payload_length;
+        let plen = letterhead.stream_size;
         let chunk_size = if plen < 1024 {
             plen
         } else if plen > 1024 && plen < (1024 * 32) {

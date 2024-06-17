@@ -20,7 +20,7 @@ use libratman::{
         task::spawn_local,
     },
     types::{Ident32, InMemoryEnvelope, LetterheadV1, Neighbour, Recipient},
-    RatmanError, Result,
+    NonfatalError, RatmanError, Result,
 };
 use std::sync::Arc;
 use tripwire::Tripwire;
@@ -165,7 +165,11 @@ pub(crate) async fn dispatch_frame(
     let EpNeighbourPair(epid, nb) = match routes.resolve(target_address).await {
         // Return the endpoint/target ID pair from the resolver
         Some(resolve) => resolve,
-        None => return Err(RatmanError::NoSuchAddress(target_address)),
+        None => {
+            return Err(RatmanError::Nonfatal(NonfatalError::UnknownAddress(
+                target_address,
+            )))
+        }
     };
 
     let (_, ep) = drivers.get(epid as usize).await;

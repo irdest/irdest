@@ -35,21 +35,31 @@ pub async fn start_api_thread(
     senders: Arc<SenderSystem>,
 ) -> Result<()> {
     new_async_thread("ratmand-api-acceptor", 1024, async move {
+        info!("Listening to API socket on {addr}");
         let l = TcpListener::bind(addr).await?;
 
         while let Ok((stream, client_addr)) = l.accept().await {
+            let client_id = Ident32::random();
+            debug!("Accepted new api client {}", client_id.pretty_string());
+
             let jh = spawn_local(run_client_handler(
                 Arc::clone(&context),
                 Arc::clone(&senders),
                 stream,
+                client_id,
             ));
+
+            let ctx = Arc::clone(&context);
             spawn_local(async move {
                 let res = jh
                     .into_future()
                     .await
                     .expect("failed to join `run_client_handler` future");
+
+                // Remove the client here, no matter what the runner task does
+                ctx.clients.lock_inner().await.remove(&client_id);
                 match res {
-                    Ok(()) => info!("Client {client_addr:?} has disconnected gracefully!"),
+                    Ok(()) => debug!("Client {client_addr:?} has disconnected gracefully!"),
                     Err(e) => error!("error occured while handling client connection: {e}"),
                 }
             });
@@ -64,9 +74,9 @@ pub async fn run_client_handler(
     ctx: Arc<RatmanContext>,
     senders: Arc<SenderSystem>,
     stream: TcpStream,
+    client_id: Ident32,
 ) -> Result<()> {
     let mut raw_socket = handshake(stream).await?;
-    let client_id = Ident32::random();
 
     // Add a new client entry for this session
     ctx.clients
@@ -111,7 +121,5 @@ pub async fn run_client_handler(
             }
         }
     }
-
-    ctx.clients.lock_inner().await.remove(&client_id);
     Ok(())
 }

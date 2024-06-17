@@ -8,21 +8,16 @@
 //! Most likely you will want to simply call `new_async_thread(...)`
 
 use crate::Result;
-use once_cell::sync::Lazy;
 use std::{
-    collections::VecDeque,
     future::Future,
     sync::{
         mpsc::{sync_channel, Receiver as SyncReceiver, SyncSender},
-        Arc, Mutex,
+        Arc,
     },
-    thread::JoinHandle,
-    time::Duration,
 };
 use tokio::{
     runtime::{Builder, Runtime},
-    task::{spawn_blocking, spawn_local, LocalSet},
-    time::timeout,
+    task::LocalSet,
 };
 
 pub mod reader;

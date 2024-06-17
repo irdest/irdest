@@ -109,7 +109,7 @@ async fn test_block_walker() {
     let letterhead = LetterheadV1 {
         from: Address::random(),
         to: Recipient::Address(Address::random()),
-        payload_length: content.len() as u64,
+        stream_size: content.len() as u64,
         auxiliary_data: vec![],
     };
 

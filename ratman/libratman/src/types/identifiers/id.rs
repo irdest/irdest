@@ -4,7 +4,7 @@
 
 use crate::{
     types::{error::UserError, identifiers::ID_LEN},
-    RatmanError,
+    EncodingError, RatmanError,
 };
 use serde::{
     de::{Deserializer, SeqAccess, Visitor},
@@ -445,5 +445,32 @@ mod test {
     #[cfg(not(features = "aligned"))]
     fn sized() {
         assert_eq!(super::ID_LEN, 32);
+    }
+}
+
+impl TryFrom<&[u8]> for Ident32 {
+    type Error = RatmanError;
+    fn try_from(value: &[u8]) -> core::result::Result<Self, Self::Error> {
+        Self::try_from_bytes(value)
+    }
+}
+
+impl TryFrom<&str> for Ident32 {
+    type Error = RatmanError;
+    fn try_from(values: &str) -> core::result::Result<Self, Self::Error> {
+        Ident32::try_from_bytes(
+            values
+                .split("-")
+                .map(|chunk| {
+                    hex::decode(chunk)
+                        .map_err(EncodingError::from)
+                        .map_err(RatmanError::from)
+                })
+                .collect::<crate::Result<Vec<Vec<u8>>>>()?
+                .into_iter()
+                .flatten()
+                .collect::<Vec<u8>>()
+                .as_slice(),
+        )
     }
 }

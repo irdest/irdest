@@ -14,7 +14,7 @@ use crate::{
 };
 use futures::ready;
 use tokio::{
-    io::{AsyncBufRead, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt},
+    io::{AsyncBufRead, AsyncWrite, AsyncWriteExt},
     net::{tcp::OwnedReadHalf, TcpStream},
 };
 use tokio_util::compat::{Compat, TokioAsyncReadCompatExt};
@@ -47,7 +47,7 @@ impl RawSocketHandle {
     }
 
     pub fn from_compat(&mut self, c: Compat<TcpStream>) {
-        core::mem::replace(&mut self.stream, Some(c.into_inner()));
+        let _ = core::mem::replace(&mut self.stream, Some(c.into_inner()));
     }
 
     pub fn stream(&mut self) -> &mut TcpStream {

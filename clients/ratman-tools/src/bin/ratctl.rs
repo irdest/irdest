@@ -2,23 +2,23 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use std::{collections::BTreeMap, env, fs::File, io::Read, path::PathBuf, sync::Arc};
-
 use clap::{arg, Arg, ArgAction, ArgMatches, Command};
 use libratman::{
-    api::{RatmanIpc, RatmanIpcExtV1},
-    tokio::{self, fs::read_to_string},
-    types::{AddrAuth, Address, Ident32},
-    ClientError, EncodingError, RatmanError, Result,
+    api::{default_api_bind, RatmanIpc, RatmanIpcExtV1},
+    types::error::UserError,
+    RatmanError, Result,
 };
-use serde::{Deserialize, Serialize};
-// use libratman::client::{Address, RatmanIpc};
+use ratman_tools::{
+    base_args::{parse_base_args, BaseArgs},
+    command_filter, tokio_runtime,
+};
+use std::{env, net::SocketAddr, str::FromStr};
 
 fn setup_cli() -> Command {
     Command::new("ratctl")
         .version(env!("CARGO_PKG_VERSION"))
-        .about("Command line management interface for Ratman, the decentralised mesh router")
-        .after_help("By default ratcat stores local address information in ~/.config/ratcat/id")
+        .about("Ratman management CLI for addresses, stream subscriptions, and more")
+        .after_help("For more documentation, please consult the user manual at https://docs.irde.st/user/")
         .max_term_width(110)
         .subcommand_required(true)
         .args(
@@ -52,7 +52,7 @@ fn setup_cli() -> Command {
             ]
         )
         .subcommands([
-            Command::new("idpath"),
+            Command::new("idpath").about("Print the currently selected identity"),
             //// \^-^/ Address management commands
             ////
             //// Addresses can be created and destroyed easily.
@@ -94,57 +94,6 @@ fn setup_cli() -> Command {
                     Command::new("list")
                         .about("List available local addresses")
                 ]),
-            //// \^-^/ Contact management commands
-            ////
-            //// The contact book contains "virtual data", meaning
-            //// associations of metadata for network addresses.  To
-            //// make it easier to remember your friends on the
-            //// network you can store personal notes on addresses you
-            //// encounter.
-            // Command::new("contact")
-            //     .about("Manage a private identity contact book, allowing for custom notes and tags")
-            //     .arg_required_else_help(true)
-            //     .subcommands([
-            //         Command::new("add")
-            //             .about("Add a new contact with optional filter data")
-            //             .args([
-            //                 Arg::new("address")
-            //                     .help("peer address to save as contact")
-            //                     .action(ArgAction::Set),
-            //                 Arg::new("note")
-            //                     .short('n')
-            //                     .help("Add a searchable note")
-            //                     .action(ArgAction::Set),
-            //                 Arg::new("tags")
-            //                     .short('t')
-            //                     .help("Add a set of searchable tags in the format '<key>=<val>'")
-            //                     .action(ArgAction::Append),
-            //                 Arg::new("trust")
-            //                     .short('u')
-            //                     .help("Set a custom trust level from 1 to 7")
-            //                     .action(ArgAction::Set)
-            //             ]),
-            //         Command::new("delete")
-            //             .about("Delete existing contact entries via filters")
-            //             .args([
-            //                 Arg::new("address")
-            //                     .help("peer address to save as contact")
-            //                     .action(ArgAction::Set),
-            //                 Arg::new("note")
-            //                     .short('n')
-            //                     .help("Add a searchable note")
-            //                     .action(ArgAction::Set),
-            //                 Arg::new("tags")
-            //                     .short('t')
-            //                     .help("Add a set of searchable tags in the format '<key>=<val>'")
-            //                     .action(ArgAction::Append),
-            //                 Arg::new("trust")
-            //                     .short('u')
-            //                     .help("Set a custom trust level from 1 to 7")
-            //                     .action(ArgAction::Set)
-            //             ])
-            //     ]),
-
             //// =^-^= Stream subscriptions & more
             ////
             //// A subscription listens to all incoming messages for a given
@@ -225,349 +174,63 @@ fn setup_cli() -> Command {
                                 .action(ArgAction::Set)
                         ]),
                 ]),
-            // Command::new("peer").about("List and query peers")
-            //     .arg_required_else_help(true)
-            //     .subcommands([
-            //         Command::new("query")
-            //             .about("Search for a specific peer via a query")
-            //             .args([
-            //                 Arg::new("by note")
-            //                     .short('n')
-            //                     .action(ArgAction::Set)
-            //                     .help("String search of contact notes"),
-            //                 Arg::new("by tag")
-            //                     .short('t')
-            //                     .action(ArgAction::Set)
-            //                     .help("Filter by a matching tag in the format '<key>=<val>'"),
-            //                 Arg::new("trust above")
-            //                     .long("tr-above")
-            //                     .action(ArgAction::Set)
-            //                     .help("Filter by a trust level higher (or equal) to the provided"),
-            //                 Arg::new("trust below")
-            //                     .long("tr-below")
-            //                     .action(ArgAction::Set)
-            //                     .help("Filter by a trust level below the provided")
-            //             ]),
-            //         Command::new("list")
-            //             .about("List and browse all available peers")
-            //             .arg(
-            //                 Arg::new("interactive")
-            //                     .short('i')
-            //                     .help("Capture the terminal and provide an interactive address browser")
-            //                     .action(ArgAction::SetTrue)
-            //             ),
-            //     ]),
-            // Command::new("link")
-            //     .about("Manage network links (netmods)")
-            //     .before_help("Adding new netmods during runtime is not yet implemented.")
-            //     .arg_required_else_help(true)
-            //     .subcommands([
-            //         Command::new("list")
-            //             .about("List currently available netmod links"),
-            //         Command::new("up")
-            //             .about("Mark the given link as online"),
-            //         Command::new("down")
-            //             .about("Mark the given link as offline"),
-            //     ]),
         ])
         .after_help(
             "For more documentation, please consult the user manual at https://docs.irde.st/user/",
         )
 }
 
-// async fn connect_ipc(bind: &str) -> Result<RatmanIpc, Box<dyn std::error::Error>> {
-//     eprint//         ArCommand::new("")g::with_name("NAMESPACE")subcommandsln!("Connecting to IPC backend...");
-//     Ok(RatmanIpc::anonymous(bind).await?)
-// }
+async fn run_program(m: ArgMatches, base_args: BaseArgs) -> Result<()> {
+    let api_bind = m.get_one::<String>("api-bind").map(|provided| {
+        SocketAddr::from_str(provided.as_str()).map_err(|parse_err| {
+            RatmanError::User(UserError::InvalidInput(
+                format!("Provided socket address could not be parsed: {}", parse_err),
+                None,
+            ))
+        })
+    });
 
-// async fn get_peers(ipc: &RatmanIpc) -> Result<Vec<Address>, Box<dyn std::error::Error>> {
-//     Ok(ipc.get_peers().await?)
-// }
-
-async fn run_command(
-    ipc: Arc<RatmanIpc>,
-    identity_data: Option<(Address, AddrAuth)>,
-    output_format: &OutputFormat,
-    subcommand: &str,
-    args: &ArgMatches,
-) -> Result<String> {
-    match subcommand {
-        "addr" => {
-            if let Some((subsub, matches)) = args.subcommand() {
-                match subsub {
-                    "create" => {
-                        
-
-                        
-
-
-                    }
-                    "up" if identity_data.is_some() => {
-                        let (addr, auth) = identity_data.unwrap();
-                        ipc.addr_up(auth, addr).await?;
-                        return Ok(reply_ok(&output_format));
-                    }
-                    "down" if identity_data.is_some() => {
-                        let (addr, auth) = identity_data.unwrap();
-                        ipc.addr_down(auth, addr).await?;
-                        return Ok(reply_ok(&output_format));
-                    }
-                    "destroy" if identity_data.is_some() => {
-                        let (addr, auth) = identity_data.unwrap();
-                        ipc.addr_destroy(auth, addr, true).await?;
-                        return Ok(reply_ok(&output_format));
-                    }
-                    "list" => {
-                        let addrs_list = ipc.addr_list().await?;
-                        match output_format {
-                            OutputFormat::Json => {
-                                return Ok(serde_json::to_string(&addrs_list)?);
-                            }
-                            OutputFormat::Lines => {
-                                return Ok(format!(
-                                    "{}",
-                                    addrs_list
-                                        .into_iter()
-                                        .map(|x| x.pretty_string())
-                                        .collect::<Vec<_>>()
-                                        .join("\n")
-                                ));
-                            }
-                        }
-                    }
-                    _ => {}
-                }
-            }
+    let ratmand_socket = match api_bind {
+        Some(socket) => socket?,
+        None => {
+            eprintln!("Selected default socket location: {}", default_api_bind());
+            default_api_bind()
         }
-        "stream" => {
-            if let Some((subsub, submatches)) = args.subcommand() {
-                match subsub {
-                    "sub" if identity_data.is_some() => {
-                        let (addr, auth) = identity_data.unwrap();
-                        let addr_ = submatches.get_one::<String>("address");
-                        let space = submatches.get_one::<String>("namespace");
+    };
 
-                        let mut subs_handle = match (addr_, space) {
-                            (Some(addr_), None) => {
-                                ipc.subs_create(
-                                    auth,
-                                    addr,
-                                    libratman::types::Recipient::Address(Address::from_string(
-                                        addr_,
-                                    )),
-                                )
-                                .await?
-                            }
-                            (None, Some(space)) => {
-                                ipc.subs_create(
-                                    auth,
-                                    addr,
-                                    libratman::types::Recipient::Namespace(Address::from_string(
-                                        space,
-                                    )),
-                                )
-                                .await?
-                            }
-                            _ => {
-                                libratman::elog(
-                                    "must only provide either '--addr' or '--space'",
-                                    2,
-                                );
-                            }
-                        };
+    let ipc = RatmanIpc::start(ratmand_socket).await?;
 
-                        // Since this program is about to shut down, we must
-                        // print enough information so the user can spawn their
-                        // own subscriber.
-                        let sub_socket = subs_handle.peer_info();
-                        let sub_id = subs_handle.sub_id();
-                        match output_format {
-                            OutputFormat::Json => {
-                                return Ok(format!(
-                                    "{}",
-                                    serde_json::to_string(
-                                        &vec![
-                                            ("sub_id", sub_id.to_string()),
-                                            ("socket", sub_socket)
-                                        ]
-                                        .into_iter()
-                                        .collect::<BTreeMap<&'static str, String>>(),
-                                    )
-                                    .unwrap()
-                                ));
-                            }
-                            OutputFormat::Lines => {
-                                return Ok(format!(
-                                    "sub_id={}\nsub_socket={}",
-                                    sub_id.to_string(),
-                                    sub_socket
-                                ));
-                            }
-                        }
-                    }
-                    "list" if identity_data.is_some() => {
-                        let (addr, auth) = identity_data.unwrap();
-                        let subs = ipc.subs_available(auth, addr).await?;
-                        match output_format {
-                            OutputFormat::Json => {
-                                return Ok(format!(
-                                    "{}",
-                                    serde_json::to_string(
-                                        &subs
-                                            .into_iter()
-                                            .map(|sub_id| sub_id.to_string())
-                                            .collect::<Vec<String>>()
-                                    )
-                                    .unwrap()
-                                ));
-                            }
-                            OutputFormat::Lines => {
-                                return Ok(subs
-                                    .into_iter()
-                                    .map(|sub_id| sub_id.to_string())
-                                    .collect::<Vec<String>>()
-                                    .join("\n"));
-                            }
-                        }
-                    }
-                    "unsub" if identity_data.is_some() => {
-                        let (addr, auth) = identity_data.unwrap();
-                        let sub_id = submatches
-                            .get_one::<String>("sub_id")
-                            .ok_or(RatmanError::Encoding(EncodingError::NoData))?;
-                        ipc.subs_delete(auth, addr, Ident32::from_string(sub_id))
-                            .await?;
-                        return Ok(reply_ok(&output_format));
-                    }
-                    "resub" if identity_data.is_some() => {
-                        let (addr, auth) = identity_data.unwrap();
-                        let sub_id = submatches
-                            .get_one::<String>("sub_id")
-                            .ok_or(RatmanError::Encoding(EncodingError::NoData))?;
-
-                        let mut subs_handle = ipc
-                            .subs_restore(auth, addr, Ident32::from_string(sub_id))
-                            .await?;
-
-                        // Since this program is about to shut down, we must
-                        // print enough information so the user can spawn their
-                        // own subscriber.
-                        let sub_socket = subs_handle.peer_info();
-                        let sub_id = subs_handle.sub_id();
-                        match output_format {
-                            OutputFormat::Json => {
-                                return Ok(format!(
-                                    "{}",
-                                    serde_json::to_string(
-                                        &vec![
-                                            ("sub_id", sub_id.to_string()),
-                                            ("socket", sub_socket)
-                                        ]
-                                        .into_iter()
-                                        .collect::<BTreeMap<&'static str, String>>(),
-                                    )
-                                    .unwrap()
-                                ));
-                            }
-                            OutputFormat::Lines => {
-                                return Ok(format!(
-                                    "sub_id={}\nsocket={}",
-                                    sub_id.to_string(),
-                                    sub_socket
-                                ));
-                            }
-                        }
-                    }
-                    _ => {}
-                }
-            }
-        }
-        "status" => {}
-        _ => {}
-    }
-
-    Ok("Nothing was done".into())
+    command_filter(&ipc, base_args, m).await
 }
 
-#[tokio::main]
-async fn main() {
-    let cli = setup_cli();
-    let m = cli.get_matches();
+fn main() {
+    let r = tokio_runtime();
 
-    let ipc = match libratman::api::RatmanIpc::start(libratman::api::default_api_bind()).await {
-        Ok(ipc) => ipc,
-        Err(e) => {
-            eprintln!("failed to setup ratmand IPC session: {e}");
-            std::process::exit(2);
-        }
-    };
+    r.block_on(async {
+        let cli = setup_cli();
+        let m = cli.get_matches();
+        let base_args = parse_base_args(&m);
+        let quiet = base_args.quiet;
 
-    let output_format: String = m
-        .get_one("output-format")
-        .unwrap_or(&"lines".to_owned())
-        .to_string();
-
-    let profile: &String = m.get_one("profile").unwrap();
-
-    let identity_file_path: String = m
-        .get_one::<String>("cid")
-        .map(|x| x.to_string())
-        .unwrap_or_else(|| {
-            env::var("XDG_CONFIG_HOME")
-                .map(|config_home| {
-                    PathBuf::new()
-                        .join(config_home)
-                        .join("ratcat")
-                        .join(&profile)
-                })
-                .expect("Must set XDG_CONFIG_HOME")
-                .to_str()
-                .unwrap()
-                .to_string()
-        });
-
-    let out_f = match output_format.as_str() {
-        "lines" => &OutputFormat::Lines,
-        "json" => &OutputFormat::Json,
-        _ => unreachable!(),
-    };
-
-    let identity_data = (|| -> Result<(Address, AddrAuth)> {
-        let mut f = File::open(identity_file_path.clone())?;
-        let mut s = String::new();
-        f.read_to_string(&mut s)?;
-
-        match out_f {
-            OutputFormat::Lines => {
-                let mut lines = s.lines();
-                Ok((
-                    Address::from_string(&lines.next().unwrap().to_string()),
-                    AddrAuth::from_string(&lines.next().unwrap().to_string()),
-                ))
+        match run_program(m, base_args).await {
+            Ok(()) => {
+                if !quiet {
+                    eprintln!("ratcctl completed successfully");
+                }
+                std::process::exit(0);
             }
-            OutputFormat::Json => {
-                let mut map: BTreeMap<String, String> = serde_json::from_str(s.as_str()).unwrap();
-                Ok((
-                    Address::from_string(&map.remove("addr").unwrap()),
-                    AddrAuth::from_string(&map.remove("auth").unwrap()),
-                ))
+            Err(RatmanError::User(u)) => {
+                eprintln!("You did it wrong: {u}");
+                std::process::exit(1);
             }
-        }
-    })();
-
-    if let Some((cmd, matches)) = m.subcommand() {
-        if cmd == "idpath" {
-            println!("{identity_file_path}");
-            return;
-        }
-
-        match run_command(ipc, identity_data.ok(), out_f, cmd, matches).await {
-            Ok(output) => {
-                println!("{output}");
+            Err(RatmanError::ClientApi(c)) => {
+                eprintln!("Client-Router communication error: {c}");
+                std::process::exit(2);
             }
             Err(e) => {
-                eprintln!("Failed: {e}");
+                eprintln!("ratcat encountered an error: {e}");
+                std::process::exit(2);
             }
         }
-    }
+    });
 }

@@ -73,7 +73,7 @@ impl SubscriptionHandle {
             .curr_stream
             .as_ref()
             .ok_or(RatmanError::Nonfatal(NonfatalError::NoStream))?;
-        let bytes_left = lh.payload_length as usize - self.read_from_stream;
+        let bytes_left = lh.stream_size as usize - self.read_from_stream;
 
         if buf.len() > bytes_left {
             let mut local_buf = vec![0; bytes_left];

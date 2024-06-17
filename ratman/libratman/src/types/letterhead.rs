@@ -33,7 +33,7 @@ pub struct LetterheadV1 {
     /// read in one go (via the `Chunk<T>` api), while larger stream sizes
     /// should most likely be read in multiple chunks to avoid the client
     /// running out of memory.
-    pub payload_length: u64,
+    pub stream_size: u64,
     /// Optional set of key-value attributes
     ///
     /// These can radically change the sending behaviour of your
@@ -47,14 +47,14 @@ impl LetterheadV1 {
         Self {
             from,
             to,
-            payload_length,
+            stream_size: payload_length,
             auxiliary_data: vec![],
         }
     }
 
     pub fn digest(&self) -> Ident32 {
         let mut plen_buf = vec![];
-        self.payload_length.generate(&mut plen_buf).unwrap();
+        self.stream_size.generate(&mut plen_buf).unwrap();
 
         let pl_len: &[u8] = plen_buf.as_slice();
 
@@ -130,7 +130,7 @@ impl FrameGenerator for LetterheadV1 {
 
         self.from.generate(buf)?;
         Some(self.to).generate(buf)?;
-        self.payload_length.generate(buf)?;
+        self.stream_size.generate(buf)?;
         generate_cstring_tuple_vec(self.auxiliary_data, buf)?;
         Ok(())
     }
@@ -150,7 +150,7 @@ impl FrameParser for LetterheadV1 {
             auxiliary_data.map(|auxiliary_data| Self {
                 from,
                 to: to.unwrap(),
-                payload_length,
+                stream_size: payload_length,
                 auxiliary_data,
             }),
         ))

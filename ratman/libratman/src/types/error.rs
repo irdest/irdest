@@ -4,9 +4,11 @@
 
 use crate::types::Address;
 use async_eris::BlockReference;
+use hex::FromHexError;
 use serde::{Deserialize, Serialize};
-use std::{ffi::CString, net::AddrParseError};
+use std::{ffi::CString, fmt::Display, net::AddrParseError};
 use tokio::{io, time::error::Elapsed};
+use tracing::Dispatch;
 
 use super::{Ident32, InMemoryEnvelope};
 
@@ -59,7 +61,7 @@ pub enum RatmanError {
     // UnixSystem(#[from] nix::errno::Errno),
     #[error("failed to acquire state directory lock")]
     StateDirectoryAlreadyLocked,
-    #[error("User input was invalid: {0}")]
+    #[error("{0}")]
     User(#[from] UserError),
     // #[error("failed to de-sequence a series of frames")]
     // DesequenceFault,
@@ -94,6 +96,8 @@ pub enum NonfatalError {
     OngoingStream,
     #[error("no stream is in progress")]
     NoStream,
+    #[error("requested address {0} is unknown")]
+    UnknownAddress(Address),
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -113,6 +117,14 @@ pub enum EncodingError {
     FrameTooLarge(usize),
     #[error("provided buffer did not contain any data")]
     NoData,
+    #[error("provided data could not be hex-decoded")]
+    InvalidHexEncoding(String),
+}
+
+impl From<FromHexError> for EncodingError {
+    fn from(hex: FromHexError) -> Self {
+        Self::InvalidHexEncoding(hex.to_string())
+    }
 }
 
 // fixme? shouldn't this be implemented for RatmanError
@@ -184,7 +196,7 @@ pub enum ClientError {
 }
 
 /// Any error that can occur when interacting with a netmod driver
-#[derive(Clone, Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum NetmodError {
     #[error("the requested operation is not supported by the netmod")]
     NotSupported,
@@ -211,7 +223,7 @@ impl From<AddrParseError> for NetmodError {
     }
 }
 
-#[derive(thiserror::Error, Debug)]
+#[derive(thiserror::Error, Clone, Debug)]
 pub enum MicroframeError {
     #[error("invalid mode: (ns: {0}, op: {1})")]
     InvalidMode(u8, u8),
@@ -225,6 +237,24 @@ pub enum MicroframeError {
 
 #[derive(thiserror::Error, Debug)]
 pub enum UserError {
-    #[error("invalid input '{0:?}', expected '{1:?}'")]
     InvalidInput(String, Option<String>),
+    MissingInput(String),
+}
+
+// We manually implement Display for the user error to include some more
+// specific output, considering these messages are shown to end-users.
+use core::fmt;
+impl fmt::Display for UserError {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            w,
+            "{}",
+            match self {
+                Self::InvalidInput(got, Some(expected)) =>
+                    format!("got invalid input '{got}' (expected '{expected}')"),
+                Self::InvalidInput(got, None) => format!("got invalid input '{got}'"),
+                Self::MissingInput(expected) => format!("required input '{expected}' was missing"),
+            }
+        )
+    }
 }

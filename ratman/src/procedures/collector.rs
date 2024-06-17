@@ -22,7 +22,7 @@ use libratman::{
         task::{self, spawn_blocking},
     },
     types::{Ident32, InMemoryEnvelope, SequenceIdV1},
-    EncodingError, RatmanError, Result,
+    BlockError, EncodingError, RatmanError, Result,
 };
 use std::{collections::BTreeMap, sync::Arc};
 
@@ -197,10 +197,12 @@ impl BlockCollector {
         env: InMemoryEnvelope,
         block_bcast: BcastSender<BlockNotifier>,
     ) -> Result<()> {
-        let sequence_id = env
-            .header
-            .get_seq_id()
-            .map_or(Err(RatmanError::DesequenceFault), |i| Ok(i))?;
+        let sequence_id =
+            env.header
+                .get_seq_id()
+                .ok_or(RatmanError::Encoding(EncodingError::Parsing(
+                    "Mandatory field 'sequence_id' was missing!".to_string(),
+                )))?;
         let _max_num = sequence_id.max;
 
         if let Ok(Some(mut block_meta)) = self.meta_db.incomplete.get(&sequence_id.hash.to_string())

@@ -24,7 +24,7 @@ use libratman::{
         task::{self, spawn_local},
     },
     types::{AddrAuth, Address, Ident32},
-    RatmanError, Result,
+    NonfatalError, RatmanError, Result,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -120,7 +120,7 @@ impl Protocol {
             .lock()
             .await
             .remove(&addr)
-            .map_or(Err(RatmanError::NoSuchAddress(addr)), |_| Ok(()))?;
+            .ok_or(RatmanError::Nonfatal(NonfatalError::UnknownAddress(addr)))?;
         Ok(())
     }
 }

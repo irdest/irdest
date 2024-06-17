@@ -576,7 +576,7 @@ pub(super) async fn single_session_exchange<'a>(
             let shared_key =
                 crypto::stream_diffie_hellman(letterhead.from, letterhead.to.inner_address()).await;
 
-            let chosen_block_size = match letterhead.payload_length {
+            let chosen_block_size = match letterhead.stream_size {
                 m if m < (16 * 1024) => async_eris::BlockSize::_1K,
                 _ => async_eris::BlockSize::_32K,
             };
@@ -643,7 +643,7 @@ pub(super) async fn single_session_exchange<'a>(
                 let shared_key =
                     crypto::stream_diffie_hellman(lh.from, lh.to.inner_address()).await;
 
-                let chosen_block_size = match lh.payload_length {
+                let chosen_block_size = match lh.stream_size {
                     m if m < (16 * 1024) => async_eris::BlockSize::_1K,
                     _ => async_eris::BlockSize::_32K,
                 };

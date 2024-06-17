@@ -15,7 +15,7 @@ use libratman::{
     frame::carrier::AnnounceFrameV1,
     tokio::sync::mpsc::channel,
     types::{Address, Ident32, Neighbour},
-    NetmodError, RatmanError, Result,
+    NetmodError, NonfatalError, RatmanError, Result,
 };
 use serde::{Deserialize, Serialize};
 use std::{collections::VecDeque, iter::FromIterator, sync::Arc};
@@ -53,7 +53,8 @@ pub(crate) async fn query_known(table: &Arc<RouteTable>, addr: Address, local: b
         table
             .resolve(addr)
             .await
-            .map_or(Err(RatmanError::NoSuchAddress(addr)), |_| Ok(()))
+            .map(|_| ())
+            .ok_or(RatmanError::Nonfatal(NonfatalError::UnknownAddress(addr)))
     }
 }
 
@@ -172,7 +173,7 @@ impl RouteTable {
         self.meta_db
             .addrs
             .get(&id.to_string())?
-            .ok_or(RatmanError::NoSuchAddress(id))
+            .ok_or(RatmanError::Nonfatal(NonfatalError::UnknownAddress(id)))
             .map(|_| ())
     }
 
