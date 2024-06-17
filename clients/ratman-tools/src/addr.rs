@@ -1,4 +1,4 @@
-use crate::{encode_list, encode_map, parse_ident32, reply_ok, base_args::BaseArgs};
+use crate::{base_args::BaseArgs, encode_list, encode_map, parse_ident32, reply_ok};
 use clap::ArgMatches;
 use libratman::{
     api::{RatmanIpc, RatmanIpcExtV1},

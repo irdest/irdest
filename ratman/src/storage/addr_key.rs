@@ -1,5 +1,5 @@
-use std::ffi::CString;
 use serde::{Deserialize, Serialize};
+use std::ffi::CString;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum AddressData {

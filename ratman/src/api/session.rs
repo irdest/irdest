@@ -593,7 +593,7 @@ pub(super) async fn single_session_exchange<'a>(
             crypto::end_stream(&ctx.meta_db, letterhead.from, letterhead.to.inner_address()).await;
 
             debug!("Block encoding complete");
-            
+
             match chosen_block_size {
                 BlockSize::_1K => {
                     senders

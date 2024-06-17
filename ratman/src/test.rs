@@ -20,7 +20,7 @@ fn create_address() {
         let ipc = RatmanIpc::start("127.0.0.1:5852".parse().unwrap())
             .await
             .unwrap();
-        let (addr, auth) = ipc.addr_create(None).await.unwrap();
+        let (addr, auth) = ipc.addr_create(None, None).await.unwrap();
 
         println!("Successfully registered new address {addr} and auth {auth:?}");
     });
