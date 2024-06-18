@@ -84,14 +84,15 @@ pub fn setup_cli() -> Command {
             Command::new("recv")
                 .about("Set your computer to receive files")
                 .args([
-                    Arg::new("to-address")
-                        .required(true)
-                        .action(ArgAction::Append)
-                        .help("Filter incoming message streams by the recipient address"),
-                    Arg::new("count")
+                    Arg::new("stream-count")
+                        .short('c')
                         .help("Set the number of message streams you want to receive")
                         .value_parser(value_parser!(u64))
                         .default_value("1"),
+                    Arg::new("to-address")
+                        .required(true)
+                        .action(ArgAction::Set)
+                        .help("Filter incoming message streams by the recipient address"),
                 ])
         ])
 }

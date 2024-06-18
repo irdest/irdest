@@ -145,7 +145,7 @@ pub(super) async fn single_session_exchange<'a>(
 
     ////////////////////////////////////////////////
 
-    debug!(
+    trace!(
         "given_auth: {} // expected_auth={:?}",
         header
             .auth
@@ -162,7 +162,6 @@ pub(super) async fn single_session_exchange<'a>(
         //
         // ;-; Client is breaking up with us, but at least it's not just a text
         m if m == cm::make(cm::INTRINSIC, cm::DOWN) => {
-            debug!("Client {client_id} disconnecting gracefully");
             return Ok(SessionResult::Drop);
         }
         //
@@ -241,13 +240,6 @@ pub(super) async fn single_session_exchange<'a>(
             // works then we store the provided authentication object in
             // "expected auth"
             expected_auth.insert(auth, addr_up.addr);
-            debug!(
-                "expected_auth={:?}",
-                expected_auth
-                    .iter()
-                    .map(|(k, v)| (k.token.pretty_string(), v.pretty_string()))
-                    .collect::<Vec<_>>()
-            );
 
             let ctx2 = Arc::clone(&ctx);
             spawn_local(async move {
@@ -454,11 +446,13 @@ pub(super) async fn single_session_exchange<'a>(
 
             let (tx, mut rx) = bcast_channel(1);
             ctx.clients.insert_sync_listener(recv_one.to, tx).await;
+            debug!("Blocking task on synchronous stream receiver");
 
             match rx.recv().await {
                 Ok((letterhead, read_cap)) => {
+                    debug!("Relaying stream to sync receiver: {letterhead:?}");
                     raw_socket
-                        .write_microframe(
+                        .write_microframe_debug(
                             MicroframeHeader {
                                 modes: cm::make(cm::RECV, cm::ONE),
                                 auth: Some(auth),
@@ -627,26 +621,26 @@ pub(super) async fn single_session_exchange<'a>(
         //
         // ^-^ Client wants to send a message to many recipients
         m if m == cm::make(cm::SEND, cm::MANY) => {
-            debug!(
-                "Handle send :: many request payload: {}",
-                header.payload_size
-            );
+            debug!("Handle send::many request payload: {}", header.payload_size);
 
             let SendMany { letterheads } = raw_socket
                 .read_payload::<SendMany>(header.payload_size)
                 .await??;
 
+            debug!("Receiving {letterheads:?}");
+
             let this_addr =
-                letterheads
+                dbg!(letterheads
                     .iter()
                     .map(|lh| lh.from)
                     .next()
                     .ok_or(RatmanError::ClientApi(ClientError::User(
                         UserError::MissingInput("No letterheads provided!".into()),
-                    )))?;
+                    ))))?;
 
+            debug!("Generated letterheads from {this_addr}");
             let auth = check_auth(&header, this_addr, expected_auth)?;
-            debug!("{client_id} Passed authentication on [send : one]");
+            debug!("{client_id} Passed authentication on [send : many]");
 
             let ctx = Arc::clone(&ctx);
             let senders = Arc::clone(senders);
@@ -654,7 +648,7 @@ pub(super) async fn single_session_exchange<'a>(
             let bind = send_sock_l.local_addr()?.to_string();
             let join = spawn_local(async move {
                 let (stream, _) = send_sock_l.accept().await?;
-
+                debug!("Spawn sender task");
                 exec_send_many_socket(
                     &ctx,
                     client_id,

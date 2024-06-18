@@ -638,7 +638,7 @@ impl RatmanStreamExtV1 for RatmanIpc {
     ) -> crate::Result<(LetterheadV1, ReadStream<'s>)> {
         let mut socket = self.socket().lock().await;
         socket
-            .write_microframe(
+            .write_microframe_debug(
                 MicroframeHeader {
                     modes: cm::make(cm::RECV, cm::ONE),
                     auth: Some(auth),
@@ -648,7 +648,7 @@ impl RatmanStreamExtV1 for RatmanIpc {
             )
             .await?;
 
-        let (_, letterhead) = socket.read_microframe::<LetterheadV1>().await?;
+        let (_, letterhead) = socket.read_microframe_debug::<LetterheadV1>().await?;
         Ok((letterhead?, ReadStream(socket)))
     }
 

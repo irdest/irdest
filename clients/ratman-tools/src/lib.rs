@@ -15,6 +15,7 @@ pub mod addr;
 pub mod base_args;
 pub mod send;
 pub mod stream;
+pub mod recv;
 
 pub const RATS: &'static str = include_str!("../rats.ascii");
 
@@ -127,10 +128,6 @@ pub async fn command_filter(
                 ("addr", "up") => addr::up(ipc, base_args, op_matches).await,
                 ("addr", "down") => addr::down(ipc, base_args, op_matches).await,
                 ("addr", "list") => addr::list(ipc, base_args, op_matches).await,
-                //// =^-^= Receive commands (cat)
-                ("recv", "one") => Ok(()),
-                ("recv", "many") => Ok(()),
-
                 //// =^-^= Status commands (ctl)
                 ("status", "system") => Ok(()),
                 ("status", "addr") => Ok(()),
@@ -144,6 +141,7 @@ pub async fn command_filter(
             None => match cmd {
                 //// =^-^= Send commands (cat)
                 "send" => send::send(ipc, base_args, operand).await,
+                "recv" => recv::receive(ipc, base_args, &operand).await,
                 _ => unreachable!("oops! looks like the cli library didn't filter this"),
             },
         },

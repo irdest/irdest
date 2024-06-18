@@ -29,6 +29,7 @@ pub async fn exec_send_many_socket(
     let this_key = crypto::get_addr_key(&ctx.meta_db, this_addr, auth)?;
     let buffer_file = temp_dir().join(format!("{this_addr}-{}", Utc::now()));
 
+    debug!("Reading input stream to buffer file");
     let stream_buf = File::create(&buffer_file).await?;
     let mut r = BufReader::new(stream);
     let mut w = BufWriter::new(stream_buf);
@@ -49,6 +50,7 @@ pub async fn exec_send_many_socket(
     let mut stream = buf_r.compat();
 
     for lh in letterheads {
+        debug!("Generate shared key");
         let shared_key = crypto::diffie_hellman(&this_key, lh.to.inner_address()).ok_or(
             RatmanError::Encoding(EncodingError::Encryption(
                 "failed to compute diffie-hellman".into(),

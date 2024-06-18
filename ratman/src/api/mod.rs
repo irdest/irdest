@@ -50,19 +50,29 @@ pub async fn start_api_thread(
             ));
 
             let ctx = Arc::clone(&context);
-            spawn_local(async move {
-                let res = jh
-                    .into_future()
-                    .await
-                    .expect("failed to join `run_client_handler` future");
+            new_async_thread(
+                format!("ratmand-api-{}", client_id.to_string().to_ascii_lowercase()),
+                1024 * 16,
+                async move {
+                    let res = jh
+                        .into_future()
+                        .await
+                        .expect("failed to join `run_client_handler` future");
 
-                // Remove the client here, no matter what the runner task does
-                ctx.clients.lock_inner().await.remove(&client_id);
-                match res {
-                    Ok(()) => debug!("Client {client_addr:?} has disconnected gracefully!"),
-                    Err(e) => error!("error occured while handling client connection: {e}"),
-                }
-            });
+                    // Remove the client here, no matter what the runner task does
+                    ctx.clients.lock_inner().await.remove(&client_id);
+                    match res {
+                        Ok(()) => {
+                            debug!("Client {client_addr:?} has disconnected gracefully!");
+                            Ok(())
+                        }
+                        Err(e) => {
+                            error!("error occured while handling client connection: {e}");
+                            Err(e)
+                        }
+                    }
+                },
+            );
         }
 
         Ok(())

@@ -197,7 +197,7 @@ pub(crate) async fn dispatch_frame(
 
     debug!(
         "Frame in local: {:?}",
-        routes.is_local(target_address).await.unwrap()
+        routes.is_local(target_address).await
     );
 
     if let Ok(true) = routes.is_local(target_address).await {

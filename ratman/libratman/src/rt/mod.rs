@@ -10,6 +10,7 @@
 use crate::Result;
 use std::{
     future::Future,
+    panic,
     sync::{
         mpsc::{sync_channel, Receiver as SyncReceiver, SyncSender},
         Arc,
@@ -86,17 +87,13 @@ where
     O: Sized + Send + 'static,
 {
     let label = label.into();
-    let join_handle = std::thread::spawn(move || {
-        debug!("Starting new async thread system: {label}");
-        let system = AsyncSystem::new(label, stack_mb);
-        let res = system.exec(f);
-        let label = system.label.clone();
-        system.exec(async move {
-            match res {
-                Ok(_) => info!("Worker thread {label} completed successfully!"),
-                Err(ref e) => error!("Worker thread {label} encountered a fatal error: {e}"),
-            }
-        });
+    std::thread::spawn(move || {
+        trace!("Starting new async thread system: {label}");
+        let system = AsyncSystem::new(label.clone(), stack_mb);
+        match system.exec(f) {
+            Ok(_) => trace!("Worker thread {label} completed successfully!"),
+            Err(ref e) => error!("Worker thread {label} encountered a fatal error: {e}"),
+        }
     });
 }
 

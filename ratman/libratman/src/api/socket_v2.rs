@@ -68,6 +68,21 @@ impl RawSocketHandle {
     }
 
     /// Read a full microframe header and payload
+    pub async fn read_microframe_debug<T: FrameParser>(
+        &mut self,
+    ) -> Result<(MicroframeHeader, T::Output)> {
+        let header = self.read_header_debug().await?;
+        let payload_buf = self.read_buffer(header.payload_size as usize).await?;
+        debug!("[debug]: Payload buf {payload_buf:?}");
+        eprintln!("[debug]: Payload buf {payload_buf:?}");
+        let (_remainder, payload) =
+            T::parse(payload_buf.as_slice()).map_err(|p| EncodingError::Parsing(p.to_string()))?;
+        debug!("[debug]: Parsed Microframe: {header:#?}");
+        eprintln!("[debug]: Parsed Microframe: {header:#?}");
+        Ok((header, payload))
+    }
+
+    /// Read a full microframe header and payload
     pub async fn read_microframe<T: FrameParser>(
         &mut self,
     ) -> Result<(MicroframeHeader, T::Output)> {
@@ -76,6 +91,21 @@ impl RawSocketHandle {
         let (_remainder, payload) =
             T::parse(payload_buf.as_slice()).map_err(|p| EncodingError::Parsing(p.to_string()))?;
         Ok((header, payload))
+    }
+
+    /// Read a length-prepended microframe header
+    pub async fn read_header_debug(&mut self) -> Result<MicroframeHeader> {
+        let length = LengthReader::new(&mut self.stream()).read_u32().await?;
+        debug!("[debug]: Length prefix {length}");
+        eprintln!("[debug]: Length prefix {length}");
+        let frame_buffer = AsyncVecReader::new(length as usize, &mut self.stream())
+            .read_to_vec()
+            .await?;
+        debug!("[debug]: Header buf {frame_buffer:?}");
+        eprintln!("[debug]: Header buf {frame_buffer:?}");
+        Ok(MicroframeHeader::parse(frame_buffer.as_slice())
+            .map_err(Into::<EncodingError>::into)?
+            .1?)
     }
 
     /// Read a length-prepended microframe header
@@ -168,6 +198,12 @@ impl RawSocketHandle {
         let mut payload_buf = vec![];
         payload.generate(&mut payload_buf)?;
 
+        debug!(
+            "[debug]: type {} encoded to {} byte buffer",
+            std::any::type_name::<T>(),
+            payload_buf.len()
+        );
+
         eprintln!(
             "[debug]: type {} encoded to {} byte buffer",
             std::any::type_name::<T>(),
@@ -185,13 +221,16 @@ impl RawSocketHandle {
         header.generate(&mut header_buf)?;
 
         // Write a header length first, then the rest
-        println!("<Write(4)> {:?}", header_buf.len().to_be_bytes());
+        debug!("<Write(4)> {:?}", header_buf.len().to_be_bytes());
+        eprintln!("<Write(4)> {:?}", header_buf.len().to_be_bytes());
         write_u32(self.stream(), header_buf.len() as u32).await?;
-        println!("<Write({})> {:?}", header_buf.len(), header_buf);
+        debug!("<Write({})> {:?}", header_buf.len(), header_buf);
+        eprintln!("<Write({})> {:?}", header_buf.len(), header_buf);
         AsyncWriter::new(header_buf.as_slice(), self.stream())
             .write_buffer()
             .await?;
-        println!("<Write({})> {:?}", payload_buf.len(), payload_buf);
+        debug!("<Write({})> {:?}", payload_buf.len(), payload_buf);
+        eprintln!("<Write({})> {:?}", payload_buf.len(), payload_buf);
         AsyncWriter::new(payload_buf.as_slice(), self.stream())
             .write_buffer()
             .await?;

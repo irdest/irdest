@@ -141,20 +141,25 @@ impl FrameParser for LetterheadV1 {
     type Output = Result<LetterheadV1>;
 
     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
+        debug!("Letterhead Input: {input:?}");
         let (input, _version) = parse::take_byte(input)?;
-        assert!(_version == 1);
+        assert!(dbg!(_version) == 1);
         let (input, from) = parse::take_address(input)?;
         let (input, to) = Option::<Recipient>::parse(input)?;
         let (input, payload_length) = parse::take_u64(input)?;
         let (input, auxiliary_data) = parse::take_cstring_tuple_vec(input)?;
 
+        debug!("Parsed: {from:?} {to:?}, {payload_length:?}");
+
         Ok((
             input,
-            auxiliary_data.map(|auxiliary_data| Self {
-                from,
-                to: to.unwrap(),
-                stream_size: payload_length,
-                auxiliary_data,
+            auxiliary_data.map(|auxiliary_data| {
+                dbg!(Self {
+                    from,
+                    to: to.unwrap(),
+                    stream_size: payload_length,
+                    auxiliary_data,
+                })
             }),
         ))
     }
