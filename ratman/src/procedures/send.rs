@@ -6,7 +6,7 @@
 
 //! Asynchronous Ratman routing core
 
-use super::{slicer::BlockSlicer, BlockWorker};
+use super::{slicer::BlockSlicer, BlockCollector, BlockNotifier, BlockWorker};
 use crate::{
     journal::Journal,
     links::LinksMap,
@@ -18,6 +18,7 @@ use libratman::{
     rt::new_async_thread,
     tokio::{
         select,
+        sync::broadcast::Sender as BcastSender,
         sync::mpsc::{channel, Sender},
         task::spawn_local,
     },
@@ -72,6 +73,8 @@ pub(crate) async fn exec_sender_system<const L: usize>(
     journal: &Arc<Journal>,
     routes: &Arc<RouteTable>,
     drivers: &Arc<LinksMap>,
+    collector: &Arc<BlockCollector>,
+    block_bcast: BcastSender<BlockNotifier>,
     tripwire: Tripwire,
 ) -> Sender<(ReadCapability, LetterheadV1)> {
     let (tx_l, mut rx_l) = channel(32);
@@ -79,6 +82,7 @@ pub(crate) async fn exec_sender_system<const L: usize>(
         let journal = Arc::clone(journal);
         let routes = Arc::clone(routes);
         let drivers = Arc::clone(drivers);
+        let collector = Arc::clone(&collector);
         new_async_thread(
             format!("sender-system-{}k", L / 1024),
             1024 * 8,
@@ -110,6 +114,8 @@ pub(crate) async fn exec_sender_system<const L: usize>(
 
                     let routes = Arc::clone(&routes);
                     let drivers = Arc::clone(&drivers);
+                    let collector = Arc::clone(&collector);
+                    let block_bcast = block_bcast.clone();
                     spawn_local(async move {
                         while let Some((block, letterhead)) = local_rx.recv().await {
                             let bid = block.reference();
@@ -126,19 +132,28 @@ pub(crate) async fn exec_sender_system<const L: usize>(
 
                             let bid32 = Ident32::from_bytes(bid.as_slice()).pretty_string();
 
-                            trace!("Block {} turned into {} frames", bid32, frame_buf.len());
+                            debug!("Block {} turned into {} frames", bid32, frame_buf.len());
                             let routes = Arc::clone(&routes);
                             let drivers = Arc::clone(&drivers);
+                            let collector = Arc::clone(&collector);
+                            let block_bcast = block_bcast.clone();
                             spawn_local(async move {
                                 for envelope in frame_buf {
+                                    let block_bcast = block_bcast.clone();
                                     trace!(
                                         "Dispatched frame {}/{}",
                                         bid32,
                                         envelope.header.get_seq_id().unwrap().num
                                     );
 
-                                    if let Err(e) =
-                                        dispatch_frame(&routes, &drivers, envelope).await
+                                    if let Err(e) = dispatch_frame(
+                                        &routes,
+                                        &drivers,
+                                        &collector,
+                                        block_bcast,
+                                        envelope,
+                                    )
+                                    .await
                                     {
                                         error!("failed to dispatch frame: {e}");
                                     }
@@ -163,6 +178,8 @@ pub(crate) async fn exec_sender_system<const L: usize>(
 pub(crate) async fn dispatch_frame(
     routes: &Arc<RouteTable>,
     drivers: &Arc<LinksMap>,
+    collector: &Arc<BlockCollector>,
+    block_bcast: BcastSender<BlockNotifier>,
     envelope: InMemoryEnvelope,
 ) -> Result<()> {
     trace!(
@@ -178,13 +195,24 @@ pub(crate) async fn dispatch_frame(
         _ => unreachable!(),
     };
 
+    debug!(
+        "Frame in local: {:?}",
+        routes.is_local(target_address).await.unwrap()
+    );
+
+    if let Ok(true) = routes.is_local(target_address).await {
+        debug!("Frame addressed to local: queue in collector!");
+        collector.queue_and_spawn(envelope, block_bcast).await?;
+        return Ok(());
+    }
+
     let EpNeighbourPair(epid, nb) = match routes.resolve(target_address).await {
         // Return the endpoint/target ID pair from the resolver
         Some(resolve) => resolve,
         None => {
             debug!(
                 "{}: failed to resolve address {}",
-                "[FAIL]".custom_color(crate::util::SOFT_WARN_COLOR),
+                "[SOFT FAIL]".custom_color(crate::util::SOFT_WARN_COLOR),
                 target_address.pretty_string()
             );
             return Err(RatmanError::Nonfatal(NonfatalError::UnknownAddress(

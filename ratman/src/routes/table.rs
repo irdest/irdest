@@ -14,7 +14,8 @@ use chrono::Utc;
 use libratman::{
     frame::carrier::AnnounceFrameV1,
     tokio::sync::mpsc::channel,
-    types::{Address, Ident32}, NonfatalError, RatmanError, Result,
+    types::{Address, Ident32},
+    NonfatalError, RatmanError, Result,
 };
 use serde::{Deserialize, Serialize};
 use std::{collections::VecDeque, iter::FromIterator, sync::Arc};
@@ -42,23 +43,6 @@ impl RouteTable {
             metrics: metrics::RouteTableMetrics::default(),
         })
     }
-}
-
-/// Query the routing table on whether it knows a particular address
-pub(crate) async fn query_known(table: &Arc<RouteTable>, addr: Address, local: bool) -> Result<()> {
-    if local {
-        table.local(addr).await
-    } else {
-        table
-            .resolve(addr)
-            .await
-            .map(|_| ())
-            .ok_or(RatmanError::Nonfatal(NonfatalError::UnknownAddress(addr)))
-    }
-}
-
-pub(crate) async fn exec_route_table(_table: &Arc<RouteTable>) {
-    // Do route things ??
 }
 
 /////////////////////////////////// SNIP ///////////////////////////////////
@@ -118,9 +102,11 @@ impl RouteTable {
                 }
 
                 // Update other bits of metadata
-                route.last_seen = Utc::now();
-                route.state = RouteState::Active;
-                route.data = announce_f.route;
+                if let Some(ref mut route) = route.as_mut() {
+                    route.last_seen = Utc::now();
+                    route.state = RouteState::Active;
+                    route.data = announce_f.route;
+                }
 
                 new_route = RouteData {
                     peer,
@@ -134,12 +120,12 @@ impl RouteTable {
                     peer: peer_addr,
                     link_id: VecDeque::from_iter(vec![ep_neighbour].into_iter()),
                     route_id: Ident32::random(),
-                    route: RouteEntry {
+                    route: Some(RouteEntry {
                         data: announce_f.route,
                         state: RouteState::Active,
                         first_seen: Utc::now(),
                         last_seen: Utc::now(),
-                    },
+                    }),
                 };
             }
         }
@@ -162,27 +148,30 @@ impl RouteTable {
         Ok(())
     }
 
-    /// Poll the set of newly discovered users
-    pub(crate) async fn discover(&mut self) -> Address {
-        self.new.1.recv().await.unwrap()
-    }
-
-    /// Check if a user is locally known
-    pub(crate) async fn local(&self, id: Address) -> Result<()> {
-        self.meta_db
-            .addrs
-            .get(&id.to_string())?
-            .ok_or(RatmanError::Nonfatal(NonfatalError::UnknownAddress(id)))
-            .map(|_| ())
-    }
-
-    /// Get all users in the routing table
-    pub(crate) async fn all(&self) -> Vec<(Address, RouteEntry)> {
+    pub(crate) async fn register_local_route(&self, local: Address) -> Result<()> {
+        let local_addr = RouteData::local(local);
         self.meta_db
             .routes
-            .iter()
-            .map(|(id, data)| (Address::from_string(&id), data.route))
-            .collect()
+            .insert(local.to_string(), &local_addr)?;
+        debug!("Insert {local_addr:?} to routes table");
+        Ok(())
+    }
+
+    pub(crate) async fn scrub_local(&self, local: Address) -> Result<()> {
+        self.meta_db.routes.remove(local.to_string())?;
+        Ok(())
+    }
+
+    pub(crate) async fn is_local(&self, maybe_local: Address) -> Result<bool> {
+        Ok(self
+            .meta_db
+            .routes
+            .get(&maybe_local.to_string())?
+            .ok_or(RatmanError::Nonfatal(NonfatalError::UnknownAddress(
+                maybe_local,
+            )))
+            // Local addresses don't have route data associated
+            .is_ok_and(|rd| rd.route.is_none()))
     }
 
     /// Get the endpoint and target ID for a peer's address
@@ -202,7 +191,7 @@ impl RouteTable {
             .get(&peer_addr.to_string())
             .ok()
             .flatten()
-            .map(|route_data| route_data.route.state)
+            .and_then(|route_data| route_data.route.map(|r| r.state))
     }
 }
 

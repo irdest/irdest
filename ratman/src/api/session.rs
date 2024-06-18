@@ -3,9 +3,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use crate::{
+    api::sending::{self, exec_send_many_socket},
     context::RatmanContext,
     crypto,
-    procedures::{handle_subscription_socket, SenderSystem},
+    procedures::{exec_block_collector_system, handle_subscription_socket, SenderSystem},
 };
 use async_eris::BlockSize;
 use libratman::{
@@ -25,8 +26,8 @@ use libratman::{
         task::spawn_local,
         time::timeout,
     },
-    types::{AddrAuth, Address, Ident32},
-    ClientError, RatmanError, Result,
+    types::{error::UserError, AddrAuth, Address, Ident32},
+    ClientError, EncodingError, RatmanError, Result,
 };
 use std::{ffi::CString, sync::Arc, time::Duration};
 
@@ -144,7 +145,7 @@ pub(super) async fn single_session_exchange<'a>(
 
     ////////////////////////////////////////////////
 
-    trace!(
+    debug!(
         "given_auth: {} // expected_auth={:?}",
         header
             .auth
@@ -181,11 +182,12 @@ pub(super) async fn single_session_exchange<'a>(
                 .read_payload::<AddrCreate>(header.payload_size)
                 .await
                 .unwrap();
-            let (addr, client_auth) = crypto::insert_addr_key(
+            let (addr, client_auth) = crypto::create_addr_key(
                 &ctx.meta_db,
                 addr_create.name,
                 addr_create.namespace_data,
             )?;
+            ctx.routes.register_local_route(addr).await?;
 
             ctx.clients
                 .lock_inner()
@@ -208,7 +210,9 @@ pub(super) async fn single_session_exchange<'a>(
 
             let auth = check_auth(&header, addr, expected_auth)?;
 
-            crypto::destroy_addr_key(&ctx.meta_db, addr, auth, client_id)?;
+            crypto::destroy_addr_key(&ctx.meta_db, addr)?;
+
+            ctx.routes.scrub_local(addr).await?;
 
             reply_ok(raw_socket, auth).await?;
         }
@@ -564,17 +568,12 @@ pub(super) async fn single_session_exchange<'a>(
 
             let auth = check_auth(&header, letterhead.from, expected_auth)?;
             debug!("{client_id} Passed authentication on [send : one]");
-            crypto::start_stream(
-                &ctx.meta_db,
-                letterhead.from,
-                letterhead.to.inner_address(),
-                auth,
-                client_id,
-            )
-            .await?;
 
-            let shared_key =
-                crypto::stream_diffie_hellman(letterhead.from, letterhead.to.inner_address()).await;
+            let this_key = crypto::get_addr_key(&ctx.meta_db, letterhead.from, auth)?;
+            let shared_key = crypto::diffie_hellman(&this_key, letterhead.to.inner_address())
+                .ok_or::<RatmanError>(
+                EncodingError::Encryption("Failed diffie-hellman exchange".into()).into(),
+            )?;
 
             let chosen_block_size = match letterhead.stream_size {
                 m if m < (16 * 1024) => async_eris::BlockSize::_1K,
@@ -585,13 +584,12 @@ pub(super) async fn single_session_exchange<'a>(
             let mut compat_socket = raw_socket.to_compat();
             let read_cap = async_eris::encode(
                 &mut compat_socket,
-                &shared_key,
+                shared_key.as_bytes(),
                 chosen_block_size,
                 &ctx.journal.blocks,
             )
             .await?;
             raw_socket.from_compat(compat_socket);
-            crypto::end_stream(&ctx.meta_db, letterhead.from, letterhead.to.inner_address()).await;
 
             debug!("Block encoding complete");
 
@@ -629,57 +627,68 @@ pub(super) async fn single_session_exchange<'a>(
         //
         // ^-^ Client wants to send a message to many recipients
         m if m == cm::make(cm::SEND, cm::MANY) => {
+            debug!(
+                "Handle send :: many request payload: {}",
+                header.payload_size
+            );
+
             let SendMany { letterheads } = raw_socket
                 .read_payload::<SendMany>(header.payload_size)
                 .await??;
 
-            for lh in letterheads {
-                let auth = check_auth(&header, lh.from, expected_auth)?;
-                crypto::start_stream(
-                    &ctx.meta_db,
-                    lh.from,
-                    lh.to.inner_address(),
-                    auth,
+            let this_addr =
+                letterheads
+                    .iter()
+                    .map(|lh| lh.from)
+                    .next()
+                    .ok_or(RatmanError::ClientApi(ClientError::User(
+                        UserError::MissingInput("No letterheads provided!".into()),
+                    )))?;
+
+            let auth = check_auth(&header, this_addr, expected_auth)?;
+            debug!("{client_id} Passed authentication on [send : one]");
+
+            let ctx = Arc::clone(&ctx);
+            let senders = Arc::clone(senders);
+            let send_sock_l = TcpListener::bind("127.0.0.1:0").await?;
+            let bind = send_sock_l.local_addr()?.to_string();
+            let join = spawn_local(async move {
+                let (stream, _) = send_sock_l.accept().await?;
+
+                exec_send_many_socket(
+                    &ctx,
                     client_id,
+                    stream,
+                    this_addr,
+                    auth,
+                    letterheads,
+                    &senders,
+                )
+                .await
+            });
+
+            raw_socket
+                .write_microframe(
+                    MicroframeHeader::intrinsic_auth(auth),
+                    ServerPing::SendSocket {
+                        socket_bind: CString::new(bind).unwrap(),
+                    },
                 )
                 .await?;
 
-                let shared_key =
-                    crypto::stream_diffie_hellman(lh.from, lh.to.inner_address()).await;
-
-                let chosen_block_size = match lh.stream_size {
-                    m if m < (16 * 1024) => async_eris::BlockSize::_1K,
-                    _ => async_eris::BlockSize::_32K,
-                };
-
-                let mut compat_socket = raw_socket.to_compat();
-                let read_cap = async_eris::encode(
-                    &mut compat_socket,
-                    &shared_key,
-                    chosen_block_size,
-                    &ctx.journal.blocks,
-                )
-                .await?;
-                raw_socket.from_compat(compat_socket);
-                crypto::end_stream(&ctx.meta_db, lh.from, lh.to.inner_address()).await;
-
-                match chosen_block_size {
-                    BlockSize::_1K => {
-                        senders.tx_1k.send((read_cap, lh)).await.map_err(|e| {
-                            RatmanError::Schedule(libratman::ScheduleError::Contention(
-                                e.to_string(),
-                            ))
-                        })?;
-                    }
-                    BlockSize::_32K => {
-                        senders.tx_32k.send((read_cap, lh)).await.map_err(|e| {
-                            RatmanError::Schedule(libratman::ScheduleError::Contention(
-                                e.to_string(),
-                            ))
-                        })?;
-                    }
+            // wait for the sender thread to shut down and return its
+            // return status
+            let send_sys_res = join.await?;
+            match send_sys_res {
+                Ok(_) => reply_ok(raw_socket, auth).await?,
+                Err(e) => {
+                    raw_socket
+                        .write_microframe(
+                            MicroframeHeader::intrinsic_auth(auth),
+                            ServerPing::Error(ClientError::Internal(e.to_string())),
+                        )
+                        .await?
                 }
-                reply_ok(raw_socket, auth).await?;
             }
         }
         //

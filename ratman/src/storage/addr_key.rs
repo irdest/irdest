@@ -1,5 +1,10 @@
+use libratman::types::Address;
 use serde::{Deserialize, Serialize};
-use std::ffi::CString;
+use std::{
+    ffi::CString,
+    hash::{Hash, Hasher},
+};
+use twox_hash::{RandomXxHashBuilder, XxHash64};
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum AddressData {
@@ -24,4 +29,29 @@ pub enum AddressData {
 pub struct EncryptedKey {
     pub encrypted: Vec<u8>,
     pub nonce: [u8; 12],
+}
+
+#[derive(Clone, Ord, PartialOrd, PartialEq, Eq, Serialize, Deserialize)]
+pub struct HumanAddress {
+    inner: Address,
+}
+
+impl From<Address> for HumanAddress {
+    fn from(inner: Address) -> Self {
+        Self { inner }
+    }
+}
+
+impl HumanAddress {
+    pub fn to_string(&self) -> String {
+        let first = self.inner.as_bytes().iter().take(4).collect::<Vec<&u8>>();
+        let id_str = self.inner.to_string();
+        let first_str = id_str.split("-").next().unwrap();
+
+        let mut hasher = XxHash64::default();
+        first.as_slice().hash(&mut hasher);
+        let hash_buf = hasher.finish().to_be_bytes();
+
+        format!("{}::[{}]", first_str, libratman::hex::encode(&hash_buf))
+    }
 }

@@ -30,6 +30,9 @@ impl Recipient {
 impl FrameGenerator for Option<Recipient> {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         match self {
+            None => {
+                buf.push(0);
+            }
             Some(Recipient::Address(addr)) => {
                 buf.push(1);
                 addr.generate(buf)?;
@@ -37,9 +40,6 @@ impl FrameGenerator for Option<Recipient> {
             Some(Recipient::Namespace(addr)) => {
                 buf.push(2);
                 addr.generate(buf)?;
-            }
-            None => {
-                buf.push(0);
             }
         }
 
@@ -64,8 +64,7 @@ impl FrameParser for Option<Recipient> {
             }
             mode => {
                 unreachable!(
-                    "(mode: {mode}) can definitely reachable but you've
-            been naughty with your data"
+                    "\n(mode: {mode}) is definitely reachable but you've been naughty with your data"
                 )
             }
         }

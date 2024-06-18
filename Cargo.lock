@@ -3198,6 +3198,7 @@ name = "ratman-tools"
 version = "0.5.0"
 dependencies = [
  "clap 4.5.7",
+ "colored",
  "directories",
  "libratman",
  "nix 0.23.2",

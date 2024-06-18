@@ -41,6 +41,9 @@ pub use tokio;
 pub use tokio_stream;
 pub use tokio_util;
 
+// Re-export some other utilities too
+pub use hex;
+
 /// Print a log message and exit
 // TODO: turn into macro
 pub fn elog<S: Into<String>>(msg: S, code: u16) -> ! {

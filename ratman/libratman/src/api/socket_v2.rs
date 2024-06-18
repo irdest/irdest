@@ -168,6 +168,12 @@ impl RawSocketHandle {
         let mut payload_buf = vec![];
         payload.generate(&mut payload_buf)?;
 
+        eprintln!(
+            "[debug]: type {} encoded to {} byte buffer",
+            std::any::type_name::<T>(),
+            payload_buf.len()
+        );
+
         // Then update the header payload_size
         header.payload_size = payload_buf
             .len()

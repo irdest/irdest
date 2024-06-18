@@ -96,6 +96,8 @@ pub enum ServerPing {
     Subscription { sub_id: Ident32, sub_bind: CString },
     /// A list of addresses, either local or remote
     AddrList(Vec<Address>),
+    /// Indicate that a client should connect to a separate socket to input a data stream
+    SendSocket { socket_bind: CString },
 }
 
 impl FrameGenerator for ServerPing {
@@ -136,6 +138,10 @@ impl FrameGenerator for ServerPing {
             Self::AddrList(list) => {
                 buf.push(7);
                 list.generate(buf)?;
+            }
+            Self::SendSocket { socket_bind } => {
+                buf.push(8);
+                generate_cstring(socket_bind, buf)?;
             }
         }
 
@@ -188,6 +194,11 @@ impl FrameParser for ServerPing {
                 let (input_, list) = Vec::<Address>::parse(input)?;
                 input = input_;
                 Ok(Self::AddrList(list))
+            }
+            8 => {
+                let (input_, send_bind) = take_cstring(input)?;
+                input = input_;
+                send_bind.map(|socket_bind| Self::SendSocket { socket_bind })
             }
             _ => Err(EncodingError::Parsing(format!("Invalid ServerPing type={}", tt)).into()),
         };

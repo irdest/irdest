@@ -285,6 +285,8 @@ impl RatmanContext {
             &this.journal,
             &this.routes,
             &this.links,
+            &this.collector,
+            collector_notify_tx.clone(),
             this.tripwire.clone(),
         )
         .await;
@@ -292,6 +294,8 @@ impl RatmanContext {
             &this.journal,
             &this.routes,
             &this.links,
+            &this.collector,
+            collector_notify_tx.clone(),
             this.tripwire.clone(),
         )
         .await;
@@ -308,7 +312,8 @@ impl RatmanContext {
                 let this_ = Arc::clone(&this);
                 let ingress_tx = ingress_tx.clone();
                 let collector_tx = collector_tx.clone();
-
+                let collector_notify_tx = collector_notify_tx.clone();
+                
                 new_async_thread::<String, _, ()>(
                     format!("ratmand-switch-{name}"),
                     1024 * 4,
@@ -319,10 +324,12 @@ impl RatmanContext {
                             &this_.routes,
                             &this_.links,
                             &this_.journal,
+                            &this_.collector,
                             this_.tripwire.clone(),
                             (&name, &ep),
                             ingress_tx,
                             collector_tx,
+                            collector_notify_tx.clone(),
                             // #[cfg(feature = "dashboard")]
                             // todo!()
                         )

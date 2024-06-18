@@ -462,9 +462,10 @@ impl TryFrom<&str> for Ident32 {
             values
                 .split("-")
                 .map(|chunk| {
-                    hex::decode(chunk)
+                    let h = hex::decode(chunk)
                         .map_err(EncodingError::from)
-                        .map_err(RatmanError::from)
+                        .map_err(RatmanError::from);
+                    h
                 })
                 .collect::<crate::Result<Vec<Vec<u8>>>>()?
                 .into_iter()

@@ -12,7 +12,18 @@ pub struct RouteData {
     pub peer: Address,
     pub link_id: VecDeque<EpNeighbourPair>,
     pub route_id: Ident32,
-    pub route: RouteEntry,
+    pub route: Option<RouteEntry>,
+}
+
+impl RouteData {
+    pub fn local(addr: Address) -> Self {
+        Self {
+            peer: addr,
+            link_id: VecDeque::new(),
+            route_id: Ident32::random(),
+            route: None,
+        }
+    }
 }
 
 /// Represent a single route

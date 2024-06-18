@@ -81,7 +81,7 @@ pub fn decrypt_raw(secret: &[u8; 32], nonce: [u8; 12], encrypted_data: &mut Vec<
     cipher.apply_keystream(encrypted_data.as_mut_slice());
 }
 
-fn diffie_hellman(self_keypair: &Keypair, peer: Address) -> Option<SharedSecret> {
+pub fn diffie_hellman(self_keypair: &Keypair, peer: Address) -> Option<SharedSecret> {
     // Here we're taking a private key on the edwards curve and
     // transform it to a private key on the montgomery curve.
     // This is done via the `ExpandedSecretKey` type, which does
@@ -151,7 +151,7 @@ pub fn get_addr_key(meta_db: &Arc<MetadataDb>, addr: Address, auth: AddrAuth) ->
     Ok(Keypair::new(secret_key))
 }
 
-pub fn insert_addr_key(
+pub fn create_addr_key(
     meta_db: &Arc<MetadataDb>,
     name: Option<CString>,
     space: Option<Ident32>,
@@ -203,89 +203,9 @@ pub fn insert_addr_key(
 }
 
 /// Destroy the local address key data
-pub fn destroy_addr_key(
-    meta_db: &Arc<MetadataDb>,
-    addr: Address,
-    auth: AddrAuth,
-    client_id: Ident32,
-) -> Result<()> {
-    // Close the address key if it existed
-    let _ = close_addr_key(meta_db, auth, client_id);
+pub fn destroy_addr_key(meta_db: &Arc<MetadataDb>, addr: Address) -> Result<()> {
     meta_db.addrs.remove(addr.to_string())?;
     Ok(())
-}
-
-/// Decrypt an address key and cache it for the local runner thread
-pub async fn open_addr_key(
-    meta_db: &Arc<MetadataDb>,
-    addr: Address,
-    auth: AddrAuth,
-    client_id: Ident32,
-) -> Result<()> {
-    let key_data = match meta_db.addrs.get(&addr.to_string())?.unwrap() {
-        AddressData::Local(e, _name) => e,
-        AddressData::Space(e, _name) => e,
-        AddressData::Remote => unreachable!("called open_addr_key with a remote key"),
-    };
-
-    let mut decrypted_key = key_data.encrypted.clone();
-    decrypt_raw(
-        auth.token.as_bytes().try_into().unwrap(),
-        key_data.nonce,
-        &mut decrypted_key,
-    );
-
-    let secret_key = SecretKey::from_bytes(&decrypted_key)
-        .map_err::<RatmanError, _>(|_| ClientError::InvalidAuth.into())?;
-    let public_key = PublicKey::from(&secret_key);
-
-    let computed_addr = Address::from_bytes(public_key.as_bytes());
-
-    if computed_addr == addr {
-        KEY_CACHE.lock().await.insert(
-            client_id,
-            Keypair::new(SecretKey::from_bytes(decrypted_key.as_slice()).unwrap()),
-        );
-
-        Ok(())
-    } else {
-        Err(RatmanError::ClientApi(ClientError::InvalidAuth))
-    }
-}
-
-pub async fn close_addr_key(_meta_db: &Arc<MetadataDb>, _auth: AddrAuth, client_id: Ident32) {
-    KEY_CACHE.lock().await.remove(&client_id);
-}
-
-/// Cache a shared secret between two addresses
-pub async fn start_stream(
-    _meta_db: &Arc<MetadataDb>,
-    self_addr: Address,
-    target_addr: Address,
-    _: AddrAuth,
-    client_id: Ident32,
-) -> Result<()> {
-    let map = KEY_CACHE.lock().await;
-    let decrypted_key = map.get(&client_id).expect("decrypted key not cached!");
-    let shared_secret = diffie_hellman(&decrypted_key, target_addr).unwrap();
-
-    let mut shared_map = SHARED_CACHE.lock().await;
-    shared_map.insert((self_addr, target_addr), shared_secret);
-    Ok(())
-}
-
-pub async fn stream_diffie_hellman(self_addr: Address, target_addr: Address) -> [u8; 32] {
-    SHARED_CACHE
-        .lock()
-        .await
-        .get(&(self_addr, target_addr))
-        .expect("stream_diffie_hellman called without start_stream!")
-        .to_bytes()
-}
-
-/// Clear a cached shared secret
-pub async fn end_stream(_meta_db: &Arc<MetadataDb>, self_addr: Address, target_addr: Address) {
-    SHARED_CACHE.lock().await.remove(&(self_addr, target_addr));
 }
 
 /// Encrypt a chunk for an ongoing session.

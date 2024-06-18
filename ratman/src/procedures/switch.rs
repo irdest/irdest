@@ -3,27 +3,25 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use crate::{
-    journal::{Journal},
+    journal::Journal,
     links::{GenericEndpoint, LinksMap},
     procedures::{self},
     routes::{EpNeighbourPair, RouteTable},
     storage::route::RouteState,
 };
-use libratman::{
-    frame::carrier::{
-        modes::{self as fmodes, DATA, MANIFEST},
-    },
-    types::{InMemoryEnvelope, Recipient},
-    NetmodError, RatmanError,
+use libratman::tokio::{
+    select, sync::broadcast::Sender as BcastSender, sync::mpsc::Sender, task::spawn_local,
 };
 use libratman::{
+    frame::carrier::modes::{self as fmodes, DATA, MANIFEST},
     frame::{carrier::AnnounceFrame, FrameParser},
-    tokio::{select, sync::mpsc::Sender, task::spawn_local},
+    types::{InMemoryEnvelope, Recipient},
+    NetmodError, RatmanError,
 };
 use std::sync::Arc;
 use tripwire::Tripwire;
 
-use super::ingress::MessageNotifier;
+use super::{ingress::MessageNotifier, BlockCollector, BlockNotifier};
 
 /// Run a batch of receive jobs for a given endpoint and state context
 pub(crate) async fn exec_switching_batch(
@@ -43,6 +41,9 @@ pub(crate) async fn exec_switching_batch(
     // The switch needs access to the central state manager for blocks
     // and frames
     journal: &Arc<Journal>,
+    // Allow spawning frames on the local collector that are addressed
+    // to a local address
+    collector: &Arc<BlockCollector>,
     // Allow the switch to shut down gracefully
     tripwire: Tripwire,
     // The netmod driver endpoint to switch messages for
@@ -50,6 +51,7 @@ pub(crate) async fn exec_switching_batch(
     // Control flow endpoint to send signals to this switch between batches
     ingress_tx: Sender<MessageNotifier>,
     collector_tx: Sender<InMemoryEnvelope>,
+    block_notify: BcastSender<BlockNotifier>,
     // Metrics collector state to allow diagnostic analysis of this
     // procedure
     // #[cfg(feature = "dashboard")] metrics: &Arc<metrics::Metrics>,
@@ -66,6 +68,8 @@ pub(crate) async fn exec_switching_batch(
             }
         };
 
+        let block_notify = block_notify.clone();
+        
         trace!(
             "Received frame ({}) from {}/{:?}",
             match header.get_seq_id() {
@@ -203,6 +207,8 @@ pub(crate) async fn exec_switching_batch(
                         match procedures::dispatch_frame(
                             routes,
                             links,
+                            collector,
+                            block_notify.clone(),
                             InMemoryEnvelope { header, buffer },
                         )
                         .await

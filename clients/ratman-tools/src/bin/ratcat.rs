@@ -62,14 +62,14 @@ pub fn setup_cli() -> Command {
                     Arg::new("to-address")
                         .short('a')
                         .long("addr")
-                        .required(true)
+                        // .required(true)
                         .help("Address a message stream to a single network participant")
                         .action(ArgAction::Append)
                         .conflicts_with_all(["to-space"]),
                     Arg::new("to-space")
                         .short('s')
                         .long("space")
-                        .required(true)
+                        // .required(true)
                         .help("Address a message stream to a namespace address")
                         .action(ArgAction::Append)
                         .conflicts_with_all(["to-address"]),

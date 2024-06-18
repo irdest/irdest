@@ -32,6 +32,7 @@ pub use _trait::{RatmanIpcExtV1, RatmanStreamExtV1, ReadStream};
 
 mod subscriber;
 pub use subscriber::SubscriptionHandle;
+use types::SendMany;
 
 pub mod socket_v2;
 pub mod types;
@@ -46,7 +47,7 @@ use crate::{
         types::{Handshake, RecvOne, SendTo, ServerPing, SubsCreate, SubsDelete, SubsRestore},
     },
     frame::micro::{client_modes as cm, MicroframeHeader},
-    types::{AddrAuth, Address, Ident32, LetterheadV1, Modify, Recipient},
+    types::{error::UserError, AddrAuth, Address, Ident32, LetterheadV1, Modify, Recipient},
     ClientError, EncodingError, Result,
 };
 use async_trait::async_trait;
@@ -57,7 +58,7 @@ use std::{
     sync::Arc,
 };
 use tokio::{
-    io::{AsyncRead, AsyncReadExt},
+    io::{AsyncRead, AsyncReadExt, AsyncWriteExt},
     net::TcpStream,
     sync::Mutex,
 };
@@ -551,7 +552,81 @@ impl RatmanStreamExtV1 for RatmanIpc {
         letterheads: Vec<LetterheadV1>,
         data_reader: I,
     ) -> crate::Result<()> {
-        Ok(())
+        let stream_size = letterheads.iter().fold(
+            Err(UserError::MissingInput("letterhead>stream-size".to_owned())),
+            |res, lh| match res {
+                Err(UserError::MissingInput(_)) => Ok(lh.stream_size),
+                Ok(prev) if prev == lh.stream_size => Ok(prev),
+                Ok(prev) if prev != lh.stream_size => Err(UserError::InvalidInput(
+                    "letterhead>stream_size".to_owned(),
+                    Some("the same stream-size for all recipients".to_owned()),
+                )),
+                err => err,
+            },
+        )?;
+
+        let chunk_size = if stream_size < 1024 {
+            stream_size
+        } else if stream_size > 1024 && stream_size < (1024 * 32) {
+            4 * 1024
+        } else {
+            16 * 1025
+        };
+
+        let mut socket = self.socket().lock().await;
+        socket
+            .write_microframe_debug(
+                MicroframeHeader {
+                    modes: cm::make(cm::SEND, cm::MANY),
+                    auth: Some(auth),
+                    ..Default::default()
+                },
+                SendMany { letterheads },
+            )
+            .await?;
+
+        let (_, ping) = socket.read_microframe::<ServerPing>().await?;
+        let bind = match ping? {
+            ServerPing::SendSocket { socket_bind } => socket_bind,
+            ServerPing::Error(e) => return Err(e.into()),
+            _ => return Err(EncodingError::Parsing("Invalid payload response!".into()).into()),
+        };
+
+        let mut send_s =
+            TcpStream::connect(bind.to_str().unwrap().parse::<SocketAddr>().unwrap()).await?;
+
+        let mut reader = Box::pin(data_reader);
+
+        let mut remaining = stream_size;
+        let mut stalling = false;
+        loop {
+            let mut buf = vec![0_u8; chunk_size.min(remaining) as usize];
+            let amount_read = reader.read_exact(&mut buf).await?;
+            if amount_read == 0 && !stalling {
+                eprintln!("Nothing read from sending client: set socket to 'stalling'");
+                stalling = true;
+            } else if amount_read == 0 && stalling {
+                eprintln!("Terminating stalled socket");
+                break;
+            }
+            remaining -= buf.len() as u64;
+
+            println!("Writing chunk to router socket {buf:?}");
+            send_s.write_all(&buf).await?;
+
+            if remaining == 0 {
+                break;
+            }
+        }
+
+        drop(send_s);
+
+        let (_, ping) = socket.read_microframe::<ServerPing>().await?;
+        match ping? {
+            ServerPing::Ok => Ok(()),
+            ServerPing::Error(e) => Err(e.into()),
+            i => Err(ClientError::Internal(format!("Invalid router response: {i:?}")).into()),
+        }
     }
 
     /// Block this task/ socket to wait for a single incoming message stream

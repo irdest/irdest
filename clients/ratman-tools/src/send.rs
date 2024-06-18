@@ -1,5 +1,6 @@
-use crate::{base_args::BaseArgs, parse_field};
+use crate::{base_args::BaseArgs, parse_field, reply_ok};
 use clap::ArgMatches;
+use colored::Colorize;
 use libratman::{
     api::{RatmanIpc, RatmanStreamExtV1},
     tokio,
@@ -10,20 +11,34 @@ use std::sync::Arc;
 
 fn generate_letterheads(
     from: Address,
-    to_addrs: &Vec<String>,
+    to_addrs: &String,
     stream_size: u64,
     recp_maker: impl Fn(Address) -> Recipient,
 ) -> Result<Vec<LetterheadV1>> {
     let mut spaces = to_addrs
-        .into_iter()
+        .split(",")
+        .map(|x| {
+            eprintln!("post-split: {x}");
+            x
+        })
         .map(|s| s.trim())
-        .map(|s| s.as_bytes())
+        .map(|x| {
+            eprintln!("post-trim {x}");
+            x
+        })
         .map(|chunk| Ident32::try_from(chunk).map(|id| Address(id)))
+        .map(|x| {
+            eprintln!("post-addressed {x:?}");
+            x
+        })
         .collect::<Result<Vec<_>>>()?;
 
+    eprintln!("Collected recipients: {spaces:?}");
+
+    let mut lh_buf = vec![];
     loop {
-        let mut lh_buf = vec![];
         if let Some(to) = spaces.pop() {
+            eprintln!("Create letterhead for {to:?}");
             lh_buf.push(LetterheadV1 {
                 from,
                 to: recp_maker(to),
@@ -37,42 +52,13 @@ fn generate_letterheads(
     }
 }
 
-// pub async fn one(ipc: &Arc<RatmanIpc>, base_args: BaseArgs, matches: &ArgMatches) -> Result<()> {
-//     let (addr, auth) = base_args.identity_data?;
-//     let to_addr = parse_ident32(matches, "to-address");
-//     let to_space = parse_ident32(matches, "to-space");
-//     let stream_size = *parse_field::<u64>(matches, "stream-size")?;
-
-//     let to = match (to_addr, to_space) {
-//         (Ok(to_addr), Err(_)) => Recipient::Address(Address(to_addr)),
-//         (Err(_), Ok(to_space)) => Recipient::Namespace(Address(to_space)),
-//         _ => {
-//             return Err(
-//                 UserError::MissingInput("Must provide either -a or -s to send".into()).into(),
-//             )
-//         }
-//     };
-
-//     let lh = LetterheadV1 {
-//         from: addr,
-//         to,
-//         stream_size,
-//         auxiliary_data: vec![],
-//     };
-
-//     let mut stdin = libratman::tokio::io::stdin();
-
-//     ipc.send_to(auth, lh, &mut stdin).await?;
-
-//     Ok(())
-// }
-
 pub async fn send(ipc: &Arc<RatmanIpc>, base_args: BaseArgs, matches: &ArgMatches) -> Result<()> {
     let (addr, auth) = base_args.identity_data?;
-    let to_addr = parse_field::<Vec<String>>(matches, "to-address");
-    let to_space = parse_field::<Vec<String>>(matches, "to-space");
+    let to_addr = parse_field::<String>(matches, "to-address");
+    let to_space = parse_field::<String>(matches, "to-space");
     let stream_size = *parse_field::<u64>(matches, "stream-size")?;
 
+    eprintln!("Generate letterheads");
     let to = match (to_addr, to_space) {
         (Ok(to_addrs), Err(_)) => {
             generate_letterheads(addr, to_addrs, stream_size, |a| Recipient::Address(a))?
@@ -97,6 +83,16 @@ pub async fn send(ipc: &Arc<RatmanIpc>, base_args: BaseArgs, matches: &ArgMatche
     };
     let mut stdin = tokio::io::stdin();
 
+    //if !base_args.quiet {
+    eprintln!(
+        "Generated {} letterheads to {:?}",
+        to.len(),
+        to.iter()
+            .map(|to| to.to.inner_address().pretty_string())
+            .collect::<Vec<_>>()
+    );
+
     ipc.send_many(auth, to, &mut stdin).await?;
+    println!("{}", reply_ok(&base_args.out_fmt).as_str().green());
     Ok(())
 }

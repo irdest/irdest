@@ -191,6 +191,8 @@ pub enum ClientError {
     Internal(String),
     #[error("requested subscrition ({0}) does not exist")]
     NoSuchSubscription(Ident32),
+    #[error("bad user input data: {0}")]
+    User(#[from] UserError),
 }
 
 /// Any error that can occur when interacting with a netmod driver
@@ -233,7 +235,7 @@ pub enum MicroframeError {
     MissingFields(&'static [&'static str]),
 }
 
-#[derive(thiserror::Error, Debug)]
+#[derive(Debug, thiserror::Error, Serialize, Deserialize)]
 pub enum UserError {
     InvalidInput(String, Option<String>),
     MissingInput(String),
