@@ -15,14 +15,20 @@ use crate::{
 use async_eris::{Block, ReadCapability};
 use colored::Colorize;
 use libratman::{
+    frame::{
+        carrier::{CarrierFrameHeader, ManifestFrame, ManifestFrameV1},
+        FrameGenerator,
+    },
     rt::new_async_thread,
     tokio::{
         select,
-        sync::broadcast::Sender as BcastSender,
-        sync::mpsc::{channel, Sender},
-        task::spawn_local,
+        sync::{
+            broadcast::Sender as BcastSender,
+            mpsc::{channel, Sender},
+        },
+        task::spawn,
     },
-    types::{Ident32, InMemoryEnvelope, LetterheadV1, Neighbour, Recipient},
+    types::{Ident32, InMemoryEnvelope, LetterheadV1, Neighbour, Recipient, SequenceIdV1},
     NonfatalError, RatmanError, Result,
 };
 use std::sync::Arc;
@@ -88,6 +94,11 @@ pub(crate) async fn exec_sender_system<const L: usize>(
             1024 * 8,
             async move {
                 loop {
+                    let routes = Arc::clone(&routes);
+                    let drivers = Arc::clone(&drivers);
+                    let collector = Arc::clone(&collector);
+                    let block_bcast = block_bcast.clone();
+
                     debug!("Setup sender system for {}kB blocks", L / 1024);
                     let tw = tripwire.clone();
                     let (read_cap, letterhead): (ReadCapability, LetterheadV1) = select! {
@@ -106,19 +117,34 @@ pub(crate) async fn exec_sender_system<const L: usize>(
                         letterhead.stream_size
                     );
                     let (local_tx, mut local_rx) = channel::<(Block<L>, LetterheadV1)>(4);
-                    spawn_local(BlockWorker { read_cap }.traverse_block_tree::<L>(
+                    let manifest = ManifestFrameV1::from((read_cap.clone(), letterhead.clone()));
+                    spawn(BlockWorker { read_cap }.traverse_block_tree::<L>(
                         Arc::clone(&journal),
                         letterhead,
                         local_tx,
                     ));
 
-                    let routes = Arc::clone(&routes);
-                    let drivers = Arc::clone(&drivers);
-                    let collector = Arc::clone(&collector);
-                    let block_bcast = block_bcast.clone();
-                    spawn_local(async move {
+                    spawn(async move {
+                        let routes = Arc::clone(&routes);
+                        let drivers = Arc::clone(&drivers);
+                        let collector = Arc::clone(&collector);
+                        let block_bcast = block_bcast.clone();
+                        let manifest = manifest.clone();
+
                         while let Some((block, letterhead)) = local_rx.recv().await {
                             let bid = block.reference();
+
+                            println!(
+                                "{}: {}",
+                                base32::encode(base32::Alphabet::RFC4648 { padding: false }, &*bid),
+                                base32::encode(
+                                    base32::Alphabet::RFC4648 { padding: false },
+                                    &block.as_slice().as_slice()
+                                )
+                            );
+
+                            let block_len = block.as_slice().as_slice().len();
+
                             let frame_buf = match BlockSlicer
                                 .produce_frames(block, letterhead.from, letterhead.to)
                                 .await
@@ -130,35 +156,89 @@ pub(crate) async fn exec_sender_system<const L: usize>(
                                 }
                             };
 
-                            let bid32 = Ident32::from_bytes(bid.as_slice()).pretty_string();
+                            let frame_len = frame_buf.get(0).unwrap().header.get_payload_length();
 
-                            debug!("Block {} turned into {} frames", bid32, frame_buf.len());
+                            assert!(dbg!(block_len == frame_len));
+
                             let routes = Arc::clone(&routes);
                             let drivers = Arc::clone(&drivers);
                             let collector = Arc::clone(&collector);
                             let block_bcast = block_bcast.clone();
-                            spawn_local(async move {
-                                for envelope in frame_buf {
-                                    let block_bcast = block_bcast.clone();
-                                    trace!(
-                                        "Dispatched frame {}/{}",
-                                        bid32,
-                                        envelope.header.get_seq_id().unwrap().num
-                                    );
 
-                                    if let Err(e) = dispatch_frame(
-                                        &routes,
-                                        &drivers,
-                                        &collector,
-                                        block_bcast,
-                                        envelope,
-                                    )
-                                    .await
-                                    {
-                                        error!("failed to dispatch frame: {e}");
+                            let bid32 = Ident32::from_bytes(bid.as_slice()).pretty_string();
+
+                            debug!("Block {} turned into {} frames", bid32, frame_buf.len());
+                            {
+                                let routes = Arc::clone(&routes);
+                                let drivers = Arc::clone(&drivers);
+                                let collector = Arc::clone(&collector);
+                                let block_bcast = block_bcast.clone();
+
+                                spawn(async move {
+                                    let routes = Arc::clone(&routes);
+                                    let drivers = Arc::clone(&drivers);
+                                    let collector = Arc::clone(&collector);
+                                    let block_bcast = (&block_bcast).clone();
+                                    for envelope in frame_buf {
+                                        debug!(
+                                            "Dispatched {}kB frame {}/{}",
+                                            envelope.buffer.len() / 1024,
+                                            bid32,
+                                            envelope.header.get_seq_id().unwrap().num
+                                        );
+
+                                        if let Err(e) = dispatch_frame(
+                                            &routes,
+                                            &drivers,
+                                            &collector,
+                                            block_bcast.clone(),
+                                            envelope,
+                                        )
+                                        .await
+                                        {
+                                            error!("failed to dispatch frame: {e}");
+                                        }
                                     }
-                                }
-                            });
+                                });
+                            }
+
+                            //// ENCODE MANIFEST
+
+                            let mut buffer = vec![];
+                            ManifestFrame::V1(manifest.clone())
+                                .generate(&mut buffer)
+                                .unwrap();
+
+                            let envelope = InMemoryEnvelope {
+                                header: CarrierFrameHeader::new_blockmanifest_frame(
+                                    letterhead.from,
+                                    letterhead.to,
+                                    SequenceIdV1 {
+                                        hash: Ident32::from_bytes(
+                                            read_cap.root_reference.as_slice(),
+                                        ),
+                                        num: 0,
+                                        max: 1,
+                                    },
+                                    buffer.len() as u16,
+                                ),
+                                // audit(security): nope, nope nope
+                                buffer,
+                            };
+
+                            let block_bcast = block_bcast.clone();
+
+                            if let Err(_e) = dispatch_frame(
+                                &Arc::clone(&routes),
+                                &Arc::clone(&drivers),
+                                &Arc::clone(&collector),
+                                block_bcast,
+                                envelope,
+                            )
+                            .await
+                            {
+                                warn!("failed to dispatch manifest; stream may arrive but is unreadable");
+                            }
                         }
                     });
                 }
@@ -201,7 +281,10 @@ pub(crate) async fn dispatch_frame(
     );
 
     if let Ok(true) = routes.is_local(target_address).await {
-        debug!("Frame addressed to local: queue in collector!");
+        debug!(
+            "Frame addressed to local ({:?}) queue in collector!",
+            envelope.header
+        );
         collector.queue_and_spawn(envelope, block_bcast).await?;
         return Ok(());
     }

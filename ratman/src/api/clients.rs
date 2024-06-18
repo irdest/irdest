@@ -14,7 +14,7 @@ use std::collections::BTreeMap;
 
 pub type ActiveAuth = Mutex<BTreeMap<AddrAuth, Address>>;
 
-pub type AuthGuard<'a> = MutexGuard<'a, BTreeMap<AddrAuth, Address>>;
+pub type AuthGuard = Mutex<BTreeMap<AddrAuth, Address>>;
 
 pub(crate) struct ConnectionManager {
     /// A map of client_id -> client metadata
@@ -36,8 +36,8 @@ impl ConnectionManager {
         self.inner.lock().await
     }
 
-    pub async fn lock_active_auth<'a>(&'a self) -> MutexGuard<'a, BTreeMap<AddrAuth, Address>> {
-        self.active_auth.lock().await
+    pub fn active_auth(&self) -> &Mutex<BTreeMap<AddrAuth, Address>> {
+        &self.active_auth
     }
 
     pub async fn insert_sync_listener(

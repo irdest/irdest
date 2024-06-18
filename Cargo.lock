@@ -3214,6 +3214,7 @@ dependencies = [
  "async-trait",
  "atomptr",
  "backoff",
+ "base32",
  "bincode",
  "byteorder",
  "chacha20",

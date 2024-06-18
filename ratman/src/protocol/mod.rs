@@ -19,18 +19,13 @@ use crate::{context::RatmanContext, protocol::announce::AddressAnnouncer};
 use libratman::{
     frame::carrier::{modes as fmodes, CarrierFrameHeader},
     tokio::{
-        select,
-        sync::{oneshot, Mutex},
-        task::{spawn_local},
+        select, spawn, sync::{oneshot, Mutex}
     },
     types::{AddrAuth, Address, Ident32},
     NonfatalError, RatmanError, Result,
 };
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::BTreeMap,
-    sync::Arc,
-};
+use std::{collections::BTreeMap, sync::Arc};
 
 /// A payload that represents a RATMAN-protocol message
 #[derive(Debug, Serialize, Deserialize)]
@@ -78,7 +73,7 @@ impl Protocol {
                 2
             }) as u16;
 
-        spawn_local(async move {
+        spawn(async move {
             // Split into a separate function to make tracing it easier
             info!("Starting announcer task for {}", address.pretty_string());
             let anon = match AddressAnnouncer::new(address, auth, client_id, &ctx).await {

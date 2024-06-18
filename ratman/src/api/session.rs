@@ -3,10 +3,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use crate::{
-    api::sending::{self, exec_send_many_socket},
+    api::sending::exec_send_many_socket,
     context::RatmanContext,
     crypto,
-    procedures::{exec_block_collector_system, handle_subscription_socket, SenderSystem},
+    procedures::{handle_subscription_socket, SenderSystem},
 };
 use async_eris::BlockSize;
 use libratman::{
@@ -23,7 +23,7 @@ use libratman::{
         io::ErrorKind,
         net::{TcpListener, TcpStream},
         sync::broadcast::channel as bcast_channel,
-        task::spawn_local,
+        task::spawn,
         time::timeout,
     },
     types::{error::UserError, AddrAuth, Address, Ident32},
@@ -76,15 +76,16 @@ pub(super) enum SessionResult {
     Drop,
 }
 
-fn check_auth<'a>(
+async fn check_auth<'a>(
     header: &MicroframeHeader,
     address: Address,
-    expected_auth: &mut AuthGuard<'a>,
+    expected_auth: &AuthGuard,
 ) -> Result<AddrAuth> {
+    let auth = expected_auth.lock().await;
     header
         .auth
         .ok_or_else(|| RatmanError::ClientApi(ClientError::InvalidAuth))
-        .and_then(|given_auth| match expected_auth.get(&given_auth) {
+        .and_then(|given_auth| match auth.get(&given_auth) {
             Some(addr) if addr == &address => Ok(given_auth),
             _ => Err(RatmanError::ClientApi(ClientError::InvalidAuth)),
         })
@@ -99,7 +100,7 @@ async fn reply_ok(raw_socket: &mut RawSocketHandle, auth: AddrAuth) -> Result<()
 pub(super) async fn single_session_exchange<'a>(
     ctx: &Arc<RatmanContext>,
     client_id: Ident32,
-    expected_auth: &mut AuthGuard<'a>,
+    auth_guard: &AuthGuard,
     raw_socket: &mut RawSocketHandle,
     senders: &Arc<SenderSystem>,
 ) -> Result<SessionResult> {
@@ -146,12 +147,14 @@ pub(super) async fn single_session_exchange<'a>(
     ////////////////////////////////////////////////
 
     trace!(
-        "given_auth: {} // expected_auth={:?}",
+        "given_auth: {} // auth_guard={:?}",
         header
             .auth
             .map(|auth| auth.token.pretty_string())
             .unwrap_or_else(|| "None".to_string()),
-        expected_auth
+        auth_guard
+            .lock()
+            .await
             .iter()
             .map(|(k, v)| (k.token.pretty_string(), v.pretty_string()))
             .collect::<Vec<_>>()
@@ -207,7 +210,7 @@ pub(super) async fn single_session_exchange<'a>(
                 .read_payload::<AddrDestroy>(header.payload_size)
                 .await??;
 
-            let auth = check_auth(&header, addr, expected_auth)?;
+            let auth = check_auth(&header, addr, auth_guard).await?;
 
             crypto::destroy_addr_key(&ctx.meta_db, addr)?;
 
@@ -239,10 +242,10 @@ pub(super) async fn single_session_exchange<'a>(
             // Use the provided auth to open the stored address key.  If this
             // works then we store the provided authentication object in
             // "expected auth"
-            expected_auth.insert(auth, addr_up.addr);
+            auth_guard.lock().await.insert(auth, addr_up.addr);
 
             let ctx2 = Arc::clone(&ctx);
-            spawn_local(async move {
+            spawn(async move {
                 if let Err(e) = Arc::clone(&ctx2.protocol)
                     .online(addr_up.addr, auth, client_id, ctx2)
                     .await
@@ -261,10 +264,10 @@ pub(super) async fn single_session_exchange<'a>(
                 .read_payload::<AddrDown>(header.payload_size)
                 .await??;
 
-            let auth = check_auth(&header, addr_down.addr, expected_auth)?;
+            let auth = check_auth(&header, addr_down.addr, auth_guard).await?;
 
             ctx.protocol.offline(addr_down.addr).await?;
-            expected_auth.remove(&auth);
+            auth_guard.lock().await.remove(&auth);
 
             reply_ok(raw_socket, auth).await?;
         }
@@ -276,6 +279,7 @@ pub(super) async fn single_session_exchange<'a>(
                 .meta_db
                 .addrs
                 .iter()
+                .into_iter()
                 .map(|(ref addr, _)| Address::from_string(addr))
                 .collect::<Vec<Address>>();
 
@@ -296,7 +300,7 @@ pub(super) async fn single_session_exchange<'a>(
                 .read_payload::<SubsCreate>(header.payload_size)
                 .await?;
 
-            let auth = check_auth(&header, subs_create.addr, expected_auth)?;
+            let auth = check_auth(&header, subs_create.addr, auth_guard).await?;
 
             let (sub_id, rx) = ctx
                 .subs
@@ -312,7 +316,7 @@ pub(super) async fn single_session_exchange<'a>(
             );
 
             let stream_ctx = Arc::clone(ctx);
-            spawn_local(async move {
+            spawn(async move {
                 debug!("Starting subscription one-shot socket");
                 if let Ok((stream, _)) = sub_listen.accept().await {
                     let raw_socket = RawSocketHandle::new(stream);
@@ -339,7 +343,7 @@ pub(super) async fn single_session_exchange<'a>(
                 .read_payload::<SubsDelete>(header.payload_size)
                 .await?;
 
-            let auth = check_auth(&header, subs_delete.addr, expected_auth)?;
+            let auth = check_auth(&header, subs_delete.addr, auth_guard).await?;
 
             ctx.subs
                 .delete_subscription(subs_delete.addr, subs_delete.sub_id)
@@ -396,7 +400,7 @@ pub(super) async fn single_session_exchange<'a>(
                 .read_payload::<SubsRestore>(header.payload_size)
                 .await?;
 
-            let auth = check_auth(&header, subs_restore.addr, expected_auth)?;
+            let auth = check_auth(&header, subs_restore.addr, auth_guard).await?;
 
             let rx = ctx
                 .subs
@@ -410,7 +414,7 @@ pub(super) async fn single_session_exchange<'a>(
             let sub_id = subs_restore.sub_id;
 
             let stream_ctx = Arc::clone(ctx);
-            spawn_local(async move {
+            spawn(async move {
                 if let Ok((stream, _)) = sub_listen.accept().await {
                     let raw_socket = RawSocketHandle::new(stream);
                     handle_subscription_socket(
@@ -442,7 +446,8 @@ pub(super) async fn single_session_exchange<'a>(
                 .read_payload::<RecvOne>(header.payload_size)
                 .await?;
 
-            let auth = check_auth(&header, recv_one.addr, expected_auth)?;
+            debug!("Decode RecvOne {}", recv_one.addr);
+            let auth = check_auth(&header, recv_one.addr, auth_guard).await?;
 
             let (tx, mut rx) = bcast_channel(1);
             ctx.clients.insert_sync_listener(recv_one.to, tx).await;
@@ -501,7 +506,7 @@ pub(super) async fn single_session_exchange<'a>(
                 .read_payload::<RecvMany>(header.payload_size)
                 .await?;
 
-            let auth = check_auth(&header, recv_many.addr, expected_auth)?;
+            let auth = check_auth(&header, recv_many.addr, auth_guard).await?;
 
             let (tx, mut rx) = bcast_channel(8);
             ctx.clients.insert_sync_listener(recv_many.to, tx).await;
@@ -556,66 +561,67 @@ pub(super) async fn single_session_exchange<'a>(
         //
         // ^-^ Client wants to send a message to one recipient
         m if m == cm::make(cm::SEND, cm::ONE) => {
-            let SendTo { letterhead } = raw_socket
-                .read_payload::<SendTo>(header.payload_size)
-                .await??;
+            todo!()
+            // let SendTo { letterhead } = raw_socket
+            //     .read_payload::<SendTo>(header.payload_size)
+            //     .await??;
 
-            let auth = check_auth(&header, letterhead.from, expected_auth)?;
-            debug!("{client_id} Passed authentication on [send : one]");
+            // let auth = check_auth(&header, letterhead.from, auth_guard).await?;
+            // debug!("{client_id} Passed authentication on [send : one]");
 
-            let this_key = crypto::get_addr_key(&ctx.meta_db, letterhead.from, auth)?;
-            let shared_key = crypto::diffie_hellman(&this_key, letterhead.to.inner_address())
-                .ok_or::<RatmanError>(
-                EncodingError::Encryption("Failed diffie-hellman exchange".into()).into(),
-            )?;
+            // let this_key = crypto::get_addr_key(&ctx.meta_db, letterhead.from, auth)?;
+            // let shared_key = crypto::diffie_hellman(&this_key, letterhead.to.inner_address())
+            //     .ok_or::<RatmanError>(
+            //     EncodingError::Encryption("Failed diffie-hellman exchange".into()).into(),
+            // )?;
 
-            let chosen_block_size = match letterhead.stream_size {
-                m if m < (16 * 1024) => async_eris::BlockSize::_1K,
-                _ => async_eris::BlockSize::_32K,
-            };
+            // let chosen_block_size = match letterhead.stream_size {
+            //     m if m < (16 * 1024) => async_eris::BlockSize::_1K,
+            //     _ => async_eris::BlockSize::_32K,
+            // };
 
-            debug!("{client_id} Selected block size is {chosen_block_size}");
-            let mut compat_socket = raw_socket.to_compat();
-            let read_cap = async_eris::encode(
-                &mut compat_socket,
-                shared_key.as_bytes(),
-                chosen_block_size,
-                &ctx.journal.blocks,
-            )
-            .await?;
-            raw_socket.from_compat(compat_socket);
+            // debug!("{client_id} Selected block size is {chosen_block_size}");
+            // let mut compat_socket = raw_socket.to_compat();
+            // let read_cap = async_eris::encode(
+            //     &mut compat_socket,
+            //     shared_key.as_bytes(),
+            //     chosen_block_size,
+            //     &ctx.journal.blocks,
+            // )
+            // .await?;
+            // raw_socket.from_compat(compat_socket);
 
-            debug!("Block encoding complete");
+            // debug!("Block encoding complete");
 
-            match chosen_block_size {
-                BlockSize::_1K => {
-                    debug!("Dispatch block on {chosen_block_size} queue");
-                    senders
-                        .tx_1k
-                        .send((read_cap, letterhead))
-                        .await
-                        .map_err(|e| {
-                            RatmanError::Schedule(libratman::ScheduleError::Contention(
-                                e.to_string(),
-                            ))
-                        })?;
-                }
-                BlockSize::_32K => {
-                    debug!("Dispatch block on {chosen_block_size} queue");
-                    senders
-                        .tx_32k
-                        .send((read_cap, letterhead))
-                        .await
-                        .map_err(|e| {
-                            RatmanError::Schedule(libratman::ScheduleError::Contention(
-                                e.to_string(),
-                            ))
-                        })?;
-                }
-            }
+            // match chosen_block_size {
+            //     BlockSize::_1K => {
+            //         debug!("Dispatch block on {chosen_block_size} queue");
+            //         senders
+            //             .tx_1k
+            //             .send((read_cap, letterhead))
+            //             .await
+            //             .map_err(|e| {
+            //                 RatmanError::Schedule(libratman::ScheduleError::Contention(
+            //                     e.to_string(),
+            //                 ))
+            //             })?;
+            //     }
+            //     BlockSize::_32K => {
+            //         debug!("Dispatch block on {chosen_block_size} queue");
+            //         senders
+            //             .tx_32k
+            //             .send((read_cap, letterhead))
+            //             .await
+            //             .map_err(|e| {
+            //                 RatmanError::Schedule(libratman::ScheduleError::Contention(
+            //                     e.to_string(),
+            //                 ))
+            //             })?;
+            //     }
+            // }
 
-            debug!("Done with request {}, reply ok", client_id.pretty_string());
-            reply_ok(raw_socket, auth).await?;
+            // debug!("Done with request {}, reply ok", client_id.pretty_string());
+            // reply_ok(raw_socket, auth).await?;
         }
         //
         //
@@ -639,14 +645,14 @@ pub(super) async fn single_session_exchange<'a>(
                     ))))?;
 
             debug!("Generated letterheads from {this_addr}");
-            let auth = check_auth(&header, this_addr, expected_auth)?;
+            let auth = check_auth(&header, this_addr, auth_guard).await?;
             debug!("{client_id} Passed authentication on [send : many]");
 
             let ctx = Arc::clone(&ctx);
             let senders = Arc::clone(senders);
             let send_sock_l = TcpListener::bind("127.0.0.1:0").await?;
             let bind = send_sock_l.local_addr()?.to_string();
-            let join = spawn_local(async move {
+            let join = spawn(async move {
                 let (stream, _) = send_sock_l.accept().await?;
                 debug!("Spawn sender task");
                 exec_send_many_socket(

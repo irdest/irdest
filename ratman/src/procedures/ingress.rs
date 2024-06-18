@@ -17,7 +17,7 @@ use libratman::{
             broadcast::{Receiver as BcastReceiver, Sender as BcastSender},
             mpsc::Receiver,
         },
-        task::spawn_local,
+        task::spawn,
     },
     tokio_util::compat::TokioAsyncReadCompatExt,
     types::{AddrAuth, Ident32, LetterheadV1},
@@ -51,6 +51,7 @@ pub async fn exec_ingress_system(
     loop {
         let tripwire = ctx.tripwire.clone();
         let block_notifier = block_notifier.clone();
+
         select! {
             biased;
             _ = tripwire => break,
@@ -61,7 +62,7 @@ pub async fn exec_ingress_system(
 
                 let ctx = Arc::clone(&ctx);
                 let tripwire = ctx.tripwire.clone();
-                spawn_local(async move {
+                spawn(async move {
                     if let Err(e) = reassemble_message_stream(ctx, manifest_notifier.unwrap(), tripwire, block_notifier.subscribe()).await {
                         error!("message stream stuck: {e}");
                         return;
@@ -84,6 +85,7 @@ async fn reassemble_message_stream(
     mut block_notify: BcastReceiver<BlockNotifier>,
 ) -> Result<()> {
     let manifest = ctx.journal.manifests.get(&manifest.0.to_string())?.unwrap();
+    debug!("Attempt to reassemble message stream for manifest {manifest:?}");
 
     // fixme: this won't work on non-linux?
     let null_file = File::open("/dev/null").await?;
@@ -124,6 +126,8 @@ async fn reassemble_message_stream(
         }
     }
 
+    debug!("Passed re-assembly check!");
+
     let sub_id = *ctx
         .subs
         .recipients
@@ -134,11 +138,13 @@ async fn reassemble_message_stream(
 
     // Notify all listening subscription streams
     if let Ok(bcast_tx) = ctx.get_active_listener(Some(sub_id), letterhead.to).await {
+        debug!("Notify subscription {sub_id}");
         bcast_tx.send((letterhead.clone(), read_cap)).unwrap();
     }
 
     // Then notify all active sync listeners, if they exist
     if let Ok(bcast_tx) = ctx.get_active_listener(None, letterhead.to).await {
+        debug!("Notify sync message receiver");
         bcast_tx.send((letterhead, read_cap)).unwrap();
     }
 

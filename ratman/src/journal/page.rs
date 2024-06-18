@@ -62,14 +62,17 @@ impl<T: Serialize + DeserializeOwned> CachePage<T> {
     }
 
     /// Get an iterator over all valid entries on this page and their keys
-    pub fn iter<'page>(&'page self) -> impl DoubleEndedIterator<Item = (String, T)> + 'page {
-        self.0.iter().filter_map(|item| match item {
-            Ok((key, val)) => Some((
-                String::from_utf8(key.to_vec()).unwrap(),
-                bincode::deserialize(&*val).unwrap(),
-            )),
-            Err(_) => None,
-        })
+    pub fn iter(&self) -> Vec<(String, T)> {
+        self.0
+            .iter()
+            .filter_map(|item| match item {
+                Ok((key, val)) => Some((
+                    String::from_utf8(key.to_vec()).unwrap(),
+                    bincode::deserialize(&*val).unwrap(),
+                )),
+                Err(_) => None,
+            })
+            .collect()
     }
 }
 

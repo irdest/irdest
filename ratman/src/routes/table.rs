@@ -150,9 +150,7 @@ impl RouteTable {
 
     pub(crate) async fn register_local_route(&self, local: Address) -> Result<()> {
         let local_addr = RouteData::local(local);
-        self.meta_db
-            .routes
-            .insert(local.to_string(), &local_addr)?;
+        self.meta_db.routes.insert(local.to_string(), &local_addr)?;
         debug!("Insert {local_addr:?} to routes table");
         Ok(())
     }
@@ -163,6 +161,7 @@ impl RouteTable {
     }
 
     pub(crate) async fn is_local(&self, maybe_local: Address) -> Result<bool> {
+        debug!("Route states: {:#?}", self.meta_db.routes.iter());
         Ok(self
             .meta_db
             .routes

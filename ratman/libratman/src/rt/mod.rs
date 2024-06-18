@@ -49,7 +49,7 @@ pub struct AsyncSystem {
 impl AsyncSystem {
     pub fn new(label: String, stack_mb: usize) -> Arc<Self> {
         Arc::new(Self {
-            rt: Builder::new_current_thread()
+            rt: Builder::new_multi_thread()
                 .thread_name(&label)
                 .enable_io()
                 .enable_time()
@@ -181,7 +181,7 @@ fn nested_block_on_panics() {
 }
 
 #[test]
-fn test_spawn_local() {
+fn test_spawn() {
     use tokio::{sync::mpsc, time};
 
     async fn wait_n_send(s: mpsc::Sender<String>, n: u64) {
@@ -201,16 +201,16 @@ fn test_spawn_local() {
     }
 
     async fn root_job() {
-        use tokio::task::spawn_local;
+        use tokio::task::spawn;
         let (tx, rx) = mpsc::channel(8);
-        spawn_local(wait_n_send(tx.clone(), 1));
-        spawn_local(wait_n_send(tx.clone(), 2));
-        spawn_local(wait_n_send(tx, 3));
+        spawn(wait_n_send(tx.clone(), 1));
+        spawn(wait_n_send(tx.clone(), 2));
+        spawn(wait_n_send(tx, 3));
 
         recv_and_print(rx).await;
     }
 
-    AsyncSystem::new("test_spawn_local".to_owned(), 1).exec(root_job());
+    AsyncSystem::new("test_spawn".to_owned(), 1).exec(root_job());
 }
 
 #[test]

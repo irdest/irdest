@@ -184,13 +184,11 @@ impl BlockSlicer {
         // sequence ID hash, with an incrementing numerical count.  This way
         // we can re-order frames that have arrived out of order.
         let mut ctr = 0;
-        let max = 1
-            + (
-                // The length of the block
-                b.as_slice().len()
+        // The length of the block
+        let max = b.as_slice().len()
                 // divided by the MTU - what is required for the header
-                / (max_payload_size as usize - header_size - 4)
-            );
+            / (max_payload_size as usize - header_size - 4);
+
         for chunk in b.as_slice().chunks(max_payload_size as usize) {
             assert!(ctr as usize <= max);
             trace!(

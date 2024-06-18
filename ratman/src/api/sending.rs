@@ -77,6 +77,16 @@ pub async fn exec_send_many_socket(
         )
         .await?;
 
+        for (_, block_data) in &ctx.journal.blocks.iter() {
+            let (reference, block) = block_data.data.clone().dissolve::<1024>();
+
+            println!(
+                "{}: {}",
+                base32::encode(base32::Alphabet::RFC4648 { padding: false }, &*reference),
+                base32::encode(base32::Alphabet::RFC4648 { padding: false }, &block)
+            );
+        }
+
         debug!("Block encoding complete");
         debug!("Dispatch block on {chosen_block_size} queue");
         match chosen_block_size {

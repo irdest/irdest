@@ -22,7 +22,7 @@ use libratman::{
     tokio::{
         io::ErrorKind as TokioIoErrorKind,
         net::{TcpListener, TcpStream},
-        task::{spawn_local, yield_now},
+        task::{spawn, yield_now},
     },
     RatmanError,
 };
@@ -42,22 +42,26 @@ pub async fn start_api_thread(
             let client_id = Ident32::random();
             debug!("Accepted new api client {}", client_id.pretty_string());
 
-            let jh = spawn_local(run_client_handler(
+            let jh = spawn(run_client_handler(
                 Arc::clone(&context),
                 Arc::clone(&senders),
                 stream,
                 client_id,
             ));
 
+            debug!("Starting new api thread");
             let ctx = Arc::clone(&context);
             new_async_thread(
                 format!("ratmand-api-{}", client_id.to_string().to_ascii_lowercase()),
                 1024 * 16,
                 async move {
+                    debug!("Oiiii");
                     let res = jh
                         .into_future()
                         .await
                         .expect("failed to join `run_client_handler` future");
+
+                    debug!("AWAWAWAWAWA");
 
                     // Remove the client here, no matter what the runner task does
                     ctx.clients.lock_inner().await.remove(&client_id);
@@ -95,8 +99,8 @@ pub async fn run_client_handler(
         .insert(client_id, Default::default());
 
     loop {
-        let mut auth_guard = ctx.clients.lock_active_auth().await;
-        match single_session_exchange(&ctx, client_id, &mut auth_guard, &mut raw_socket, &senders)
+        let auth_guard = ctx.clients.active_auth();
+        match single_session_exchange(&ctx, client_id, &auth_guard, &mut raw_socket, &senders)
             .await
         {
             Ok(SessionResult::Next) => {

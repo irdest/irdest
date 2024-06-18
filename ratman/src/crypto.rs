@@ -118,6 +118,7 @@ pub fn list_addr_keys(meta_db: &Arc<MetadataDb>) -> Vec<Address> {
     meta_db
         .addrs
         .iter()
+        .into_iter()
         .map(|(addr, _)| Address::from_string(&addr))
         .collect()
 }

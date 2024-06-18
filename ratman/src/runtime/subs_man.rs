@@ -22,9 +22,13 @@ impl SubsManager {
     pub fn new(meta_db: &Arc<MetadataDb>) -> Arc<Self> {
         let mut recipients = BTreeMap::new();
 
-        meta_db.subscriptions.iter().for_each(|(sub_id, sub_data)| {
-            recipients.insert(sub_data.recipient, Ident32::from_string(&sub_id));
-        });
+        meta_db
+            .subscriptions
+            .iter()
+            .into_iter()
+            .for_each(|(sub_id, sub_data)| {
+                recipients.insert(sub_data.recipient, Ident32::from_string(&sub_id));
+            });
 
         Arc::new(Self {
             meta_db: Arc::clone(meta_db),
@@ -51,6 +55,7 @@ impl SubsManager {
             .meta_db
             .subscriptions
             .iter()
+            .into_iter()
             .find(|(_, SubscriptionData { recipient: r, .. })| r == &recipient)
         {
             Some((sub_key, mut sub_val)) => {
@@ -72,7 +77,7 @@ impl SubsManager {
                     sub_id.to_string(),
                     &SubscriptionData {
                         recipient,
-                        listeners: vec![addr].into_iter().collect(),
+                        listeners: vec![addr].into_iter().into_iter().collect(),
                         missed_items: Default::default(),
                     },
                 )?;

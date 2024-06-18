@@ -21,9 +21,10 @@ use libratman::{
         },
         task::{self, spawn_blocking},
     },
-    types::{Ident32, InMemoryEnvelope, SequenceIdV1}, EncodingError, RatmanError, Result,
+    types::{Ident32, InMemoryEnvelope, SequenceIdV1},
+    EncodingError, RatmanError, Result,
 };
-use std::{collections::BTreeMap, sync::Arc};
+use std::{collections::BTreeMap, convert::TryFrom, sync::Arc};
 
 type EnvSender = Sender<(SequenceIdV1, InMemoryEnvelope)>;
 type EnvReceiver = Receiver<(SequenceIdV1, InMemoryEnvelope)>;
@@ -68,10 +69,11 @@ impl BlockCollectorWorker {
         let this = &mut self;
         while let Some((seq_id, envelope)) = recv.recv().await {
             let insert_at_end = seq_id.num as usize >= this.buffer.len();
-            trace!(
-                "Insert chunk in sequence {} to index {}",
+            debug!(
+                "Insert chunk in sequence {} to index {}/{}",
                 seq_id.hash,
-                if insert_at_end { -1 } else { seq_id.num as i8 }
+                if insert_at_end { -1 } else { seq_id.num as i8 },
+                seq_id.max
             );
 
             // If the index we're looking at is beyond the limit of the current
@@ -160,7 +162,8 @@ impl BlockCollector {
         // when the router last shut down
         for entry in Arc::clone(&this.meta_db).incomplete.0.iter() {
             let (key, val) = entry?;
-            let id = Ident32::from_bytes(&key);
+            let key_str = core::str::from_utf8(&key).unwrap();
+            let id = Ident32::try_from(key_str)?;
             let incomplete = rmp_serde::from_slice::<'_, IncompleteBlockData>(&val)
                 .map_err(|e| EncodingError::Internal(e.to_string()))?;
 
@@ -246,7 +249,7 @@ impl BlockCollector {
                     "Spawn new frame collector for block_id {}",
                     sequence_id.hash
                 );
-                task::spawn_local(
+                task::spawn(
                     BlockCollectorWorker {
                         max_num: sequence_id.max,
                         buffer: vec![],

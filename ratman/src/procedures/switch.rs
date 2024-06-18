@@ -10,7 +10,7 @@ use crate::{
     storage::route::RouteState,
 };
 use libratman::tokio::{
-    select, sync::broadcast::Sender as BcastSender, sync::mpsc::Sender, task::spawn_local,
+    select, sync::broadcast::Sender as BcastSender, sync::mpsc::Sender, task::spawn,
 };
 use libratman::{
     frame::carrier::modes::{self as fmodes, DATA, MANIFEST},
@@ -51,7 +51,9 @@ pub(crate) async fn exec_switching_batch(
     // Control flow endpoint to send signals to this switch between batches
     ingress_tx: Sender<MessageNotifier>,
     collector_tx: Sender<InMemoryEnvelope>,
-    block_notify: BcastSender<BlockNotifier>,
+    // We only take the sender because we can spawn receivers from it
+    // with .subscribe()
+    block_notify_tx: BcastSender<BlockNotifier>,
     // Metrics collector state to allow diagnostic analysis of this
     // procedure
     // #[cfg(feature = "dashboard")] metrics: &Arc<metrics::Metrics>,
@@ -68,8 +70,8 @@ pub(crate) async fn exec_switching_batch(
             }
         };
 
-        let block_notify = block_notify.clone();
-        
+        let block_notify_tx = block_notify_tx.clone();
+
         trace!(
             "Received frame ({}) from {}/{:?}",
             match header.get_seq_id() {
@@ -191,7 +193,7 @@ pub(crate) async fn exec_switching_batch(
                     Some(RouteState::Active) if mode == MANIFEST => {
                         let journal = Arc::clone(&journal);
                         let ingress_tx = ingress_tx.clone();
-                        spawn_local(async move {
+                        spawn(async move {
                             if let Err(e) =
                                 journal.queue_manifest(InMemoryEnvelope { header, buffer })
                             {
@@ -208,7 +210,7 @@ pub(crate) async fn exec_switching_batch(
                             routes,
                             links,
                             collector,
-                            block_notify.clone(),
+                            block_notify_tx.clone(),
                             InMemoryEnvelope { header, buffer },
                         )
                         .await
@@ -234,7 +236,7 @@ pub(crate) async fn exec_switching_batch(
                     // journal
                     None => {
                         let journal = Arc::clone(&journal);
-                        spawn_local(async move {
+                        spawn(async move {
                             if let Err(e) = journal.queue_frame(InMemoryEnvelope { header, buffer })
                             {
                                 error!("failed to queue frame to journal: {e:?}");

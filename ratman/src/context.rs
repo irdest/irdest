@@ -24,7 +24,7 @@ use libratman::{
             broadcast::{channel as bcast_channel, Sender as BcastSender},
             mpsc::channel,
         },
-        task::spawn_local,
+        task::spawn,
     },
     types::{Ident32, LetterheadV1, Os, Recipient, StateDirectoryLock},
     RatmanError, Result,
@@ -75,12 +75,12 @@ impl RatmanContext {
     // todo: return errors here to allow the journal init to fail gracefully
     pub(crate) async fn new(
         config: ConfigTree,
-        collector_notify_tx: BcastSender<BlockNotifier>,
+        block_notify_tx: BcastSender<BlockNotifier>,
     ) -> Result<Arc<Self>> {
         let (tripwire, tw_worker) = Tripwire::new_signals();
         let protocol = Protocol::new();
 
-        spawn_local(tw_worker);
+        spawn(tw_worker);
 
         // Initialise storage systems
         let journal_fjall = Config::new(Os::match_os().data_path().join("journal.fjall"))
@@ -95,12 +95,9 @@ impl RatmanContext {
         let links = LinksMap::new();
         let routes = RouteTable::new(Arc::clone(&meta_db));
 
-        let collector = BlockCollector::restore(
-            Arc::clone(&journal),
-            Arc::clone(&meta_db),
-            collector_notify_tx,
-        )
-        .await?;
+        let collector =
+            BlockCollector::restore(Arc::clone(&journal), Arc::clone(&meta_db), block_notify_tx)
+                .await?;
         let clients = Arc::new(ConnectionManager::new());
         let subs = SubsManager::new(&meta_db);
 
@@ -124,10 +121,10 @@ impl RatmanContext {
         // Setup the channel to notify future block assemblers of new blocks.
         // This is needed to setup the block collector, which is initialised
         // very early to make sure we can restore previous restore sessions.
-        let (collector_notify_tx, _) = bcast_channel(8);
+        let (block_notify_tx, block_notify_rx) = bcast_channel(8);
 
         // Initialise in-memory state and restore any existing state from disk
-        let this = match Self::new(cfg, collector_notify_tx.clone()).await {
+        let this = match Self::new(cfg, block_notify_tx.clone()).await {
             Ok(t) => t,
             Err(e) => libratman::elog(
                 format!("failed to initialise/ restore journal state: {e:?}"),
@@ -257,11 +254,11 @@ impl RatmanContext {
         // contained in a manifest back into a complete message streams
         let ingress_tx = {
             let (ingress_tx, rx) = channel(32);
-            let collector_notify_tx = collector_notify_tx.clone();
+            let block_notify_tx = block_notify_tx.clone();
 
             let this_ = Arc::clone(&this);
             new_async_thread("ratmand-ingress", 1024 * 8, async move {
-                procedures::exec_ingress_system(this_, rx, collector_notify_tx).await;
+                procedures::exec_ingress_system(this_, rx, block_notify_tx).await;
                 Ok(())
             });
 
@@ -274,10 +271,9 @@ impl RatmanContext {
         let (collector_tx, collector_rx) = channel(8);
         {
             let ctx = Arc::clone(&this);
-            let collector_notify_tx = collector_notify_tx.clone();
+            let block_notify_tx = block_notify_tx.clone();
             new_async_thread("ratmand-collector", 1024 * 32, async move {
-                procedures::exec_block_collector_system(ctx, collector_rx, collector_notify_tx)
-                    .await
+                procedures::exec_block_collector_system(ctx, collector_rx, block_notify_tx).await
             });
         }
 
@@ -286,7 +282,7 @@ impl RatmanContext {
             &this.routes,
             &this.links,
             &this.collector,
-            collector_notify_tx.clone(),
+            block_notify_tx.clone(),
             this.tripwire.clone(),
         )
         .await;
@@ -295,7 +291,7 @@ impl RatmanContext {
             &this.routes,
             &this.links,
             &this.collector,
-            collector_notify_tx.clone(),
+            block_notify_tx.clone(),
             this.tripwire.clone(),
         )
         .await;
@@ -312,8 +308,8 @@ impl RatmanContext {
                 let this_ = Arc::clone(&this);
                 let ingress_tx = ingress_tx.clone();
                 let collector_tx = collector_tx.clone();
-                let collector_notify_tx = collector_notify_tx.clone();
-                
+                let block_notify_tx = block_notify_tx.clone();
+
                 new_async_thread::<String, _, ()>(
                     format!("ratmand-switch-{name}"),
                     1024 * 4,
@@ -329,7 +325,7 @@ impl RatmanContext {
                             (&name, &ep),
                             ingress_tx,
                             collector_tx,
-                            collector_notify_tx.clone(),
+                            block_notify_tx.clone(),
                             // #[cfg(feature = "dashboard")]
                             // todo!()
                         )
