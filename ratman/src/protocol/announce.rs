@@ -5,13 +5,11 @@ use libratman::{
         carrier::{AnnounceFrame, AnnounceFrameV1, CarrierFrameHeader, OriginDataV1, RouteDataV1},
         FrameGenerator,
     },
-    tokio::{sync::oneshot, task::spawn_local, time},
-    types::{AddrAuth, Address, Ident32, InMemoryEnvelope},
-    RatmanError, Result,
+    tokio::{time},
+    types::{AddrAuth, Address, Ident32, InMemoryEnvelope}, Result,
 };
 use std::{
     sync::{
-        atomic::{AtomicBool, Ordering},
         Arc,
     },
     time::Duration,

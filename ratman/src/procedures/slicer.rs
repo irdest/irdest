@@ -5,10 +5,9 @@
 
 //! Slices `Message` into a series of Frames
 
-use crate::context::RatmanContext;
-use crate::journal::{self, Journal};
-use async_eris::{Block, BlockKey, BlockReference, BlockStorage, MemoryStorage, ReadCapability};
-use fjall::{Config, Keyspace};
+use crate::journal::Journal;
+use async_eris::{Block, BlockKey, BlockReference, BlockStorage, ReadCapability};
+
 use libratman::tokio::sync::mpsc::Sender;
 use libratman::types::LetterheadV1;
 use libratman::{
@@ -17,11 +16,10 @@ use libratman::{
     Result,
 };
 use libratman::{BlockError, RatmanError};
-use rand::rngs::OsRng;
-use rand::{random, RngCore};
-use std::collections::{HashMap, VecDeque};
+
+use std::collections::VecDeque;
 use std::convert::TryInto;
-use std::env::temp_dir;
+
 use std::sync::Arc;
 
 pub struct BlockWorker {
@@ -94,7 +92,7 @@ use libratman::tokio;
 async fn test_block_walker() {
     use std::collections::HashMap;
 
-    let td = temp_dir();
+    let td = tempdir::temp_dir();
     let j = Arc::new(
         Journal::new(Keyspace::open(Config::new(td.join("test_block_walker.jfall"))).unwrap())
             .unwrap(),

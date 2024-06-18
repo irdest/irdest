@@ -6,12 +6,14 @@
 
 //! Asynchronous Ratman routing core
 
+use super::{slicer::BlockSlicer, BlockWorker};
 use crate::{
     journal::Journal,
     links::LinksMap,
     routes::{EpNeighbourPair, RouteTable},
 };
 use async_eris::{Block, ReadCapability};
+use colored::Colorize;
 use libratman::{
     rt::new_async_thread,
     tokio::{
@@ -24,8 +26,6 @@ use libratman::{
 };
 use std::sync::Arc;
 use tripwire::Tripwire;
-
-use super::{slicer::BlockSlicer, BlockWorker};
 
 pub struct SenderSystem {
     pub tx_1k: Sender<(ReadCapability, LetterheadV1)>,
@@ -84,8 +84,9 @@ pub(crate) async fn exec_sender_system<const L: usize>(
             1024 * 8,
             async move {
                 loop {
+                    debug!("Setup sender system for {}kB blocks", L / 1024);
                     let tw = tripwire.clone();
-                    let (read_cap, letterhead) = select! {
+                    let (read_cap, letterhead): (ReadCapability, LetterheadV1) = select! {
                         _ = tw => break,
                         i = rx_l.recv() => {
                             match i {
@@ -95,6 +96,11 @@ pub(crate) async fn exec_sender_system<const L: usize>(
                         }
                     };
 
+                    debug!(
+                        "Got block to handle, (to: {}, len: {})",
+                        letterhead.to.inner_address().pretty_string(),
+                        letterhead.stream_size
+                    );
                     let (local_tx, mut local_rx) = channel::<(Block<L>, LetterheadV1)>(4);
                     spawn_local(BlockWorker { read_cap }.traverse_block_tree::<L>(
                         Arc::clone(&journal),
@@ -106,6 +112,7 @@ pub(crate) async fn exec_sender_system<const L: usize>(
                     let drivers = Arc::clone(&drivers);
                     spawn_local(async move {
                         while let Some((block, letterhead)) = local_rx.recv().await {
+                            let bid = block.reference();
                             let frame_buf = match BlockSlicer
                                 .produce_frames(block, letterhead.from, letterhead.to)
                                 .await
@@ -117,10 +124,19 @@ pub(crate) async fn exec_sender_system<const L: usize>(
                                 }
                             };
 
+                            let bid32 = Ident32::from_bytes(bid.as_slice()).pretty_string();
+
+                            trace!("Block {} turned into {} frames", bid32, frame_buf.len());
                             let routes = Arc::clone(&routes);
                             let drivers = Arc::clone(&drivers);
                             spawn_local(async move {
                                 for envelope in frame_buf {
+                                    trace!(
+                                        "Dispatched frame {}/{}",
+                                        bid32,
+                                        envelope.header.get_seq_id().unwrap().num
+                                    );
+
                                     if let Err(e) =
                                         dispatch_frame(&routes, &drivers, envelope).await
                                     {
@@ -166,9 +182,14 @@ pub(crate) async fn dispatch_frame(
         // Return the endpoint/target ID pair from the resolver
         Some(resolve) => resolve,
         None => {
+            debug!(
+                "{}: failed to resolve address {}",
+                "[FAIL]".custom_color(crate::util::SOFT_WARN_COLOR),
+                target_address.pretty_string()
+            );
             return Err(RatmanError::Nonfatal(NonfatalError::UnknownAddress(
                 target_address,
-            )))
+            )));
         }
     };
 

@@ -14,8 +14,7 @@ use chrono::Utc;
 use libratman::{
     frame::carrier::AnnounceFrameV1,
     tokio::sync::mpsc::channel,
-    types::{Address, Ident32, Neighbour},
-    NetmodError, NonfatalError, RatmanError, Result,
+    types::{Address, Ident32}, NonfatalError, RatmanError, Result,
 };
 use serde::{Deserialize, Serialize};
 use std::{collections::VecDeque, iter::FromIterator, sync::Arc};

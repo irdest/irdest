@@ -28,7 +28,7 @@ use libratman::{
     types::{AddrAuth, Address, Ident32},
     ClientError, RatmanError, Result,
 };
-use std::{collections::BTreeMap, ffi::CString, sync::Arc, time::Duration};
+use std::{ffi::CString, sync::Arc, time::Duration};
 
 use super::clients::AuthGuard;
 
@@ -563,7 +563,7 @@ pub(super) async fn single_session_exchange<'a>(
                 .await??;
 
             let auth = check_auth(&header, letterhead.from, expected_auth)?;
-            debug!("Passed authentication on [send : one]");
+            debug!("{client_id} Passed authentication on [send : one]");
             crypto::start_stream(
                 &ctx.meta_db,
                 letterhead.from,
@@ -581,6 +581,7 @@ pub(super) async fn single_session_exchange<'a>(
                 _ => async_eris::BlockSize::_32K,
             };
 
+            debug!("{client_id} Selected block size is {chosen_block_size}");
             let mut compat_socket = raw_socket.to_compat();
             let read_cap = async_eris::encode(
                 &mut compat_socket,
@@ -596,6 +597,7 @@ pub(super) async fn single_session_exchange<'a>(
 
             match chosen_block_size {
                 BlockSize::_1K => {
+                    debug!("Dispatch block on {chosen_block_size} queue");
                     senders
                         .tx_1k
                         .send((read_cap, letterhead))
@@ -607,6 +609,7 @@ pub(super) async fn single_session_exchange<'a>(
                         })?;
                 }
                 BlockSize::_32K => {
+                    debug!("Dispatch block on {chosen_block_size} queue");
                     senders
                         .tx_32k
                         .send((read_cap, letterhead))
@@ -619,6 +622,7 @@ pub(super) async fn single_session_exchange<'a>(
                 }
             }
 
+            debug!("Done with request {}, reply ok", client_id.pretty_string());
             reply_ok(raw_socket, auth).await?;
         }
         //

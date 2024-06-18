@@ -29,9 +29,11 @@ pub struct Encoder<'a, S: BlockStorage<BS>, const BS: usize> {
 }
 
 /// Supported block sizes by this implementation
-#[derive(Clone, Copy, Debug)]
+#[derive(thiserror::Error, Clone, Copy, Debug)]
 pub enum BlockSize {
+    #[error("1kB")]
     _1K,
+    #[error("32kB")]
     _32K,
 }
 

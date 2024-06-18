@@ -3,16 +3,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use crate::{
-    journal::{self, Journal},
+    journal::{Journal},
     links::{GenericEndpoint, LinksMap},
-    procedures::{self, BlockCollector},
-    routes::{EpNeighbourPair, RouteTable, RouteType},
+    procedures::{self},
+    routes::{EpNeighbourPair, RouteTable},
     storage::route::RouteState,
 };
 use libratman::{
     frame::carrier::{
         modes::{self as fmodes, DATA, MANIFEST},
-        AnnounceFrameV1,
     },
     types::{InMemoryEnvelope, Recipient},
     NetmodError, RatmanError,

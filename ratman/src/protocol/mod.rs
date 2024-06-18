@@ -21,7 +21,7 @@ use libratman::{
     tokio::{
         select,
         sync::{oneshot, Mutex},
-        task::{self, spawn_local},
+        task::{spawn_local},
     },
     types::{AddrAuth, Address, Ident32},
     NonfatalError, RatmanError, Result,
@@ -29,7 +29,6 @@ use libratman::{
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
-    sync::atomic::{AtomicBool, Ordering},
     sync::Arc,
 };
 

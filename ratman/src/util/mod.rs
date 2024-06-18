@@ -10,6 +10,7 @@ pub(crate) mod pidfile;
 // pub(crate) mod upnp; // FIXME: this currently doesn't work
 
 use crate::config::{ConfigTree, SubConfig};
+use colored::CustomColor;
 use libratman::tokio::sync::mpsc::{Receiver, Sender};
 use nix::unistd::Uid;
 
@@ -23,6 +24,12 @@ pub fn setup_test_logging() {
     let cfg = ConfigTree::default_in_memory().patch("ratmand/verbosity", "trace");
     setup_logging(cfg.get_subtree("ratmand").as_ref().unwrap());
 }
+
+pub const SOFT_WARN_COLOR: CustomColor = CustomColor {
+    r: 255,
+    g: 152,
+    b: 83,
+};
 
 /// Setup default logging output with a configuration
 pub fn setup_logging(ratmand_config: &SubConfig) {

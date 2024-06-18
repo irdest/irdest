@@ -2,15 +2,13 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
+use super::{Ident32, InMemoryEnvelope};
 use crate::types::Address;
 use async_eris::BlockReference;
 use hex::FromHexError;
 use serde::{Deserialize, Serialize};
-use std::{ffi::CString, fmt::Display, net::AddrParseError};
+use std::net::AddrParseError;
 use tokio::{io, time::error::Elapsed};
-use tracing::Dispatch;
-
-use super::{Ident32, InMemoryEnvelope};
 
 /// An Irdest-wide Result capable of expressing many different states
 pub type Result<T> = std::result::Result<T, RatmanError>;

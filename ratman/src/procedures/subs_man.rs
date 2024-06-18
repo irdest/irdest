@@ -35,7 +35,10 @@ impl SubsManager {
         })
     }
 
-    async fn sub_listener(&self, sub_id: Ident32) -> Sender<(LetterheadV1, ReadCapability)> {
+    async fn sub_listener(
+        self: &Arc<Self>,
+        sub_id: Ident32,
+    ) -> Sender<(LetterheadV1, ReadCapability)> {
         self.active_listeners
             .lock()
             .await
@@ -44,7 +47,7 @@ impl SubsManager {
             .clone()
     }
 
-    pub fn available_subscriptions(&self, _recipient: Recipient) -> Vec<Ident32> {
+    pub fn available_subscriptions(self: &Arc<Self>, _recipient: Recipient) -> Vec<Ident32> {
         self.meta_db
             .subscriptions
             .iter()
@@ -53,7 +56,7 @@ impl SubsManager {
     }
 
     pub async fn create_subscription(
-        &self,
+        self: &Arc<Self>,
         addr: Address,
         recipient: Recipient,
     ) -> Result<(Ident32, Receiver<(LetterheadV1, ReadCapability)>)> {
@@ -109,7 +112,11 @@ impl SubsManager {
         }
     }
 
-    pub async fn delete_subscription(&self, addr: Address, sub_id: Ident32) -> Result<()> {
+    pub async fn delete_subscription(
+        self: &Arc<Self>,
+        addr: Address,
+        sub_id: Ident32,
+    ) -> Result<()> {
         let mut sub =
             self.meta_db
                 .subscriptions
@@ -141,7 +148,7 @@ impl SubsManager {
     // Address is indeed listening to this recipient.  If not, we return an
     // "NoAddress" error.
     pub async fn restore_subscription(
-        &self,
+        self: &Arc<Self>,
         addr: Address,
         sub_id: Ident32,
     ) -> Result<Receiver<(LetterheadV1, ReadCapability)>> {
@@ -164,7 +171,7 @@ impl SubsManager {
     }
 
     pub async fn missed_item(
-        &self,
+        self: &Arc<Self>,
         letterhead: LetterheadV1,
         read_cap: ReadCapability,
     ) -> Result<()> {

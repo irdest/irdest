@@ -253,7 +253,7 @@ pub async fn open_addr_key(
     }
 }
 
-pub async fn close_addr_key(meta_db: &Arc<MetadataDb>, auth: AddrAuth, client_id: Ident32) {
+pub async fn close_addr_key(_meta_db: &Arc<MetadataDb>, _auth: AddrAuth, client_id: Ident32) {
     KEY_CACHE.lock().await.remove(&client_id);
 }
 
@@ -284,7 +284,7 @@ pub async fn stream_diffie_hellman(self_addr: Address, target_addr: Address) -> 
 }
 
 /// Clear a cached shared secret
-pub async fn end_stream(meta_db: &Arc<MetadataDb>, self_addr: Address, target_addr: Address) {
+pub async fn end_stream(_meta_db: &Arc<MetadataDb>, self_addr: Address, target_addr: Address) {
     SHARED_CACHE.lock().await.remove(&(self_addr, target_addr));
 }
 
@@ -292,7 +292,7 @@ pub async fn end_stream(meta_db: &Arc<MetadataDb>, self_addr: Address, target_ad
 ///
 /// Panics: This function will panic if start_stream is not called first!
 pub async fn encrypt_chunk_for_key<const L: usize>(
-    meta_db: &Arc<MetadataDb>,
+    _meta_db: &Arc<MetadataDb>,
     self_addr: Address,
     target_addr: Address,
     _auth: AddrAuth,

@@ -21,8 +21,7 @@ use libratman::{
         },
         task::{self, spawn_blocking},
     },
-    types::{Ident32, InMemoryEnvelope, SequenceIdV1},
-    BlockError, EncodingError, RatmanError, Result,
+    types::{Ident32, InMemoryEnvelope, SequenceIdV1}, EncodingError, RatmanError, Result,
 };
 use std::{collections::BTreeMap, sync::Arc};
 
