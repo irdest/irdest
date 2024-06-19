@@ -100,8 +100,7 @@ pub async fn run_client_handler(
 
     loop {
         let auth_guard = ctx.clients.active_auth();
-        match single_session_exchange(&ctx, client_id, &auth_guard, &mut raw_socket, &senders)
-            .await
+        match single_session_exchange(&ctx, client_id, &auth_guard, &mut raw_socket, &senders).await
         {
             Ok(SessionResult::Next) => {
                 drop(auth_guard);

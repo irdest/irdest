@@ -19,7 +19,8 @@ use crate::{context::RatmanContext, protocol::announce::AddressAnnouncer};
 use libratman::{
     frame::carrier::{modes as fmodes, CarrierFrameHeader},
     tokio::{
-        select, spawn, sync::{oneshot, Mutex}
+        select, spawn,
+        sync::{oneshot, Mutex},
     },
     types::{AddrAuth, Address, Ident32},
     NonfatalError, RatmanError, Result,

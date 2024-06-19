@@ -13,9 +13,9 @@ use std::{any::Any, collections::BTreeMap, fmt::Display, sync::Arc};
 
 pub mod addr;
 pub mod base_args;
+pub mod recv;
 pub mod send;
 pub mod stream;
-pub mod recv;
 
 pub const RATS: &'static str = include_str!("../rats.ascii");
 

@@ -5,15 +5,11 @@ use libratman::{
         carrier::{AnnounceFrame, AnnounceFrameV1, CarrierFrameHeader, OriginDataV1, RouteDataV1},
         FrameGenerator,
     },
-    tokio::{time},
-    types::{AddrAuth, Address, Ident32, InMemoryEnvelope}, Result,
+    tokio::time,
+    types::{AddrAuth, Address, Ident32, InMemoryEnvelope},
+    Result,
 };
-use std::{
-    sync::{
-        Arc,
-    },
-    time::Duration,
-};
+use std::{sync::Arc, time::Duration};
 
 /// Periodically announce an address to the network
 pub struct AddressAnnouncer {
