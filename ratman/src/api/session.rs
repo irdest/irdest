@@ -456,7 +456,7 @@ pub(super) async fn single_session_exchange<'a>(
                 Ok((letterhead, read_cap)) => {
                     debug!("Relaying stream to sync receiver: {letterhead:?}");
                     raw_socket
-                        .write_microframe_debug(
+                        .write_microframe(
                             MicroframeHeader {
                                 modes: cm::make(cm::RECV, cm::ONE),
                                 auth: Some(auth),

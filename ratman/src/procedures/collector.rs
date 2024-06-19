@@ -61,6 +61,7 @@ pub struct BlockCollectorWorker {
     buffer: Vec<InMemoryEnvelope>,
     senders: SenderStore,
     journal: Arc<Journal>,
+    meta_db: Arc<MetadataDb>,
 }
 
 impl BlockCollectorWorker {
@@ -137,6 +138,9 @@ impl BlockCollectorWorker {
                 }
 
                 // Finally shut down this block collection worker
+                if let Err(e) = self.meta_db.incomplete.remove(seq_id.hash.to_string()) {
+                    warn!("Couldn't remove incomplete sequence from meta_db: {e}");
+                }
                 self.senders.write().await.remove(&seq_id.hash);
                 break;
             }
@@ -164,23 +168,18 @@ impl BlockCollector {
 
         // Restore existing workers for blocks that were still being assembled
         // when the router last shut down
-        for entry in Arc::clone(&this.meta_db).incomplete.0.iter() {
-            let (key, val) = entry?;
-            let key_str = core::str::from_utf8(&key).unwrap();
-            let id = Ident32::try_from(key_str)?;
-            let incomplete = rmp_serde::from_slice::<'_, IncompleteBlockData>(&val)
-                .map_err(|e| EncodingError::Internal(e.to_string()))?;
-
+        for (key, incomplete) in Arc::clone(&this.meta_db).incomplete.iter() {
+            let id = Ident32::try_from(key.as_str()).unwrap();
             let journal = Arc::clone(&this.journal);
             let prefix_key = format!("{}::*", id);
             let frames = journal.frames.prefix(&prefix_key);
 
             let mut len = 0;
-            for (id, frame_data) in frames {
+            for (_id, frame_data) in frames {
                 len += 1;
                 this.queue_and_spawn(
                     InMemoryEnvelope {
-                        header: frame_data.header.maybe_inner()?,
+                        header: frame_data.header.maybe_inner().unwrap(),
                         buffer: frame_data.payload,
                     },
                     block_bcast.clone(),
@@ -259,6 +258,7 @@ impl BlockCollector {
                         buffer: vec![],
                         senders,
                         journal: Arc::clone(&self.journal),
+                        meta_db: Arc::clone(&self.meta_db),
                     }
                     .run(rx, block_bcast.clone()),
                 );
