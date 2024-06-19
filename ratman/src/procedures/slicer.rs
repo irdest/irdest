@@ -90,12 +90,17 @@ use libratman::tokio;
 
 #[libratman::tokio::test]
 async fn test_block_walker() {
+    use async_eris::MemoryStorage;
+    use fjall::{Config, Keyspace};
+    use rand::{random, rngs::OsRng, RngCore};
     use std::collections::HashMap;
 
-    let td = tempdir::temp_dir();
+    let td = tempdir::TempDir::new("test-block-walker").unwrap();
     let j = Arc::new(
-        Journal::new(Keyspace::open(Config::new(td.join("test_block_walker.jfall"))).unwrap())
-            .unwrap(),
+        Journal::new(
+            Keyspace::open(Config::new(td.into_path().join("test_block_walker.jfall"))).unwrap(),
+        )
+        .unwrap(),
     );
 
     // 1 MibiBytes of delicious random data. nom! nom!

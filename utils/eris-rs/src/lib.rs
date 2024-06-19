@@ -83,6 +83,14 @@ impl BlockReference {
     }
 }
 
+impl TryFrom<&String> for BlockReference {
+    type Error = Error;
+    fn try_from(s: &String) -> Result<BlockReference> {
+        let buf = decode_base32(s.as_str())?;
+        Ok(BlockReference(buf))
+    }
+}
+
 /// Represents a 32 byte ChaCha20 key for encryption
 #[derive(
     Clone,
