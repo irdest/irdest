@@ -57,6 +57,8 @@ pub fn setup_logging(ratmand_config: &SubConfig) {
     .add_directive("mio=error".parse().unwrap())
     .add_directive("polling=error".parse().unwrap())
     .add_directive("trust_dns_proto=error".parse().unwrap())
+    .add_directive("lsm_tree=warn".parse().unwrap())
+    .add_directive("fjall=info".parse().unwrap())
     .add_directive("trust_dns_resolver=warn".parse().unwrap());
 
     // Initialise the logger

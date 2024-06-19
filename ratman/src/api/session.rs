@@ -8,13 +8,12 @@ use crate::{
     crypto,
     procedures::{handle_subscription_socket, SenderSystem},
 };
-use async_eris::BlockSize;
 use libratman::{
     api::{
         socket_v2::RawSocketHandle,
         types::{
             AddrCreate, AddrDestroy, AddrDown, AddrList, AddrUp, Handshake, RecvMany, RecvOne,
-            SendMany, SendTo, ServerPing, SubsCreate, SubsDelete, SubsRestore,
+            SendMany, ServerPing, SubsCreate, SubsDelete, SubsRestore,
         },
         version_str, versions_compatible,
     },
@@ -27,7 +26,7 @@ use libratman::{
         time::timeout,
     },
     types::{error::UserError, AddrAuth, Address, Ident32},
-    ClientError, EncodingError, RatmanError, Result,
+    ClientError, RatmanError, Result,
 };
 use std::{ffi::CString, sync::Arc, time::Duration};
 

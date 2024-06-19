@@ -3,7 +3,10 @@ use clap::ArgMatches;
 use colored::Colorize;
 use libratman::{
     api::{RatmanIpc, RatmanStreamExtV1},
-    tokio::{self, io::AsyncWriteExt},
+    tokio::{
+        self,
+        io::{AsyncReadExt, AsyncWriteExt},
+    },
     types::{error::UserError, Address, Ident32, LetterheadV1, Recipient},
     Result,
 };
@@ -15,7 +18,7 @@ pub async fn receive(
     matches: &ArgMatches,
 ) -> Result<()> {
     let (addr, auth) = base_args.identity_data?;
-    let count = matches.get_one::<u64>("stream-count").unwrap(); // has default
+    let _count = matches.get_one::<u64>("stream-count").unwrap(); // has default
     let addr_to = matches.get_one::<String>("to-address").unwrap(); // required
 
     let mut stdout = tokio::io::stdout();
@@ -32,7 +35,13 @@ pub async fn receive(
         serde_json::to_string_pretty(&letterhead)?
     );
 
-    tokio::io::copy(read_stream.as_reader(), &mut stdout).await?;
+    tokio::io::copy(
+        // Limit the amount of data this socket reads
+        &mut read_stream.as_reader().take(letterhead.stream_size),
+        &mut stdout,
+    )
+    .await?;
 
+    read_stream.drop().await?;
     Ok(())
 }

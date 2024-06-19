@@ -8,7 +8,7 @@ use std::collections::HashMap;
 
 #[tokio::main]
 async fn main() {
-    let examples = vec![b"Hello world!".as_slice(), [0; 4096].as_slice()];
+    let examples = vec![b"Hello world!".as_slice()];
 
     for content in examples {
         let key = [0; 32];

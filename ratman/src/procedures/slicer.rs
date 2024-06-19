@@ -175,7 +175,8 @@ impl BlockSlicer {
     ) -> Result<Vec<InMemoryEnvelope>> {
         let mut buf = vec![];
         let header_size = CarrierFrameHeader::get_blockdata_size(sender, recipient);
-        let max_payload_size = 1100; // fixme: /o\
+        debug!("Slice block with header size {header_size}");
+        let max_transfer_size = 1300; // fixme: /o\
 
         let block_ref = Ident32::from_bytes(b.reference().as_slice());
 
@@ -184,14 +185,16 @@ impl BlockSlicer {
         // sequence ID hash, with an incrementing numerical count.  This way
         // we can re-order frames that have arrived out of order.
         let mut ctr = 0;
-        // The length of the block
-        let max = b.as_slice().len()
-                // divided by the MTU - what is required for the header
-            / (max_payload_size as usize - header_size - 4);
 
+        // The length of the block divided by the MTU - what is
+        // required for the header
+        let max_payload_size = max_transfer_size as usize - header_size - 4;
+        let num_chunks = b.as_slice().len() / max_payload_size;
+
+        debug!("Selected data chunk size {max_payload_size}");
         for chunk in b.as_slice().chunks(max_payload_size as usize) {
-            assert!(ctr as usize <= max);
-            trace!(
+            assert!(ctr as usize <= num_chunks);
+            debug!(
                 "Cutting block {} into {} length chunks",
                 block_ref,
                 chunk.len()
@@ -201,7 +204,7 @@ impl BlockSlicer {
             let seq_id = SequenceIdV1 {
                 hash: block_ref,
                 num: ctr,
-                max: u8::try_from(max).expect("maximum frame number too large!"),
+                max: u8::try_from(num_chunks).expect("maximum frame number too large!"),
             };
 
             // Create a header and encode it into an InMemoryEnvelope

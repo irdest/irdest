@@ -6,10 +6,13 @@
 
 //! Asynchronous Ratman routing core
 
-use super::{slicer::BlockSlicer, BlockCollector, BlockNotifier, BlockWorker};
+use super::{
+    ingress::MessageNotifier, slicer::BlockSlicer, BlockCollector, BlockNotifier, BlockWorker,
+};
 use crate::{
     journal::Journal,
     links::LinksMap,
+    procedures::ingress,
     routes::{EpNeighbourPair, RouteTable},
 };
 use async_eris::{Block, ReadCapability};
@@ -75,12 +78,21 @@ pub struct SenderSystem {
 /// forcably terminated, and created blocks and frames in any of the
 /// created sequences MUST be marked with `incomplete=?` in the
 /// journal tagging system
+// note(refactor): this function does too many things and is too
+// deeply nested.  Ideally the different branches (mainly: send to
+// local and send to remote) are broken out into separate functions,
+// skipping the need for the dispatch functions to know about the
+// collector at all!  Ideally there's 1-2 async functions that handle
+// the spawn and loop setups, and then small handler functions which
+// can return Result<_> which are handled in a central place for the
+// sender stream.
 pub(crate) async fn exec_sender_system<const L: usize>(
     journal: &Arc<Journal>,
     routes: &Arc<RouteTable>,
     drivers: &Arc<LinksMap>,
     collector: &Arc<BlockCollector>,
     block_bcast: BcastSender<BlockNotifier>,
+    ingress_tx: Sender<MessageNotifier>,
     tripwire: Tripwire,
 ) -> Sender<(ReadCapability, LetterheadV1)> {
     let (tx_l, mut rx_l) = channel(32);
@@ -98,6 +110,7 @@ pub(crate) async fn exec_sender_system<const L: usize>(
                     let drivers = Arc::clone(&drivers);
                     let collector = Arc::clone(&collector);
                     let block_bcast = block_bcast.clone();
+                    let ingress_tx = ingress_tx.clone();
 
                     debug!("Setup sender system for {}kB blocks", L / 1024);
                     let tw = tripwire.clone();
@@ -118,6 +131,7 @@ pub(crate) async fn exec_sender_system<const L: usize>(
                     );
                     let (local_tx, mut local_rx) = channel::<(Block<L>, LetterheadV1)>(4);
                     let manifest = ManifestFrameV1::from((read_cap.clone(), letterhead.clone()));
+                    let journal = Arc::clone(&journal);
                     spawn(BlockWorker { read_cap }.traverse_block_tree::<L>(
                         Arc::clone(&journal),
                         letterhead,
@@ -130,12 +144,13 @@ pub(crate) async fn exec_sender_system<const L: usize>(
                         let collector = Arc::clone(&collector);
                         let block_bcast = block_bcast.clone();
                         let manifest = manifest.clone();
+                        let ingress_tx = ingress_tx.clone();
 
                         while let Some((block, letterhead)) = local_rx.recv().await {
                             let bid = block.reference();
 
-                            println!(
-                                "{}: {}",
+                            debug!(
+                                "[RAW] {}: {}",
                                 base32::encode(base32::Alphabet::RFC4648 { padding: false }, &*bid),
                                 base32::encode(
                                     base32::Alphabet::RFC4648 { padding: false },
@@ -143,7 +158,20 @@ pub(crate) async fn exec_sender_system<const L: usize>(
                                 )
                             );
 
-                            let block_len = block.as_slice().as_slice().len();
+                            let m = manifest.clone();
+                            debug!(
+                                "[MNF] {}: {}",
+                                base32::encode(
+                                    base32::Alphabet::RFC4648 { padding: false },
+                                    &m.root_reference.as_bytes()
+                                ),
+                                base32::encode(
+                                    base32::Alphabet::RFC4648 { padding: false },
+                                    &block.as_slice().as_slice()
+                                )
+                            );
+
+                            let block_len = dbg!(block.as_slice().as_slice().len());
 
                             let frame_buf = match BlockSlicer
                                 .produce_frames(block, letterhead.from, letterhead.to)
@@ -156,14 +184,17 @@ pub(crate) async fn exec_sender_system<const L: usize>(
                                 }
                             };
 
-                            let frame_len = frame_buf.get(0).unwrap().header.get_payload_length();
+                            let frame_len =
+                                dbg!(frame_buf.get(0).unwrap().header.get_payload_length());
+                            dbg!(frame_buf.get(0).unwrap().buffer.len());
 
-                            assert!(dbg!(block_len == frame_len));
+                            assert!(block_len == frame_len);
 
                             let routes = Arc::clone(&routes);
                             let drivers = Arc::clone(&drivers);
                             let collector = Arc::clone(&collector);
                             let block_bcast = block_bcast.clone();
+                            let ingress_tx = ingress_tx.clone();
 
                             let bid32 = Ident32::from_bytes(bid.as_slice()).pretty_string();
 
@@ -181,8 +212,8 @@ pub(crate) async fn exec_sender_system<const L: usize>(
                                     let block_bcast = (&block_bcast).clone();
                                     for envelope in frame_buf {
                                         debug!(
-                                            "Dispatched {}kB frame {}/{}",
-                                            envelope.buffer.len() / 1024,
+                                            "Dispatching {} byte frame {}/{}",
+                                            envelope.buffer.len(),
                                             bid32,
                                             envelope.header.get_seq_id().unwrap().num
                                         );
@@ -204,40 +235,55 @@ pub(crate) async fn exec_sender_system<const L: usize>(
 
                             //// ENCODE MANIFEST
 
-                            let mut buffer = vec![];
+                            let mut payload_buf = vec![];
                             ManifestFrame::V1(manifest.clone())
-                                .generate(&mut buffer)
+                                .generate(&mut payload_buf)
                                 .unwrap();
 
+                            let header = CarrierFrameHeader::new_blockmanifest_frame(
+                                letterhead.from,
+                                letterhead.to,
+                                SequenceIdV1 {
+                                    hash: Ident32::from_bytes(read_cap.root_reference.as_slice()),
+                                    num: 0,
+                                    max: 1,
+                                },
+                                payload_buf.len() as u16,
+                            );
+
+                            let mut full_buf = vec![];
+                            header.clone().generate(&mut full_buf).unwrap();
+
+                            full_buf.append(&mut payload_buf);
                             let envelope = InMemoryEnvelope {
-                                header: CarrierFrameHeader::new_blockmanifest_frame(
-                                    letterhead.from,
-                                    letterhead.to,
-                                    SequenceIdV1 {
-                                        hash: Ident32::from_bytes(
-                                            read_cap.root_reference.as_slice(),
-                                        ),
-                                        num: 0,
-                                        max: 1,
-                                    },
-                                    buffer.len() as u16,
-                                ),
-                                // audit(security): nope, nope nope
-                                buffer,
+                                header,
+                                buffer: full_buf,
                             };
 
-                            let block_bcast = block_bcast.clone();
+                            if let Ok(true) = routes.is_local(letterhead.to.inner_address()).await {
+                                journal.queue_manifest(envelope.clone()).unwrap();
+                                if let Err(e) = ingress_tx
+                                    .send(MessageNotifier(
+                                        envelope.header.get_seq_id().unwrap().hash,
+                                    ))
+                                    .await
+                                {
+                                    warn!("failed to notify local task of manifest: {e}");
+                                }
+                            } else {
+                                let block_bcast = block_bcast.clone();
 
-                            if let Err(_e) = dispatch_frame(
-                                &Arc::clone(&routes),
-                                &Arc::clone(&drivers),
-                                &Arc::clone(&collector),
-                                block_bcast,
-                                envelope,
-                            )
-                            .await
-                            {
-                                warn!("failed to dispatch manifest; stream may arrive but is unreadable");
+                                if let Err(_e) = dispatch_frame(
+                                    &Arc::clone(&routes),
+                                    &Arc::clone(&drivers),
+                                    &Arc::clone(&collector),
+                                    block_bcast,
+                                    envelope,
+                                )
+                                .await
+                                {
+                                    warn!("failed to dispatch manifest; stream may arrive but is unreadable");
+                                }
                             }
                         }
                     });

@@ -102,7 +102,11 @@ impl BlockCollectorWorker {
                 core::mem::replace(&mut this.buffer, Default::default())
                     .into_iter()
                     // todo: can we avoid copying here?
-                    .for_each(|chunk| block.extend_from_slice(chunk.get_payload_slice()));
+                    .for_each(|chunk| {
+                        let pl = chunk.get_payload_slice();
+                        block.extend_from_slice(pl);
+                        dbg!(pl.len());
+                    });
 
                 // Then offer the finished block up to the block god
                 match StorageBlock::reconstruct_from_vec(block) {
@@ -172,7 +176,7 @@ impl BlockCollector {
             let frames = journal.frames.prefix(&prefix_key);
 
             let mut len = 0;
-            for (_, frame_data) in frames {
+            for (id, frame_data) in frames {
                 len += 1;
                 this.queue_and_spawn(
                     InMemoryEnvelope {

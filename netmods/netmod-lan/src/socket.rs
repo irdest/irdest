@@ -171,12 +171,12 @@ impl Socket {
                             }
                             _ => {
                                 trace!("(Most likely) received data frame");
-                                let id = table.id(peer.into()).await.unwrap();
-
-                                // Append to the inbox and wake
-                                let mut inbox = arc.inbox.write().await;
-                                inbox.push_back(MemoryEnvelopeExt(env, Neighbour::Single(id)));
-                                Notify::wake(&mut inbox);
+                                if let Some(id) = table.id(peer.into()).await {
+                                    // Append to the inbox and wake
+                                    let mut inbox = arc.inbox.write().await;
+                                    inbox.push_back(MemoryEnvelopeExt(env, Neighbour::Single(id)));
+                                    Notify::wake(&mut inbox);
+                                }
                             }
                         }
                     }

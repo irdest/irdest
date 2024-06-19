@@ -110,7 +110,7 @@ impl CarrierFrameHeader {
                 let recipient_size = match header.recipient {
                     // Recipient adds one more byte to distinguish between
                     // Targeted and Flood send
-                    Some(_) => 32 + 1,
+                    Some(ref r) => core::mem::size_of_val(r),
                     None => 1,
                 };
                 let seq_id_size = match header.seq_id {
@@ -118,11 +118,11 @@ impl CarrierFrameHeader {
                     None => 1,
                 };
                 let aux_data_size = match header.auxiliary_data {
-                    Some(_) => 32,
+                    Some(_) => 64,
                     None => 1,
                 };
                 let sign_data_size = match header.auxiliary_data {
-                    Some(_) => 32,
+                    Some(_) => 64,
                     None => 1,
                 };
                 1 // Include 1 byte for the version field itself

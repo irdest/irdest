@@ -75,20 +75,11 @@ impl BlockReference {
     pub fn as_slice(&self) -> &[u8] {
         &self.0
     }
-    pub fn from_bytes(bytes: &[u8]) -> Self {
-        Self(
-            bytes
-                .try_into()
-                .expect("not enough bytes for a block reference"),
-        )
-    }
-}
-
-impl TryFrom<&String> for BlockReference {
-    type Error = Error;
-    fn try_from(s: &String) -> Result<BlockReference> {
-        let buf = decode_base32(s.as_str())?;
-        Ok(BlockReference(buf))
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
+        bytes
+            .try_into()
+            .map(|inner| Self(inner))
+            .map_err(|_| crate::Error::UnexpectedBlockSize)
     }
 }
 
@@ -115,6 +106,13 @@ pub struct BlockKey(pub [u8; 32]);
 impl BlockKey {
     pub fn as_slice(&self) -> &[u8] {
         &self.0
+    }
+
+    pub fn from_bytes(input: &[u8]) -> Result<Self> {
+        input
+            .try_into()
+            .map(|inner| Self(inner))
+            .map_err(|_| crate::Error::UnexpectedKeySize)
     }
 }
 

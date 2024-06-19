@@ -114,9 +114,9 @@ impl From<(ReadCapability, LetterheadV1)> for ManifestFrameV1 {
 impl From<ManifestFrameV1> for Result<ReadCapability> {
     fn from(mf: ManifestFrameV1) -> Self {
         Ok(ReadCapability {
-            root_reference: BlockReference::try_from(&mf.root_reference.to_string())
+            root_reference: BlockReference::from_bytes(mf.root_reference.as_bytes())
                 .map_err(|e| BlockError::Eris(e))?,
-            root_key: BlockKey::try_from(&mf.root_key.to_string())
+            root_key: BlockKey::from_bytes(mf.root_key.as_bytes())
                 .map_err(|e| BlockError::Eris(e))?,
             level: mf.block_level,
             block_size: match mf.block_size {

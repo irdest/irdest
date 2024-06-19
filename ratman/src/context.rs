@@ -118,10 +118,13 @@ impl RatmanContext {
 
     /// Create and start a new Ratman router context with a config
     pub async fn start(cfg: ConfigTree) {
+        // Before we do anything else, make sure we see logs
+        setup_logging(&cfg.get_subtree(CFG_RATMAND).expect("no 'ratmand' tree"));
+
         // Setup the channel to notify future block assemblers of new blocks.
         // This is needed to setup the block collector, which is initialised
         // very early to make sure we can restore previous restore sessions.
-        let (block_notify_tx, block_notify_rx) = bcast_channel(8);
+        let (block_notify_tx, _) = bcast_channel(8);
 
         // Initialise in-memory state and restore any existing state from disk
         let this = match Self::new(cfg, block_notify_tx.clone()).await {
@@ -132,14 +135,10 @@ impl RatmanContext {
             ),
         };
 
-        // Parse the ratmand config tree
         let ratmand_config = this
             .config
-            .get_subtree(CFG_RATMAND)
-            .expect("no 'ratmand' tree");
-
-        // Before we do anything else, make sure we see logs
-        setup_logging(&ratmand_config);
+            .get_subtree(&CFG_RATMAND)
+            .expect("No 'ratmand' tree");
 
         // If ratmand isn't set up to run ephemerally (for tests) try
         // to lock the state directory here and crash if we can't.
@@ -283,6 +282,7 @@ impl RatmanContext {
             &this.links,
             &this.collector,
             block_notify_tx.clone(),
+            ingress_tx.clone(),
             this.tripwire.clone(),
         )
         .await;
@@ -292,6 +292,7 @@ impl RatmanContext {
             &this.links,
             &this.collector,
             block_notify_tx.clone(),
+            ingress_tx.clone(),
             this.tripwire.clone(),
         )
         .await;
@@ -300,7 +301,7 @@ impl RatmanContext {
         {
             let links = Arc::clone(&this.links);
 
-            // todo: make this configurable
+            // todo: make this configuenvrable
             let batch_size = 32;
 
             // todo: use the configurable netmod runtime here instead
@@ -378,6 +379,7 @@ impl RatmanContext {
         sub_id: Option<Ident32>,
         address_to: Recipient,
     ) -> Result<BcastSender<(LetterheadV1, ReadCapability)>> {
+        debug!("Look-up active listeners for recipient {address_to:?}");
         match sub_id {
             Some(sub_id) => self
                 .subs

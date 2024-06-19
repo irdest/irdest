@@ -1,11 +1,13 @@
 use crate::{
     api::{socket_v2::RawSocketHandle, SubscriptionHandle},
     types::{AddrAuth, Address, Ident32, LetterheadV1, Modify, Recipient},
-    Result,
+    ClientError, Result,
 };
 use async_trait::async_trait;
 use std::{collections::BTreeMap, net::SocketAddr, sync::Arc};
 use tokio::{io::AsyncRead, sync::MutexGuard};
+
+use super::types::ServerPing;
 
 #[async_trait]
 pub trait RatmanIpcExtV1 {
@@ -215,5 +217,14 @@ pub struct ReadStream<'a>(pub(crate) MutexGuard<'a, RawSocketHandle>);
 impl<'a> ReadStream<'a> {
     pub fn as_reader(&mut self) -> &mut impl AsyncRead {
         &mut *self.0.stream()
+    }
+
+    pub async fn drop(mut self) -> Result<()> {
+        let (_, ping) = self.0.read_microframe::<ServerPing>().await?;
+        match ping? {
+            ServerPing::Ok => Ok(()),
+            ServerPing::Error(e) => Err(e.into()),
+            ping => Err(ClientError::Internal(format!("{ping:?}")).into()),
+        }
     }
 }

@@ -85,11 +85,12 @@ async fn reassemble_message_stream(
     mut block_notify: BcastReceiver<BlockNotifier>,
 ) -> Result<()> {
     let manifest = ctx.journal.manifests.get(&manifest.0.to_string())?.unwrap();
-    debug!("Attempt to reassemble message stream for manifest {manifest:?}");
+    let inner_manifest = manifest.manifest.maybe_inner()?;
+    debug!("Attempt to reassemble message stream for manifest {inner_manifest:?}");
 
     // fixme: this won't work on non-linux?
     let null_file = File::open("/dev/null").await?;
-    let (read_cap, letterhead) = match manifest.manifest.maybe_inner()? {
+    let (read_cap, letterhead) = match inner_manifest {
         ManifestFrame::V1(ref v1) => (
             <ManifestFrameV1 as Into<Result<ReadCapability>>>::into(v1.clone())?,
             v1.letterhead.clone(),
@@ -128,27 +129,34 @@ async fn reassemble_message_stream(
 
     debug!("Passed re-assembly check!");
 
-    let sub_id = *ctx
+    match ctx
         .subs
         .recipients
         .lock()
         .await
         .get(&manifest.recipient)
-        .ok_or(RatmanError::Nonfatal(NonfatalError::NoStream))?;
+        .ok_or(RatmanError::Nonfatal(NonfatalError::NoStream))
+    {
+        Ok(sub_id) => {
+            // Notify all listening subscription streams
+            if let Ok(bcast_tx) = ctx.get_active_listener(Some(*sub_id), letterhead.to).await {
+                debug!("Notify subscription {sub_id}");
+                bcast_tx.send((letterhead.clone(), read_cap)).unwrap();
+            }
 
-    // Notify all listening subscription streams
-    if let Ok(bcast_tx) = ctx.get_active_listener(Some(sub_id), letterhead.to).await {
-        debug!("Notify subscription {sub_id}");
-        bcast_tx.send((letterhead.clone(), read_cap)).unwrap();
+            Ok(())
+        }
+        Err(e) => {
+            // Then notify all active sync listeners, if they exist
+            if let Ok(bcast_tx) = ctx.get_active_listener(None, letterhead.to).await {
+                debug!("Notify sync message receiver");
+                bcast_tx.send((letterhead, read_cap)).unwrap();
+                Ok(())
+            } else {
+                Err(e)
+            }
+        }
     }
-
-    // Then notify all active sync listeners, if they exist
-    if let Ok(bcast_tx) = ctx.get_active_listener(None, letterhead.to).await {
-        debug!("Notify sync message receiver");
-        bcast_tx.send((letterhead, read_cap)).unwrap();
-    }
-
-    Ok(())
 }
 
 pub async fn handle_subscription_socket(

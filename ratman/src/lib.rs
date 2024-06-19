@@ -56,6 +56,7 @@ pub fn start_with_configuration(cfg: config::ConfigTree) {
     // what we want to do is listen to various signals here and
     // respond to them.
 
+    eprintln!("Pass launch configuration to core async system...");
     let system = AsyncSystem::new("ratmand-core".to_owned(), 8);
     system.exec(context::RatmanContext::start(cfg));
 }

@@ -19,6 +19,8 @@ pub enum Error {
     NonstandardBlockSize,
     #[error("unexpected block size")]
     UnexpectedBlockSize,
+    #[error("unexpected key size")]
+    UnexpectedKeySize,
     /// Mostly used for testing
     #[error("invalid base32 encoding")]
     InvalidBase32,
