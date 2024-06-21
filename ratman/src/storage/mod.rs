@@ -46,7 +46,7 @@ pub mod subs;
 // though there's no real reason for this.  Maybe move this code to the crypto
 // module?
 pub struct MetadataDb {
-    db: Keyspace,
+    pub db: Keyspace,
     pub addrs: CachePage<AddressData>,
     pub routes: CachePage<RouteData>,
     pub links: CachePage<LinkData>,
@@ -66,7 +66,8 @@ impl MetadataDb {
             Ident32::from_bytes(&*router_key_id)
         } else {
             let router_key_id = Ident32::random();
-            part.insert("router.key_id", router_key_id.as_bytes());
+            part.insert("router.key_id", router_key_id.as_bytes())
+                .expect("failed to insert router id");
             router_key_id
         }
     }

@@ -1,8 +1,7 @@
 use crate::{
     frame::{
         generate::generate_cstring_tuple_vec,
-        micro::parse::vec_of,
-        parse::{self, take_cstring_tuple_vec},
+        parse::{self},
         FrameGenerator, FrameParser,
     },
     types::{Address, Recipient},
@@ -132,7 +131,6 @@ impl FrameGenerator for LetterheadV1 {
         Some(self.to).generate(buf)?;
         self.stream_size.generate(buf)?;
         generate_cstring_tuple_vec(self.auxiliary_data, buf)?;
-        eprintln!("Generate LetterheadV1 buffer {:?}", buf);
         Ok(())
     }
 }
@@ -148,17 +146,17 @@ impl FrameParser for LetterheadV1 {
         let (input, payload_length) = parse::take_u64(input)?;
         let (input, auxiliary_data) = parse::take_cstring_tuple_vec(input)?;
 
-        debug!("Parsed: {from:?} {to:?}, {payload_length:?}");
+        trace!("Parsed: {from:?} {to:?}, {payload_length:?}");
 
         Ok((
             input,
             auxiliary_data.map(|auxiliary_data| {
-                dbg!(Self {
+                Self {
                     from,
                     to: to.unwrap(),
                     stream_size: payload_length,
                     auxiliary_data,
-                })
+                }
             }),
         ))
     }

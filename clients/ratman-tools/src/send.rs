@@ -17,28 +17,13 @@ fn generate_letterheads(
 ) -> Result<Vec<LetterheadV1>> {
     let mut spaces = to_addrs
         .split(",")
-        .map(|x| {
-            eprintln!("post-split: {x}");
-            x
-        })
         .map(|s| s.trim())
-        .map(|x| {
-            eprintln!("post-trim {x}");
-            x
-        })
         .map(|chunk| Ident32::try_from(chunk).map(|id| Address(id)))
-        .map(|x| {
-            eprintln!("post-addressed {x:?}");
-            x
-        })
         .collect::<Result<Vec<_>>>()?;
-
-    eprintln!("Collected recipients: {spaces:?}");
 
     let mut lh_buf = vec![];
     loop {
         if let Some(to) = spaces.pop() {
-            eprintln!("Create letterhead for {to:?}");
             lh_buf.push(LetterheadV1 {
                 from,
                 to: recp_maker(to),
@@ -83,14 +68,14 @@ pub async fn send(ipc: &Arc<RatmanIpc>, base_args: BaseArgs, matches: &ArgMatche
     };
     let mut stdin = tokio::io::stdin();
 
-    //if !base_args.quiet {
-    eprintln!(
-        "Generated {} letterheads to {:?}",
-        to.len(),
-        to.iter()
-            .map(|to| to.to.inner_address().pretty_string())
-            .collect::<Vec<_>>()
-    );
+    // if !base_args.quiet {
+    //     eprintln!(
+    //         "Generated {} letterheads to {:?}",
+    //         to.len(),
+    //         to.iter()
+    //             .map(|to| to.to.inner_address().pretty_string())
+    //             .collect::<Vec<_>>());
+    //     }
 
     ipc.send_many(auth, to, &mut stdin).await?;
     println!("{}", reply_ok(&base_args.out_fmt).as_str().green());

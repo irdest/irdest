@@ -1,6 +1,5 @@
 use crate::{base_args::BaseArgs, parse_field, reply_ok};
 use clap::ArgMatches;
-use colored::Colorize;
 use libratman::{
     api::{RatmanIpc, RatmanStreamExtV1},
     tokio::{

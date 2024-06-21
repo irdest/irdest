@@ -174,23 +174,25 @@ impl BlockCollector {
             let prefix_key = format!("{}::*", id);
             let frames = journal.frames.prefix(&prefix_key);
 
-            let mut len = 0;
-            for (_id, frame_data) in frames {
-                len += 1;
-                this.queue_and_spawn(
-                    InMemoryEnvelope {
-                        header: frame_data.header.maybe_inner().unwrap(),
-                        buffer: frame_data.payload,
-                    },
-                    block_bcast.clone(),
-                )
-                .await?;
-            }
-
             info!(
-                "Restoring block collection worker for block {id}; {}/{}",
-                len, incomplete.max_num
+                "Restoring block collection worker for block {id}/{}",
+                incomplete.max_num
             );
+
+            for (_id, frame_data) in frames {
+                if let Err(e) = this
+                    .queue_and_spawn(
+                        InMemoryEnvelope {
+                            header: frame_data.header.maybe_inner().unwrap(),
+                            buffer: frame_data.payload,
+                        },
+                        block_bcast.clone(),
+                    )
+                    .await
+                {
+                    warn!("failed to restore incomplete block collector: {e}");
+                }
+            }
         }
 
         Ok(this)

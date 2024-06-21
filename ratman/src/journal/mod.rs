@@ -144,11 +144,6 @@ impl Journal {
         )
     }
 
-    pub fn remove_frame(&self, frame_id: &Ident32) -> Result<()> {
-        self.frames.remove(frame_id.to_string())?;
-        Ok(())
-    }
-
     pub fn queue_manifest(&self, env: InMemoryEnvelope) -> Result<()> {
         let (_, manifest) = ManifestFrame::parse(env.get_payload_slice())?;
         let seq_id = env.header.get_seq_id().unwrap();
