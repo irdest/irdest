@@ -73,24 +73,16 @@ pub fn setup_cli() -> Command {
                         .help("Address a message stream to a namespace address")
                         .action(ArgAction::Append)
                         .conflicts_with_all(["to-address"]),
-                    Arg::new("stream-size")
-                        .long("size")
-                        .short('z')
-                        .required(true)
-                        .value_parser(value_parser!(u64))
-                        .help("Specify the maximum length of the sending message stream")
-                        .action(ArgAction::Set),
                 ]),
             Command::new("recv")
                 .about("Set your computer to receive files")
                 .args([
-                    Arg::new("stream-count")
+                    Arg::new("streams-count")
                         .short('c')
-                        .help("Set the number of message streams you want to receive")
+                        .help("Set the number of message streams you want to receive. Value of 0 will receive streams forever")
                         .value_parser(value_parser!(u64))
-                        .default_value("1"),
+                        .default_value("0"),
                     Arg::new("to-address")
-                        .required(true)
                         .action(ArgAction::Set)
                         .help("Filter incoming message streams by the recipient address"),
                 ])

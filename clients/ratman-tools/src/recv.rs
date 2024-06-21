@@ -1,12 +1,9 @@
-use crate::{base_args::BaseArgs, parse_field, reply_ok};
+use crate::base_args::BaseArgs;
 use clap::ArgMatches;
 use libratman::{
     api::{RatmanIpc, RatmanStreamExtV1},
-    tokio::{
-        self,
-        io::{AsyncReadExt, AsyncWriteExt},
-    },
-    types::{error::UserError, Address, Ident32, LetterheadV1, Recipient},
+    tokio::{self, io::AsyncReadExt},
+    types::{Address, Ident32, Recipient},
     Result,
 };
 use std::sync::Arc;
@@ -17,16 +14,18 @@ pub async fn receive(
     matches: &ArgMatches,
 ) -> Result<()> {
     let (addr, auth) = base_args.identity_data?;
-    let _count = matches.get_one::<u64>("stream-count").unwrap(); // has default
-    let addr_to = matches.get_one::<String>("to-address").unwrap(); // required
+    let count = matches.get_one::<u64>("stream-count").unwrap(); // has default
+
+    let addr_to = Address(
+        matches
+            .get_one::<String>("to-address")
+            .and_then(|buf| Ident32::try_from(buf.as_str()).ok())
+            .unwrap_or_else(|| addr.0),
+    );
 
     let mut stdout = tokio::io::stdout();
     let (letterhead, mut read_stream) = ipc
-        .recv_one(
-            auth,
-            addr,
-            Recipient::Address(Address(Ident32::try_from(addr_to.as_str())?)),
-        )
+        .recv_one(auth, addr, Recipient::Address(addressed_to))
         .await?;
 
     eprintln!(

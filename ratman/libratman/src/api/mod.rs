@@ -550,29 +550,8 @@ impl RatmanStreamExtV1 for RatmanIpc {
         self: &Arc<Self>,
         auth: AddrAuth,
         letterheads: Vec<LetterheadV1>,
-        data_reader: I,
+        mut data_reader: I,
     ) -> crate::Result<()> {
-        let stream_size = letterheads.iter().fold(
-            Err(UserError::MissingInput("letterhead>stream-size".to_owned())),
-            |res, lh| match res {
-                Err(UserError::MissingInput(_)) => Ok(lh.stream_size),
-                Ok(prev) if prev == lh.stream_size => Ok(prev),
-                Ok(prev) if prev != lh.stream_size => Err(UserError::InvalidInput(
-                    "letterhead>stream_size".to_owned(),
-                    Some("the same stream-size for all recipients".to_owned()),
-                )),
-                err => err,
-            },
-        )?;
-
-        let chunk_size = if stream_size < 1024 {
-            stream_size
-        } else if stream_size > 1024 && stream_size < (1024 * 32) {
-            4 * 1024
-        } else {
-            16 * 1025
-        };
-
         let mut socket = self.socket().lock().await;
         socket
             .write_microframe(
@@ -595,30 +574,7 @@ impl RatmanStreamExtV1 for RatmanIpc {
         let mut send_s =
             TcpStream::connect(bind.to_str().unwrap().parse::<SocketAddr>().unwrap()).await?;
 
-        let mut reader = Box::pin(data_reader);
-
-        let mut remaining = stream_size;
-        let mut stalling = false;
-        loop {
-            let mut buf = vec![0_u8; chunk_size.min(remaining) as usize];
-            let amount_read = reader.read_exact(&mut buf).await?;
-            if amount_read == 0 && !stalling {
-                eprintln!("Nothing read from sending client: set socket to 'stalling'");
-                stalling = true;
-            } else if amount_read == 0 && stalling {
-                eprintln!("Terminating stalled socket");
-                break;
-            }
-            remaining -= buf.len() as u64;
-
-            println!("Writing chunk to router socket {buf:?}");
-            send_s.write_all(&buf).await?;
-
-            if remaining == 0 {
-                break;
-            }
-        }
-
+        tokio::io::copy(&mut data_reader, &mut send_s).await?;
         drop(send_s);
 
         let (_, ping) = socket.read_microframe::<ServerPing>().await?;

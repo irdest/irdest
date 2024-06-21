@@ -12,7 +12,6 @@ use super::{
 use crate::{
     journal::Journal,
     links::LinksMap,
-    procedures::ingress,
     routes::{EpNeighbourPair, RouteTable},
 };
 use async_eris::{Block, ReadCapability};
@@ -134,7 +133,7 @@ pub(crate) async fn exec_sender_system<const L: usize>(
                     let journal = Arc::clone(&journal);
                     spawn(BlockWorker { read_cap }.traverse_block_tree::<L>(
                         Arc::clone(&journal),
-                        letterhead,
+                        letterhead.clone(),
                         local_tx,
                     ));
 
@@ -149,30 +148,6 @@ pub(crate) async fn exec_sender_system<const L: usize>(
                         while let Some((block, letterhead)) = local_rx.recv().await {
                             let bid = block.reference();
 
-                            debug!(
-                                "[RAW] {}: {}",
-                                base32::encode(base32::Alphabet::RFC4648 { padding: false }, &*bid),
-                                base32::encode(
-                                    base32::Alphabet::RFC4648 { padding: false },
-                                    &block.as_slice().as_slice()
-                                )
-                            );
-
-                            let m = manifest.clone();
-                            debug!(
-                                "[MNF] {}: {}",
-                                base32::encode(
-                                    base32::Alphabet::RFC4648 { padding: false },
-                                    &m.root_reference.as_bytes()
-                                ),
-                                base32::encode(
-                                    base32::Alphabet::RFC4648 { padding: false },
-                                    &block.as_slice().as_slice()
-                                )
-                            );
-
-                            let block_len = dbg!(block.as_slice().as_slice().len());
-
                             let frame_buf = match BlockSlicer
                                 .produce_frames(block, letterhead.from, letterhead.to)
                                 .await
@@ -184,21 +159,21 @@ pub(crate) async fn exec_sender_system<const L: usize>(
                                 }
                             };
 
-                            let frame_len =
-                                dbg!(frame_buf.get(0).unwrap().header.get_payload_length());
-                            dbg!(frame_buf.get(0).unwrap().buffer.len());
-
-                            assert!(block_len == frame_len);
+                            let frame_count = frame_buf.get(0).unwrap().buffer.len();
 
                             let routes = Arc::clone(&routes);
                             let drivers = Arc::clone(&drivers);
                             let collector = Arc::clone(&collector);
                             let block_bcast = block_bcast.clone();
-                            let ingress_tx = ingress_tx.clone();
 
                             let bid32 = Ident32::from_bytes(bid.as_slice()).pretty_string();
 
-                            debug!("Block {} turned into {} frames", bid32, frame_buf.len());
+                            debug!(
+                                "Block {} turned into {}x {}kB frames",
+                                bid32,
+                                frame_buf.len(),
+                                frame_count / 1024,
+                            );
                             {
                                 let routes = Arc::clone(&routes);
                                 let drivers = Arc::clone(&drivers);
@@ -232,58 +207,56 @@ pub(crate) async fn exec_sender_system<const L: usize>(
                                     }
                                 });
                             }
+                        }
 
-                            //// ENCODE MANIFEST
+                        //// ENCODE MANIFEST
 
-                            let mut payload_buf = vec![];
-                            ManifestFrame::V1(manifest.clone())
-                                .generate(&mut payload_buf)
-                                .unwrap();
+                        let mut payload_buf = vec![];
+                        ManifestFrame::V1(manifest.clone())
+                            .generate(&mut payload_buf)
+                            .unwrap();
 
-                            let header = CarrierFrameHeader::new_blockmanifest_frame(
-                                letterhead.from,
-                                letterhead.to,
-                                SequenceIdV1 {
-                                    hash: Ident32::from_bytes(read_cap.root_reference.as_slice()),
-                                    num: 0,
-                                    max: 1,
-                                },
-                                payload_buf.len() as u16,
-                            );
+                        let header = CarrierFrameHeader::new_blockmanifest_frame(
+                            letterhead.from,
+                            letterhead.to,
+                            SequenceIdV1 {
+                                hash: Ident32::from_bytes(read_cap.root_reference.as_slice()),
+                                num: 0,
+                                max: 1,
+                            },
+                            payload_buf.len() as u16,
+                        );
 
-                            let mut full_buf = vec![];
-                            header.clone().generate(&mut full_buf).unwrap();
+                        let mut full_buf = vec![];
+                        header.clone().generate(&mut full_buf).unwrap();
 
-                            full_buf.append(&mut payload_buf);
-                            let envelope = InMemoryEnvelope {
-                                header,
-                                buffer: full_buf,
-                            };
+                        full_buf.append(&mut payload_buf);
+                        let envelope = InMemoryEnvelope {
+                            header,
+                            buffer: full_buf,
+                        };
 
-                            if let Ok(true) = routes.is_local(letterhead.to.inner_address()).await {
-                                journal.queue_manifest(envelope.clone()).unwrap();
-                                if let Err(e) = ingress_tx
-                                    .send(MessageNotifier(
-                                        envelope.header.get_seq_id().unwrap().hash,
-                                    ))
-                                    .await
-                                {
-                                    warn!("failed to notify local task of manifest: {e}");
-                                }
-                            } else {
-                                let block_bcast = block_bcast.clone();
-
-                                if let Err(_e) = dispatch_frame(
-                                    &Arc::clone(&routes),
-                                    &Arc::clone(&drivers),
-                                    &Arc::clone(&collector),
-                                    block_bcast,
-                                    envelope,
-                                )
+                        if let Ok(true) = routes.is_local(letterhead.to.inner_address()).await {
+                            journal.queue_manifest(envelope.clone()).unwrap();
+                            if let Err(e) = ingress_tx
+                                .send(MessageNotifier(envelope.header.get_seq_id().unwrap().hash))
                                 .await
-                                {
-                                    warn!("failed to dispatch manifest; stream may arrive but is unreadable");
-                                }
+                            {
+                                warn!("failed to notify local task of manifest: {e}");
+                            }
+                        } else {
+                            let block_bcast = block_bcast.clone();
+
+                            if let Err(_e) = dispatch_frame(
+                                &Arc::clone(&routes),
+                                &Arc::clone(&drivers),
+                                &Arc::clone(&collector),
+                                block_bcast,
+                                envelope,
+                            )
+                            .await
+                            {
+                                warn!("failed to dispatch manifest; stream may arrive but is unreadable");
                             }
                         }
                     });
@@ -321,13 +294,8 @@ pub(crate) async fn dispatch_frame(
         _ => unreachable!(),
     };
 
-    debug!(
-        "Frame in local: {:?}",
-        routes.is_local(target_address).await
-    );
-
     if let Ok(true) = routes.is_local(target_address).await {
-        debug!(
+        trace!(
             "Frame addressed to local ({:?}) queue in collector!",
             envelope.header
         );

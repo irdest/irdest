@@ -11,7 +11,7 @@ use libratman::{
         micro::MicroframeHeader,
     },
     tokio::{
-        fs::File,
+        fs::{File, OpenOptions},
         select,
         sync::{
             broadcast::{Receiver as BcastReceiver, Sender as BcastSender},
@@ -89,7 +89,6 @@ async fn reassemble_message_stream(
     debug!("Attempt to reassemble message stream for manifest {inner_manifest:?}");
 
     // fixme: this won't work on non-linux?
-    let null_file = File::open("/dev/null").await?;
     let (read_cap, letterhead) = match inner_manifest {
         ManifestFrame::V1(ref v1) => (
             <ManifestFrameV1 as Into<Result<ReadCapability>>>::into(v1.clone())?,
@@ -97,31 +96,26 @@ async fn reassemble_message_stream(
         ),
     };
 
-    // check that we have all the bits we need to decode a message stream.  If
-    // we do we notify the API frontend
-    if async_eris::decode(&mut null_file.compat(), &read_cap, &ctx.journal.blocks)
-        .await
-        .is_ok()
-    {
-        debug!("Assembled full block: {}", read_cap.root_reference);
-    }
-    // If we weren't able to decode the full stream we wait for a block notifier
-    // event and then try again.
-    else {
-        loop {
-            let tw = tripwire.clone();
-            let null_file = File::open("/dev/null").await?;
-            select! {
-                biased;
-                _ = tw => break,
-                _ = block_notify.recv() => {
-                    if async_eris::decode(&mut null_file.compat(), &read_cap, &ctx.journal.blocks)
-                        .await
-                        .is_ok()
-                    {
-                        debug!("Completed new block stream!");
-                        break;
-                    }
+    loop {
+        let null_file = OpenOptions::new()
+            .create(false)
+            .write(true)
+            .open("/dev/null")
+            .await?;
+        let mut compat_null = null_file.compat();
+
+        // check that we have all the bits we need to decode a message stream.  If
+        // we do we notify the API frontend
+        match async_eris::decode(&mut compat_null, &read_cap, &ctx.journal.blocks).await {
+            Ok(()) => break,
+            Err(e) => {
+                let tw = tripwire.clone();
+                debug!("Couldn't re-assemble stream ({e}); wait for block notifier");
+                drop(compat_null);
+                select! {
+                    biased;
+                    _ = tw => break,
+                    _ = block_notify.recv() => continue
                 }
             }
         }

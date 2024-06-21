@@ -53,7 +53,7 @@ impl BlockWorker {
             let mut scan_block = curr_block.clone();
             scan_block.chacha20(&tree.root_key);
 
-            println!(
+            trace!(
                 "Traversing '{}' on level {}",
                 scan_block.reference(),
                 tree.level
@@ -197,13 +197,12 @@ impl BlockSlicer {
         let num_chunks = b.as_slice().len() / max_payload_size;
 
         debug!("Selected data chunk size {max_payload_size}");
+        debug!(
+            "Cutting block {} into {} length chunks",
+            block_ref, max_payload_size,
+        );
         for chunk in b.as_slice().chunks(max_payload_size as usize) {
             assert!(ctr as usize <= num_chunks);
-            debug!(
-                "Cutting block {} into {} length chunks",
-                block_ref,
-                chunk.len()
-            );
 
             use std::convert::TryFrom;
             let seq_id = SequenceIdV1 {

@@ -150,13 +150,11 @@ impl FrameParser for LetterheadV1 {
 
         Ok((
             input,
-            auxiliary_data.map(|auxiliary_data| {
-                Self {
-                    from,
-                    to: to.unwrap(),
-                    stream_size: payload_length,
-                    auxiliary_data,
-                }
+            auxiliary_data.map(|auxiliary_data| Self {
+                from,
+                to: to.unwrap(),
+                stream_size: payload_length,
+                auxiliary_data,
             }),
         ))
     }

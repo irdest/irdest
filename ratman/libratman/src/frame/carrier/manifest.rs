@@ -5,11 +5,18 @@ use crate::{
 };
 use async_eris::{BlockKey, BlockReference, ReadCapability};
 use nom::{AsBytes, IResult};
-use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub enum ManifestFrame {
     V1(ManifestFrameV1),
+}
+
+impl ManifestFrame {
+    pub fn as_v1(&self) -> &ManifestFrameV1 {
+        match self {
+            Self::V1(frame_v1) => frame_v1,
+        }
+    }
 }
 
 impl FrameParser for ManifestFrame {

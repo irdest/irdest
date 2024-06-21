@@ -635,13 +635,13 @@ pub(super) async fn single_session_exchange<'a>(
             debug!("Receiving {letterheads:?}");
 
             let this_addr =
-                dbg!(letterheads
+                letterheads
                     .iter()
                     .map(|lh| lh.from)
                     .next()
                     .ok_or(RatmanError::ClientApi(ClientError::User(
                         UserError::MissingInput("No letterheads provided!".into()),
-                    ))))?;
+                    )))?;
 
             debug!("Generated letterheads from {this_addr}");
             let auth = check_auth(&header, this_addr, auth_guard).await?;

@@ -161,7 +161,6 @@ impl RouteTable {
     }
 
     pub(crate) async fn is_local(&self, maybe_local: Address) -> Result<bool> {
-        debug!("Route states: {:#?}", self.meta_db.routes.iter());
         Ok(self
             .meta_db
             .routes

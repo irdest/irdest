@@ -71,7 +71,8 @@ impl BlockCollectorWorker {
         while let Some((seq_id, envelope)) = recv.recv().await {
             let insert_at_end = seq_id.num as usize >= this.buffer.len();
             debug!(
-                "Insert chunk in sequence {} to index {}/{}",
+                "Insert chunk {} in sequence {} to index {}/{}",
+                seq_id.num,
                 seq_id.hash,
                 if insert_at_end { -1 } else { seq_id.num as i8 },
                 seq_id.max
@@ -88,7 +89,7 @@ impl BlockCollectorWorker {
             }
 
             // If the block is complete
-            if this.buffer.len() == this.max_num as usize {
+            if this.buffer.len() == this.max_num as usize + 1 {
                 info!(
                     "Collected enough chunks ({}) to reconstruct block {}",
                     this.buffer.len(),
@@ -108,6 +109,8 @@ impl BlockCollectorWorker {
                         block.extend_from_slice(pl);
                         dbg!(pl.len());
                     });
+
+                debug!("Reconstructing {} byte-sized block", block.len());
 
                 // Then offer the finished block up to the block god
                 match StorageBlock::reconstruct_from_vec(block) {
@@ -141,6 +144,8 @@ impl BlockCollectorWorker {
                 if let Err(e) = self.meta_db.incomplete.remove(seq_id.hash.to_string()) {
                     warn!("Couldn't remove incomplete sequence from meta_db: {e}");
                 }
+
+                debug!("Successfully collected block {}", seq_id.hash);
                 self.senders.write().await.remove(&seq_id.hash);
                 break;
             }
@@ -210,7 +215,7 @@ impl BlockCollector {
                 .ok_or(RatmanError::Encoding(EncodingError::Parsing(
                     "Mandatory field 'sequence_id' was missing!".to_string(),
                 )))?;
-        let _max_num = sequence_id.max;
+        let max_num = sequence_id.max;
 
         if let Ok(Some(mut block_meta)) = self.meta_db.incomplete.get(&sequence_id.hash.to_string())
         {
@@ -256,9 +261,9 @@ impl BlockCollector {
                 );
                 task::spawn(
                     BlockCollectorWorker {
-                        max_num: sequence_id.max,
-                        buffer: vec![],
+                        max_num,
                         senders,
+                        buffer: vec![],
                         journal: Arc::clone(&self.journal),
                         meta_db: Arc::clone(&self.meta_db),
                     }
