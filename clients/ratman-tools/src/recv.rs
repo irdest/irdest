@@ -14,7 +14,7 @@ pub async fn receive(
     matches: &ArgMatches,
 ) -> Result<()> {
     let (addr, auth) = base_args.identity_data?;
-    let count = matches.get_one::<u64>("stream-count").unwrap(); // has default
+    let count = matches.get_one::<u64>("stream-count").unwrap_or(&1);
 
     let addr_to = Address(
         matches
@@ -24,22 +24,36 @@ pub async fn receive(
     );
 
     let mut stdout = tokio::io::stdout();
-    let (letterhead, mut read_stream) = ipc
-        .recv_one(auth, addr, Recipient::Address(addressed_to))
+    let mut step = *count;
+    loop {
+        let (letterhead, mut read_stream) =
+            match ipc.recv_one(auth, addr, Recipient::Address(addr_to)).await {
+                Ok((lh, rs)) => (lh, rs),
+                Err(e) => {
+                    eprintln!("Read stream ended: {e}");
+                    break;
+                }
+            };
+
+        eprintln!(
+            "Receiving message stream: {}",
+            serde_json::to_string_pretty(&letterhead)?
+        );
+
+        tokio::io::copy(
+            // Limit the amount of data this socket reads
+            &mut read_stream.as_reader().take(letterhead.stream_size),
+            &mut stdout,
+        )
         .await?;
+        read_stream.drop().await?;
 
-    eprintln!(
-        "Receiving message stream: {}",
-        serde_json::to_string_pretty(&letterhead)?
-    );
+        if step == 1 {
+            break;
+        }
 
-    tokio::io::copy(
-        // Limit the amount of data this socket reads
-        &mut read_stream.as_reader().take(letterhead.stream_size),
-        &mut stdout,
-    )
-    .await?;
+        step -= 1;
+    }
 
-    read_stream.drop().await?;
     Ok(())
 }

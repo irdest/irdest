@@ -73,6 +73,12 @@ pub fn setup_cli() -> Command {
                         .help("Address a message stream to a namespace address")
                         .action(ArgAction::Append)
                         .conflicts_with_all(["to-address"]),
+                    Arg::new("chunk-size")
+                        .help("Optionally split the incoming stream into smaller chunks to reduce transmission latency.  A value of 0 disables stream chunk splitting")
+                        .value_parser(value_parser!(u64))
+                        .short('z')
+                        .long("chunk-size")
+                        .action(ArgAction::Set)
                 ]),
             Command::new("recv")
                 .about("Set your computer to receive files")

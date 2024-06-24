@@ -35,8 +35,8 @@ pub mod peers;
 /// Represent the well-known `ratmand` configuration tree
 pub(crate) const CFG_RATMAND: &'static str = "ratmand";
 
-/// Represent the well-known `irdest.intrinsics` configuration tree
-pub(crate) const CFG_INTRINSICS: &'static str = "irdest.intrinsics";
+//// Represent the well-known `irdest.intrinsics` configuration tree
+//pub(crate) const CFG_INTRINSICS: &'static str = "irdest.intrinsics";
 
 /// Represents the top-level configuration structure
 ///

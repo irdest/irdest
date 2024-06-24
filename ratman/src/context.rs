@@ -252,12 +252,12 @@ impl RatmanContext {
         // Setup the ingress system, responsible for collecting all blocks
         // contained in a manifest back into a complete message streams
         let ingress_tx = {
-            let (ingress_tx, rx) = channel(32);
+            let (ingress_tx, ingress_rx) = channel(32);
             let block_notify_tx = block_notify_tx.clone();
 
             let this_ = Arc::clone(&this);
             new_async_thread("ratmand-ingress", 1024 * 8, async move {
-                procedures::exec_ingress_system(this_, rx, block_notify_tx).await;
+                procedures::exec_ingress_system(this_, ingress_rx, block_notify_tx).await;
                 Ok(())
             });
 

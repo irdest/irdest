@@ -1,9 +1,8 @@
 use crate::{
     frame::{
-        parse::{take_address, take_id, take_u32},
+        parse::{take_address, take_id},
         FrameGenerator, FrameParser,
     },
-    rt::writer::write_u32,
     types::{Address, Ident32, Recipient},
     Result,
 };
@@ -112,14 +111,14 @@ impl FrameParser for RecvOne {
 pub struct RecvMany {
     pub addr: Address,
     pub to: Recipient,
-    pub num: u32,
+    pub limit: Option<u32>,
 }
 
 impl FrameGenerator for RecvMany {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         self.addr.generate(buf)?;
         Some(self.to).generate(buf)?;
-        self.num.generate(buf)?;
+        self.limit.generate(buf)?;
         Ok(())
     }
 }
@@ -129,13 +128,13 @@ impl FrameParser for RecvMany {
     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
         let (input, addr) = take_address(input)?;
         let (input, to) = Option::<Recipient>::parse(input)?;
-        let (input, num) = take_u32(input)?;
+        let (input, limit) = Option::<u32>::parse(input)?;
         Ok((
             input,
             Self {
                 addr,
                 to: to.expect("invalid RecvOne payload"),
-                num,
+                limit,
             },
         ))
     }

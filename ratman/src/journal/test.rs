@@ -9,7 +9,7 @@ use libratman::{
 };
 use tempdir::TempDir;
 
-use super::{page::SerdeFrameType, types::FrameData, Journal};
+use super::{types::FrameData, Journal};
 
 fn setup_db() -> Keyspace {
     Keyspace::open(Config::new(

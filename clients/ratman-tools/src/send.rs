@@ -3,7 +3,7 @@ use clap::ArgMatches;
 use colored::Colorize;
 use libratman::{
     api::{RatmanIpc, RatmanStreamExtV1},
-    tokio,
+    tokio::{self, io::AsyncReadExt},
     types::{error::UserError, Address, Ident32, LetterheadV1, Recipient},
     Result,
 };
@@ -41,21 +41,22 @@ pub async fn send(ipc: &Arc<RatmanIpc>, base_args: BaseArgs, matches: &ArgMatche
     let (addr, auth) = base_args.identity_data?;
     let to_addr = parse_field::<String>(matches, "to-address");
     let to_space = parse_field::<String>(matches, "to-space");
-    let stream_size = *parse_field::<u64>(matches, "stream-size")?;
+    let chunk_size = *parse_field::<u64>(matches, "chunk-size").unwrap_or(&0);
 
     eprintln!("Generate letterheads");
     let to = match (to_addr, to_space) {
         (Ok(to_addrs), Err(_)) => {
-            generate_letterheads(addr, to_addrs, stream_size, |a| Recipient::Address(a))?
+            generate_letterheads(addr, to_addrs, chunk_size, |a| Recipient::Address(a))?
         }
         (Err(_), Ok(to_str)) => {
-            generate_letterheads(addr, to_str, stream_size, |s| Recipient::Namespace(s))?
+            generate_letterheads(addr, to_str, chunk_size, |s| Recipient::Namespace(s))?
         }
         (Ok(to_addr_str), Ok(to_s_str)) => {
-            let addrs =
-                generate_letterheads(addr, to_addr_str, stream_size, |a| Recipient::Address(a))?;
+            let addrs = generate_letterheads(addr, to_addr_str, chunk_size.clone(), |a| {
+                Recipient::Address(a)
+            })?;
             let spaces =
-                generate_letterheads(addr, to_s_str, stream_size, |s| Recipient::Address(s))?;
+                generate_letterheads(addr, to_s_str, chunk_size, |s| Recipient::Address(s))?;
             addrs.into_iter().chain(spaces.into_iter()).collect()
         }
         (Err(e1), Err(e2)) => {
@@ -66,18 +67,21 @@ pub async fn send(ipc: &Arc<RatmanIpc>, base_args: BaseArgs, matches: &ArgMatche
             .into());
         }
     };
-    let mut stdin = tokio::io::stdin();
 
-    // if !base_args.quiet {
-    //     eprintln!(
-    //         "Generated {} letterheads to {:?}",
-    //         to.len(),
-    //         to.iter()
-    //             .map(|to| to.to.inner_address().pretty_string())
-    //             .collect::<Vec<_>>());
-    //     }
+    if chunk_size == 0 {
+        eprintln!("Send full stream...");
+        let mut stdin = tokio::io::stdin();
+        ipc.send_many(auth, to, &mut stdin).await?;
+    } else {
+        loop {
+            let mut stdin = tokio::io::stdin().take(chunk_size);
+            eprintln!("Send {chunk_size} sized stream chunk...");
+            if ipc.send_many(auth, to.clone(), &mut stdin).await.is_err() {
+                break;
+            }
+        }
+    }
 
-    ipc.send_many(auth, to, &mut stdin).await?;
     println!("{}", reply_ok(&base_args.out_fmt).as_str().green());
     Ok(())
 }

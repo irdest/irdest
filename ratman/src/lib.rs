@@ -31,7 +31,6 @@ mod links;
 mod procedures;
 mod protocol;
 mod routes;
-mod runtime;
 mod storage;
 
 // #[cfg(feature = "dashboard")]

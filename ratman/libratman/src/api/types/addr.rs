@@ -1,7 +1,7 @@
 use crate::{
     frame::{
-        micro::parse::{cstring, maybe, vec_of},
-        parse::{self, maybe_cstring, maybe_id, take_id},
+        micro::parse::{maybe, vec_of},
+        parse::{self, maybe_cstring, maybe_id},
         FrameGenerator, FrameParser,
     },
     types::{Address, Ident32},

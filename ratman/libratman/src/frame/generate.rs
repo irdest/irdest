@@ -4,7 +4,7 @@ use std::ffi::CString;
 
 use crate::{
     frame::FrameGenerator,
-    types::{Address, Ident32, SequenceIdV1},
+    types::{Ident32, SequenceIdV1},
     EncodingError, Result,
 };
 use byteorder::{BigEndian, ByteOrder};
@@ -53,6 +53,22 @@ impl FrameGenerator for u32 {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         let slice = u32_to_big_endian(self);
         slice.generate(buf)
+    }
+}
+
+impl FrameGenerator for Option<u32> {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        match self {
+            Some(s) => {
+                buf.push(1);
+                s.generate(buf)?;
+                Ok(())
+            }
+            None => {
+                buf.push(0);
+                Ok(())
+            }
+        }
     }
 }
 

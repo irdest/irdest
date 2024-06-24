@@ -11,7 +11,7 @@ use serde::{
     Deserialize, Serialize, Serializer,
 };
 use std::{
-    fmt::{self, format, Debug, Display, Formatter},
+    fmt::{self, Debug, Display, Formatter},
     string::ToString,
 };
 
@@ -432,12 +432,6 @@ mod test {
         );
         let i2 = bincode::deserialize(&v).unwrap();
         assert_eq!(i, i2);
-    }
-
-    #[test]
-    #[cfg(features = "aligned")]
-    fn sized() {
-        assert_eq!(super::ID_LEN, size_of::<usize>());
     }
 
     /// This is the default length

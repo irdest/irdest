@@ -146,7 +146,7 @@ pub(crate) async fn exec_switching_batch(
                         assert!(remainder.len() == 0);
 
                         // Update the routing table and re-flood the announcement
-                        routes
+                        if let Err(e) = routes
                             .update(
                                 EpNeighbourPair(id, neighbour.assume_single()),
                                 header.get_sender(),
@@ -154,7 +154,12 @@ pub(crate) async fn exec_switching_batch(
                                     AnnounceFrame::V1(v1) => v1,
                                 },
                             )
-                            .await;
+                            .await
+                        {
+                            warn!("failed to update route for peer {id}: {e}");
+                            continue;
+                        }
+
                         if let Err(e) = procedures::flood_frame(
                             &routes,
                             &links,

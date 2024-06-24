@@ -10,7 +10,6 @@
 use crate::Result;
 use std::{
     future::Future,
-    panic,
     sync::{
         mpsc::{sync_channel, Receiver as SyncReceiver, SyncSender},
         Arc,
@@ -39,6 +38,7 @@ pub const fn size_commonbuf_t<const T: usize>() -> usize {
 
 /// Encapsulates a single threaded async system
 pub struct AsyncSystem {
+    #[allow(unused)]
     label: String,
     rt: Runtime,
     #[allow(unused)]

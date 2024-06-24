@@ -22,6 +22,7 @@ use std::{
     sync::Arc,
 };
 
+#[allow(unused)]
 #[derive(Debug, thiserror::Error)]
 pub enum ServerError {
     #[error("unknown error (check your logs)")]
@@ -42,6 +43,7 @@ impl From<io::Error> for ServerError {
 /// configuring links, and spawning async peer handlers
 pub struct Server {
     self_router_key_id: Ident32,
+    #[allow(unused)]
     ipv4_listen: Option<TcpListener>,
     ipv6_listen: TcpListener,
 }

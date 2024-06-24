@@ -13,14 +13,13 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 pub type ActiveAuth = Mutex<BTreeMap<AddrAuth, Address>>;
-
 pub type AuthGuard = Mutex<BTreeMap<AddrAuth, Address>>;
 
 pub(crate) struct ConnectionManager {
     /// A map of client_id -> client metadata
     inner: Mutex<BTreeMap<Ident32, RouterClient>>,
     sync_listeners: Mutex<BTreeMap<Recipient, BcastSender<(LetterheadV1, ReadCapability)>>>,
-    active_auth: Mutex<BTreeMap<AddrAuth, Address>>,
+    active_auth: ActiveAuth,
 }
 
 impl ConnectionManager {
@@ -28,7 +27,7 @@ impl ConnectionManager {
         Self {
             inner: Mutex::new(BTreeMap::default()),
             sync_listeners: Mutex::new(BTreeMap::default()),
-            active_auth: Mutex::new(BTreeMap::default()),
+            active_auth: ActiveAuth::default(),
         }
     }
 
@@ -36,7 +35,7 @@ impl ConnectionManager {
         self.inner.lock().await
     }
 
-    pub fn active_auth(&self) -> &Mutex<BTreeMap<AddrAuth, Address>> {
+    pub fn active_auth(&self) -> &ActiveAuth {
         &self.active_auth
     }
 
@@ -66,6 +65,7 @@ impl ConnectionManager {
             .ok_or(RatmanError::Nonfatal(NonfatalError::NoStream))
     }
 
+    #[allow(unused)]
     pub async fn client_exists_for_address(&self, addr: Address) -> bool {
         self.inner
             .lock()

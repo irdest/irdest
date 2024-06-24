@@ -13,7 +13,7 @@
 use async_trait::async_trait;
 use libratman::{
     endpoint::EndpointExt,
-    tokio::{sync::RwLock, task},
+    tokio::sync::RwLock,
     types::{Ident32, InMemoryEnvelope, Neighbour},
     NetmodError, RatmanError, Result as RatResult,
 };

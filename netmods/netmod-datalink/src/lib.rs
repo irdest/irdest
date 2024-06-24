@@ -12,7 +12,6 @@ use std::{collections::HashMap, convert::TryInto, time::Duration};
 
 use libratman::{
     frame::FrameGenerator,
-    futures::future,
     tokio::time::{self, timeout},
     types::Ident32,
     NetmodError,

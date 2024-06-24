@@ -4,7 +4,7 @@ use std::{
     ffi::CString,
     hash::{Hash, Hasher},
 };
-use twox_hash::{RandomXxHashBuilder, XxHash64};
+use twox_hash::XxHash64;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum AddressData {

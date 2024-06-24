@@ -5,8 +5,8 @@
 mod clients;
 pub(crate) use clients::ConnectionManager;
 
-mod receiving;
-mod sending;
+mod recv_util;
+mod send_util;
 mod session;
 
 use crate::{
@@ -103,7 +103,6 @@ pub async fn run_client_handler(
         match single_session_exchange(&ctx, client_id, &auth_guard, &mut raw_socket, &senders).await
         {
             Ok(SessionResult::Next) => {
-                drop(auth_guard);
                 yield_now().await;
             }
             Ok(SessionResult::Drop) => break,

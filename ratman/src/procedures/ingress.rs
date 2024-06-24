@@ -11,7 +11,7 @@ use libratman::{
         micro::MicroframeHeader,
     },
     tokio::{
-        fs::{File, OpenOptions},
+        fs::OpenOptions,
         select,
         sync::{
             broadcast::{Receiver as BcastReceiver, Sender as BcastSender},
@@ -45,17 +45,17 @@ pub(crate) struct BlockNotifier;
 /// it yet
 pub async fn exec_ingress_system(
     ctx: Arc<RatmanContext>,
-    mut rx: Receiver<MessageNotifier>,
-    block_notifier: BcastSender<BlockNotifier>,
+    mut ingress_rx: Receiver<MessageNotifier>,
+    block_notifier_tx: BcastSender<BlockNotifier>,
 ) {
     loop {
         let tripwire = ctx.tripwire.clone();
-        let block_notifier = block_notifier.clone();
+        let block_notifier_tx = block_notifier_tx.clone();
 
         select! {
             biased;
             _ = tripwire => break,
-            manifest_notifier = rx.recv() => {
+            manifest_notifier = ingress_rx.recv() => {
                 if manifest_notifier.is_none() {
                     break;
                 }
@@ -63,7 +63,7 @@ pub async fn exec_ingress_system(
                 let ctx = Arc::clone(&ctx);
                 let tripwire = ctx.tripwire.clone();
                 spawn(async move {
-                    if let Err(e) = reassemble_message_stream(ctx, manifest_notifier.unwrap(), tripwire, block_notifier.subscribe()).await {
+                    if let Err(e) = reassemble_message_stream(ctx, manifest_notifier.unwrap(), tripwire, block_notifier_tx.subscribe()).await {
                         error!("message stream stuck: {e}");
                         return;
                     }

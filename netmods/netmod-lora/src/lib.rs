@@ -40,6 +40,7 @@ struct CtrlHeader {
 
 const PAYLOAD_SIZE: usize = RADIO_MTU - std::mem::size_of::<CtrlHeader>();
 
+#[allow(unused)]
 #[derive(Debug)]
 enum LoraPacketError {
     InvalidMagicNumber(u8),
@@ -92,6 +93,7 @@ impl LoraPacket {
     }
 }
 
+#[allow(unused)]
 pub struct LoraEndpoint {
     rx: channel::Receiver<InMemoryEnvelope>,
     router_pk_id: Ident32,

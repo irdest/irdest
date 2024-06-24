@@ -17,6 +17,7 @@ pub(crate) type GenericEndpoint = dyn EndpointExt + 'static + Send + Sync;
 /// don't have have to be updated or mapped, because their place in the list doesn't change.
 enum EpWrap {
     Used(String, Arc<GenericEndpoint>),
+    #[allow(unused)]
     Void,
 }
 type EpVec = Vec<EpWrap>;
@@ -46,6 +47,7 @@ impl LinksMap {
     }
 
     /// Remove an endpoint from the list
+    #[allow(unused)]
     pub(crate) async fn remove(&self, id: usize) {
         let mut map = self.map.write().await;
         std::mem::swap(&mut map[id], &mut EpWrap::Void);

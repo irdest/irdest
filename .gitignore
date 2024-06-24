@@ -8,8 +8,8 @@ target/
 # Nix out links
 result
 
-# ratman's local config files
-ratcat_config/
-
 # generated book
 docs/user/book
+
+# test identity files
+id_*.json

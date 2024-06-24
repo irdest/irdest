@@ -16,14 +16,13 @@ mod session;
 use std::sync::Arc;
 
 use peer::{FrameReceiver, FrameSender};
-use routes::{Routes, Target};
+use routes::Routes;
 use session::{setup_cleanuptask, start_connection, SessionData};
 use {resolve::Resolver, server::Server};
 
 // use async_std::{channel::unbounded, io::WriteExt, net::TcpListener, sync::Arc, task};
 use libratman::{
     endpoint::EndpointExt,
-    rt::AsyncSystem,
     tokio::{
         sync::{mpsc::channel, Mutex},
         task::spawn_local,
@@ -243,6 +242,7 @@ impl EndpointExt for InetEndpoint {
 
 #[test]
 fn test_simple_transmission() {
+    use libratman::rt::AsyncSystem;
     let system = AsyncSystem::new("simple-transmission".into(), 2);
     system.exec(simple_transmission()).unwrap()
 }

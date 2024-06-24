@@ -54,7 +54,7 @@ impl FrameGenerator for ContactAdd {
 impl FrameParser for ContactAdd {
     type Output = Result<Self>;
     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
-        let (input, addr) = take_address(input)?;
+        let (input, _addr) = take_address(input)?;
 
         // Read a CString note
         let (input, note) = maybe_cstring(input)?;

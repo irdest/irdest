@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use crate::{
-    api::sending::exec_send_many_socket,
+    api::send_util::exec_send_many_socket,
     context::RatmanContext,
     crypto,
     procedures::{handle_subscription_socket, SenderSystem},
@@ -501,16 +501,16 @@ pub(super) async fn single_session_exchange<'a>(
         //
         // ^-^ Client wants to listen for messages in this session
         m if m == cm::make(cm::RECV, cm::MANY) => {
-            let recv_many = raw_socket
+            let RecvMany { addr, to, mut limit } = raw_socket
                 .read_payload::<RecvMany>(header.payload_size)
                 .await?;
 
-            let auth = check_auth(&header, recv_many.addr, auth_guard).await?;
+            let auth = check_auth(&header, addr, auth_guard).await?;
 
             let (tx, mut rx) = bcast_channel(8);
-            ctx.clients.insert_sync_listener(recv_many.to, tx).await;
+            ctx.clients.insert_sync_listener(to, tx).await;
 
-            for _ in 0..recv_many.num {
+            loop {
                 match rx.recv().await {
                     Ok((letterhead, read_cap)) => {
                         raw_socket
@@ -542,6 +542,11 @@ pub(super) async fn single_session_exchange<'a>(
                                     .await?
                             }
                         }
+
+                        // If a limit was set, decrement it
+                        if let Some(ref mut limit) = limit {
+                            *limit -= 1;
+                        }
                     }
                     Err(e) => {
                         raw_socket
@@ -552,75 +557,19 @@ pub(super) async fn single_session_exchange<'a>(
                             .await?
                     }
                 }
-            }
 
-            ctx.clients.remove_sync_listener(recv_many.to).await;
+                // If the remaining limit is "1" we break here
+                if let Some(1) = limit {
+                    ctx.clients.remove_sync_listener(to).await;
+                    break;
+                }
+            }
         }
         //
         //
         // ^-^ Client wants to send a message to one recipient
         m if m == cm::make(cm::SEND, cm::ONE) => {
             todo!()
-            // let SendTo { letterhead } = raw_socket
-            //     .read_payload::<SendTo>(header.payload_size)
-            //     .await??;
-
-            // let auth = check_auth(&header, letterhead.from, auth_guard).await?;
-            // debug!("{client_id} Passed authentication on [send : one]");
-
-            // let this_key = crypto::get_addr_key(&ctx.meta_db, letterhead.from, auth)?;
-            // let shared_key = crypto::diffie_hellman(&this_key, letterhead.to.inner_address())
-            //     .ok_or::<RatmanError>(
-            //     EncodingError::Encryption("Failed diffie-hellman exchange".into()).into(),
-            // )?;
-
-            // let chosen_block_size = match letterhead.stream_size {
-            //     m if m < (16 * 1024) => async_eris::BlockSize::_1K,
-            //     _ => async_eris::BlockSize::_32K,
-            // };
-
-            // debug!("{client_id} Selected block size is {chosen_block_size}");
-            // let mut compat_socket = raw_socket.to_compat();
-            // let read_cap = async_eris::encode(
-            //     &mut compat_socket,
-            //     shared_key.as_bytes(),
-            //     chosen_block_size,
-            //     &ctx.journal.blocks,
-            // )
-            // .await?;
-            // raw_socket.from_compat(compat_socket);
-
-            // debug!("Block encoding complete");
-
-            // match chosen_block_size {
-            //     BlockSize::_1K => {
-            //         debug!("Dispatch block on {chosen_block_size} queue");
-            //         senders
-            //             .tx_1k
-            //             .send((read_cap, letterhead))
-            //             .await
-            //             .map_err(|e| {
-            //                 RatmanError::Schedule(libratman::ScheduleError::Contention(
-            //                     e.to_string(),
-            //                 ))
-            //             })?;
-            //     }
-            //     BlockSize::_32K => {
-            //         debug!("Dispatch block on {chosen_block_size} queue");
-            //         senders
-            //             .tx_32k
-            //             .send((read_cap, letterhead))
-            //             .await
-            //             .map_err(|e| {
-            //                 RatmanError::Schedule(libratman::ScheduleError::Contention(
-            //                     e.to_string(),
-            //                 ))
-            //             })?;
-            //     }
-            // }
-
-            // debug!("Done with request {}, reply ok", client_id.pretty_string());
-            // reply_ok(raw_socket, auth).await?;
         }
         //
         //

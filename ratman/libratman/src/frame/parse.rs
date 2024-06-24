@@ -213,6 +213,20 @@ impl<T: FrameParser> FrameParser for Vec<T> {
     }
 }
 
+impl FrameParser for Option<u32> {
+    type Output = Option<u32>;
+    fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
+        let (input, exists) = take_byte(input)?;
+
+        if exists == 1 {
+            let (input, val) = take_u32(input)?;
+            Ok((input, Some(val)))
+        } else {
+            Ok((input, None))
+        }
+    }
+}
+
 ////// Test that CStrings can be encoded correctly
 
 #[test]

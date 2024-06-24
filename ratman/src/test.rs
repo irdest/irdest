@@ -9,7 +9,7 @@ use libratman::{
 #[test]
 fn create_address() {
     let rrt = Runtime::new().unwrap();
-    let jh = rrt.spawn_blocking(|| {
+    let _jh = rrt.spawn_blocking(|| {
         crate::start_with_configuration(ConfigTree::default_in_memory());
     });
 

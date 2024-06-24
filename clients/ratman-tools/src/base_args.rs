@@ -1,6 +1,7 @@
-use crate::OutputFormat;
+use crate::{encode_map, OutputFormat};
 use clap::ArgMatches;
 use libratman::{
+    tokio::{fs::OpenOptions, io::AsyncWriteExt},
     types::{error::UserError, AddrAuth, Address},
     RatmanError, Result,
 };
@@ -87,10 +88,25 @@ pub fn parse_base_args(m: &ArgMatches) -> BaseArgs {
 }
 
 pub struct IdentityFile {
-    addr: Address,
-    auth: AddrAuth,
+    pub addr: Address,
+    pub auth: AddrAuth,
 }
 
-pub async fn write_new_identity(new_id: IdentityFile) -> Result<()> {
+pub async fn write_new_identity(new_id: IdentityFile, base_args: BaseArgs) -> Result<()> {
+    let mut f = OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .open(base_args.identity_path)
+        .await?;
+
+    let identity_map = encode_map(
+        vec![
+            ("addr".to_owned(), new_id.addr.to_string()),
+            ("auth".to_owned(), new_id.auth.to_string()),
+        ],
+        base_args.out_fmt,
+    );
+
+    f.write_all(identity_map.as_bytes()).await?;
     Ok(())
 }

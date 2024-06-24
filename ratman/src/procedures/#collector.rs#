@@ -22,7 +22,7 @@ use libratman::{
         },
         task::{self, spawn_blocking},
     },
-    types::{Ident32, InMemoryEnvelope, SequenceIdV1},
+                                types::{Ident32, InMemoryEnvelope, SequenceIdV1},
     EncodingError, RatmanError, Result,
 };
 use std::{collections::BTreeMap, convert::TryFrom, sync::Arc};

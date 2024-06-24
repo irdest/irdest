@@ -8,7 +8,6 @@ use crate::{
 use serde::{Deserialize, Serialize};
 
 use std::collections::{BTreeMap, HashMap};
-use std::sync::atomic::AtomicU64;
 use std::{fs::File, io::Read, path::Path};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -270,7 +269,7 @@ async fn serde_enc_dec() {
         bincode_serde.len()
     );
 
-    let mut blocks2 = MemoryStorage::new(HashMap::new());
+    let blocks2 = MemoryStorage::new(HashMap::new());
 
     for json_block in bincode_serde.into_iter() {
         let block: Block<1024> = serde_json::from_str(&json_block).unwrap();

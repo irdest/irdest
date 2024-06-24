@@ -1,4 +1,3 @@
-use byteorder::{BigEndian, ByteOrder};
 use nom::{
     bytes::complete::{take, take_till},
     combinator::peek,

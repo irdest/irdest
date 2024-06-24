@@ -1,7 +1,7 @@
 //! Peer session management
 
 use crate::{
-    peer::{FrameReceiver, FrameSender, Peer},
+    peer::{FrameSender, Peer},
     proto::{self, Handshake},
     routes::{Routes, Target},
     PeerType,
@@ -16,7 +16,7 @@ use libratman::{
     types::{Ident32, InMemoryEnvelope},
     RatmanError,
 };
-use std::{io, net::SocketAddr, sync::Arc, time::Duration};
+use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 /// The number of attempts a session maskes to a peer before giving up
 pub const SESSION_TIMEOUT: u16 = 6;
@@ -124,6 +124,7 @@ pub(crate) struct SessionData {
     pub(crate) peer_router_key_id: Ident32,
     pub(crate) tt: PeerType,
     pub(crate) addr: SocketAddr,
+    #[allow(unused)]
     pub(crate) self_port: u16,
 }
 
@@ -186,7 +187,7 @@ pub(crate) async fn connect(
 /// If anything goes wrong during the handshake we close the
 /// connection again, and re-try to connect from the beginning.
 async fn handshake(
-    mut data: SessionData,
+    data: SessionData,
     sender: FrameSender,
     restart: Sender<SessionData>,
     stream: TcpStream,

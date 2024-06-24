@@ -32,7 +32,7 @@ pub use _trait::{RatmanIpcExtV1, RatmanStreamExtV1, ReadStream};
 
 mod subscriber;
 pub use subscriber::SubscriptionHandle;
-use types::SendMany;
+use types::{RecvMany, SendMany};
 
 pub mod socket_v2;
 pub mod types;
@@ -47,7 +47,7 @@ use crate::{
         types::{Handshake, RecvOne, SendTo, ServerPing, SubsCreate, SubsDelete, SubsRestore},
     },
     frame::micro::{client_modes as cm, MicroframeHeader},
-    types::{error::UserError, AddrAuth, Address, Ident32, LetterheadV1, Modify, Recipient},
+    types::{AddrAuth, Address, Ident32, LetterheadV1, Modify, Recipient},
     ClientError, EncodingError, Result,
 };
 use async_trait::async_trait;
@@ -58,7 +58,7 @@ use std::{
     sync::Arc,
 };
 use tokio::{
-    io::{AsyncRead, AsyncReadExt, AsyncWriteExt},
+    io::{AsyncRead, AsyncReadExt},
     net::TcpStream,
     sync::Mutex,
 };
@@ -614,27 +614,27 @@ impl RatmanStreamExtV1 for RatmanIpc {
         auth: AddrAuth,
         addr: Address,
         to: Recipient,
-        num: u32,
+        limit: Option<u32>,
     ) -> crate::Result<I>
     where
         I: Iterator<Item = (LetterheadV1, ReadStream<'s>)>,
     {
-        // let mut socket = self.socket().lock().await;
-        // socket
-        //     .write_microframe(
-        //         MicroframeHeader {
-        //             modes: cm::make(cm::RECV, cm::MANY),
-        //             auth: Some(auth),
-        //             ..Default::default()
-        //         },
-        //         RecvMany { addr, to, num },
-        //     )
-        //     .await?;
+        let mut socket = self.socket().lock().await;
+        socket
+            .write_microframe(
+                MicroframeHeader {
+                    modes: cm::make(cm::RECV, cm::MANY),
+                    auth: Some(auth),
+                    ..Default::default()
+                },
+                RecvMany { addr, to, limit },
+            )
+            .await?;
 
-        todo!(
-            "This API endpoint is unimplemented in {}",
-            version_str(&crate::api::VERSION)
-        );
+        
+        
+        todo!()
+        
         // 0..num.into_iter().map(|_| {
         //     let join =
         //         spawn_local(async move { socket.read_microframe::<LetterheadV1>().await.unwrap() });

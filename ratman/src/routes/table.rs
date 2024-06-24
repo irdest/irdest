@@ -28,7 +28,9 @@ use std::{collections::VecDeque, iter::FromIterator, sync::Arc};
 pub(crate) struct RouteTable {
     meta_db: Arc<MetadataDb>,
     // routes: Arc<Mutex<BTreeMap<Address, RouteType>>>,
+    #[allow(unused)]
     new: IoPair<Address>,
+    #[allow(unused)]
     #[cfg(feature = "dashboard")]
     metrics: metrics::RouteTableMetrics,
 }
@@ -50,13 +52,6 @@ impl RouteTable {
 /// A netmod endpoint ID and an endpoint target ID
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub(crate) struct EpNeighbourPair(pub(crate) usize, pub(crate) Ident32);
-
-/// Describes the reachability of a route
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) enum RouteType {
-    Remote(EpNeighbourPair),
-    Local,
-}
 
 /// An ephemeral routing table
 ///
@@ -205,17 +200,7 @@ mod metrics {
 
     #[derive(Clone, Hash, PartialEq, Eq, Encode)]
     pub(super) struct RouteLabels {
-        pub kind: super::RouteType,
-    }
-
-    impl Encode for super::RouteType {
-        fn encode(&self, w: &mut dyn std::io::Write) -> std::io::Result<()> {
-            match self {
-                Self::Local => write!(w, "local"),
-                // TODO: Can we add more detail to this?
-                Self::Remote(_) => write!(w, "remote"),
-            }
-        }
+        pub kind: String,
     }
 
     #[derive(Default)]

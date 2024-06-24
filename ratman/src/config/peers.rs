@@ -4,7 +4,7 @@
 //! must be configured to `accept_unknown_peers`.
 
 use crate::links::LinksMap;
-use libratman::{endpoint::EndpointExt, NetmodError, RatmanError};
+use libratman::{NetmodError, RatmanError};
 use std::sync::Arc;
 
 /// A helper that parses, validates, and attaches peer data to drivers
@@ -20,7 +20,7 @@ impl PeeringBuilder {
     ///
     /// The strings used for identification are used as prefixes in
     /// the peer syntax.
-    pub fn new(links: Arc<LinksMap>) -> Self {
+    pub(crate) fn new(links: Arc<LinksMap>) -> Self {
         Self { links }
     }
 

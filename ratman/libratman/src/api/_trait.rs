@@ -1,5 +1,6 @@
 use crate::{
     api::{socket_v2::RawSocketHandle, SubscriptionHandle},
+    frame::carrier::ManifestFrameV1,
     types::{AddrAuth, Address, Ident32, LetterheadV1, Modify, Recipient},
     ClientError, Result,
 };
@@ -206,7 +207,7 @@ pub trait RatmanStreamExtV1: RatmanIpcExtV1 {
         auth: AddrAuth,
         addr: Address,
         to: Recipient,
-        num: u32,
+        num: Option<u32>,
     ) -> Result<I>
     where
         I: Iterator<Item = (LetterheadV1, ReadStream<'s>)>;
@@ -217,6 +218,11 @@ pub struct ReadStream<'a>(pub(crate) MutexGuard<'a, RawSocketHandle>);
 impl<'a> ReadStream<'a> {
     pub fn as_reader(&mut self) -> &mut impl AsyncRead {
         &mut *self.0.stream()
+    }
+
+    #[doc(hidden)]
+    pub fn wait_for_manifest(&mut self) -> Result<ManifestFrameV1> {
+        todo!()
     }
 
     pub async fn drop(mut self) -> Result<()> {
