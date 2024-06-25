@@ -169,10 +169,10 @@ pub(crate) async fn exec_sender_system<const L: usize>(
                             let bid32 = Ident32::from_bytes(bid.as_slice()).pretty_string();
 
                             debug!(
-                                "Block {} turned into {}x {}kB frames",
+                                "Block {} turned into {}x {:1}kB frames",
                                 bid32,
                                 frame_buf.len(),
-                                frame_count / 1024,
+                                frame_count as f32 / 1024.0,
                             );
                             {
                                 let routes = Arc::clone(&routes);
@@ -186,7 +186,7 @@ pub(crate) async fn exec_sender_system<const L: usize>(
                                     let collector = Arc::clone(&collector);
                                     let block_bcast = (&block_bcast).clone();
                                     for envelope in frame_buf {
-                                        debug!(
+                                        trace!(
                                             "Dispatching {} byte frame {}/{}",
                                             envelope.buffer.len(),
                                             bid32,

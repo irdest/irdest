@@ -15,7 +15,6 @@ use std::{sync::Arc, time::Duration};
 pub struct AddressAnnouncer {
     addr: Address,
     pub(super) auth: AddrAuth,
-    client_id: Ident32,
     db: Arc<MetadataDb>,
 }
 
@@ -26,13 +25,11 @@ impl AddressAnnouncer {
     pub async fn new(
         addr: Address,
         auth: AddrAuth,
-        client_id: Ident32,
         ctx: &Arc<RatmanContext>,
     ) -> Result<Self> {
         Ok(Self {
             addr,
             auth,
-            client_id,
             db: Arc::clone(&ctx.meta_db),
         })
     }

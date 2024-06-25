@@ -76,8 +76,8 @@ impl Protocol {
 
         spawn(async move {
             // Split into a separate function to make tracing it easier
-            info!("Starting announcer task for {}", address.pretty_string());
-            let anon = match AddressAnnouncer::new(address, auth, client_id, &ctx).await {
+            info!("Starting address announcer for {}", address.pretty_string());
+            let announcer = match AddressAnnouncer::new(address, auth, &ctx).await {
                 Ok(an) => an,
                 Err(e) => {
                     error!("failed to start address announcer task: {e}");
@@ -91,7 +91,7 @@ impl Protocol {
                     biased;
                     _ = ctx.tripwire.clone() => break,
                     _ = &mut rx => break,
-                    res = anon.run(announce_delay, &ctx) => {
+                    res = announcer.run(announce_delay, &ctx) => {
                         match res {
                             Ok(_) => {},
                             Err(e) => {

@@ -47,10 +47,12 @@ pub async fn receive(
             Err(e) => return Err(e),
         };
 
-        eprintln!(
-            "Receiving message stream: {}",
-            serde_json::to_string_pretty(&lh)?
-        );
+        if !base_args.quiet {
+            eprintln!(
+                "Receiving message stream: {}",
+                serde_json::to_string_pretty(&lh)?
+            );
+        }
 
         let mut stdout = tokio::io::stdout();
         tokio::io::copy(

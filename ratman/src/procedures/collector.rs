@@ -108,10 +108,9 @@ impl BlockCollectorWorker {
                     .for_each(|chunk| {
                         let pl = chunk.get_payload_slice();
                         block.extend_from_slice(pl);
-                        dbg!(pl.len());
                     });
 
-                debug!("Reconstructing {} byte-sized block", block.len());
+                trace!("Reconstructing {} byte-sized block", block.len());
 
                 // Then offer the finished block up to the block god
                 match StorageBlock::reconstruct_from_vec(block) {
@@ -241,7 +240,7 @@ impl BlockCollector {
         let maybe_sender = read.get(&sequence_id.hash);
         match maybe_sender {
             Some(sender) => {
-                debug!("Queue new frame for block_id {}", sequence_id.hash);
+                trace!("Queue new frame for block_id {}", sequence_id.hash);
                 sender
                     .send((sequence_id, env))
                     .await
@@ -259,7 +258,7 @@ impl BlockCollector {
 
                 // Setup a new block worker
                 let senders = Arc::clone(&self.inner);
-                debug!(
+                trace!(
                     "Spawn new frame collector for block_id {}",
                     sequence_id.hash
                 );
