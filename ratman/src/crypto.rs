@@ -123,17 +123,23 @@ pub fn list_addr_keys(meta_db: &Arc<MetadataDb>) -> Vec<Address> {
         .collect()
 }
 
-pub fn get_addr_key(meta_db: &Arc<MetadataDb>, addr: Address, auth: AddrAuth) -> Result<Keypair> {
-    let key_data = match meta_db
-        .addrs
-        .get(&addr.to_string())?
-        .ok_or(RatmanError::Encoding(libratman::EncodingError::Encryption(
-            "Address key was deleted!".into(),
-        )))? {
-        AddressData::Local(e, _name) => e,
-        AddressData::Space(e, _name) => e,
-        AddressData::Remote => unreachable!("called open_addr_key with a remote key"),
-    };
+pub async fn get_addr_key(
+    meta_db: &Arc<MetadataDb>,
+    addr: Address,
+    auth: AddrAuth,
+) -> Result<Keypair> {
+    let key_data =
+        match meta_db
+            .addrs
+            .get(&addr.to_string())
+            .await?
+            .ok_or(RatmanError::Encoding(libratman::EncodingError::Encryption(
+                "Address key was deleted!".into(),
+            )))? {
+            AddressData::Local(e, _name) => e,
+            AddressData::Space(e, _name) => e,
+            AddressData::Remote => unreachable!("called open_addr_key with a remote key"),
+        };
 
     let mut decrypted_key = key_data.encrypted.clone();
     decrypt_raw(
@@ -152,7 +158,7 @@ pub fn get_addr_key(meta_db: &Arc<MetadataDb>, addr: Address, auth: AddrAuth) ->
     Ok(Keypair::new(secret_key))
 }
 
-pub fn create_addr_key(
+pub async fn create_addr_key(
     meta_db: &Arc<MetadataDb>,
     name: Option<CString>,
     space: Option<Ident32>,
@@ -198,14 +204,17 @@ pub fn create_addr_key(
         )
     };
 
-    meta_db.addrs.insert(addr.to_string(), &address_data)?;
+    meta_db
+        .addrs
+        .insert(addr.to_string(), &address_data)
+        .await?;
 
     Ok((addr, client_auth))
 }
 
 /// Destroy the local address key data
-pub fn destroy_addr_key(meta_db: &Arc<MetadataDb>, addr: Address) -> Result<()> {
-    meta_db.addrs.remove(addr.to_string())?;
+pub async fn destroy_addr_key(meta_db: &Arc<MetadataDb>, addr: Address) -> Result<()> {
+    meta_db.addrs.remove(addr.to_string()).await?;
     Ok(())
 }
 

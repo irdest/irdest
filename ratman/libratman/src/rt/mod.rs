@@ -49,7 +49,7 @@ pub struct AsyncSystem {
 impl AsyncSystem {
     pub fn new(label: String, stack_mb: usize) -> Arc<Self> {
         Arc::new(Self {
-            rt: Builder::new_multi_thread()
+            rt: Builder::new_current_thread()
                 .thread_name(&label)
                 .enable_io()
                 .enable_time()

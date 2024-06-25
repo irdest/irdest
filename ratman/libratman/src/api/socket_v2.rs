@@ -247,7 +247,7 @@ impl RawSocketHandle {
         let mut payload_buf = vec![];
         payload.generate(&mut payload_buf)?;
 
-        // Then update the header payload_size
+        // Update the payload size with however much the payload is
         header.payload_size = payload_buf
             .len()
             .try_into()

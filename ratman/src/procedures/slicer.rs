@@ -53,11 +53,6 @@ impl BlockWorker {
             let mut scan_block = curr_block.clone();
             scan_block.chacha20(&tree.root_key);
 
-            trace!(
-                "Traversing '{}' on level {}",
-                scan_block.reference(),
-                tree.level
-            );
             if tree.level > 0 {
                 for rk_pair_raw in scan_block.chunks_exact(64) {
                     let has_content = rk_pair_raw.iter().any(|x| *x != 0);
@@ -180,7 +175,7 @@ impl BlockSlicer {
     ) -> Result<Vec<InMemoryEnvelope>> {
         let mut buf = vec![];
         let header_size = CarrierFrameHeader::get_blockdata_size(sender, recipient);
-        debug!("Slice block with header size {header_size}");
+        trace!("Slice block with header size {header_size}");
         let max_transfer_size = 1300; // fixme: /o\
 
         let block_ref = Ident32::from_bytes(b.reference().as_slice());
@@ -196,8 +191,8 @@ impl BlockSlicer {
         let max_payload_size = max_transfer_size as usize - header_size - 4;
         let num_chunks = b.as_slice().len() / max_payload_size;
 
-        debug!("Selected data chunk size {max_payload_size}");
-        debug!(
+        trace!("Selected data chunk size {max_payload_size}");
+        trace!(
             "Cutting block {} into {} length chunks",
             block_ref, max_payload_size,
         );

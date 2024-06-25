@@ -87,6 +87,7 @@ igd = "*"
 ipnetwork = "*"
 nix = "0.23"
 pnet = "*"
+tempdir = "*"
 
 ## Bundled network modules
 netmod-datalink = { path = "../netmods/netmod-datalink", version = "0.2", optional = true }
@@ -105,5 +106,4 @@ tracing-subscriber = { version = "0.2", features = ["fmt"] }
 # tokio = { version = "1.0", features = [ "macros" ] }
 
 criterion = { version = "0.4", features = ["html_reports"] }
-tempdir = "*"
 rand = "0.7"

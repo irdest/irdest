@@ -81,7 +81,8 @@ impl SubsManager {
                 debug!("Previous subscription found and updated: {sub_val:?}");
                 self.meta_db
                     .subscriptions
-                    .insert(sub_key.clone(), &sub_val)?;
+                    .insert(sub_key.clone(), &sub_val)
+                    .await?;
 
                 // And then add a new active listeners stream
                 let tx = self.sub_listener(sub_id).await;
@@ -90,14 +91,17 @@ impl SubsManager {
             None => {
                 let sub_id = Ident32::random();
                 debug!("Insert brand new subscription: {}", sub_id.pretty_string());
-                self.meta_db.subscriptions.insert(
-                    sub_id.to_string(),
-                    &SubscriptionData {
-                        recipient,
-                        listeners: vec![addr].into_iter().collect(),
-                        missed_items: Default::default(),
-                    },
-                )?;
+                self.meta_db
+                    .subscriptions
+                    .insert(
+                        sub_id.to_string(),
+                        &SubscriptionData {
+                            recipient,
+                            listeners: vec![addr].into_iter().collect(),
+                            missed_items: Default::default(),
+                        },
+                    )
+                    .await?;
 
                 debug!(
                     "{:?}",
@@ -124,26 +128,31 @@ impl SubsManager {
         addr: Address,
         sub_id: Ident32,
     ) -> Result<()> {
-        let mut sub =
-            self.meta_db
-                .subscriptions
-                .get(&sub_id.to_string())?
-                .ok_or(RatmanError::ClientApi(ClientError::NoSuchSubscription(
-                    sub_id,
-                )))?;
+        let mut sub = self
+            .meta_db
+            .subscriptions
+            .get(&sub_id.to_string())
+            .await?
+            .ok_or(RatmanError::ClientApi(ClientError::NoSuchSubscription(
+                sub_id,
+            )))?;
 
         // Remove this address from the subscription and if the listener set is
         // empty afterwards we delete the whole subscription.  If anyone else is
         // still listening to it we keep it alive
         sub.listeners.remove(&addr);
         if sub.listeners.is_empty() {
-            self.meta_db.subscriptions.remove(sub_id.to_string())?;
+            self.meta_db
+                .subscriptions
+                .remove(sub_id.to_string())
+                .await?;
             self.recipients.lock().await.remove(&sub.recipient);
             self.active_listeners.lock().await.remove(&sub_id);
         } else {
             self.meta_db
                 .subscriptions
-                .insert(sub_id.to_string(), &sub)?;
+                .insert(sub_id.to_string(), &sub)
+                .await?;
             // If other listeners still exist for this subscription we don't
             // have to touch the listener set since we use a broadcast channel.
         }
@@ -162,7 +171,8 @@ impl SubsManager {
         if self
             .meta_db
             .subscriptions
-            .get(&sub_id.to_string())?
+            .get(&sub_id.to_string())
+            .await?
             .ok_or(RatmanError::ClientApi(ClientError::NoSuchSubscription(
                 sub_id,
             )))?
@@ -183,7 +193,12 @@ impl SubsManager {
         read_cap: ReadCapability,
     ) -> Result<()> {
         let sid = *self.recipients.lock().await.get(&letterhead.to).unwrap();
-        let mut sentry = self.meta_db.subscriptions.get(&sid.to_string())?.unwrap();
+        let mut sentry = self
+            .meta_db
+            .subscriptions
+            .get(&sid.to_string())
+            .await?
+            .unwrap();
 
         sentry
             .missed_items
@@ -193,7 +208,8 @@ impl SubsManager {
 
         self.meta_db
             .subscriptions
-            .insert(sid.to_string(), &sentry)?;
+            .insert(sid.to_string(), &sentry)
+            .await?;
 
         Ok(())
     }

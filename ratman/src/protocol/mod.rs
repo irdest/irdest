@@ -17,12 +17,11 @@ mod announce;
 
 use crate::{context::RatmanContext, protocol::announce::AddressAnnouncer};
 use libratman::{
-    frame::carrier::{modes as fmodes, CarrierFrameHeader},
     tokio::{
         select, spawn,
         sync::{oneshot, Mutex},
     },
-    types::{AddrAuth, Address, Ident32},
+    types::{AddrAuth, Address},
     NonfatalError, RatmanError, Result,
 };
 use serde::{Deserialize, Serialize};
@@ -58,7 +57,6 @@ impl Protocol {
         self: Arc<Self>,
         address: Address,
         auth: AddrAuth,
-        client_id: Ident32,
         ctx: Arc<RatmanContext>,
     ) -> Result<()> {
         let mut map = self.online.lock().await;
@@ -117,18 +115,6 @@ impl Protocol {
             .remove(&addr)
             .ok_or(RatmanError::Nonfatal(NonfatalError::UnknownAddress(addr)))?;
         Ok(())
-    }
-}
-
-/// Match the carrier modes bitfield to decide what kind of frame
-pub fn parse(carrier_meta: CarrierFrameHeader, _bin_envelope: Vec<u8>) {
-    match carrier_meta.get_modes() {
-        fmodes::ANNOUNCE => {}
-        fmodes::DATA => {}
-        fmodes::MANIFEST => {}
-        _ => {
-            warn!("received frame with malformed metadata: {:?}", carrier_meta);
-        }
     }
 }
 

@@ -79,35 +79,21 @@ pub struct Journal {
 
 impl Journal {
     pub fn new(db: Keyspace) -> Result<Self> {
-        let frames = CachePage(
-            db.open_partition("frames_data", PartitionCreateOptions::default())?,
-            PhantomData,
-        );
+        fn options() -> PartitionCreateOptions {
+            PartitionCreateOptions::default()
+                // .level_ratio(4)
+                // .level_count(4)
+                .block_size(32 * 1024)
+        }
 
-        let blocks = CachePage(
-            db.open_partition("blocks_data", PartitionCreateOptions::default())?,
-            PhantomData,
-        );
-
+        let frames = CachePage(db.open_partition("frames_data", options())?, PhantomData);
+        let blocks = CachePage(db.open_partition("blocks_data", options())?, PhantomData);
         let manifests = CachePage(
-            db.open_partition("blocks_manifests", PartitionCreateOptions::default())?,
+            db.open_partition("blocks_manifests", options())?,
             PhantomData,
         );
-
-        let seen_frames = JournalCache(
-            db.open_partition("frames_seen", PartitionCreateOptions::default())?,
-            PhantomData,
-        );
-
-        let routes = CachePage(
-            db.open_partition("meta_routes", PartitionCreateOptions::default())?,
-            PhantomData,
-        );
-
-        // let links = CachePage(
-        //     db.open_partition("meta_links", PartitionCreateOptions::default())?,
-        //     PhantomData,
-        // );
+        let seen_frames = JournalCache(db.open_partition("frames_seen", options())?, PhantomData);
+        let routes = CachePage(db.open_partition("meta_routes", options())?, PhantomData);
 
         Ok(Self {
             db,
@@ -132,7 +118,7 @@ impl Journal {
     ///
     /// Frame keys are composed of the block ID and the number in sequence
     /// (`<seq>::<num>`).  Frames without a sequence ???
-    pub fn queue_frame(&self, InMemoryEnvelope { header, buffer }: InMemoryEnvelope) -> Result<()> {
+    pub async fn queue_frame(&self, InMemoryEnvelope { header, buffer }: InMemoryEnvelope) -> Result<()> {
         let seq_id = header.get_seq_id().unwrap();
 
         self.frames.insert(
@@ -141,10 +127,10 @@ impl Journal {
                 header: SerdeFrameType::from(header),
                 payload: buffer,
             },
-        )
+        ).await
     }
 
-    pub fn queue_manifest(&self, env: InMemoryEnvelope) -> Result<()> {
+    pub async fn queue_manifest(&self, env: InMemoryEnvelope) -> Result<()> {
         let (_, manifest) = ManifestFrame::parse(env.get_payload_slice())?;
         let seq_id = env.header.get_seq_id().unwrap();
 
@@ -156,8 +142,7 @@ impl Journal {
                 manifest: SerdeFrameType::from(manifest?),
                 forwarded: false,
             },
-        )?;
-
+        ).await?;
         Ok(())
     }
 }

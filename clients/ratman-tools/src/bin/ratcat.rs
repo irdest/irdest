@@ -118,7 +118,6 @@ async fn run_program(m: ArgMatches, base_args: BaseArgs) -> Result<()> {
     };
 
     let ipc = RatmanIpc::start(ratmand_socket).await?;
-
     command_filter(&ipc, base_args, m).await
 }
 

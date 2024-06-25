@@ -84,7 +84,12 @@ async fn reassemble_message_stream(
     tripwire: Tripwire,
     mut block_notify: BcastReceiver<BlockNotifier>,
 ) -> Result<()> {
-    let manifest = ctx.journal.manifests.get(&manifest.0.to_string())?.unwrap();
+    let manifest = ctx
+        .journal
+        .manifests
+        .get(&manifest.0.to_string())
+        .await?
+        .unwrap();
     let inner_manifest = manifest.manifest.maybe_inner()?;
     debug!("Attempt to reassemble message stream for manifest {inner_manifest:?}");
 
@@ -121,7 +126,7 @@ async fn reassemble_message_stream(
         }
     }
 
-    debug!("Passed re-assembly check!");
+    trace!("Passed re-assembly check!");
 
     match ctx
         .subs

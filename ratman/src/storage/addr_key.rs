@@ -31,6 +31,7 @@ pub struct EncryptedKey {
     pub nonce: [u8; 12],
 }
 
+#[allow(unused)] // requires a bit more refactoring
 #[derive(Clone, Ord, PartialOrd, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HumanAddress {
     inner: Address,
@@ -43,6 +44,7 @@ impl From<Address> for HumanAddress {
 }
 
 impl HumanAddress {
+    #[allow(unused)] // see parent
     pub fn to_string(&self) -> String {
         let first = self.inner.as_bytes().iter().take(4).collect::<Vec<&u8>>();
         let id_str = self.inner.to_string();

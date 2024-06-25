@@ -13,7 +13,7 @@ use libratman::{
         socket_v2::RawSocketHandle,
         types::{
             AddrCreate, AddrDestroy, AddrDown, AddrList, AddrUp, Handshake, RecvMany, RecvOne,
-            SendMany, ServerPing, SubsCreate, SubsDelete, SubsRestore,
+            SendMany, SendOne, ServerPing, SubsCreate, SubsDelete, SubsRestore,
         },
         version_str, versions_compatible,
     },
@@ -43,6 +43,7 @@ pub(super) async fn handshake(stream: TcpStream) -> Result<RawSocketHandle> {
 
     // Reject connection and disconnect
     if compatible {
+        info!("Sending OK message to client");
         raw_socket
             .write_microframe(MicroframeHeader::intrinsic_noauth(), ServerPing::Ok)
             .await?;
@@ -183,11 +184,9 @@ pub(super) async fn single_session_exchange<'a>(
                 .read_payload::<AddrCreate>(header.payload_size)
                 .await
                 .unwrap();
-            let (addr, client_auth) = crypto::create_addr_key(
-                &ctx.meta_db,
-                addr_create.name,
-                addr_create.namespace_data,
-            )?;
+            let (addr, client_auth) =
+                crypto::create_addr_key(&ctx.meta_db, addr_create.name, addr_create.namespace_data)
+                    .await?;
             ctx.routes.register_local_route(addr).await?;
 
             ctx.clients
@@ -211,7 +210,7 @@ pub(super) async fn single_session_exchange<'a>(
 
             let auth = check_auth(&header, addr, auth_guard).await?;
 
-            crypto::destroy_addr_key(&ctx.meta_db, addr)?;
+            crypto::destroy_addr_key(&ctx.meta_db, addr).await?;
 
             ctx.routes.scrub_local(addr).await?;
 
@@ -230,7 +229,7 @@ pub(super) async fn single_session_exchange<'a>(
                 .ok_or(RatmanError::ClientApi(ClientError::InvalidAuth))?;
 
             // If we can decrypt the adress key the token passed authentication
-            let _ = crypto::get_addr_key(&ctx.meta_db, addr_up.addr, auth)?;
+            let _ = crypto::get_addr_key(&ctx.meta_db, addr_up.addr, auth).await?;
 
             debug!(
                 "Client {} provided valid authentication for address '{}'",
@@ -246,7 +245,7 @@ pub(super) async fn single_session_exchange<'a>(
             let ctx2 = Arc::clone(&ctx);
             spawn(async move {
                 if let Err(e) = Arc::clone(&ctx2.protocol)
-                    .online(addr_up.addr, auth, client_id, ctx2)
+                    .online(addr_up.addr, auth, ctx2)
                     .await
                 {
                     error!("failed to spawn address announcer: {e}");
@@ -448,6 +447,10 @@ pub(super) async fn single_session_exchange<'a>(
             debug!("Decode RecvOne {}", recv_one.addr);
             let auth = check_auth(&header, recv_one.addr, auth_guard).await?;
 
+            raw_socket
+                .write_microframe(MicroframeHeader::intrinsic_auth(auth), ServerPing::Ok)
+                .await?;
+
             let (tx, mut rx) = bcast_channel(1);
             ctx.clients.insert_sync_listener(recv_one.to, tx).await;
             debug!("Blocking task on synchronous stream receiver");
@@ -501,11 +504,19 @@ pub(super) async fn single_session_exchange<'a>(
         //
         // ^-^ Client wants to listen for messages in this session
         m if m == cm::make(cm::RECV, cm::MANY) => {
-            let RecvMany { addr, to, mut limit } = raw_socket
+            let RecvMany {
+                addr,
+                to,
+                mut limit,
+            } = raw_socket
                 .read_payload::<RecvMany>(header.payload_size)
                 .await?;
 
             let auth = check_auth(&header, addr, auth_guard).await?;
+
+            raw_socket
+                .write_microframe(MicroframeHeader::intrinsic_auth(auth), ServerPing::Ok)
+                .await?;
 
             let (tx, mut rx) = bcast_channel(8);
             ctx.clients.insert_sync_listener(to, tx).await;
@@ -569,7 +580,59 @@ pub(super) async fn single_session_exchange<'a>(
         //
         // ^-^ Client wants to send a message to one recipient
         m if m == cm::make(cm::SEND, cm::ONE) => {
-            todo!()
+            debug!("Handle send::one request payload: {}", header.payload_size);
+
+            let SendOne { letterhead } = raw_socket
+                .read_payload::<SendOne>(header.payload_size)
+                .await??;
+
+            trace!("Receiving {letterhead:?}");
+
+            let auth = check_auth(&header, letterhead.from, auth_guard).await?;
+            debug!("{client_id} Passed authentication on [send : one]");
+
+            let ctx = Arc::clone(&ctx);
+            let senders = Arc::clone(senders);
+            let send_sock_l = TcpListener::bind("127.0.0.1:0").await?;
+            let bind = send_sock_l.local_addr()?.to_string();
+            let join = spawn(async move {
+                let (stream, _) = send_sock_l.accept().await?;
+                trace!("Spawn sender task for {client_id}");
+                exec_send_many_socket(
+                    &ctx,
+                    client_id,
+                    stream,
+                    letterhead.from,
+                    auth,
+                    vec![letterhead],
+                    &senders,
+                )
+                .await
+            });
+
+            raw_socket
+                .write_microframe(
+                    MicroframeHeader::intrinsic_auth(auth),
+                    ServerPing::SendSocket {
+                        socket_bind: CString::new(bind).unwrap(),
+                    },
+                )
+                .await?;
+
+            // wait for the sender thread to shut down and return its
+            // return status
+            let send_sys_res = join.await?;
+            match send_sys_res {
+                Ok(_) => reply_ok(raw_socket, auth).await?,
+                Err(e) => {
+                    raw_socket
+                        .write_microframe(
+                            MicroframeHeader::intrinsic_auth(auth),
+                            ServerPing::Error(ClientError::Internal(e.to_string())),
+                        )
+                        .await?
+                }
+            }
         }
         //
         //
@@ -581,7 +644,7 @@ pub(super) async fn single_session_exchange<'a>(
                 .read_payload::<SendMany>(header.payload_size)
                 .await??;
 
-            debug!("Receiving {letterheads:?}");
+            trace!("Receiving {letterheads:?}");
 
             let this_addr =
                 letterheads
@@ -592,7 +655,6 @@ pub(super) async fn single_session_exchange<'a>(
                         UserError::MissingInput("No letterheads provided!".into()),
                     )))?;
 
-            debug!("Generated letterheads from {this_addr}");
             let auth = check_auth(&header, this_addr, auth_guard).await?;
             debug!("{client_id} Passed authentication on [send : many]");
 
@@ -602,7 +664,7 @@ pub(super) async fn single_session_exchange<'a>(
             let bind = send_sock_l.local_addr()?.to_string();
             let join = spawn(async move {
                 let (stream, _) = send_sock_l.accept().await?;
-                debug!("Spawn sender task");
+                trace!("Spawn sender task");
                 exec_send_many_socket(
                     &ctx,
                     client_id,

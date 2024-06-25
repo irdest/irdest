@@ -123,7 +123,7 @@ pub(crate) async fn exec_sender_system<const L: usize>(
                         }
                     };
 
-                    debug!(
+                    trace!(
                         "Got block to handle, (to: {}, len: {})",
                         letterhead.to.inner_address().pretty_string(),
                         letterhead.stream_size
@@ -168,8 +168,8 @@ pub(crate) async fn exec_sender_system<const L: usize>(
 
                             let bid32 = Ident32::from_bytes(bid.as_slice()).pretty_string();
 
-                            debug!(
-                                "Block {} turned into {}x {:1}kB frames",
+                            trace!(
+                                "Block {} turned into {}x {:.1}kB frames",
                                 bid32,
                                 frame_buf.len(),
                                 frame_count as f32 / 1024.0,
@@ -237,7 +237,7 @@ pub(crate) async fn exec_sender_system<const L: usize>(
                         };
 
                         if let Ok(true) = routes.is_local(letterhead.to.inner_address()).await {
-                            journal.queue_manifest(envelope.clone()).unwrap();
+                            journal.queue_manifest(envelope.clone()).await.unwrap();
                             if let Err(e) = ingress_tx
                                 .send(MessageNotifier(envelope.header.get_seq_id().unwrap().hash))
                                 .await

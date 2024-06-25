@@ -11,7 +11,6 @@ use crate::{
         MetadataDb,
     },
 };
-use colored::Colorize;
 use libratman::{
     tokio::{
         select,
@@ -91,7 +90,7 @@ impl BlockCollectorWorker {
 
             // If the block is complete
             if this.buffer.len() == this.max_num as usize + 1 {
-                debug!(
+                trace!(
                     "Collected enough chunks ({}) to reconstruct block {}",
                     this.buffer.len(),
                     seq_id.hash
@@ -116,39 +115,41 @@ impl BlockCollectorWorker {
                 match StorageBlock::reconstruct_from_vec(block) {
                     Ok(block) => {
                         let journal = Arc::clone(&self.journal);
-                        spawn_blocking(move || {
-                            journal
-                                .blocks
-                                .insert(
-                                    block.reference().to_string(),
-                                    &BlockData {
-                                        data: block.into(),
-                                        valid: true,
-                                    },
-                                )
-                                .expect("failed to insert block into journal!")
-                        })
-                        .await
-                        .unwrap();
+                        journal
+                            .blocks
+                            .insert(
+                                block.reference().to_string(),
+                                &BlockData {
+                                    data: block.into(),
+                                    valid: true,
+                                },
+                            )
+                            .await
+                            .expect("failed to insert block into journal!")
                     }
                     Err(e) => warn!("failed to reconstruct block: {e:?}"),
                 }
 
                 // Notify all current stream re-assemblers
-                if let Err(e) = block_bcast.send(BlockNotifier) {
-                    debug!(
-                        "{} failed to notify block re-assemblers: {e}",
-                        "[SOFT FAIL]".custom_color(crate::util::SOFT_WARN_COLOR)
-                    );
+                if let Err(_e) = block_bcast.send(BlockNotifier) {
+                    // trace!(
+                    //     "{} failed to notify block re-assemblers: {e}",
+                    //     "[SOFT FAIL]".custom_color(crate::util::SOFT_WARN_COLOR)
+                    // );
                     // todo: store this error somewhere so we can retry later?
                 }
 
                 // Finally shut down this block collection worker
-                if let Err(e) = self.meta_db.incomplete.remove(seq_id.hash.to_string()) {
+                if let Err(e) = self
+                    .meta_db
+                    .incomplete
+                    .remove(seq_id.hash.to_string())
+                    .await
+                {
                     warn!("Couldn't remove incomplete sequence from meta_db: {e}");
                 }
 
-                debug!("Successfully collected block {}", seq_id.hash);
+                trace!("Successfully collected block {}", seq_id.hash);
                 self.senders.write().await.remove(&seq_id.hash);
                 break;
             }
@@ -220,20 +221,28 @@ impl BlockCollector {
                 )))?;
         let max_num = sequence_id.max;
 
-        if let Ok(Some(mut block_meta)) = self.meta_db.incomplete.get(&sequence_id.hash.to_string())
+        if let Ok(Some(mut block_meta)) = self
+            .meta_db
+            .incomplete
+            .get(&sequence_id.hash.to_string())
+            .await
         {
             block_meta.buffer.push(sequence_id.num);
             self.meta_db
                 .incomplete
-                .insert(sequence_id.hash.to_string(), &block_meta)?;
+                .insert(sequence_id.hash.to_string(), &block_meta)
+                .await?;
         } else {
-            self.meta_db.incomplete.insert(
-                sequence_id.hash.to_string(),
-                &IncompleteBlockData {
-                    max_num: sequence_id.max,
-                    buffer: vec![sequence_id.num],
-                },
-            )?;
+            self.meta_db
+                .incomplete
+                .insert(
+                    sequence_id.hash.to_string(),
+                    &IncompleteBlockData {
+                        max_num: sequence_id.max,
+                        buffer: vec![sequence_id.num],
+                    },
+                )
+                .await?;
         }
 
         let read = self.inner.read().await;

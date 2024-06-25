@@ -80,7 +80,7 @@ impl RouteTable {
         // let route = RouteType::Remote(EpNeighbourPair(ifid, t));
 
         let new_route;
-        match self.meta_db.routes.get(&peer_addr.to_string())? {
+        match self.meta_db.routes.get(&peer_addr.to_string()).await? {
             Some(RouteData {
                 peer,
                 mut link_id,
@@ -109,6 +109,11 @@ impl RouteTable {
                     route_id,
                     route,
                 };
+
+                trace!(
+                    "Update existing route to {} with new link information {new_route:?}",
+                    peer.pretty_string()
+                );
             }
             None => {
                 info!("Discovered new address: {}", peer_addr.pretty_string());
@@ -126,14 +131,21 @@ impl RouteTable {
             }
         }
 
-        if self.meta_db.routes.get(&peer_addr.to_string())?.is_some() {
+        if self
+            .meta_db
+            .routes
+            .get(&peer_addr.to_string())
+            .await?
+            .is_some()
+        {
             // spawn_local(async move { s.new.0.send(id).await });
         }
 
         // Then update the caches and on-disk table
         self.meta_db
             .routes
-            .insert(peer_addr.to_string(), &new_route)?;
+            .insert(peer_addr.to_string(), &new_route)
+            .await?;
 
         // #[cfg(feature = "dashboard")]
         // self.metrics
@@ -146,13 +158,15 @@ impl RouteTable {
 
     pub(crate) async fn register_local_route(&self, local: Address) -> Result<()> {
         let local_addr = RouteData::local(local);
-        self.meta_db.routes.insert(local.to_string(), &local_addr)?;
-        debug!("Insert {local_addr:?} to routes table");
+        self.meta_db
+            .routes
+            .insert(local.to_string(), &local_addr)
+            .await?;
         Ok(())
     }
 
     pub(crate) async fn scrub_local(&self, local: Address) -> Result<()> {
-        self.meta_db.routes.remove(local.to_string())?;
+        self.meta_db.routes.remove(local.to_string()).await?;
         Ok(())
     }
 
@@ -160,7 +174,8 @@ impl RouteTable {
         Ok(self
             .meta_db
             .routes
-            .get(&maybe_local.to_string())?
+            .get(&maybe_local.to_string())
+            .await?
             .ok_or(RatmanError::Nonfatal(NonfatalError::UnknownAddress(
                 maybe_local,
             )))
@@ -173,6 +188,7 @@ impl RouteTable {
         self.meta_db
             .routes
             .get(&peer_addr.to_string())
+            .await
             .ok()
             .flatten()
             .and_then(|route_data| route_data.link_id.get(0).copied())
@@ -183,6 +199,7 @@ impl RouteTable {
         self.meta_db
             .routes
             .get(&peer_addr.to_string())
+            .await
             .ok()
             .flatten()
             .and_then(|route_data| route_data.route.map(|r| r.state))

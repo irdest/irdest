@@ -8,6 +8,7 @@ use async_trait::async_trait;
 use fjall::{Keyspace, PartitionCreateOptions, PartitionHandle};
 use libratman::{
     frame::{FrameGenerator, FrameParser},
+    tokio::task::spawn_blocking,
     EncodingError, RatmanError, Result,
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
@@ -21,22 +22,26 @@ use std::{io::Result as IoResult, marker::PhantomData};
 pub struct CachePage<T: Serialize + DeserializeOwned>(pub PartitionHandle, pub PhantomData<T>);
 
 impl<T: Serialize + DeserializeOwned> CachePage<T> {
-    pub fn insert(&self, key: String, value: &T) -> Result<()> {
+    pub async fn insert(&self, key: String, value: &T) -> Result<()> {
         let bin = bincode::serialize(value)?;
-        self.0.insert(key, bin)?;
+        let handle = self.0.clone();
+        spawn_blocking(move || handle.insert(key, bin)).await??;
         Ok(())
     }
 
-    pub fn remove(&self, key: String) -> Result<()> {
-        self.0.remove(key)?;
+    pub async fn remove(&self, key: String) -> Result<()> {
+        let handle = self.0.clone();
+        spawn_blocking(move || handle.remove(key)).await??;
         Ok(())
     }
 
-    pub fn get(&self, key: &String) -> Result<Option<T>> {
-        Ok(self
-            .0
-            .get(key)?
-            .map(|bin_data| bincode::deserialize(&*bin_data).expect("failed deserialising")))
+    pub async fn get(&self, key: &String) -> Result<Option<T>> {
+        let handle = self.0.clone();
+        let key = key.clone();
+
+        let bin_data = spawn_blocking(move || handle.get(key)).await??;
+        Ok(bin_data
+            .map(|bin_data| bincode::deserialize(&*bin_data).expect("failed to decode data")))
     }
 
     /// Perform a prefix key search and filter out invalid entries
@@ -87,12 +92,13 @@ impl<const L: usize> BlockStorage<L> for CachePage<BlockData> {
                 data: StorageBlock::reconstruct(block.as_slice()).unwrap(),
                 valid: true,
             },
-        )?;
+        )
+        .await?;
         Ok(())
     }
 
     async fn fetch(&self, reference: &BlockReference) -> IoResult<Option<Block<L>>> {
-        match self.get(&reference.to_string()) {
+        match self.get(&reference.to_string()).await {
             Err(RatmanError::Io(io)) => Err(io),
             Ok(Some(BlockData { data, valid })) if valid => Ok(Some(data.to_block())),
             _ => Ok(None),

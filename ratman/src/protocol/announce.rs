@@ -6,7 +6,7 @@ use libratman::{
         FrameGenerator,
     },
     tokio::time,
-    types::{AddrAuth, Address, Ident32, InMemoryEnvelope},
+    types::{AddrAuth, Address, InMemoryEnvelope},
     Result,
 };
 use std::{sync::Arc, time::Duration};
@@ -41,7 +41,7 @@ impl AddressAnnouncer {
         let origin_signature = {
             let mut origin_buf = vec![];
             origin.clone().generate(&mut origin_buf).unwrap();
-            let mut key = crypto::get_addr_key(&self.db, self.addr, self.auth)?;
+            let mut key = crypto::get_addr_key(&self.db, self.addr, self.auth).await?;
 
             // return signature
             key.inner.sign(origin_buf.as_slice())

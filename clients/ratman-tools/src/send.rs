@@ -37,6 +37,7 @@ fn generate_letterheads(
     }
 }
 
+#[inline(never)]
 pub async fn send(ipc: &Arc<RatmanIpc>, base_args: BaseArgs, matches: &ArgMatches) -> Result<()> {
     let (addr, auth) = base_args.identity_data?;
     let to_addr = parse_field::<String>(matches, "to-address");

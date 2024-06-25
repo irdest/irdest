@@ -45,7 +45,7 @@ use self::types::{self as ty, AddrList};
 use crate::{
     api::{
         socket_v2::RawSocketHandle,
-        types::{Handshake, RecvOne, SendTo, ServerPing, SubsCreate, SubsDelete, SubsRestore},
+        types::{Handshake, RecvOne, SendOne, ServerPing, SubsCreate, SubsDelete, SubsRestore},
     },
     frame::micro::{client_modes as cm, MicroframeHeader},
     types::{AddrAuth, Address, Ident32, LetterheadV1, Modify, Recipient},
@@ -521,7 +521,7 @@ impl RatmanStreamExtV1 for RatmanIpc {
                     auth: Some(auth),
                     ..Default::default()
                 },
-                SendTo { letterhead },
+                SendOne { letterhead },
             )
             .await?;
 
@@ -605,6 +605,12 @@ impl RatmanStreamExtV1 for RatmanIpc {
             )
             .await?;
 
+        match socket.read_microframe::<ServerPing>().await?.1? {
+            ServerPing::Ok => {}
+            ServerPing::Error(e) => return Err(e.into()),
+            other => return Err(ClientError::Internal(format!("{other:?}")).into()),
+        }
+
         let (_, letterhead) = socket.read_microframe::<LetterheadV1>().await?;
         Ok((letterhead?, ReadStream(socket)))
     }
@@ -628,6 +634,12 @@ impl RatmanStreamExtV1 for RatmanIpc {
                 RecvMany { addr, to, limit },
             )
             .await?;
+
+        match socket.read_microframe::<ServerPing>().await?.1? {
+            ServerPing::Ok => {}
+            ServerPing::Error(e) => return Err(e.into()),
+            other => return Err(ClientError::Internal(format!("{other:?}")).into()),
+        }
 
         Ok(StreamGenerator {
             limit,

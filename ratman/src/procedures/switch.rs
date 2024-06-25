@@ -200,7 +200,7 @@ pub(crate) async fn exec_switching_batch(
                         let ingress_tx = ingress_tx.clone();
                         spawn(async move {
                             if let Err(e) =
-                                journal.queue_manifest(InMemoryEnvelope { header, buffer })
+                                journal.queue_manifest(InMemoryEnvelope { header, buffer }).await
                             {
                                 error!("failed to queue Manifest: {e:?}.  This will result in unrecoverable blocks");
                             }
@@ -222,7 +222,7 @@ pub(crate) async fn exec_switching_batch(
                         {
                             Err(RatmanError::Netmod(NetmodError::ConnectionLost(envelope))) => {
                                 debug!("Connection dropped while forwarding frame!  Message contents were saved");
-                                if let Err(e) = journal.queue_frame(envelope) {
+                                if let Err(e) = journal.queue_frame(envelope).await {
                                     error!("failed to queue frame to journal: {e}!  Data has been dropped");
                                 }
                             }
@@ -242,7 +242,9 @@ pub(crate) async fn exec_switching_batch(
                     None => {
                         let journal = Arc::clone(&journal);
                         spawn(async move {
-                            if let Err(e) = journal.queue_frame(InMemoryEnvelope { header, buffer })
+                            if let Err(e) = journal
+                                .queue_frame(InMemoryEnvelope { header, buffer })
+                                .await
                             {
                                 error!("failed to queue frame to journal: {e:?}");
                             }

@@ -128,7 +128,7 @@ impl Ident32 {
         let head = &sections[0..2];
         let tail = &sections[14..16];
 
-        format!("[{}:{}::  ::{}:{}]", head[0], head[1], tail[0], tail[1])
+        format!("[{}:{}::::{}:{}]", head[0], head[1], tail[0], tail[1])
     }
 
     pub fn from_string(s: &String) -> Self {

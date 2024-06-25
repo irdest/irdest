@@ -5,18 +5,18 @@ use crate::{
 };
 use nom::IResult;
 
-pub struct SendTo {
+pub struct SendOne {
     pub letterhead: LetterheadV1,
 }
 
-impl FrameGenerator for SendTo {
+impl FrameGenerator for SendOne {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         self.letterhead.generate(buf)?;
         Ok(())
     }
 }
 
-impl FrameParser for SendTo {
+impl FrameParser for SendOne {
     type Output = Result<Self>;
     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
         let (input, letterhead) = LetterheadV1::parse(input)?;
