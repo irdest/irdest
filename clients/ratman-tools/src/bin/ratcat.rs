@@ -85,9 +85,13 @@ pub fn setup_cli() -> Command {
                 .args([
                     Arg::new("streams-count")
                         .short('c')
-                        .help("Set the number of message streams you want to receive. Value of 0 will receive streams forever")
+                        .help("Set the number of message streams you want to receive.  \
+                               Value of 0 will receive streams forever.
+NOTE: ratcat will not terminate on its own and will have to be stopped externally.  \
+                               The API socket remains unavailable during this time.  \
+                               For longer receive sessions it's recommended you set up a subscription instead")
                         .value_parser(value_parser!(u64))
-                        .default_value("0"),
+                        .default_value("1"),
                     Arg::new("to-address")
                         .action(ArgAction::Set)
                         .help("Filter incoming message streams by the recipient address"),

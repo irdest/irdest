@@ -239,6 +239,7 @@ pub enum MicroframeError {
 pub enum UserError {
     InvalidInput(String, Option<String>),
     MissingInput(String),
+    RecvLimitReached,
 }
 
 // We manually implement Display for the user error to include some more
@@ -254,6 +255,8 @@ impl fmt::Display for UserError {
                     format!("got invalid input '{got}' (expected '{expected}')"),
                 Self::InvalidInput(got, None) => format!("got invalid input '{got}'"),
                 Self::MissingInput(expected) => format!("required input '{expected}' was missing"),
+                Self::RecvLimitReached =>
+                    format!("this stream generator has reached its end and should be dropped!"),
             }
         )
     }

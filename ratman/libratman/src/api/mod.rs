@@ -28,6 +28,7 @@
 //! behaviour can be disabled via the `RatmanIpc` API.
 
 mod _trait;
+use _trait::StreamGenerator;
 pub use _trait::{RatmanIpcExtV1, RatmanStreamExtV1, ReadStream};
 
 mod subscriber;
@@ -609,16 +610,13 @@ impl RatmanStreamExtV1 for RatmanIpc {
     }
 
     /// Return an iterator over a stream of letterheads and read streams
-    async fn recv_many<'s, I>(
+    async fn recv_many<'s>(
         self: &'s Arc<Self>,
         auth: AddrAuth,
         addr: Address,
         to: Recipient,
         limit: Option<u32>,
-    ) -> crate::Result<I>
-    where
-        I: Iterator<Item = (LetterheadV1, ReadStream<'s>)>,
-    {
+    ) -> crate::Result<StreamGenerator<'s>> {
         let mut socket = self.socket().lock().await;
         socket
             .write_microframe(
@@ -631,17 +629,10 @@ impl RatmanStreamExtV1 for RatmanIpc {
             )
             .await?;
 
-        
-        
-        todo!()
-        
-        // 0..num.into_iter().map(|_| {
-        //     let join =
-        //         spawn_local(async move { socket.read_microframe::<LetterheadV1>().await.unwrap() });
-
-        //     join.
-
-        //     todo!()
-        // })
+        Ok(StreamGenerator {
+            limit,
+            read: 0,
+            inner: ReadStream(socket),
+        })
     }
 }

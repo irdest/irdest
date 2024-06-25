@@ -35,7 +35,6 @@ where
 {
     let (mut input, count) = take(2 as usize)(input)?;
     let count = u16::from_be_bytes([count[0], count[1]]);
-    eprintln!("Reading {count} length vector");
 
     let mut buf = Vec::with_capacity(count as usize);
     for _ in 0..count as usize {

@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{thread, time::Duration};
 
 use crate::config::ConfigTree;
 use libratman::{
@@ -8,14 +8,15 @@ use libratman::{
 
 #[test]
 fn create_address() {
-    let rrt = Runtime::new().unwrap();
-    let _jh = rrt.spawn_blocking(|| {
+    let _jh = thread::spawn(|| {
         crate::start_with_configuration(ConfigTree::default_in_memory());
     });
 
     let rt = Runtime::new().unwrap();
     rt.block_on(async move {
-        sleep(Duration::from_millis(200)).await;
+        println!("sleep 10 seconds");
+        sleep(Duration::from_secs(10)).await;
+        println!("woke up");
 
         let ipc = RatmanIpc::start("127.0.0.1:5852".parse().unwrap())
             .await

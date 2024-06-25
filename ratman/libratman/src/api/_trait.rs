@@ -1,7 +1,6 @@
 use crate::{
     api::{socket_v2::RawSocketHandle, SubscriptionHandle},
-    frame::carrier::ManifestFrameV1,
-    types::{AddrAuth, Address, Ident32, LetterheadV1, Modify, Recipient},
+    types::{error::UserError, AddrAuth, Address, Ident32, LetterheadV1, Modify, Recipient},
     ClientError, Result,
 };
 use async_trait::async_trait;
@@ -202,15 +201,13 @@ pub trait RatmanStreamExtV1: RatmanIpcExtV1 {
     ///
     /// If you need to receive data more consistently consider setting up a
     /// subscription!
-    async fn recv_many<'s, I>(
+    async fn recv_many<'s>(
         self: &'s Arc<Self>,
         auth: AddrAuth,
         addr: Address,
         to: Recipient,
         num: Option<u32>,
-    ) -> Result<I>
-    where
-        I: Iterator<Item = (LetterheadV1, ReadStream<'s>)>;
+    ) -> Result<StreamGenerator<'s>>;
 }
 
 pub struct ReadStream<'a>(pub(crate) MutexGuard<'a, RawSocketHandle>);
@@ -220,17 +217,36 @@ impl<'a> ReadStream<'a> {
         &mut *self.0.stream()
     }
 
-    #[doc(hidden)]
-    pub fn wait_for_manifest(&mut self) -> Result<ManifestFrameV1> {
-        todo!()
-    }
-
     pub async fn drop(mut self) -> Result<()> {
         let (_, ping) = self.0.read_microframe::<ServerPing>().await?;
         match ping? {
             ServerPing::Ok => Ok(()),
             ServerPing::Error(e) => Err(e.into()),
             ping => Err(ClientError::Internal(format!("{ping:?}")).into()),
+        }
+    }
+}
+
+pub struct StreamGenerator<'a> {
+    pub(crate) limit: Option<u32>,
+    pub read: u32,
+    pub inner: ReadStream<'a>,
+}
+
+impl<'a> StreamGenerator<'a> {
+    pub async fn wait_for_manifest(&mut self) -> Result<LetterheadV1> {
+        match self.limit {
+            Some(limit) if limit < self.read => {
+                let (_, lh) = self.inner.0.read_microframe::<LetterheadV1>().await?;
+                self.read += 1;
+                lh
+            }
+            None => {
+                let (_, lh) = self.inner.0.read_microframe::<LetterheadV1>().await?;
+                self.read += 1;
+                lh
+            }
+            Some(_) => Err(UserError::RecvLimitReached.into()),
         }
     }
 }

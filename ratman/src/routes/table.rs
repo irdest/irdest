@@ -111,6 +111,7 @@ impl RouteTable {
                 };
             }
             None => {
+                info!("Discovered new address: {}", peer_addr.pretty_string());
                 new_route = RouteData {
                     peer: peer_addr,
                     link_id: VecDeque::from_iter(vec![ep_neighbour].into_iter()),

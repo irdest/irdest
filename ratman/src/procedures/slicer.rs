@@ -129,7 +129,7 @@ async fn test_block_walker() {
     .await
     .unwrap();
 
-    println!("Encode blocks to disk: complete");
+    eprintln!("Encode blocks to disk: complete");
 
     // Encode to in-memory store to have something to compare with later
     let read_cap2 = async_eris::encode(
@@ -141,9 +141,9 @@ async fn test_block_walker() {
     .await
     .unwrap();
 
-    println!("Encode blocks to memory: complete");
+    eprintln!("Encode blocks to memory: complete");
     assert_eq!(read_cap1, read_cap2);
-    println!("read_cap1 == read_cap2");
+    eprintln!("read_cap1 == read_cap2");
 
     let (tx, mut rx) = tokio::sync::mpsc::channel(16);
     tokio::spawn(
