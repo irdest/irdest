@@ -140,8 +140,6 @@ pub(crate) async fn exec_switching_batch(
                     journal.save_as_known(&announce_id).unwrap();
                     debug!("Received announcement for {}", header.get_sender());
 
-                    trace!("Parse announce: {:?}", buffer);
-
                     if let Ok((remainder, Ok(announce_frame))) =
                         AnnounceFrame::parse(&buffer.as_slice()[payload_slice])
                     {
@@ -181,6 +179,8 @@ pub(crate) async fn exec_switching_batch(
             //
             // A data frame that is addressed to a particular address
             (mode, Some(Recipient::Address(address))) => {
+                trace!("Received data frame for {address}");
+
                 // Check if the target address is "reachable"
                 match routes.reachable(address).await {
                     // A locally addressed data frame is queued on the collector
@@ -201,6 +201,7 @@ pub(crate) async fn exec_switching_batch(
                     Some(RouteState::Active) if mode == MANIFEST => {
                         let journal = Arc::clone(&journal);
                         let ingress_tx = ingress_tx.clone();
+                        trace!("Received stream manifest");
                         spawn(async move {
                             if let Err(e) =
                                 journal.queue_manifest(InMemoryEnvelope { header, buffer }).await
@@ -257,7 +258,9 @@ pub(crate) async fn exec_switching_batch(
             }
             //
             // A data or manifest frame that is addressed to a network namespace
-            (_, Some(Recipient::Namespace(_ns))) => {
+            (_, Some(Recipient::Namespace(space))) => {
+                trace!("Received data frame for {space}");
+
                 let announce_id = match header.get_seq_id() {
                     Some(seq) => seq.hash,
                     None => {

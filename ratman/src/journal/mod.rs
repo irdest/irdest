@@ -82,7 +82,7 @@ pub struct Journal {
 fn setup_hot_partition(name: &str, db: &Keyspace) -> Result<PartitionHandle> {
     let part = db.open_partition(name, options())?;
     part.set_compaction_strategy(Arc::new(SizeTiered::default()));
-    part.set_max_memtable_size(128 * 1024 * 1024); // 128 MB of write cache
+    part.set_max_memtable_size(512 * 1024 * 1024); // 512 MB of write cache
     Ok(part)
 }
 

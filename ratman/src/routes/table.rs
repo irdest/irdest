@@ -192,21 +192,23 @@ impl RouteTable {
     fn start_activity_task(self: Arc<Self>, peer_addr: Address) {
         spawn_local(async move {
             self.activity_tasks.write().await.insert(peer_addr);
+            let announce_timeout = 30;
+            let sleep_time = 10;
             loop {
                 // Check every 30 seconds whether the last announcement
                 // is older than 1 minute.  If so, we declare the route
                 // DOWN and end this task
                 let check = Utc::now();
-                sleep(Duration::from_secs(10)).await;
+                sleep(Duration::from_secs(sleep_time)).await;
                 match self.meta_db.routes.get(&peer_addr.to_string()).await {
                     Ok(Some(mut entry)) => {
                         //
                         // If the route is None it is a local address and we don't care
                         if let Some(route) = entry.route.as_mut() {
                             // todo: make this timeout configurable
-                            if (check - route.last_seen).num_seconds() > 30 {
+                            if (check - route.last_seen).num_seconds() > announce_timeout {
                                 route.state = RouteState::Idle;
-                                debug!("No announcement in >60 seconds: marking address {peer_addr} as IDLE");
+                                info!("No announcement in >{announce_timeout} seconds: marking address {peer_addr} as IDLE");
 
                                 if let Err(e) = self
                                     .meta_db

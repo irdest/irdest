@@ -25,7 +25,7 @@ use libratman::{
     endpoint::EndpointExt,
     tokio::{
         sync::{mpsc::channel, Mutex},
-        task::spawn_local,
+        task::spawn,
     },
     types::{Ident32, InMemoryEnvelope, Neighbour},
     NetmodError, RatmanError, Result,
@@ -68,7 +68,7 @@ impl InetEndpoint {
         // Accept connections and spawn associated peers
         {
             let sender = channel.0.clone();
-            spawn_local(server.run(sender, Arc::clone(&routes)));
+            spawn(server.run(sender, Arc::clone(&routes)));
         }
 
         Ok(Arc::new(Self {

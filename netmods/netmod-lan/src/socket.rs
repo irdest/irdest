@@ -6,7 +6,7 @@
 
 use crate::{framing::HandshakeV1, AddrTable, MemoryEnvelopeExt};
 use libratman::futures::future::{self, Future};
-use libratman::tokio::task::spawn_local;
+use libratman::tokio::task::spawn;
 use libratman::tokio::{net::UdpSocket, sync::RwLock, task};
 use libratman::{
     frame::carrier::{modes, CarrierFrameHeader},
@@ -124,7 +124,7 @@ impl Socket {
 
     #[instrument(skip(arc, table), level = "trace")]
     fn incoming_handle(arc: Arc<Self>, table: Arc<AddrTable>) {
-        spawn_local(async move {
+        spawn(async move {
             loop {
                 // fixme: aaaaaaaaaaaaaaaaaaaaaaaaaah
                 let mut buf = vec![0; 1024 * 16];
