@@ -164,8 +164,8 @@ pub fn take_u16(input: &[u8]) -> IResult<&[u8], u16> {
 }
 
 pub fn take_datetime(input: &[u8]) -> IResult<&[u8], Result<DateTime<Utc>>> {
-    // Take 25 bytes which is the length of an rfc3339 timestamp
-    let (input, slice) = take(25 as usize)(input)?;
+    // Take 35 bytes which is the length of an rfc3339 timestamp
+    let (input, slice) = take(35 as usize)(input)?;
 
     // Convert this to a string and fail early if it's an invalid string encoding
     let dt_str: Result<_> = core::str::from_utf8(slice)
@@ -183,13 +183,18 @@ pub fn take_datetime(input: &[u8]) -> IResult<&[u8], Result<DateTime<Utc>>> {
     ))
 }
 
+pub fn take_signature(input: &[u8]) -> IResult<&[u8], [u8; 64]> {
+    let (input, slice) = take(64 as usize)(input)?;
+    let mut signature = [0; 64];
+    signature.copy_from_slice(slice);
+    Ok((input, signature))
+}
+
 pub fn maybe_signature(input: &[u8]) -> IResult<&[u8], Option<[u8; 64]>> {
     let (input, first) = peek(take(1 as usize))(input)?;
     if first == &[0] {
-        let (input, slice) = take(64 as usize)(input)?;
-        let mut signature = [0; 64];
-        signature.copy_from_slice(slice);
-        Ok((input, Some(signature)))
+        let (input, sig) = take_signature(input)?;
+        Ok((input, Some(sig)))
     } else {
         let (input, _) = take(1 as usize)(input)?;
         Ok((input, None))

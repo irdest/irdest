@@ -15,9 +15,9 @@ impl FrameParser for AnnounceFrame {
     type Output = Result<Self>;
 
     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
-        let (input, v) = parse::take(1 as usize)(input)?;
+        let (input, v) = parse::take_byte(input)?;
 
-        match v[0] {
+        match v {
             1 => {
                 let (input, inner) = AnnounceFrameV1::parse(input)?;
                 Ok((input, inner.map(|inner| AnnounceFrame::V1(inner))))
@@ -65,15 +65,14 @@ impl FrameParser for AnnounceFrameV1 {
 
     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
         let (input, origin) = OriginDataV1::parse(input)?;
-        let (input, origin_signature) = parse::maybe_signature(input)?;
+        let (input, origin_signature) = parse::take_signature(input)?;
         let (input, route) = RouteDataV1::parse(input)?;
 
         Ok((
             input,
             origin.map(|origin| Self {
                 origin,
-                // fixme: handle error explicitly
-                origin_signature: origin_signature.unwrap(),
+                origin_signature,
                 route,
             }),
         ))
@@ -149,4 +148,30 @@ impl FrameGenerator for RouteDataV1 {
         self.size_hint.generate(buf)?;
         Ok(())
     }
+}
+
+#[test]
+fn generate_parse_announce() {
+    let origin = OriginDataV1::now();
+    let origin_signature = [0; 64];
+
+    // Create a full announcement and encode it
+    let a = AnnounceFrame::V1(AnnounceFrameV1 {
+        origin,
+        origin_signature,
+        route: RouteDataV1 {
+            mtu: 0,
+            size_hint: 0,
+        },
+    });
+
+    let mut a_buf = vec![];
+    a.clone().generate(&mut a_buf).unwrap();
+    println!("Announce buf: {a_buf:?}");
+
+    let (rem, a_dec) = AnnounceFrame::parse(a_buf.as_slice()).unwrap();
+    println!("Remaining: {rem:?}");
+    println!("Announce: {a_dec:?}");
+    assert_eq!(rem.len(), 0);
+    assert_eq!(a, a_dec.unwrap());
 }

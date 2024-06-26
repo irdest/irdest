@@ -22,11 +22,7 @@ impl AddressAnnouncer {
     /// Start a new address announcer with a client authenticator.  Even when
     /// the starting client goes away, this is used to keep the thread local key
     /// cache session alive
-    pub async fn new(
-        addr: Address,
-        auth: AddrAuth,
-        ctx: &Arc<RatmanContext>,
-    ) -> Result<Self> {
+    pub async fn new(addr: Address, auth: AddrAuth, ctx: &Arc<RatmanContext>) -> Result<Self> {
         Ok(Self {
             addr,
             auth,
@@ -79,14 +75,13 @@ impl AddressAnnouncer {
             .save_as_known(&header.get_seq_id().unwrap().hash)
             .unwrap();
 
+        let full_anon_buffer =
+            InMemoryEnvelope::from_header_and_payload(header, announce_buffer).unwrap();
+
+        trace!("Send announce: {:?}", full_anon_buffer.buffer);
+
         // Send it into the network
-        procedures::flood_frame(
-            &ctx.routes,
-            &ctx.links,
-            InMemoryEnvelope::from_header_and_payload(header, announce_buffer).unwrap(),
-            None,
-        )
-        .await?;
+        procedures::flood_frame(&ctx.routes, &ctx.links, full_anon_buffer, None).await?;
 
         // Wait some amount of time
         time::sleep(Duration::from_secs(announce_delay as u64)).await;

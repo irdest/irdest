@@ -160,6 +160,7 @@ impl<T: FrameGenerator> FrameGenerator for Vec<T> {
 impl<Tz: TimeZone> FrameGenerator for DateTime<Tz> {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         let utc_string = self.to_rfc3339();
+        // todo: replace this with a better encoding?
         buf.extend_from_slice(utc_string.as_bytes());
         Ok(())
     }
