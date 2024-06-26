@@ -30,20 +30,19 @@
 //! the same messages infinitely.
 //!
 
-use crate::storage::route::RouteData;
-
 use self::{
     page::{CachePage, JournalCache, SerdeFrameType},
     types::{BlockData, FrameData, ManifestData},
 };
+use crate::storage::route::RouteData;
 
-use fjall::{Keyspace, PartitionCreateOptions};
+use fjall::{compaction::SizeTiered, Keyspace, PartitionCreateOptions, PartitionHandle};
 use libratman::frame::{carrier::ManifestFrame, FrameParser};
 use libratman::{
     types::{Ident32, InMemoryEnvelope},
     Result,
 };
-use std::marker::PhantomData;
+use std::{marker::PhantomData, sync::Arc};
 
 pub mod page;
 pub mod types;
@@ -77,17 +76,24 @@ pub struct Journal {
     // pub links: CachePage<LinkData>,
 }
 
+fn setup_hot_partition(name: &str, db: &Keyspace) -> Result<PartitionHandle> {
+    let part = db.open_partition(name, options())?;
+    part.set_compaction_strategy(Arc::new(SizeTiered::default()));
+    part.set_max_memtable_size(128 * 1024 * 1024); // 128 MB of write cache
+    Ok(part)
+}
+
+fn options() -> PartitionCreateOptions {
+    PartitionCreateOptions::default()
+        // .level_ratio(4)
+        // .level_count(4)
+        .block_size(32 * 1024)
+}
+
 impl Journal {
     pub fn new(db: Keyspace) -> Result<Self> {
-        fn options() -> PartitionCreateOptions {
-            PartitionCreateOptions::default()
-                // .level_ratio(4)
-                // .level_count(4)
-                .block_size(32 * 1024)
-        }
-
-        let frames = CachePage(db.open_partition("frames_data", options())?, PhantomData);
-        let blocks = CachePage(db.open_partition("blocks_data", options())?, PhantomData);
+        let frames = CachePage(setup_hot_partition("frame_data", &db)?, PhantomData);
+        let blocks = CachePage(setup_hot_partition("block_data", &db)?, PhantomData);
         let manifests = CachePage(
             db.open_partition("blocks_manifests", options())?,
             PhantomData,

@@ -140,6 +140,8 @@ pub(crate) async fn exec_switching_batch(
                     journal.save_as_known(&announce_id).unwrap();
                     debug!("Received announcement for {}", header.get_sender());
 
+                    trace!("Parse announce: {:?}", buffer);
+
                     if let Ok((remainder, Ok(announce_frame))) =
                         AnnounceFrame::parse(&buffer.as_slice()[payload_slice])
                     {
