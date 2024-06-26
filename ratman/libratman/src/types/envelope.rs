@@ -7,6 +7,11 @@ use crate::{
 #[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct InMemoryEnvelope {
     pub header: CarrierFrameHeader,
+    /// WARNING: this buffer contains both the header and payload.  If you try
+    /// to parse this buffer as a payload it will fail!  Use
+    /// `get_payload_slice()` on InMemoryEnvelope instead, or if a function only
+    /// has access to header and buffer separately you can do:
+    /// `buffer.as_slice[header.get_size()..]`
     pub buffer: Vec<u8>,
 }
 

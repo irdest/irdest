@@ -71,6 +71,7 @@ pub(crate) async fn exec_switching_batch(
         };
 
         let block_notify_tx = block_notify_tx.clone();
+        let payload_slice = header.get_size()..;
 
         trace!(
             "Received frame ({}) from {}/{:?}",
@@ -140,7 +141,7 @@ pub(crate) async fn exec_switching_batch(
                     debug!("Received announcement for {}", header.get_sender());
 
                     if let Ok((remainder, Ok(announce_frame))) =
-                        AnnounceFrame::parse(buffer.as_slice())
+                        AnnounceFrame::parse(&buffer.as_slice()[payload_slice])
                     {
                         // fail softly ;-;
                         assert!(remainder.len() == 0);
