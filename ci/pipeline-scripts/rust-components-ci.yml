@@ -46,6 +46,7 @@ build-ratmand-static-aarch64:
 build-ratmand-static-armv7l-musl:
   tags: [ irdest-nix ]
   stage: build
+  allow_failure: true # fjall doesn't support 32bit systems so this is going to fail for a while
   needs: [ build-ratman-dashboard ]
   script:
     - nix-env -iA cachix -f https://cachix.org/api/v1/install
@@ -91,6 +92,7 @@ build-ratman-tools-static-aarch64:
 build-ratman-tools-static-armv7l-musl:
   tags: [ irdest-nix ]
   stage: build
+  allow_failure: true # fjall doesn't support 32bit systems so this is going to fail for a while
   script:
     - nix-env -iA cachix -f https://cachix.org/api/v1/install
     - cachix use irdest -O ~/.config/nix
@@ -135,6 +137,7 @@ build-irdest-proxy-static-aarch64:
 build-irdest-proxy-static-armv7l-musl:
   tags: [ irdest-nix ]
   stage: build
+  allow_failure: true # fjall doesn't support 32bit systems so this is going to fail for a while
   script:
     - nix-env -iA cachix -f https://cachix.org/api/v1/install
     - cachix use irdest -O ~/.config/nix
@@ -187,6 +190,7 @@ build-installer-static-aarch64:
 build-installer-static-armv7l-musl:
   tags: [ irdest-nix ]
   stage: build
+  allow_failure: true # fjall doesn't support 32bit systems so this is going to fail for a while
   script:
     - nix-env -iA cachix -f https://cachix.org/api/v1/install
     - cachix use irdest -O ~/.config/nix
