@@ -180,32 +180,30 @@ pub(crate) async fn exec_sender_system<const L: usize>(
                                 let collector = Arc::clone(&collector);
                                 let block_bcast = block_bcast.clone();
 
-                                spawn(async move {
-                                    let routes = Arc::clone(&routes);
-                                    let drivers = Arc::clone(&drivers);
-                                    let collector = Arc::clone(&collector);
-                                    let block_bcast = (&block_bcast).clone();
-                                    for envelope in frame_buf {
-                                        trace!(
-                                            "Dispatching {} byte frame {}/{}",
-                                            envelope.buffer.len(),
-                                            bid32,
-                                            envelope.header.get_seq_id().unwrap().num
-                                        );
+                                let routes = Arc::clone(&routes);
+                                let drivers = Arc::clone(&drivers);
+                                let collector = Arc::clone(&collector);
+                                let block_bcast = (&block_bcast).clone();
+                                for envelope in frame_buf {
+                                    trace!(
+                                        "Dispatch {} byte frame {}/{}",
+                                        envelope.buffer.len(),
+                                        bid32,
+                                        envelope.header.get_seq_id().unwrap().num
+                                    );
 
-                                        if let Err(e) = dispatch_frame(
-                                            &routes,
-                                            &drivers,
-                                            &collector,
-                                            block_bcast.clone(),
-                                            envelope,
-                                        )
-                                        .await
-                                        {
-                                            error!("failed to dispatch frame: {e}");
-                                        }
+                                    if let Err(e) = dispatch_frame(
+                                        &routes,
+                                        &drivers,
+                                        &collector,
+                                        block_bcast.clone(),
+                                        envelope,
+                                    )
+                                    .await
+                                    {
+                                        error!("failed to dispatch frame: {e}");
                                     }
-                                });
+                                }
                             }
                         }
 
