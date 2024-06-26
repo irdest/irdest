@@ -179,40 +179,10 @@ pub(crate) async fn exec_switching_batch(
             //
             // A data frame that is addressed to a particular address
             (mode, Some(Recipient::Address(address))) => {
-                trace!("Received data frame for {address}");
+                trace!("Received [mode:{mode}] frame for {address}");
 
                 // Check if the target address is "reachable"
                 match routes.reachable(address).await {
-                    // A locally addressed data frame is queued on the collector
-                    Some(RouteState::Active) if mode == DATA => {
-                        if let Err(_e) =
-                            collector_tx.send(InMemoryEnvelope { header, buffer }).await
-                        {
-                            error!(
-                                "Failed to queue frame in sequence {:?}",
-                                header.get_seq_id()
-                            );
-                            continue;
-                        }
-                    }
-                    // Locally addressed manifest is cached in the journal, then
-                    // we notify the ingress system to start collecting the full
-                    // message stream.
-                    Some(RouteState::Active) if mode == MANIFEST => {
-                        let journal = Arc::clone(&journal);
-                        let ingress_tx = ingress_tx.clone();
-                        trace!("Received stream manifest");
-                        spawn(async move {
-                            if let Err(e) =
-                                journal.queue_manifest(InMemoryEnvelope { header, buffer }).await
-                            {
-                                error!("failed to queue Manifest: {e:?}.  This will result in unrecoverable blocks");
-                            }
-                            if let Err(e) = ingress_tx.send(MessageNotifier(header.get_seq_id().unwrap().hash)).await {
-                                error!("failed to notify ingress system for manifest: {e}");
-                            }
-                        }).await.unwrap();
-                    }
                     // Any frame for a reachable remote address will be forwarded
                     Some(RouteState::Active) => {
                         match procedures::dispatch_frame(
@@ -238,21 +208,31 @@ pub(crate) async fn exec_switching_batch(
                         }
                     }
                     Some(RouteState::Idle) | Some(RouteState::Lost) => {
+                        //let journal = Arc::clone(&journal);
+                        //spawn(async move {
+                        //    trace!("Queue frame to unknown destination.  This is wrong, we ");
+                        //    if let Err(e) = journal
+                        //        .queue_frame(InMemoryEnvelope { header, buffer })
+                        //        .await
+                        //    {
+                        //        error!("failed to queue frame to journal: {e:?}");
+                        //    }
+                        //    trace!("Post queue_frame");
+                        //});
+
                         warn!("offline buffering not yet implemented >_<");
                     }
-                    // A frame for an unreachable address (either
-                    // local or remote) will be queued in the
-                    // journal
+                    // A route entry with actual route data is a local address and needs to be queued with the collector
                     None => {
-                        let journal = Arc::clone(&journal);
-                        spawn(async move {
-                            if let Err(e) = journal
-                                .queue_frame(InMemoryEnvelope { header, buffer })
-                                .await
-                            {
-                                error!("failed to queue frame to journal: {e:?}");
-                            }
-                        });
+                        if let Err(_e) =
+                            collector_tx.send(InMemoryEnvelope { header, buffer }).await
+                        {
+                            error!(
+                                "Failed to queue frame in sequence {:?}",
+                                header.get_seq_id()
+                            );
+                            continue;
+                        }
                     }
                 }
             }
