@@ -194,7 +194,8 @@ impl BlockSlicer {
         trace!("Selected data chunk size {max_payload_size}");
         trace!(
             "Cutting block {} into {} length chunks",
-            block_ref, max_payload_size,
+            block_ref,
+            max_payload_size,
         );
         for chunk in b.as_slice().chunks(max_payload_size as usize) {
             assert!(ctr as usize <= num_chunks);

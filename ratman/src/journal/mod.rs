@@ -118,31 +118,38 @@ impl Journal {
     ///
     /// Frame keys are composed of the block ID and the number in sequence
     /// (`<seq>::<num>`).  Frames without a sequence ???
-    pub async fn queue_frame(&self, InMemoryEnvelope { header, buffer }: InMemoryEnvelope) -> Result<()> {
+    pub async fn queue_frame(
+        &self,
+        InMemoryEnvelope { header, buffer }: InMemoryEnvelope,
+    ) -> Result<()> {
         let seq_id = header.get_seq_id().unwrap();
 
-        self.frames.insert(
-            format!("{}::{}", seq_id.hash, seq_id.num),
-            &FrameData {
-                header: SerdeFrameType::from(header),
-                payload: buffer,
-            },
-        ).await
+        self.frames
+            .insert(
+                format!("{}::{}", seq_id.hash, seq_id.num),
+                &FrameData {
+                    header: SerdeFrameType::from(header),
+                    payload: buffer,
+                },
+            )
+            .await
     }
 
     pub async fn queue_manifest(&self, env: InMemoryEnvelope) -> Result<()> {
         let (_, manifest) = ManifestFrame::parse(env.get_payload_slice())?;
         let seq_id = env.header.get_seq_id().unwrap();
 
-        self.manifests.insert(
-            seq_id.hash.to_string(),
-            &ManifestData {
-                sender: env.header.get_sender(),
-                recipient: env.header.get_recipient().unwrap(),
-                manifest: SerdeFrameType::from(manifest?),
-                forwarded: false,
-            },
-        ).await?;
+        self.manifests
+            .insert(
+                seq_id.hash.to_string(),
+                &ManifestData {
+                    sender: env.header.get_sender(),
+                    recipient: env.header.get_recipient().unwrap(),
+                    manifest: SerdeFrameType::from(manifest?),
+                    forwarded: false,
+                },
+            )
+            .await?;
         Ok(())
     }
 }
