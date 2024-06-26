@@ -17,13 +17,13 @@ use nix::{
     fcntl::{open, OFlag},
     libc,
 };
-use std::{convert::TryInto, os::unix::io::RawFd};
+use std::{convert::TryInto, os::unix::io::RawFd, path::PathBuf};
 use std::{error::Error, path::Path, result::Result as StdResult};
 
 use super::pidfile::PidFile;
 
 /// Start Ratman as a daemonised process
-pub fn sysv_daemonize_app(cfg: ConfigTree) -> StdResult<(), Box<dyn Error>> {
+pub fn sysv_daemonize_app(cfg: ConfigTree, state_path: PathBuf) -> StdResult<(), Box<dyn Error>> {
     //  1. Close all open file descriptors except standard input,
     //     output, and error (i.e. the first three file descriptors 0,
     //     1, 2). This ensures that no accidentally passed file
@@ -138,7 +138,7 @@ pub fn sysv_daemonize_app(cfg: ConfigTree) -> StdResult<(), Box<dyn Error>> {
     write(write_pipe_fd, &pid_bytes)?;
     close(write_pipe_fd)?;
 
-    let _ = start_with_configuration(cfg);
+    let _ = start_with_configuration(cfg, state_path);
 
     // Unlock and close/delete pid file
     drop(pid_file);

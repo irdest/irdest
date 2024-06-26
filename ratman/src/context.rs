@@ -33,7 +33,7 @@ use libratman::{
 // External imports
 use atomptr::AtomPtr;
 use fjall::Config;
-use std::{net::SocketAddr, sync::Arc};
+use std::{net::SocketAddr, path::PathBuf, sync::Arc};
 use tripwire::Tripwire;
 
 /// Top-level Ratman router state handle
@@ -75,6 +75,7 @@ impl RatmanContext {
     // todo: return errors here to allow the journal init to fail gracefully
     pub(crate) async fn new(
         config: ConfigTree,
+        state_path: PathBuf,
         block_notify_tx: BcastSender<BlockNotifier>,
     ) -> Result<Arc<Self>> {
         let (tripwire, tw_worker) = Tripwire::new_signals();
@@ -83,10 +84,10 @@ impl RatmanContext {
         spawn(tw_worker);
 
         // Initialise storage systems
-        let journal_fjall = Config::new(Os::match_os().data_path().join("journal.fjall"))
+        let journal_fjall = Config::new(state_path.join("journal.fjall"))
             .fsync_ms(Some(25))
             .open()?;
-        let meta_fjall = Config::new(Os::match_os().data_path().join("metadata.fjall"))
+        let meta_fjall = Config::new(state_path.join("metadata.fjall"))
             .fsync_ms(Some(25))
             .open()?;
         let journal = Arc::new(Journal::new(journal_fjall)?);
@@ -117,7 +118,7 @@ impl RatmanContext {
     }
 
     /// Create and start a new Ratman router context with a config
-    pub async fn start(cfg: ConfigTree) {
+    pub async fn start(cfg: ConfigTree, state_path: PathBuf) {
         // Before we do anything else, make sure we see logs
         setup_logging(&cfg.get_subtree(CFG_RATMAND).expect("no 'ratmand' tree"));
 
@@ -127,7 +128,7 @@ impl RatmanContext {
         let (block_notify_tx, _) = bcast_channel(8);
 
         // Initialise in-memory state and restore any existing state from disk
-        let this = match Self::new(cfg, block_notify_tx.clone()).await {
+        let this = match Self::new(cfg, state_path.clone(), block_notify_tx.clone()).await {
             Ok(t) => t,
             Err(e) => libratman::elog(
                 format!("failed to initialise/ restore journal state: {e:?}"),
@@ -148,7 +149,7 @@ impl RatmanContext {
             // warn!("Take care that peering hardware is not used from multiple drivers!");
             warn!("ephemeral mode is currently unimplemented");
         } else {
-            match Os::lock_state_directory(None).await {
+            match Os::lock_state_directory(Some(state_path)).await {
                 Ok(Some(lock)) => {
                     this._statedir_lock.swap(Some(lock));
                 }

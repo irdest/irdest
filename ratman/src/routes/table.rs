@@ -299,6 +299,12 @@ impl RouteTable {
     }
 
     /// Check if an ID is reachable via currently known routes
+    ///
+    /// - `Some(State)` indicates a remote address with a particular connection
+    /// state
+    ///
+    /// - `None` indicates a local address, since the state is always
+    /// "available".
     pub(crate) async fn reachable(&self, peer_addr: Address) -> Option<RouteState> {
         self.meta_db
             .routes

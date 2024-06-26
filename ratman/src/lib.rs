@@ -18,6 +18,8 @@
 //! See the Irdest repository README for additional permissions
 //! granted by the authors for this code.
 
+use std::path::PathBuf;
+
 use libratman::rt::AsyncSystem;
 
 #[macro_use]
@@ -50,12 +52,12 @@ mod test;
 /// that will initialise drivers and OS operations correctly.
 ///
 /// Special permissions may be required for certain features!
-pub fn start_with_configuration(cfg: config::ConfigTree) {
+pub fn start_with_configuration(cfg: config::ConfigTree, state_path: PathBuf) {
     // TODO: this function currently doesn't return at all.  Instead,
     // what we want to do is listen to various signals here and
     // respond to them.
 
     eprintln!("Pass launch configuration to core async system...");
     let system = AsyncSystem::new("ratmand-core".to_owned(), 8);
-    system.exec(context::RatmanContext::start(cfg));
+    system.exec(context::RatmanContext::start(cfg, state_path));
 }

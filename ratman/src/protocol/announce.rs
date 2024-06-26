@@ -73,6 +73,7 @@ impl AddressAnnouncer {
         // sent back to us.
         ctx.journal
             .save_as_known(&header.get_seq_id().unwrap().hash)
+            .await
             .unwrap();
 
         let full_anon_buffer =

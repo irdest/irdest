@@ -31,7 +31,7 @@
 //!
 
 use self::{
-    page::{CachePage, JournalCache, SerdeFrameType},
+    page::{CachePage, SerdeFrameType},
     types::{BlockData, FrameData, ManifestData},
 };
 use crate::storage::route::RouteData;
@@ -72,7 +72,7 @@ pub struct Journal {
     /// Fully cached manifests for existing block streams
     pub manifests: CachePage<ManifestData>,
     /// A simple lookup set for known frame IDs
-    pub seen_frames: JournalCache<Ident32>,
+    pub seen_frames: CachePage<bool>,
     /// Route metadata table
     pub routes: CachePage<RouteData>,
     // /// Message stream metadata table
@@ -101,7 +101,7 @@ impl Journal {
             db.open_partition("blocks_manifests", options())?,
             PhantomData,
         );
-        let seen_frames = JournalCache(db.open_partition("frames_seen", options())?, PhantomData);
+        let seen_frames = CachePage(db.open_partition("frames_seen", options())?, PhantomData);
         let routes = CachePage(db.open_partition("meta_routes", options())?, PhantomData);
 
         Ok(Self {
@@ -115,12 +115,15 @@ impl Journal {
         })
     }
 
-    pub fn is_unknown(&self, frame_id: &Ident32) -> Result<bool> {
-        self.seen_frames.get(frame_id)
+    pub async fn is_unknown(&self, frame_id: &Ident32) -> Result<bool> {
+        self.seen_frames
+            .get(&frame_id.to_string())
+            .await
+            .map(|x| x.is_some())
     }
 
-    pub fn save_as_known(&self, frame_id: &Ident32) -> Result<()> {
-        self.seen_frames.insert(frame_id)
+    pub async fn save_as_known(&self, frame_id: &Ident32) -> Result<()> {
+        self.seen_frames.insert(frame_id.to_string(), &true).await
     }
 
     pub async fn num_blocks(self: &Arc<Self>) -> Result<u64> {

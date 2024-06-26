@@ -49,14 +49,16 @@ If you encounter a reproducible issue, \
                 .help("Override the configuration path from $XDG_CONFIG_HOME/ratmand/ratmand.kdl")
         )
         .arg(
+            Arg::with_name("STATE_DIR")
+                .takes_value(true)
+                .short("d")
+                .long("dir")
+                .help("Set the state directory where ratmand keeps its databases")
+        )
+        .arg(
             Arg::with_name("DAEMONIZE")
                 .long("daemonize")
                 .help("Fork ratmand into the background and detach it from the current stdout/stderr/tty")
-        )
-        .arg(
-            Arg::with_name("EPHEMERAL")
-                .long("ephemeral")
-                .help("Configure ratmand to not persist any information to disk.  Only use this for tests and special circumstances!")
         )
         .get_matches()
 }

@@ -11,7 +11,7 @@ use crate::{
 use libratman::{
     tokio::{
         net::{TcpListener, TcpStream},
-        task::spawn_local,
+        task::spawn,
     },
     types::Ident32,
     NetmodError, RatmanError,
@@ -82,7 +82,7 @@ impl Server {
             match self.ipv6_listen.accept().await {
                 Ok((stream, _)) => {
                     let r = Arc::clone(&r);
-                    spawn_local(handle_stream(
+                    spawn(handle_stream(
                         stream,
                         sender.clone(),
                         r,
@@ -113,7 +113,7 @@ async fn handle_stream(s: TcpStream, sender: FrameSender, r: Arc<Routes>, self_k
 
     // Spawn a task to listen for packets for this peer
     let this_peer = Arc::clone(&peer);
-    spawn_local(async move { this_peer.run().await });
+    spawn(async move { this_peer.run().await });
 
     // Also add the peer to the routing table
     r.add_peer(peer.session.peer_router_key_id, peer).await;

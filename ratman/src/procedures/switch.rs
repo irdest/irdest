@@ -136,8 +136,8 @@ pub(crate) async fn exec_switching_batch(
 
                 // Check that we haven't seen this frame/ message ID before.
                 // This prevents infinite replication of any flooded frame.
-                if journal.is_unknown(&announce_id).is_ok() {
-                    journal.save_as_known(&announce_id).unwrap();
+                if journal.is_unknown(&announce_id).await.is_ok() {
+                    journal.save_as_known(&announce_id).await.unwrap();
                     debug!("Received announcement for {}", header.get_sender());
 
                     if let Ok((remainder, Ok(announce_frame))) =
@@ -176,15 +176,16 @@ pub(crate) async fn exec_switching_batch(
                     }
                 }
             }
+            ///////////////////////////////////////////////////////////
             //
-            // A data frame that is addressed to a particular address
-            (mode, Some(Recipient::Address(address))) => {
+            // Any frame that's addressed to an address
+            (mode, Some(Recipient::Address(address))) if mode == DATA || mode == MANIFEST => {
                 trace!("Received [mode:{mode}] frame for {address}");
 
                 // Check if the target address is "reachable"
                 match routes.reachable(address).await {
                     // Any frame for a reachable remote address will be forwarded
-                    Some(RouteState::Active) => {
+                    Some(_) => {
                         match procedures::dispatch_frame(
                             routes,
                             links,
@@ -207,31 +208,35 @@ pub(crate) async fn exec_switching_batch(
                             _ => continue,
                         }
                     }
-                    Some(RouteState::Idle) | Some(RouteState::Lost) => {
-                        //let journal = Arc::clone(&journal);
-                        //spawn(async move {
-                        //    trace!("Queue frame to unknown destination.  This is wrong, we ");
-                        //    if let Err(e) = journal
-                        //        .queue_frame(InMemoryEnvelope { header, buffer })
-                        //        .await
-                        //    {
-                        //        error!("failed to queue frame to journal: {e:?}");
-                        //    }
-                        //    trace!("Post queue_frame");
-                        //});
-
-                        warn!("offline buffering not yet implemented >_<");
-                    }
-                    // A route entry with actual route data is a local address and needs to be queued with the collector
+                    // A route entry with actual route data is a local address
                     None => {
-                        if let Err(_e) =
-                            collector_tx.send(InMemoryEnvelope { header, buffer }).await
-                        {
-                            error!(
-                                "Failed to queue frame in sequence {:?}",
-                                header.get_seq_id()
-                            );
-                            continue;
+                        // If it's a manifest we queue that and start the ingress machine
+                        if mode == MANIFEST {
+                            let manifest_id = header.get_seq_id().unwrap().hash;
+
+                            if let Err(e) = journal
+                                .queue_manifest(InMemoryEnvelope { header, buffer })
+                                .await
+                            {
+                                error!("failed to ueue manifest: {e}");
+                            }
+
+                            if let Err(e) = ingress_tx.send(MessageNotifier(manifest_id)).await {
+                                error!("failed to notify local task of manifest: {e}");
+                            }
+                        }
+                        // Otherwise it's a data frame and we queue it in the collector
+                        else {
+                            trace!("Queue locally addressed frame in collector");
+                            if let Err(_e) =
+                                collector_tx.send(InMemoryEnvelope { header, buffer }).await
+                            {
+                                error!(
+                                    "Failed to queue frame in sequence {:?}",
+                                    header.get_seq_id()
+                                );
+                                continue;
+                            }
                         }
                     }
                 }
@@ -255,8 +260,8 @@ pub(crate) async fn exec_switching_batch(
                 // If we haven seen this frame before, we keep
                 // track of it and then re-flood it into the
                 // network.
-                if journal.is_unknown(&announce_id).unwrap() {
-                    journal.save_as_known(&announce_id).unwrap();
+                if journal.is_unknown(&announce_id).await.unwrap() {
+                    journal.save_as_known(&announce_id).await.unwrap();
                     if let Err(e) = procedures::flood_frame(
                         routes,
                         links,

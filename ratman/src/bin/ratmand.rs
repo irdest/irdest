@@ -25,6 +25,11 @@ fn main() {
         .map(|s| PathBuf::new().join(s))
         .unwrap_or_else(|| Os::xdg_config_path().join("ratmand.kdl"));
 
+    let state_path = arg_matches
+        .value_of("STATE_DIR")
+        .map(|s| PathBuf::new().join(s))
+        .unwrap_or_else(|| Os::xdg_data_path());
+
     let sys_startup = AsyncSystem::new("ratmand-startup".to_owned(), 2);
 
     // Check if we were tasked to generate the default
@@ -93,9 +98,9 @@ fn main() {
     // config.pretty_print();
 
     // Override the ephemeral value
-    if arg_matches.is_present("EPHEMERAL") {
-        config = config.patch("ratmand/ephemeral", true);
-    }
+    // if arg_matches.is_present("EPHEMERAL") {
+    //     config = config.patch("ratmand/ephemeral", true);
+    // }
 
     // Override the config verbosity value with the CLI value if desired
     if let Some(verbosity) = arg_matches.value_of("VERBOSE") {
@@ -117,13 +122,13 @@ fn main() {
 
     // If the config says that ratmand should daemonize itself...
     if ratmand_tree.get_bool_value("daemonize").unwrap_or(false) {
-        if let Err(err) = sysv_daemonize_app(config) {
+        if let Err(err) = sysv_daemonize_app(config, state_path) {
             eprintln!("ratmand suffered fatal error: {}", err);
             std::process::exit(codes::FATAL as i32);
         }
     }
     // Otherwise just normally initialise the Context
     else {
-        start_with_configuration(config)
+        start_with_configuration(config, state_path)
     }
 }

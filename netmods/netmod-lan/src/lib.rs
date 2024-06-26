@@ -18,7 +18,6 @@ pub(crate) use framing::MemoryEnvelopeExt;
 use async_trait::async_trait;
 use libratman::{
     endpoint::EndpointExt,
-    tokio::task::spawn_local,
     types::{Ident32, InMemoryEnvelope, Neighbour},
     Result,
 };

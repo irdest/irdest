@@ -327,8 +327,11 @@ pub(crate) async fn flood_frame(
     envelope: InMemoryEnvelope,
     except: Option<Ident32>,
 ) -> Result<()> {
+    let eepies = drivers.get_all().await;
+    trace!("Flood frame on {} interfaces", eepies.len());
+
     // Loop over every driver and send a version of the envelope to it
-    for (ep_name, ep) in drivers.get_all().await.into_iter() {
+    for (ep_name, ep) in eepies.into_iter() {
         let env = envelope.clone();
         if let Err(e) = ep.send(env, Neighbour::Flood, except).await {
             error!(

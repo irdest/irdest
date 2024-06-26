@@ -10,7 +10,7 @@ use libratman::{
     tokio::{
         net::TcpStream,
         sync::mpsc::{channel, Receiver, Sender},
-        task::spawn_local,
+        task::spawn,
         time,
     },
     types::{Ident32, InMemoryEnvelope},
@@ -47,7 +47,7 @@ pub(crate) async fn start_connection(
 
     let routes2 = Arc::clone(&routes);
     let sender2 = sender.clone();
-    spawn_local(async move {
+    spawn(async move {
         let tcp_stream = match connect(&session_data).await {
             Ok(tcp) => tcp,
             Err(e) => {
@@ -66,7 +66,7 @@ pub(crate) async fn start_connection(
             }
         };
 
-        spawn_local(Arc::clone(&peer).run());
+        spawn(Arc::clone(&peer).run());
         routes2.add_peer(id, Arc::clone(&peer)).await;
     });
 
@@ -86,7 +86,7 @@ pub(crate) async fn setup_cleanuptask(
     // For peers of incoming connections this sender is None, and
     // thus this code will never be run on a server.  Woops :)
     let routes = Arc::clone(&routes);
-    spawn_local(async move {
+    spawn(async move {
         debug!("setup_cleanuptask spawned");
         match rx.recv().await {
             Some(session_data) => {
