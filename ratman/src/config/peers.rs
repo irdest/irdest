@@ -40,6 +40,7 @@ impl PeeringBuilder {
         match self.links.get_by_name(driver_id).await {
             Some(endpoint) => {
                 // Ignore the peer_id for now
+                debug!("Start peering request with {address_str}");
                 let _peer_id = endpoint.start_peering(address_str).await;
                 Ok(())
             }

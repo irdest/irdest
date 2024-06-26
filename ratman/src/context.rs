@@ -163,15 +163,15 @@ impl RatmanContext {
         }
 
         // This never fails, we will have a map of netmods here, even if it is empty
-        {
-            let this = Arc::clone(&this);
-            new_async_thread("netmod-runner", 128, async move {
-                initialise_netmods(&this.config, &this.links, &this.meta_db).await;
-                this.tripwire.clone().await;
-                debug!("Netmod task system shutting down");
-                Ok(())
-            });
-        }
+        initialise_netmods(&this.config, &this.links, &this.meta_db).await;
+        // {
+        //     let this = Arc::clone(&this);
+        //     new_async_thread("netmod-runner", 128, async move {
+        //         this.tripwire.clone().await;
+        //         debug!("Netmod task system shutting down");
+        //         Ok(())
+        //     });
+        // }
 
         // Get the initial set of peers from the configuration.
         // Either this is done via the `peer_file` field, which is
