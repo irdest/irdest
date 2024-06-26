@@ -151,10 +151,13 @@ impl Socket {
                         };
 
                         let env = InMemoryEnvelope::parse_from_buffer(buf).unwrap();
+                        let payload = env.get_payload_slice();
+
+                        trace!("Decoding carrier frame payload: {:?}", payload);
+
                         match env.header.get_modes() {
                             crate::framing::modes::HANDSHAKE_ANNOUNCE => {
-                                let hshake: HandshakeV1 =
-                                    bincode::deserialize(&env.buffer).unwrap();
+                                let hshake: HandshakeV1 = bincode::deserialize(payload).unwrap();
 
                                 trace!("Recieving announce");
                                 table.set(peer, hshake.r_key_id()).await;
@@ -165,8 +168,7 @@ impl Socket {
                             }
                             crate::framing::modes::HANDSHAKE_REPLY => {
                                 trace!("Recieving announce reply");
-                                let hshake: HandshakeV1 =
-                                    bincode::deserialize(&env.buffer).unwrap();
+                                let hshake: HandshakeV1 = bincode::deserialize(payload).unwrap();
                                 table.set(peer, hshake.r_key_id()).await;
                             }
                             _ => {

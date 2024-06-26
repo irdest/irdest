@@ -1,12 +1,11 @@
-// SPDX-FileCopyrightText: 2022 Katharina Fey <kookie@spacekookie.de>
+// SPDX-FileCopyrightText: 2022, 2024 Katharina Fey <kookie@spacekookie.de>
 // SPDX-FileCopyrightText: 2022 embr <hi@liclac.eu>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use crate::context::RatmanContext;
-use async_std::sync::Arc;
 use prometheus_client::registry::Registry;
-use std::path::Path;
+use std::{path::Path, sync::Arc};
 use tide::{http::mime, prelude::*, utils::After, Request, Response};
 
 pub mod middleware;

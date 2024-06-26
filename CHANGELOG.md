@@ -26,7 +26,6 @@ Hope you enjoy!
 - ratcat `0.5.0`
 - ratctl `0.5.0`
 - libratman `0.5.0`
-- Irdest mblog `0.1.0`
 
 ### Added
 
@@ -45,6 +44,9 @@ Hope you enjoy!
   large message streams this means that the router will no longer run out of
   memory and crash.  Currently we hold back the whole message stream until all
   blocks are encoded to allow the manifest to be sent first.
+- Clients can now subscribe to an address (if they posses the auth token) or
+  namespace to be notified of future messages.  Missed messages are replayed
+  when restoring a subscription from a restarting client.
 
 ### Changed
 
@@ -53,10 +55,17 @@ Hope you enjoy!
 - User and developer manuals were completely overhauled
 - The Ratman configuration now uses the KDL language, which supports comments
   and nested blocks, without getting unwielding to edit.
-- Management functions (register addresses and subscriptions) has been moved
-  from `ratcat` to `ratctl`
-- Both `ratcat` and `ratctl` commandline interfaces have been overhauled
-- 
+- The `ratcat` CLI has changed significantly
+  - Managament functions (handle addresses, subscriptions, and in future
+  contacts, peers, links, routes, ...)  has been moved to `ratctl`
+  - Stream handling (sending and receiving data) remains in `ratcat`, with
+    easier commandline interfaces.
+- On-disk state has been changed from a random assortment of json files to the
+  [fjall](https://github.com/fjall-rs/fjall) embedded database, enabling better
+  persistence and upgradability.
+- Entries in the routing table support more than a single link, and will update
+  based on the most recently received announcement.  This behaviour is temporary
+  and will be replaced with real route scoring in the next release.
 - Many internal and external structural changes that aren't directly reflected
   in the user experience, but will make development and maintenance easier and
   faster in the future
@@ -83,6 +92,8 @@ Hope you enjoy!
 - Due to [kdl issue #65](https://github.com/kdl-org/kdl-rs/issues/65)
   insertions made to the `peers` block of the ratmand configuration
   produce wrong formatting for the first entry.
+- `ratcat` stream chunks are experimental and will start encoding invalid data
+  after 150-200MB of input data.
 
 
 ## 0.4.0 (2022-04-16)
