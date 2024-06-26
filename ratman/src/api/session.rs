@@ -408,8 +408,20 @@ pub(super) async fn single_session_exchange<'a>(
         m if m == cm::make(cm::INTRINSIC, cm::STATUS) => {
             let num_peers = ctx.routes.list_remote().await?.len() as u64;
             let num_local = crypto::list_addr_keys(&ctx.meta_db).len() as u64;
-            let num_auth = ctx.clients.active_auth().lock().await.len();
+            let num_auth = ctx.clients.active_auth().lock().await.len() as u64;
             let num_collector_workers = ctx.collector.num_workers().await;
+
+            raw_socket
+                .write_microframe(
+                    MicroframeHeader::intrinsic_noauth(),
+                    ServerPing::Status {
+                        num_peers,
+                        num_local,
+                        num_auth,
+                        num_collector_workers,
+                    },
+                )
+                .await?;
         }
         //
         //

@@ -57,7 +57,11 @@ impl RouteTable {
             metrics: metrics::RouteTableMetrics::default(),
         });
 
-        // When we _just_ come online
+        // When we have just come online we need to start a route activity
+        // checker for every peer.  Peers that were stored as "Active" in the
+        // database because they were the last time this instance ran, but have
+        // since disappeared will appear online after startup, until the task
+        // notices that they're not and marks them as such
         this.meta_db
             .routes
             .iter()
@@ -193,14 +197,14 @@ impl RouteTable {
                 // is older than 1 minute.  If so, we declare the route
                 // DOWN and end this task
                 let check = Utc::now();
-                sleep(Duration::from_secs(30)).await;
+                sleep(Duration::from_secs(10)).await;
                 match self.meta_db.routes.get(&peer_addr.to_string()).await {
                     Ok(Some(mut entry)) => {
                         //
                         // If the route is None it is a local address and we don't care
                         if let Some(route) = entry.route.as_mut() {
                             // todo: make this timeout configurable
-                            if (check - route.last_seen).num_seconds() > 60 {
+                            if (check - route.last_seen).num_seconds() > 30 {
                                 route.state = RouteState::Idle;
                                 debug!("No announcement in >60 seconds: marking address {peer_addr} as IDLE");
 
