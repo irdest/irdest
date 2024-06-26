@@ -11,6 +11,7 @@ use libratman::{
 use serde::{Deserialize, Serialize};
 use std::{any::Any, collections::BTreeMap, fmt::Display, sync::Arc};
 
+pub mod peers;
 pub mod addr;
 pub mod base_args;
 pub mod recv;
@@ -130,8 +131,8 @@ pub async fn command_filter(
                 ("addr", "list") => addr::list(ipc, base_args, op_matches).await,
                 //// =^-^= Status commands (ctl)
                 ("status", "system") => Ok(()),
-                ("status", "addr") => Ok(()),
-                ("status", "sub") => Ok(()),
+                //// =^-^= Peer commands (ctl)
+                ("peers", "list") => peers::list(ipc, base_args, op_matches).await,
                 //// =^-^= Stream subscription commands (ctl)
                 ("stream", "sub") => stream::subscribe(ipc, base_args, op_matches).await,
                 ("stream", "unsub") => stream::unsubscribe(ipc, base_args, op_matches).await,

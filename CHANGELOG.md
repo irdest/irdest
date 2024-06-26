@@ -47,6 +47,9 @@ Hope you enjoy!
 - Clients can now subscribe to an address (if they posses the auth token) or
   namespace to be notified of future messages.  Missed messages are replayed
   when restoring a subscription from a restarting client.
+- Domain name resolution in `netmod-inet`: you can now list your peers as any
+  DNS accessible domain entry and ratmand will resolve the IP address itself.
+  This may fail if no resolver is available on your system.
 
 ### Changed
 
@@ -87,11 +90,19 @@ Hope you enjoy!
   - ed25519-dalek is used for signatures, key management and secret negotiation
   - chacha20 is used for block encryption as per the [ERIS] specification
 
+### Removed
+
+- `armv7l` CI pipelines were soft-removed since the new database backend doesn't
+  currently support 32-bit systems.  This will change with the next release of
+  fjall, but for the time being we're disabling those targets.
+- The web dashboard is currently forcably disabled.  Some diagnostics can be
+  retrieved via `ratctl peers` or `ratctl status`.
+
 ### Known bugs
 
-- Due to [kdl issue #65](https://github.com/kdl-org/kdl-rs/issues/65)
-  insertions made to the `peers` block of the ratmand configuration
-  produce wrong formatting for the first entry.
+- Due to [kdl issue #65](https://github.com/kdl-org/kdl-rs/issues/65) insertions
+  made to the `peers` block of the ratmand configuration produce wrong
+  formatting for the first entry.
 - `ratcat` stream chunks are experimental and will start encoding invalid data
   after 150-200MB of input data.
 

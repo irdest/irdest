@@ -164,6 +164,10 @@ pub struct BlockCollector {
 }
 
 impl BlockCollector {
+    pub async fn num_workers(&self) -> u64 {
+        self.inner.read().await.len() as u64
+    }
+    
     pub async fn restore(
         journal: Arc<Journal>,
         meta_db: Arc<MetadataDb>,

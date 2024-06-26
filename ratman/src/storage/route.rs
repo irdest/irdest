@@ -36,7 +36,7 @@ pub struct RouteEntry {
 }
 
 /// Describe the state of a given route
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum RouteState {
     Active,
     Idle,

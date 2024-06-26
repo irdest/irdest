@@ -21,7 +21,7 @@ use crate::{
     frame::{
         generate::generate_cstring,
         micro::parse::vec_of,
-        parse::{self, take_cstring, take_id, take_u32},
+        parse::{self, take_cstring, take_id, take_u32, take_u64},
         FrameGenerator, FrameParser,
     },
     types::{Address, Ident32},
@@ -74,6 +74,10 @@ impl FrameParser for Handshake {
 }
 
 /// Router-client ping and response type
+// todo: this is a big kitchen sink of a protocol type and I hate it.  These
+// should not exist and instead be their own types.  The header should contain
+// in its mode field whether it contains an error, and then the client can
+// handle it that way.
 #[derive(Debug)]
 pub enum ServerPing {
     /// A generic "everything is good" response
@@ -96,8 +100,23 @@ pub enum ServerPing {
     Subscription { sub_id: Ident32, sub_bind: CString },
     /// A list of addresses, either local or remote
     AddrList(Vec<Address>),
+    /// A list of peer entries
+    PeerList(PeerList),
     /// Indicate that a client should connect to a separate socket to input a data stream
     SendSocket { socket_bind: CString },
+    Status {
+        num_peers: u64,
+        num_local: u64,
+        num_auth: u64,
+        num_collector_workers: u64,
+    },
+}
+
+pub struct RouterStatus {
+    pub num_peers: u64,
+    pub num_local: u64,
+    pub num_auth: u64,
+    pub num_collector_workers: u64,
 }
 
 impl FrameGenerator for ServerPing {
@@ -139,9 +158,25 @@ impl FrameGenerator for ServerPing {
                 buf.push(7);
                 list.generate(buf)?;
             }
-            Self::SendSocket { socket_bind } => {
+            Self::PeerList(list) => {
                 buf.push(8);
+                list.generate(buf)?;
+            }
+            Self::SendSocket { socket_bind } => {
+                buf.push(9);
                 generate_cstring(socket_bind, buf)?;
+            }
+            Self::Status {
+                num_peers,
+                num_local,
+                num_auth,
+                num_collector_workers,
+            } => {
+                buf.push(10);
+                num_peers.generate(buf)?;
+                num_local.generate(buf)?;
+                num_auth.generate(buf)?;
+                num_collector_workers.generate(buf)?;
             }
         }
 
@@ -196,9 +231,27 @@ impl FrameParser for ServerPing {
                 Ok(Self::AddrList(list))
             }
             8 => {
+                let (input_, list) = PeerList::parse(input)?;
+                input = input_;
+                list.map(|list| Self::PeerList(list))
+            }
+            9 => {
                 let (input_, send_bind) = take_cstring(input)?;
                 input = input_;
                 send_bind.map(|socket_bind| Self::SendSocket { socket_bind })
+            }
+            10 => {
+                let (input_, num_peers) = take_u64(input)?;
+                let (input_, num_local) = take_u64(input_)?;
+                let (input_, num_auth) = take_u64(input_)?;
+                let (input_, num_collector_workers) = take_u64(input_)?;
+                input = input_;
+                Ok(Self::Status {
+                    num_peers,
+                    num_local,
+                    num_auth,
+                    num_collector_workers,
+                })
             }
             _ => Err(EncodingError::Parsing(format!("Invalid ServerPing type={}", tt)).into()),
         };

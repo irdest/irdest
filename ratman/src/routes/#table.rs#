@@ -57,7 +57,8 @@ impl RouteTable {
             metrics: metrics::RouteTableMetrics::default(),
         });
 
-        // When we _just_ come online
+        // When we have just come online we need to start a route activity
+        // checker for every peer.  Peers 
         this.meta_db
             .routes
             .iter()

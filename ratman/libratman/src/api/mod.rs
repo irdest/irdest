@@ -33,7 +33,7 @@ pub use _trait::{RatmanIpcExtV1, RatmanStreamExtV1, ReadStream};
 
 mod subscriber;
 pub use subscriber::SubscriptionHandle;
-use types::{RecvMany, SendMany};
+use types::{PeerEntry, RecvMany, RouterStatus, SendMany};
 
 pub mod socket_v2;
 pub mod types;
@@ -263,49 +263,101 @@ impl RatmanIpcExtV1 for RatmanIpc {
         }
     }
 
-    async fn contact_add(
-        self: &Arc<Self>,
-        _auth: AddrAuth,
-        _addr: Address,
-        _note: Option<String>,
-        _tags: BTreeMap<String, String>,
-        _trust: u8,
-    ) -> crate::Result<Ident32> {
-        todo!(
-            "This API endpoint is unimplemented in {}",
-            version_str(&crate::api::VERSION)
-        );
+    async fn peers_list(self: &Arc<Self>) -> Result<Vec<PeerEntry>> {
+        let mut socket = self.socket().lock().await;
+        socket
+            .write_microframe(
+                MicroframeHeader {
+                    modes: cm::make(cm::PEER, cm::LIST),
+                    ..Default::default()
+                },
+                (),
+            )
+            .await?;
+
+        let (_, ping) = socket.read_microframe::<ServerPing>().await?;
+
+        match ping? {
+            ServerPing::PeerList(pl) => Ok(pl.list),
+            ServerPing::Error(e) => Err(e.into()),
+            _ => Err(ClientError::ConnectionLost.into()),
+        }
     }
 
-    async fn contact_modify(
-        self: &Arc<Self>,
-        _auth: AddrAuth,
+    async fn router_status(self: &Arc<Self>) -> Result<RouterStatus> {
+        let mut socket = self.socket().lock().await;
+        socket
+            .write_microframe(
+                MicroframeHeader {
+                    modes: cm::make(cm::INTRINSIC, cm::STATUS),
+                    ..Default::default()
+                },
+                (),
+            )
+            .await?;
 
-        // Selection filter section
-        _addr_filter: Vec<Address>,
-        _note_filter: Option<String>,
-        _tags_filter: BTreeMap<String, String>,
+        let (_, ping) = socket.read_microframe::<ServerPing>().await?;
 
-        // Modification section
-        _note_modify: Modify<String>,
-        _tags_modify: Modify<(String, String)>,
-    ) -> crate::Result<Vec<Ident32>> {
-        todo!(
-            "This API endpoint is unimplemented in {}",
-            version_str(&crate::api::VERSION)
-        );
+        match ping? {
+            ServerPing::Status {
+                num_peers,
+                num_local,
+                num_auth,
+                num_collector_workers,
+            } => Ok(RouterStatus {
+                num_peers,
+                num_local,
+                num_auth,
+                num_collector_workers,
+            }),
+            ServerPing::Error(e) => Err(e.into()),
+            _ => Err(ClientError::ConnectionLost.into()),
+        }
     }
 
-    async fn contact_delete(
-        self: &Arc<Self>,
-        _auth: AddrAuth,
-        _addr: Address,
-    ) -> crate::Result<()> {
-        todo!(
-            "This API endpoint is unimplemented in {}",
-            version_str(&crate::api::VERSION)
-        );
-    }
+    // async fn contact_add(
+    //     self: &Arc<Self>,
+    //     _auth: AddrAuth,
+    //     _addr: Address,
+    //     _note: Option<String>,
+    //     _tags: BTreeMap<String, String>,
+    //     _trust: u8,
+    // ) -> crate::Result<Ident32> {
+    //     todo!(
+    //         "This API endpoint is unimplemented in {}",
+    //         version_str(&crate::api::VERSION)
+    //     );
+    // }
+
+    // async fn contact_modify(
+    //     self: &Arc<Self>,
+    //     _auth: AddrAuth,
+
+    //     // Selection filter section
+    //     _addr_filter: Vec<Address>,
+    //     _note_filter: Option<String>,
+    //     _tags_filter: BTreeMap<String, String>,
+
+    //     // Modification section
+    //     _note_modify: Modify<String>,
+    //     _tags_modify: Modify<(String, String)>,
+    // ) -> crate::Result<Vec<Ident32>> {
+    //     todo!(
+    //         "This API endpoint is unimplemented in {}",
+    //         version_str(&crate::api::VERSION)
+    //     );
+    // }
+
+    // async fn contact_delete(
+    //     self: &Arc<Self>,
+    //     _auth: AddrAuth,
+    //     _addr: Address,
+    // ) -> crate::Result<()> {
+    //     todo!(
+    //         "This API endpoint is unimplemented in {}",
+    //         version_str(&crate::api::VERSION)
+    //     );
+    // }
 
     async fn subs_available(
         self: &Arc<Self>,

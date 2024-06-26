@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use std::{collections::BTreeMap, net::SocketAddr, sync::Arc};
 use tokio::{io::AsyncRead, sync::MutexGuard};
 
-use super::types::ServerPing;
+use super::types::{PeerEntry, RouterStatus, ServerPing};
 
 #[async_trait]
 pub trait RatmanIpcExtV1 {
@@ -55,39 +55,52 @@ pub trait RatmanIpcExtV1 {
     async fn addr_down(self: &Arc<Self>, auth: AddrAuth, addr: Address) -> Result<()>;
 
     //
+    // (@^_^@) Peers commands
+    //
+
+    async fn peers_list(self: &Arc<Self>) -> Result<Vec<PeerEntry>>;
+
+    //
+    // (@^_^@) Status commands
+    //
+
+    async fn router_status(self: &Arc<Self>) -> Result<RouterStatus>;
+    
+    
+    //
     // (@^_^@) Contact commands
     //
 
-    /// Create a new contact entry for an address
-    ///
-    /// Each client has its own contact book.  Currently there's no
-    /// way to share contacts between clients.
-    async fn contact_add(
-        self: &Arc<Self>,
-        auth: AddrAuth,
-        addr: Address,
-        note: Option<String>,
-        tags: BTreeMap<String, String>,
-        trust: u8,
-    ) -> Result<Ident32>;
+    // /// Create a new contact entry for an address
+    // ///
+    // /// Each client has its own contact book.  Currently there's no
+    // /// way to share contacts between clients.
+    // async fn contact_add(
+    //     self: &Arc<Self>,
+    //     auth: AddrAuth,
+    //     addr: Address,
+    //     note: Option<String>,
+    //     tags: BTreeMap<String, String>,
+    //     trust: u8,
+    // ) -> Result<Ident32>;
 
-    /// Apply a simple change across one or multiple contact entries
-    async fn contact_modify(
-        self: &Arc<Self>,
-        auth: AddrAuth,
+    // /// Apply a simple change across one or multiple contact entries
+    // async fn contact_modify(
+    //     self: &Arc<Self>,
+    //     auth: AddrAuth,
 
-        // Selection filter section
-        addr_filter: Vec<Address>,
-        note_filter: Option<String>,
-        tags_filter: BTreeMap<String, String>,
+    //     // Selection filter section
+    //     addr_filter: Vec<Address>,
+    //     note_filter: Option<String>,
+    //     tags_filter: BTreeMap<String, String>,
 
-        // Modification section
-        note_modify: Modify<String>,
-        tags_modify: Modify<(String, String)>,
-    ) -> Result<Vec<Ident32>>;
+    //     // Modification section
+    //     note_modify: Modify<String>,
+    //     tags_modify: Modify<(String, String)>,
+    // ) -> Result<Vec<Ident32>>;
 
-    /// Delete existing contact entries via filters
-    async fn contact_delete(self: &Arc<Self>, auth: AddrAuth, addr: Address) -> Result<()>;
+    // /// Delete existing contact entries via filters
+    // async fn contact_delete(self: &Arc<Self>, auth: AddrAuth, addr: Address) -> Result<()>;
 
     //
     // (@^_^@) Subscription commands

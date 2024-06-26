@@ -108,12 +108,6 @@ pub fn diffie_hellman(self_keypair: &Keypair, peer: Address) -> Option<SharedSec
     Some(self_x25519_secret.diffie_hellman(&peer_x25519_public))
 }
 
-// Cache decrypted address keys and shared secret keys for particular streams
-static KEY_CACHE: Lazy<Mutex<BTreeMap<Ident32, Keypair>>> =
-    Lazy::new(|| Mutex::new(BTreeMap::default()));
-static SHARED_CACHE: Lazy<Mutex<BTreeMap<(Address, Address), SharedSecret>>> =
-    Lazy::new(|| Mutex::new(BTreeMap::default()));
-
 pub fn list_addr_keys(meta_db: &Arc<MetadataDb>) -> Vec<Address> {
     meta_db
         .addrs
@@ -218,35 +212,35 @@ pub async fn destroy_addr_key(meta_db: &Arc<MetadataDb>, addr: Address) -> Resul
     Ok(())
 }
 
-/// Encrypt a chunk for an ongoing session.
-///
-/// Panics: This function will panic if start_stream is not called first!
-pub async fn encrypt_chunk_for_key<const L: usize>(
-    _meta_db: &Arc<MetadataDb>,
-    self_addr: Address,
-    target_addr: Address,
-    _auth: AddrAuth,
-    chunk: &mut [u8; L],
-) -> [u8; 12] {
-    let map = SHARED_CACHE.lock().await;
-    let shared = map
-        .get(&(self_addr, target_addr))
-        .expect("Shared secret not found in cache; must call `start_stream` first!");
-    encrypt_chunk(shared, chunk)
-}
+// /// Encrypt a chunk for an ongoing session.
+// ///
+// /// Panics: This function will panic if start_stream is not called first!
+// pub async fn encrypt_chunk_for_key<const L: usize>(
+//     _meta_db: &Arc<MetadataDb>,
+//     self_addr: Address,
+//     target_addr: Address,
+//     _auth: AddrAuth,
+//     chunk: &mut [u8; L],
+// ) -> [u8; 12] {
+//     let map = SHARED_CACHE.lock().await;
+//     let shared = map
+//         .get(&(self_addr, target_addr))
+//         .expect("Shared secret not found in cache; must call `start_stream` first!");
+//     encrypt_chunk(shared, chunk)
+// }
 
-/// Sign a payload with a cached secret key
-pub async fn sign_message(auth: AddrAuth, msg: &[u8]) -> Result<Signature> {
-    Ok(KEY_CACHE
-        .lock()
-        .await
-        .get(&auth.token)
-        .ok_or(RatmanError::Encoding(libratman::EncodingError::Encryption(
-            "no key cached for this AddrAuth token".to_owned(),
-        )))?
-        .inner
-        .sign(msg))
-}
+// /// Sign a payload with a cached secret key
+// pub async fn sign_message(auth: AddrAuth, msg: &[u8]) -> Result<Signature> {
+//     Ok(KEY_CACHE
+//         .lock()
+//         .await
+//         .get(&auth.token)
+//         .ok_or(RatmanError::Encoding(libratman::EncodingError::Encryption(
+//             "no key cached for this AddrAuth token".to_owned(),
+//         )))?
+//         .inner
+//         .sign(msg))
+// }
 
 /// Verify the signature of a payload with a peer's public key (address)
 pub fn verify_message(peer: Address, msg: &[u8], signature: Signature) -> Option<()> {

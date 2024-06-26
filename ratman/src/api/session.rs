@@ -12,8 +12,8 @@ use libratman::{
     api::{
         socket_v2::RawSocketHandle,
         types::{
-            AddrCreate, AddrDestroy, AddrDown, AddrList, AddrUp, Handshake, RecvMany, RecvOne,
-            SendMany, SendOne, ServerPing, SubsCreate, SubsDelete, SubsRestore,
+            AddrCreate, AddrDestroy, AddrDown, AddrList, AddrUp, Handshake, PeerList, RecvMany,
+            RecvOne, SendMany, SendOne, ServerPing, SubsCreate, SubsDelete, SubsRestore,
         },
         version_str, versions_compatible,
     },
@@ -389,6 +389,27 @@ pub(super) async fn single_session_exchange<'a>(
         // ^-^ Resubscribe from new address events
         m if m == cm::make(cm::ADDR, cm::RESUB) => {
             todo!()
+        }
+        //
+        //
+        // ^-^ List all available peers with some metadata
+        m if m == cm::make(cm::PEER, cm::LIST) => {
+            let peer_list = ctx.routes.list_remote().await?;
+            raw_socket
+                .write_microframe(
+                    MicroframeHeader::intrinsic_noauth(),
+                    ServerPing::PeerList(PeerList { list: peer_list }),
+                )
+                .await?;
+        }
+        //
+        //
+        // ^-^ Get some diagnostics about the current status of the router
+        m if m == cm::make(cm::INTRINSIC, cm::STATUS) => {
+            let num_peers = ctx.routes.list_remote().await?.len() as u64;
+            let num_local = crypto::list_addr_keys(&ctx.meta_db).len() as u64;
+            let num_auth = ctx.clients.active_auth().lock().await.len();
+            let num_collector_workers = ctx.collector.num_workers().await;
         }
         //
         //

@@ -153,27 +153,13 @@ fn setup_cli() -> Command {
                     //// clients and links are connected, how many peers are
                     //// seen online, what the network global latency is
                     Command::new("system").about("Print the overall system status"),
-                    //// Print individual address statistics, for example how
-                    //// much traffic that address has produced in various
-                    //// timescales, etc
-                    Command::new("addr")
-                        .about("Print individual address statistics")
-                        .args([
-                            Arg::new("irdest address")
-                                .help("Provide the address to query")
-                                .default_value("current identity address")
-                                .action(ArgAction::Set)
-                        ]),
-                    //// Print statistics about the throughput and
-                    //// connectivity of a specific link
-                    Command::new("link")
-                        .about("Print network link statistics")
-                        .args([
-                            Arg::new("link id")
-                                .help("Provide the link to query")
-                                .action(ArgAction::Set)
-                        ]),
                 ]),
+            Command::new("peers")
+                .about("Information about other peers on the network")
+                .arg_required_else_help(true)
+                .subcommands([
+                    Command::new("list").about("List all available peers on the network along some metadata about them"),
+                ])
         ])
         .after_help(
             "For more documentation, please consult the user manual at https://docs.irde.st/user/",

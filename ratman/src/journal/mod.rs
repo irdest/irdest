@@ -37,7 +37,10 @@ use self::{
 use crate::storage::route::RouteData;
 
 use fjall::{compaction::SizeTiered, Keyspace, PartitionCreateOptions, PartitionHandle};
-use libratman::frame::{carrier::ManifestFrame, FrameParser};
+use libratman::{
+    frame::{carrier::ManifestFrame, FrameParser},
+    tokio::task::spawn_blocking,
+};
 use libratman::{
     types::{Ident32, InMemoryEnvelope},
     Result,
@@ -118,6 +121,11 @@ impl Journal {
 
     pub fn save_as_known(&self, frame_id: &Ident32) -> Result<()> {
         self.seen_frames.insert(frame_id)
+    }
+
+    pub async fn num_blocks(self: &Arc<Self>) -> Result<u64> {
+        let this = Arc::clone(&self);
+        Ok(spawn_blocking(move || this.blocks.0.len().map(|l| l as u64)).await??)
     }
 
     /// Store a frame in the journal

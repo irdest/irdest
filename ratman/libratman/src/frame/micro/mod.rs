@@ -37,10 +37,8 @@ pub mod client_modes {
     pub const RECV: u8      = 0x5;
     /// Send mode
     pub const SEND: u8      = 0x6;
-    /// General status queries
-    pub const STATUS: u8    = 0x7;
     /// Incoming message streams
-    pub const STREAM: u8    = 0x8;
+    pub const STREAM: u8    = 0x7;
     
 
     //// Creating new data or destroying it permanently
@@ -66,7 +64,8 @@ pub mod client_modes {
     pub const QUERY: u8     = 0x31;
     pub const ONE: u8       = 0x32;
     pub const MANY: u8      = 0x33;
-
+    pub const STATUS: u8    = 0x34;
+    
 
     /// Assemble a full mode byte from a command namespace and a
     /// compatible operator.  Not all mode encodings are valid and may
