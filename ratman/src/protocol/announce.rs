@@ -76,16 +76,10 @@ impl AddressAnnouncer {
             .await
             .unwrap();
 
-        info!("Announce buffer: {announce_buffer:?}");
-
         let full_anon_buffer =
             InMemoryEnvelope::from_header_and_payload(header, announce_buffer).unwrap();
 
         trace!("Send announce: {:?}", full_anon_buffer.buffer);
-
-        let (r, x) = AnnounceFrame::parse(full_anon_buffer.get_payload_slice()).unwrap();
-        assert_eq!(r, EMPTY);
-        let _ = x.unwrap();
 
         // Send it into the network
         procedures::flood_frame(&ctx.routes, &ctx.links, full_anon_buffer, None).await?;
