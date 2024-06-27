@@ -103,8 +103,11 @@ Hope you enjoy!
 - Due to [kdl issue #65](https://github.com/kdl-org/kdl-rs/issues/65) insertions
   made to the `peers` block of the ratmand configuration produce wrong
   formatting for the first entry.
-- `ratcat` stream chunks are experimental and will start encoding invalid data
-  after 150-200MB of input data.
+- Very arge message streams (>1GB) sometimes get stuck in decoding.  For general
+  performance reasons it's recommended to chunk these (in `ratcat` this can be
+  done via the `send -z _` parameter) into smaller sub-streams.  On the
+  receiving end either use `ratcat recv -c 0` or calculate the exact number of
+  stream segments you expect.  The Rust API similarly exposes this feature.
 
 
 ## 0.4.0 (2022-04-16)
