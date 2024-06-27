@@ -14,6 +14,7 @@ use std::{
         mpsc::{sync_channel, Receiver as SyncReceiver, SyncSender},
         Arc,
     },
+    thread::Thread,
 };
 use tokio::{
     runtime::{Builder, Runtime},
@@ -87,14 +88,17 @@ where
     O: Sized + Send + 'static,
 {
     let label = label.into();
-    std::thread::spawn(move || {
-        trace!("Starting new async thread system: {label}");
-        let system = AsyncSystem::new(label.clone(), stack_mb);
-        match system.exec(f) {
-            Ok(_) => trace!("Worker thread {label} completed successfully!"),
-            Err(ref e) => error!("Worker thread {label} encountered a fatal error: {e}"),
-        }
-    });
+    std::thread::Builder::new()
+        .name(label.clone())
+        .stack_size(stack_mb * 1024 * 1024)
+        .spawn(move || {
+            trace!("Starting new async thread system: {label}");
+            let system = AsyncSystem::new(label.clone(), stack_mb);
+            match system.exec(f) {
+                Ok(_) => trace!("Worker thread {label} completed successfully!"),
+                Err(ref e) => error!("Worker thread {label} encountered a fatal error: {e}"),
+            }
+        });
 }
 
 #[test]
