@@ -9,7 +9,9 @@ use crate::{
     routes::{EpNeighbourPair, RouteTable},
 };
 use libratman::tokio::{
-    select, sync::{broadcast::Sender as BcastSender, mpsc::Sender}, task::yield_now,
+    select,
+    sync::{broadcast::Sender as BcastSender, mpsc::Sender},
+    task::yield_now,
 };
 use libratman::{
     frame::carrier::modes::{self as fmodes, DATA, MANIFEST},
@@ -184,12 +186,19 @@ pub(crate) async fn exec_switching_batch(
                         // Otherwise it's a data frame and we queue it in the collector
                         else {
                             trace!("Queue locally addressed frame in collector");
-                            if let Err(_e) =
+                            info!("Data frame has sequence ID: {:?}", header.get_seq_id());
+
+                            if let Err(e) =
                                 collector_tx.send(InMemoryEnvelope { header, buffer }).await
                             {
+                                let (s_hash, s_num, s_max) = match header.get_seq_id() {
+                                    Some(seq) => (seq.hash.pretty_string(), seq.num, seq.max),
+                                    None => ("unknown".to_string(), 0, 0),
+                                };
+
                                 error!(
-                                    "Failed to queue frame in sequence {:?}",
-                                    header.get_seq_id()
+                                    "Failed to queue frame in sequence {}[{}/{}]: {e}",
+                                    s_hash, s_num, s_max
                                 );
                                 continue;
                             }

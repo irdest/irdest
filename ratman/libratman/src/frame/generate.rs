@@ -166,18 +166,6 @@ impl<Tz: TimeZone> FrameGenerator for DateTime<Tz> {
     }
 }
 
-impl FrameGenerator for Option<SequenceIdV1> {
-    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
-        match self {
-            Some(seq_id) => seq_id.generate(buf),
-            None => {
-                buf.push(0);
-                Ok(())
-            }
-        }
-    }
-}
-
 pub fn generate_cstring(cstr: CString, buf: &mut Vec<u8>) -> Result<()> {
     buf.extend_from_slice(cstr.as_bytes_with_nul());
     Ok(())

@@ -19,7 +19,7 @@ use libratman::{
             mpsc::{channel, Receiver, Sender},
             RwLock,
         },
-        task::{self, spawn_blocking},
+        task::{self},
     },
     types::{Ident32, InMemoryEnvelope, SequenceIdV1},
     EncodingError, RatmanError, Result,
