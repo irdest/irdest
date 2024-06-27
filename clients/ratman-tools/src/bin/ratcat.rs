@@ -48,7 +48,10 @@ pub fn setup_cli() -> Command {
                     .long("out")
                     .value_parser(["lines", "json"])
                     .default_value("lines"),
-                arg!(-q --quiet "Disable additional output.  Results are still sent to stdout, making it easier to use ratcat in scripts")
+                Arg::new("quiet")
+                    .action(ArgAction::SetTrue)
+                    .short('q')
+                    .help("Disable additional output.  Results are still sent to stdout, making it easier to use ratcat in scripts")
             ]
         )
         .subcommands([

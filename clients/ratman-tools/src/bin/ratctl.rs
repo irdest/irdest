@@ -196,15 +196,10 @@ fn main() {
         let cli = setup_cli();
         let m = cli.get_matches();
         let base_args = parse_base_args(&m);
-        let quiet = base_args.quiet;
 
         match run_program(m, base_args).await {
-            Ok(()) => {
-                if !quiet {
-                    eprintln!("ratcctl completed successfully");
-                }
-                std::process::exit(0);
-            }
+            Ok(()) => std::process::exit(0),
+
             Err(RatmanError::User(u)) => {
                 eprintln!("You did it wrong: {u}");
                 std::process::exit(1);

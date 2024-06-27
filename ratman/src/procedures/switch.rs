@@ -194,7 +194,6 @@ pub(crate) async fn exec_switching_batch(
                         // Otherwise it's a data frame and we queue it in the collector
                         else {
                             trace!("Queue locally addressed frame in collector");
-                            info!("Data frame has sequence ID: {:?}", header.get_seq_id());
 
                             if let Err(e) =
                                 collector_tx.send(InMemoryEnvelope { header, buffer }).await

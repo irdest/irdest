@@ -16,6 +16,7 @@ pub use link::*;
 pub use peer::*;
 pub use recv::*;
 pub use send::*;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     frame::{
@@ -27,8 +28,9 @@ use crate::{
     types::{Address, Ident32},
     ClientError, EncodingError, Result,
 };
+use core::fmt;
 use nom::{bytes::complete::take, IResult};
-use std::ffi::CString;
+use std::{ffi::CString, fmt::Display};
 
 /// Sent from the router to the client when a client connects
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -112,11 +114,22 @@ pub enum ServerPing {
     },
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct RouterStatus {
     pub num_peers: u64,
     pub num_local: u64,
     pub num_auth: u64,
     pub num_collector_workers: u64,
+}
+
+impl Display for RouterStatus {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "known peers: {}, local addrs: {}, active auths: {}, collector workers: {}",
+            self.num_peers, self.num_local, self.num_auth, self.num_collector_workers
+        )
+    }
 }
 
 impl FrameGenerator for ServerPing {

@@ -16,6 +16,7 @@ pub mod base_args;
 pub mod peers;
 pub mod recv;
 pub mod send;
+pub mod status;
 pub mod stream;
 
 pub const RATS: &'static str = include_str!("../rats.ascii");
@@ -56,6 +57,13 @@ pub(crate) fn parse_field<'m, T: Any + Sync + Send + Clone>(
     Ok(m.get_one::<T>(key).ok_or(UserError::MissingInput(
         "Required input {key} is missing!".to_owned(),
     ))?)
+}
+
+pub(crate) fn encode(tt: impl Display + Serialize, fmt: OutputFormat) -> String {
+    match fmt {
+        OutputFormat::Json => serde_json::to_string_pretty(&tt).unwrap(),
+        OutputFormat::Lines => format!("{}", tt),
+    }
 }
 
 pub(crate) fn encode_map<
@@ -130,7 +138,7 @@ pub async fn command_filter(
                 ("addr", "down") => addr::down(ipc, base_args, op_matches).await,
                 ("addr", "list") => addr::list(ipc, base_args, op_matches).await,
                 //// =^-^= Status commands (ctl)
-                ("status", "system") => Ok(()),
+                ("status", "system") => status::system(ipc, base_args, op_matches).await,
                 //// =^-^= Peer commands (ctl)
                 ("peers", "list") => peers::list(ipc, base_args, op_matches).await,
                 //// =^-^= Stream subscription commands (ctl)

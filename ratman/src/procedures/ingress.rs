@@ -119,14 +119,14 @@ async fn reassemble_message_stream(
                 drop(compat_null);
                 select! {
                     biased;
-                    _ = tw => break,
+                    _ = tw => return Ok(()),
                     _ = block_notify.recv() => continue
                 }
             }
         }
     }
 
-    trace!("Passed re-assembly check!");
+    info!("Stream from {} passed re-assembly check!", letterhead.from);
 
     match ctx
         .subs
@@ -152,6 +152,10 @@ async fn reassemble_message_stream(
                 bcast_tx.send((letterhead, read_cap)).unwrap();
                 Ok(())
             } else {
+                warn!(
+                    "Stream from {} is stuck: no active receivers found",
+                    letterhead.from
+                );
                 Err(e)
             }
         }
@@ -192,7 +196,7 @@ pub async fn handle_subscription_socket(
                 {
                     error!("failed to send stream letterhead: {e}");
                     if let Err(e) = ctx.subs.missed_item(letterhead, read_cap).await {
-                        error!("failed to persist missed item; client will miss this one: {e}");
+                        error!("failed to persist item; client will miss this one: {e}");
                     }
                     break;
                 }
@@ -207,7 +211,7 @@ pub async fn handle_subscription_socket(
                 {
                     error!("subscription stream has died: {e}");
                     if let Err(e) = ctx.subs.missed_item(letterhead, read_cap).await {
-                        error!("failed to persist missed item; client will miss this one: {e}");
+                        error!("failed to persist item; client will miss this one: {e}");
                     }
                     break;
                 }

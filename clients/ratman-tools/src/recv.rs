@@ -43,7 +43,7 @@ pub async fn receive(
 
     loop {
         if !base_args.quiet {
-        eprintln!("Waiting...");
+            eprintln!("Waiting...");
         }
 
         let lh = match stream_gen.wait_for_manifest().await {
@@ -52,12 +52,12 @@ pub async fn receive(
             Err(e) => return Err(e),
         };
 
-        // if !base_args.quiet {
-        eprintln!(
-            "Receiving message stream: {}",
-            serde_json::to_string_pretty(&lh)?
-        );
-        // }
+        if !base_args.quiet {
+            eprintln!(
+                "Receiving message stream: {}",
+                serde_json::to_string_pretty(&lh)?
+            );
+        }
 
         let mut stdout = tokio::io::stdout();
         tokio::io::copy(
@@ -67,7 +67,7 @@ pub async fn receive(
         )
         .await?;
         if !base_args.quiet {
-        eprintln!("Next slide please...");
+            eprintln!("Next slide please...");
         }
         stdout.flush().await?;
     }

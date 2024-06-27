@@ -76,7 +76,7 @@ pub fn parse_base_args(m: &ArgMatches) -> BaseArgs {
         )))
         .cloned();
 
-    let quiet = m.contains_id("quiet");
+    let quiet = m.get_flag("quiet");
 
     BaseArgs {
         identity_path: identity_file_path,
