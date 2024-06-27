@@ -21,8 +21,10 @@ fn setup_db() -> Keyspace {
     .unwrap()
 }
 
-#[test]
-fn insert_get_frames() {
+use libratman::tokio;
+
+#[tokio::test]
+async fn insert_get_frames() {
     let db = setup_db();
     let journal = Journal::new(db).unwrap();
 
@@ -49,9 +51,14 @@ fn insert_get_frames() {
     journal
         .frames
         .insert(frame_id.to_string(), &frame_data)
+        .await
         .unwrap();
-    journal.seen_frames.insert(&frame_id).unwrap();
+    journal
+        .seen_frames
+        .insert(frame_id.to_string(), &true)
+        .await
+        .unwrap();
 
-    let recovered_event = journal.frames.get(&frame_id.to_string()).unwrap();
+    let recovered_event = journal.frames.get(&frame_id.to_string()).await.unwrap();
     assert_eq!(Some(frame_data), recovered_event);
 }

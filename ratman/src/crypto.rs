@@ -13,19 +13,17 @@ use crate::storage::{
     MetadataDb,
 };
 use libratman::{
-    tokio::sync::Mutex,
     types::{AddrAuth, Address, Ident32},
     ClientError, RatmanError, Result,
 };
-use once_cell::sync::Lazy;
 use rand::{rngs::OsRng, thread_rng, RngCore};
-use std::{collections::BTreeMap, convert::TryInto, ffi::CString, sync::Arc};
+use std::{convert::TryInto, ffi::CString, sync::Arc};
 
 // Cryptography imports
 use chacha20::cipher::{KeyIvInit, StreamCipher};
 use chacha20::ChaCha20;
 use curve25519_dalek::edwards::CompressedEdwardsY;
-use ed25519_dalek::{ExpandedSecretKey, PublicKey, SecretKey, Signature, Signer, Verifier};
+use ed25519_dalek::{ExpandedSecretKey, PublicKey, SecretKey, Signature, Verifier};
 use x25519_dalek::{PublicKey as X25519Pubkey, SharedSecret, StaticSecret as X25519Secret};
 
 /// An ed25519 keypair
@@ -212,102 +210,9 @@ pub async fn destroy_addr_key(meta_db: &Arc<MetadataDb>, addr: Address) -> Resul
     Ok(())
 }
 
-// /// Encrypt a chunk for an ongoing session.
-// ///
-// /// Panics: This function will panic if start_stream is not called first!
-// pub async fn encrypt_chunk_for_key<const L: usize>(
-//     _meta_db: &Arc<MetadataDb>,
-//     self_addr: Address,
-//     target_addr: Address,
-//     _auth: AddrAuth,
-//     chunk: &mut [u8; L],
-// ) -> [u8; 12] {
-//     let map = SHARED_CACHE.lock().await;
-//     let shared = map
-//         .get(&(self_addr, target_addr))
-//         .expect("Shared secret not found in cache; must call `start_stream` first!");
-//     encrypt_chunk(shared, chunk)
-// }
-
-// /// Sign a payload with a cached secret key
-// pub async fn sign_message(auth: AddrAuth, msg: &[u8]) -> Result<Signature> {
-//     Ok(KEY_CACHE
-//         .lock()
-//         .await
-//         .get(&auth.token)
-//         .ok_or(RatmanError::Encoding(libratman::EncodingError::Encryption(
-//             "no key cached for this AddrAuth token".to_owned(),
-//         )))?
-//         .inner
-//         .sign(msg))
-// }
-
 /// Verify the signature of a payload with a peer's public key (address)
+#[allow(unused)] // todo
 pub fn verify_message(peer: Address, msg: &[u8], signature: Signature) -> Option<()> {
     let peer_pubkey = PublicKey::from_bytes(peer.as_bytes()).ok()?;
     peer_pubkey.verify(msg, &signature).ok()
 }
-
-// #[libratman::tokio::test]
-// async fn shared_key() {
-//     let store = Keystore::new();
-
-//     // Computer A
-//     let alice = store.create_address().await;
-
-//     // Computer B
-//     let bob = store.create_address().await;
-
-//     // Computer A
-//     let alice_to_bob = store.diffie_hellman(alice, bob).await.unwrap();
-//     println!("A->B {:?}", alice_to_bob.as_bytes());
-
-//     // Computer B
-//     let bob_to_alice = store.diffie_hellman(bob, alice).await.unwrap();
-//     println!("A->B {:?}", bob_to_alice.as_bytes());
-
-//     // Outside the universe
-//     assert_eq!(alice_to_bob.as_bytes(), bob_to_alice.as_bytes());
-// }
-
-// #[libratman::tokio::test]
-// async fn manifest_signature() {
-//     let store = Keystore::new();
-
-//     // Computer A
-//     let alice = store.create_address().await;
-//     let manifest = vec![7, 6, 9, 6, 5, 8, 7, 4, 3, 6, 8, 8, 5, 5, 7, 8, 5, 5, 87];
-//     let signature = store
-//         .sign_message(alice, manifest.as_slice())
-//         .await
-//         .unwrap();
-
-//     // Computer B
-//     assert_eq!(
-//         store.verify_message(alice, manifest.as_slice(), signature),
-//         Some(())
-//     )
-// }
-
-// #[libratman::tokio::test]
-// async fn diffie_hellman_chacha20() {
-//     let store = Keystore::new();
-//     let alice = store.create_address().await;
-//     let bob = store.create_address().await;
-
-//     let mut message = vec![7, 6, 9, 6, 5, 8, 7, 4, 3, 6, 8, 8, 5, 5, 7, 8, 5, 5, 87];
-//     let check = message.clone();
-//     let message_len = message.len();
-//     let alice_to_bob = store.diffie_hellman(alice, bob).await.unwrap();
-
-//     let nonce = [0; 12];
-//     let mut cipher1 = ChaCha20::new(&(*alice_to_bob.as_bytes()).into(), &nonce.into());
-//     cipher1.apply_keystream(message.as_mut_slice());
-
-//     eprintln!("Encrypted message reads: {:?}", message);
-
-//     let bob_from_alice = store.diffie_hellman(bob, alice).await.unwrap();
-//     let mut cipher2 = ChaCha20::new(&(*bob_from_alice.as_bytes()).into(), &nonce.into());
-//     cipher2.apply_keystream(message.as_mut_slice());
-//     assert_eq!(message, check);
-// }

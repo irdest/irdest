@@ -14,7 +14,6 @@ use std::{
         mpsc::{sync_channel, Receiver as SyncReceiver, SyncSender},
         Arc,
     },
-    thread::Thread,
 };
 use tokio::{
     runtime::{Builder, Runtime},
@@ -23,7 +22,6 @@ use tokio::{
 
 pub mod reader;
 pub mod writer;
-// pub mod async_io;
 
 /// An arbitrary buffer scheme size called "commonbuf"
 ///
@@ -98,7 +96,8 @@ where
                 Ok(_) => trace!("Worker thread {label} completed successfully!"),
                 Err(ref e) => error!("Worker thread {label} encountered a fatal error: {e}"),
             }
-        });
+        })
+        .expect("failed to spawn thread");
 }
 
 #[test]

@@ -5,7 +5,7 @@ use crate::{
         FrameGenerator, FrameParser,
     },
     types::{Address, TrustFilter},
-    EncodingError, Result,
+    Result,
 };
 use chrono::{DateTime, Utc};
 use core::fmt;

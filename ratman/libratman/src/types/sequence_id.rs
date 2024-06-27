@@ -6,7 +6,7 @@ use crate::{
     types::Ident32,
     Result,
 };
-use nom::{combinator::peek, IResult};
+use nom::IResult;
 use serde::{Deserialize, Serialize};
 
 /// Block hash and a sequential counter to allow carrier re-ordering

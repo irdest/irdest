@@ -1,14 +1,9 @@
 //! Generator utilities
 
-use std::ffi::CString;
-
-use crate::{
-    frame::FrameGenerator,
-    types::{Ident32, SequenceIdV1},
-    EncodingError, Result,
-};
+use crate::{frame::FrameGenerator, types::Ident32, EncodingError, Result};
 use byteorder::{BigEndian, ByteOrder};
 use chrono::{DateTime, TimeZone};
+use std::ffi::CString;
 
 fn u16_to_big_endian(val: u16) -> [u8; 2] {
     let mut v = [0; 2];

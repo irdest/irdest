@@ -1,10 +1,10 @@
 use crate::{
     api::{socket_v2::RawSocketHandle, SubscriptionHandle},
-    types::{error::UserError, AddrAuth, Address, Ident32, LetterheadV1, Modify, Recipient},
+    types::{error::UserError, AddrAuth, Address, Ident32, LetterheadV1, Recipient},
     ClientError, Result,
 };
 use async_trait::async_trait;
-use std::{collections::BTreeMap, net::SocketAddr, sync::Arc};
+use std::{net::SocketAddr, sync::Arc};
 use tokio::{io::AsyncRead, sync::MutexGuard};
 
 use super::types::{PeerEntry, RouterStatus, ServerPing};

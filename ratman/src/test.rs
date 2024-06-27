@@ -9,7 +9,8 @@ use libratman::{
 #[test]
 fn create_address() {
     let _jh = thread::spawn(|| {
-        crate::start_with_configuration(ConfigTree::default_in_memory());
+        let tmp = tempdir::TempDir::new("create-addr").unwrap();
+        crate::start_with_configuration(ConfigTree::default_in_memory(), tmp.path().to_path_buf());
     });
 
     let rt = Runtime::new().unwrap();
