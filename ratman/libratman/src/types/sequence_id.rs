@@ -31,7 +31,6 @@ impl FrameParser for SequenceIdV1 {
             let (input, max) = parse::take_byte(input)?;
             Ok((input, Some(Self { hash, num, max })))
         } else {
-            let (input, _) = take_byte(input)?;
             Ok((input, None))
         }
     }

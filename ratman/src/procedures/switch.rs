@@ -87,7 +87,7 @@ pub(crate) async fn exec_switching_batch(
                 let announce_id = match header.get_seq_id() {
                     Some(seq) => seq.hash,
                     None => {
-                        warn!("Received Announce frame with invalid SequenceId! Ignoring");
+                        warn!("Received Announce frame with no SequenceId! Ignoring");
                         continue;
                     }
                 };
@@ -98,7 +98,10 @@ pub(crate) async fn exec_switching_batch(
                     journal.save_as_known(&announce_id).await.unwrap();
                     debug!("Received announcement for {}", header.get_sender());
 
-                    match AnnounceFrame::parse(&buffer.as_slice()[payload_slice]) {
+                    debug!("Announce buffer: {:?}", buffer.as_slice());
+                    let announce_buf = &buffer.as_slice()[payload_slice];
+
+                    match AnnounceFrame::parse(announce_buf) {
                         Ok((remainder, Ok(announce_frame))) => {
                             // fail softly ;-;
                             assert!(remainder.len() == 0);
