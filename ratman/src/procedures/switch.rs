@@ -73,49 +73,10 @@ pub(crate) async fn exec_switching_batch(
         let block_notify_tx = block_notify_tx.clone();
         let payload_slice = header.get_size()..;
 
-        trace!(
-            "Received frame ({}) from {}/{:?}",
-            match header.get_seq_id() {
-                Some(seq_id) => format!("{}", seq_id.hash),
-                None => format!("<???>"),
-            },
-            ep_name,
-            neighbour,
+        info!(
+            "[{ep_name}] received frame of type {}",
+            fmodes::str_name(header.get_modes())
         );
-
-        // If the dashboard feature is enabled we first update the
-        // metrics engine before all the data gets moved away >:(
-        // #[cfg(feature = "dashboard")]
-        // {
-        //     let metric_labels = &metrics::Labels {
-        //         sender_id: header.get_sender(),
-        //         recp_type: header.get_recipient().as_ref().into(),
-        //         recp_id: header
-        //             .get_recipient()
-        //             .map(|r| r.inner_address().to_string())
-        //             .unwrap_or_else(|| "None".to_owned()),
-        //     };
-        //     metrics.frames_total.get_or_create(metric_labels).inc();
-        //     metrics
-        //         .bytes_total
-        //         .get_or_create(metric_labels)
-        //         .inc_by(header.get_payload_length() as u64);
-        // }
-
-        // This is the core Ratman switch logic.  The accepted
-        // frame header will be inspected below, and then the full
-        // contents of the frame are handled appropriately.
-        //
-        // Currently a frame can be one of the following:
-        //
-        // - An announcement
-        // - A data frame, to be forwarded
-        // - A data frame, sent to a local address
-        // - A manifest frame, to be forwarded
-        // - A manifest frame, sent to a local address
-        //
-        // In future this function will also handle other
-        // ratman-to-ratman protocols.
 
         ////////////////////////////////////////////
         //
