@@ -98,39 +98,45 @@ pub(crate) async fn exec_switching_batch(
                     journal.save_as_known(&announce_id).await.unwrap();
                     debug!("Received announcement for {}", header.get_sender());
 
-                    if let Ok((remainder, Ok(announce_frame))) =
-                        AnnounceFrame::parse(&buffer.as_slice()[payload_slice])
-                    {
-                        // fail softly ;-;
-                        assert!(remainder.len() == 0);
+                    match AnnounceFrame::parse(&buffer.as_slice()[payload_slice]) {
+                        Ok((remainder, Ok(announce_frame))) => {
+                            // fail softly ;-;
+                            assert!(remainder.len() == 0);
 
-                        // Update the routing table and re-flood the announcement
-                        if let Err(e) = routes
-                            .update(
-                                EpNeighbourPair(id, neighbour.assume_single()),
-                                header.get_sender(),
-                                match announce_frame {
-                                    AnnounceFrame::V1(v1) => v1,
-                                },
+                            // Update the routing table and re-flood the announcement
+                            if let Err(e) = routes
+                                .update(
+                                    EpNeighbourPair(id, neighbour.assume_single()),
+                                    header.get_sender(),
+                                    match announce_frame {
+                                        AnnounceFrame::V1(v1) => v1,
+                                    },
+                                )
+                                .await
+                            {
+                                warn!("failed to update route for peer {id}: {e}");
+                                continue;
+                            }
+
+                            if let Err(e) = procedures::flood_frame(
+                                &routes,
+                                &links,
+                                InMemoryEnvelope { header, buffer },
+                                neighbour.maybe_single(),
                             )
                             .await
-                        {
-                            warn!("failed to update route for peer {id}: {e}");
-                            continue;
+                            {
+                                error!("failed to flood announcement frame: {e:?}");
+                                panic!();
+                            }
                         }
-
-                        if let Err(e) = procedures::flood_frame(
-                            &routes,
-                            &links,
-                            InMemoryEnvelope { header, buffer },
-                            neighbour.maybe_single(),
-                        )
-                        .await
-                        {
-                            error!("failed to flood announcement frame: {e:?}");
+                        Ok((remainder, Err(e))) => {
+                            error!("Received invalid announcement: [remains:{remainder:?}] [error:{e}]");
+                            panic!();
                         }
-                    } else {
-                        warn!("Received invalid AnnounceFrame: ignoring route update");
+                        Err(e) => {
+                            error!("Completely failed announce parsing: {e}");
+                        }
                     }
                 }
             }
@@ -157,6 +163,7 @@ pub(crate) async fn exec_switching_batch(
                                 debug!("Connection dropped while forwarding frame!  Message contents were saved");
                                 if let Err(e) = journal.queue_frame(envelope).await {
                                     error!("failed to queue frame to journal: {e}!  Data has been dropped");
+                                    panic!();
                                 }
                             }
                             Err(e) => {
@@ -176,11 +183,13 @@ pub(crate) async fn exec_switching_batch(
                                 .queue_manifest(InMemoryEnvelope { header, buffer })
                                 .await
                             {
-                                error!("failed to ueue manifest: {e}");
+                                error!("failed to queue manifest: {e}");
+                                panic!();
                             }
 
                             if let Err(e) = ingress_tx.send(MessageNotifier(manifest_id)).await {
                                 error!("failed to notify local task of manifest: {e}");
+                                panic!();
                             }
                         }
                         // Otherwise it's a data frame and we queue it in the collector
@@ -200,7 +209,8 @@ pub(crate) async fn exec_switching_batch(
                                     "Failed to queue frame in sequence {}[{}/{}]: {e}",
                                     s_hash, s_num, s_max
                                 );
-                                continue;
+                                panic!();
+                                // continue;
                             }
                         }
                     }
@@ -236,6 +246,7 @@ pub(crate) async fn exec_switching_batch(
                     .await
                     {
                         error!("failed to flood frame to namespace: {e:?}");
+                        panic!();
                     }
                 }
             }

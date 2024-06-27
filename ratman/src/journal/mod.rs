@@ -153,7 +153,9 @@ impl Journal {
     }
 
     pub async fn queue_manifest(&self, env: InMemoryEnvelope) -> Result<()> {
-        let (_, manifest) = ManifestFrame::parse(env.get_payload_slice())?;
+        let (remaining, manifest) = ManifestFrame::parse(env.get_payload_slice())?;
+        let empty: &[u8] = &[];
+        assert_eq!(remaining, empty);
         let seq_id = env.header.get_seq_id().unwrap();
 
         self.manifests
