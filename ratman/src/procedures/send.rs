@@ -135,6 +135,14 @@ pub(crate) async fn exec_sender_system<const L: usize>(
                         );
 
                         for envelope in frame_buf {
+                            if envelope.header.get_seq_id().is_none() {
+                                error!("{:?}", envelope.header);
+                                panic!(
+                                    "WAS ABOUT TO SEND OFF A DATA FRAME WITHOUT SEQUENCE ID
+WHAT THE FUCK"
+                                );
+                            }
+
                             trace!(
                                 "Dispatching {} byte frame {}/{}",
                                 envelope.buffer.len(),

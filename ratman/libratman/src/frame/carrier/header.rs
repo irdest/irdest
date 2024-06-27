@@ -114,7 +114,8 @@ impl CarrierFrameHeader {
                     None => 1,
                 };
                 let seq_id_size = match header.seq_id {
-                    Some(ref seq_id) => core::mem::size_of_val(seq_id),
+                    // The sequence ID has another byte to indicate whether it exists
+                    Some(ref seq_id) => 1 + core::mem::size_of_val(seq_id),
                     None => 1,
                 };
                 let aux_data_size = match header.auxiliary_data {
@@ -327,3 +328,4 @@ pub enum AuxiliaryData {
     ///
     Sent(DateTime<Utc>),
 }
+

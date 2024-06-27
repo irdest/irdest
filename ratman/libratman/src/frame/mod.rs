@@ -13,6 +13,8 @@ pub mod parse;
 use crate::Result;
 use nom::IResult;
 
+pub const EMPTY: &[u8] = &[];
+
 /// A utility trait that represents a parsable frame entity
 ///
 /// This trait is a slim wrapper around the nom parsing
