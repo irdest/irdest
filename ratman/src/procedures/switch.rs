@@ -70,7 +70,7 @@ pub(crate) async fn exec_switching_batch(
         let block_notify_tx = block_notify_tx.clone();
         let payload_slice = header.get_size()..;
 
-        info!(
+        trace!(
             "[{ep_name}] received frame of type {}",
             fmodes::str_name(header.get_modes())
         );
@@ -98,7 +98,6 @@ pub(crate) async fn exec_switching_batch(
                     journal.save_as_known(&announce_id).await.unwrap();
                     debug!("Received announcement for {}", header.get_sender());
 
-                    debug!("Announce buffer: {:?}", buffer.as_slice());
                     let announce_buf = &buffer.as_slice()[payload_slice];
 
                     match AnnounceFrame::parse(announce_buf) {
@@ -130,12 +129,12 @@ pub(crate) async fn exec_switching_batch(
                             .await
                             {
                                 error!("failed to flood announcement frame: {e:?}");
-                                panic!();
                             }
                         }
                         Ok((remainder, Err(e))) => {
-                            error!("Received invalid announcement: [remains:{remainder:?}] [error:{e}]");
-                            panic!();
+                            error!(
+                                "Failed to parse announcement: [remains:{remainder:?}] [error:{e}]"
+                            );
                         }
                         Err(e) => {
                             error!("Completely failed announce parsing: {e}");
@@ -166,7 +165,6 @@ pub(crate) async fn exec_switching_batch(
                                 debug!("Connection dropped while forwarding frame!  Message contents were saved");
                                 if let Err(e) = journal.queue_frame(envelope).await {
                                     error!("failed to queue frame to journal: {e}!  Data has been dropped");
-                                    panic!();
                                 }
                             }
                             Err(e) => {
@@ -187,12 +185,10 @@ pub(crate) async fn exec_switching_batch(
                                 .await
                             {
                                 error!("failed to queue manifest: {e}");
-                                panic!();
                             }
 
                             if let Err(e) = ingress_tx.send(MessageNotifier(manifest_id)).await {
                                 error!("failed to notify local task of manifest: {e}");
-                                panic!();
                             }
                         }
                         // Otherwise it's a data frame and we queue it in the collector
@@ -212,8 +208,7 @@ pub(crate) async fn exec_switching_batch(
                                     "Failed to queue frame in sequence {}[{}/{}]: {e}",
                                     s_hash, s_num, s_max
                                 );
-                                panic!();
-                                // continue;
+                                continue;
                             }
                         }
                     }
@@ -249,7 +244,6 @@ pub(crate) async fn exec_switching_batch(
                     .await
                     {
                         error!("failed to flood frame to namespace: {e:?}");
-                        panic!();
                     }
                 }
             }
