@@ -48,12 +48,11 @@ use crate::{
         types::{Handshake, RecvOne, SendOne, ServerPing, SubsCreate, SubsDelete, SubsRestore},
     },
     frame::micro::{client_modes as cm, MicroframeHeader},
-    types::{AddrAuth, Address, Ident32, LetterheadV1, Modify, Recipient},
+    types::{AddrAuth, Address, Ident32, LetterheadV1, Recipient},
     ClientError, EncodingError, Result,
 };
 use async_trait::async_trait;
 use std::{
-    collections::BTreeMap,
     ffi::CString,
     net::{Ipv4Addr, SocketAddr, SocketAddrV4},
     sync::Arc,

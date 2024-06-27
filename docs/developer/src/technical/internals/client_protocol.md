@@ -1,6 +1,6 @@
 # Ratman client protocol
 
-External applications can connect to the Ratman routing daemon via a Tcp socket connection (by default `localhost:9020`, but this can be changed via the user configuration).  This page outlines the protocol in use for this connection.
+External applications can connect to the Ratman routing daemon via a Tcp socket connection (by default `localhost:5852`, but this can be changed via the user configuration).  This page outlines the protocol in use for this connection.
 
 If `libratman` SDK bindings exist for your language (currently only Rust) we highly recommend you use those instead of implementing the protocol from scratch.
 
@@ -32,9 +32,7 @@ The following namespaces are available:
 | Peer      | 0x4         | Other network participants without any relation metadata      |
 | Recv      | 0x5         | Configure Ratman to receive a file                            |
 | Send      | 0x6         | Sending data to other peers and the network                   |
-| Status    | 0x7         | Query general status information                              |
-| Sub       | 0x8         | Setup asynchronous stream subscriptions                       |
-| Client    | 0x9         | Configure client connection                                   |
+| Stream    | 0x7         | Incoming streams namespace, separate from explicity receiving |
 
 The following methods are availble:
 
@@ -42,17 +40,30 @@ The following methods are availble:
 |---------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
 | Create  | 0x1         | Create a new resource locally                                                                                                                     |
 | Destroy | 0x2         | Destroy an existing local resource permanently                                                                                                    |
-| Up      | 0x3         | Mark an existing resource as "up", which will start announcing it to the network.  This could be an address or a pre-cached stream (file sharing) |
-| Down    | 0x4         | Mark an existing resource as "down", which will stop announcing it to the network, but not delete its local state                                 |
-| Add     | 0x5         | Insert a new record into any data storage endpoint.  This operation is indempotent (applying an operation for the second time is a no-op)         |
-| Delete  | 0x6         | Delete a record from any data storage endpoint.  This does not by default delete any associated data on disk (but can be opted into)              |
-| Modify  | 0x7         | Modify an existing data storage record in place                                                                                                   |
-| List    | 0x10        | List available records for a given namespace and storage endpoint                                                                                 |
-| Query   | 0x11        | Run a query for specific data in the storage engine                                                                                               |
-| One     | 0x12        | "One-to-one" mode when sending or receiving data, which locks a stream to a single destination address                                            |
-| Many    | 0x13        | "One-to-many" mode when sending or receiving data, which allows message streams from and to multiple destination addresses                        |
-| Flood   | 0x14        | "Flood" mode when sending, which sends a message stream to all network participants listening to a given flood address namespace                  |
-| Fetch   | 0x15        | Pull cached message streams (partial or completed) from the router storage                                                                        |
-| System  | 0x16        | ???                                                                                                                                               |
-| Op addr | 0x17        | I genuinely forgot what this does                                                                                                                 |
-| Op link | 0x18        | I'll read the source and fill this in later but lol                                                                                               |
+| Sub     | 0x3         | Subscribe to a particular resource (currently only streams are supported)                                                                         |
+| Resub   | 0x4         | Restore a previously held subscription after a router restart                                                                                     |
+| Unsub   | 0x5         | Unsubscribe from a previously subscribed resource                                                                                                 |
+| Up      | 0x10        | Mark an existing resource as "up", which will start announcing it to the network.  This could be an address or a pre-cached stream (file sharing) |
+| Down    | 0x11        | Mark an existing resource as "down", which will stop announcing it to the network, but not delete its local state                                 |
+| Add     | 0x20        | Insert a new record into any data storage endpoint.  This operation is indempotent (applying an operation for the second time is a no-op)         |
+| Delete  | 0x21        | Delete a record from any data storage endpoint.  This does not by default delete any associated data on disk (but can be opted into)              |
+| Modify  | 0x22        | Modify an existing data storage record in place                                                                                                   |
+| List    | 0x30        | List available records for a given namespace and storage endpoint                                                                                 |
+| Query   | 0x31        | Run a query for specific data in the storage engine                                                                                               |
+| One     | 0x32        | "One-to-one" mode when sending or receiving data, which locks a stream to a single destination address                                            |
+| Many    | 0x33        | "One-to-many" mode when sending or receiving data, which allows message streams from and to multiple destination addresses                        |
+| Status  | 0x34        | Get status updates on various components.  Currently only "Peer" and "Intrinsic" are supported                                                    |
+
+Since the microframe header can have various sizes it is length-prepended with a 4-byte integer.  A full API protocol transmission thus looks as follows:
+
+```
+[ 4 byte header size ]
+[ 2 byte mode indicator ]
+[ 32 bytes auth token ][ 1 byte placeholder (0) ]
+[ 4 byte payload length ]
+[ N byte payload ]
+```
+
+## Command payload encoding
+
+The available commands are described in `libratman/src/api/types`.  More documentation to be added.  Please feel free to ask if you run into any issues or have general questions.

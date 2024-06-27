@@ -18,54 +18,66 @@ There are three main steps to using the client-lib:
 
 ### IPC initialisation
 
-By default the IPC socket for Ratman is running on `localhost:9020`. Many of the Irdest tools allow you to overwrite this socket address, to allow for local testing with multiple routers.  We recommend that your application expose this option to users for testing purposes as well!
+By default the IPC socket for Ratman is running on `localhost:5852`. Many of the Irdest tools allow you to overwrite this socket address, to allow for local testing with multiple routers.  We recommend that your application expose this option to users for testing purposes as well!
 
 
 ### Address registration
 
 An address for Ratman is associated with a cryptographic key pair.  Currently we don't expose the private key from the router to applications (which will probably change in the future!)
 
-When your application is given an address you should store it in your application state somewhere, along with the corresponding auth token.  These will be important the next time your application starts.  *For added security you should encrypt this data with a user password!*
+When your application is given an address you should store it in your application state somewhere, along with the corresponding address auth token.  These will be important the next time your application starts.  *For privacy reasons you should encrypt this data with a user password!*
 
 
 ### Message sending and receiving
 
-Sending messages happens asynchronously, which means that the client lib will not get feedback on if your message has actually been dispatched across a network channel, let alone been received.
+Every "message" in Irdest is a stream, which is encoded into encrypted data blocks, along with a manifest which contains the root block reference and key.  Currently the manifest is not encrypted, meaning that anyone intercepting it will be able to decode the rest of the block stream.
 
-Messages can be sent as one of two types: **Standard** and **Flood**.
+Sending a message stream happens somewhat asynchronously:  the sending client will block until the router has received the full message, but there's currently no feedback how encoding or sending is going.
 
-**Standard** messages have a fixed recipient address and will be routed to the destination where they will leave the network and be processed by the target application (or dropped).
+Receiving message streams can happen in two ways: synchronously and asynchronously via subscriptions.  A subscription can persist across router restarts and will save missed items for a client to re-play when it next connects.  Synchronous receiving blocks the main client socket, so no other commands can be exchanged.  A subscription uses a dedicated TCP socket for a client to connect to.
 
-**Flood** messages are sent to every device and address on the network, to allow for network-wide announcements (this is also how your address announces itself!)  To limit the amount of relevant Flood messages an application has to deal with, they are namespaced.  The namespace itself is also an Irdest address.
+When receiving you first get a "letterhead", which contains who the stream is from, who it is addressed to, it's final size, and additional metadata map currently not used).
 
-So for example a **standard** message sent to `ECB4-30B9-4416-C403-716F-601F-FC56-9AD3-BD2E-3892-227A-84AD-E6FC-A1CE-0A92-03F6` will be carried across the network until it reaches _this exact_ address.
+Messages can either be sent to one ore multiple *Addresses* or a *Namespace*.  Address-recipient messages will only be delivered to the devices that have advertised those addresses.
 
-A **flood** message sent to `ECB4-30B9-4416-C403-716F-601F-FC56-9AD3-BD2E-3892-227A-84AD-E6FC-A1CE-0A92-03F6` will be delivered to all applications that are _listening_ on this namespace.
+Namespaces are special addresses that any client can subscribe to.  Namespace-recipient messages are spread across the whole network and any router/ client that subscribes to it can receive them.  Namespaces are a great way for different instances of your application to find each other.
+
+So for example a message sent to the address `ECB4-30B9-4416-C403-716F-601F-FC56-9AD3-BD2E-3892-227A-84AD-E6FC-A1CE-0A92-03F6` will be carried across the network until it reaches _this exact_ address.
+
+A message sent to the namespace
+`ECB4-30B9-4416-C403-716F-601F-FC56-9AD3-BD2E-3892-227A-84AD-E6FC-A1CE-0A92-03F6` will be delivered to all applications that are _listening_ on this namespace.
 
 
-### API Example: `irdest-echo`
+### API example
 
 This is a small program demonstrating the most basic usage of the ratman-client SDK.  At start-up it registers a new address, listens to any incoming messages, and returns them as they are to the sender.
 
 ```rust
-use ratman_client::{RatmanIpc, Receive_Type};
+use libratman::{
+    api::{default_api_bind, RatmanIpc, RatmanIpcExtV1, RatmanStreamExtV1},
+    tokio,
+    types::Recipient,
+    Result,
+};
 
-#[async_std::main]
-async fn main() {
-    let ipc = RatmanIpc::default()
-        .await
-        .expect("Failed to connect to Ratman daemon!");
+#[tokio::main]
+async fn main() -> Result<()> {
+    let ipc = RatmanIpc::start(default_api_bind()).await?;
 
-    println!("Listening on address: {}", ipc.address());
-    while let Some((tt, msg)) = ipc.next().await {
-        // Ignore flood messages
-        if tt == Receive_Type::FLOOD {
-            continue;
-        }
+    // Create a regular address
+    // The second parameter can be used to create a specific namespace key
+    let (addr, auth) = ipc.addr_create(Some(&"my-name".to_owned()), None).await?;
 
-        // Get the message sender identity and reply
-        let sender = msg.get_sender();
-        ipc.send_to(sender, msg.get_payload()).await.unwrap();
-    }
+    // Start advertising the address on the network
+    ipc.addr_up(auth, addr).await?;
+
+    // Wait for incoming messages
+    let (letterhead, mut reader) = ipc.recv_one(auth, addr, Recipient::Address(addr)).await?;
+
+    println!("Receiving stream {letterhead:?}");
+    let mut stdout = tokio::io::stdout();
+
+    tokio::io::copy(&mut reader.as_reader(), &mut stdout).await?;
+    Ok(())
 }
 ```
