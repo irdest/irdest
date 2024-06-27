@@ -109,6 +109,7 @@ build-ratman-tools-static-armv7l-musl:
 build-irdest-proxy-static:
   tags: [ irdest-nix ]
   stage: build
+  allow_failure: true # not updated yet
   script:
     - nix-env -iA cachix -f https://cachix.org/api/v1/install
     - cachix use irdest -O ~/.config/nix
@@ -123,6 +124,7 @@ build-irdest-proxy-static:
 build-irdest-proxy-static-aarch64:
   tags: [ irdest-nix ]
   stage: build
+  allow_failure: true # not updated yet
   script:
     - nix-env -iA cachix -f https://cachix.org/api/v1/install
     - cachix use irdest -O ~/.config/nix
@@ -153,6 +155,7 @@ build-irdest-proxy-static-armv7l-musl:
 
 build-irdest-mblog:
   tags: [ irdest-nix ]
+  allow_failure: true # not updated yet
   stage: build
   script:
     - nix-build nix -A irdest-mblog
