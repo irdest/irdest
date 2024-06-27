@@ -7,10 +7,9 @@ use crate::{
     links::{GenericEndpoint, LinksMap},
     procedures::{self},
     routes::{EpNeighbourPair, RouteTable},
-    storage::route::RouteState,
 };
 use libratman::tokio::{
-    select, sync::broadcast::Sender as BcastSender, sync::mpsc::Sender, task::spawn,
+    select, sync::{broadcast::Sender as BcastSender, mpsc::Sender}, task::yield_now,
 };
 use libratman::{
     frame::carrier::modes::{self as fmodes, DATA, MANIFEST},
@@ -27,10 +26,6 @@ use super::{ingress::MessageNotifier, BlockCollector, BlockNotifier};
 pub(crate) async fn exec_switching_batch(
     // Current netmod ID us
     id: usize,
-    // Always run a batch of receive jobs to mitigate excessive
-    // context switching.  Batch limit should be dynamically chosen on
-    // load, but can be overriden for specific usecases
-    batch_size: usize,
     // Routes container to update tables based on announcements
     routes: &Arc<RouteTable>,
     // Even though this switch only runs for a single endpoint, we
@@ -58,7 +53,7 @@ pub(crate) async fn exec_switching_batch(
     // procedure
     // #[cfg(feature = "dashboard")] metrics: &Arc<metrics::Metrics>,
 ) {
-    for _ in 0..batch_size {
+    loop {
         let (InMemoryEnvelope { header, buffer }, neighbour) = select! {
             biased;
             _ = tripwire.clone() => break,
@@ -245,7 +240,11 @@ pub(crate) async fn exec_switching_batch(
                 continue;
             }
         }
+
+        yield_now().await;
     }
+
+    info!("Switch loop has terminated!");
 }
 
 // #[cfg(feature = "dashboard")]

@@ -310,9 +310,6 @@ impl RatmanContext {
         {
             let links = Arc::clone(&this.links);
 
-            // todo: make this configuenvrable
-            let batch_size = 32;
-
             // todo: use the configurable netmod runtime here instead
             for (name, ep, id) in links.get_with_ids().await {
                 let this_ = Arc::clone(&this);
@@ -326,7 +323,6 @@ impl RatmanContext {
                     async move {
                         procedures::exec_switching_batch(
                             id,
-                            batch_size,
                             &this_.routes,
                             &this_.links,
                             &this_.journal,
