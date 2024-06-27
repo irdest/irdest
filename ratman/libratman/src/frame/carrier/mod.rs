@@ -81,7 +81,7 @@ fn full_announce_frame() {
     assert_eq!(afp.unwrap(), af);
 
     assert_eq!(hb.len(), h.get_size());
-    
+
     let (r3, afp2) = AnnounceFrame::parse(&in_memory_env.get_payload_slice()).unwrap();
     assert_eq!(r3, crate::frame::EMPTY);
     assert_eq!(afp2.unwrap(), af);

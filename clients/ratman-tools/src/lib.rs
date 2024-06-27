@@ -11,9 +11,9 @@ use libratman::{
 use serde::{Deserialize, Serialize};
 use std::{any::Any, collections::BTreeMap, fmt::Display, sync::Arc};
 
-pub mod peers;
 pub mod addr;
 pub mod base_args;
+pub mod peers;
 pub mod recv;
 pub mod send;
 pub mod stream;

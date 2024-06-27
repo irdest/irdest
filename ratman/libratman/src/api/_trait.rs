@@ -65,8 +65,7 @@ pub trait RatmanIpcExtV1 {
     //
 
     async fn router_status(self: &Arc<Self>) -> Result<RouterStatus>;
-    
-    
+
     //
     // (@^_^@) Contact commands
     //
@@ -249,7 +248,7 @@ pub struct StreamGenerator<'a> {
 impl<'a> StreamGenerator<'a> {
     pub async fn wait_for_manifest(&mut self) -> Result<LetterheadV1> {
         match self.limit {
-            Some(limit) if limit < self.read => {
+            Some(limit) if limit > self.read => {
                 let (_, lh) = self.inner.0.read_microframe::<LetterheadV1>().await?;
                 self.read += 1;
                 lh

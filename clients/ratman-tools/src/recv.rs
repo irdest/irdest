@@ -42,9 +42,9 @@ pub async fn receive(
         .await?;
 
     loop {
-        // if !base_args.quiet {
+        if !base_args.quiet {
         eprintln!("Waiting...");
-        // }
+        }
 
         let lh = match stream_gen.wait_for_manifest().await {
             Ok(letterhead) => letterhead,
@@ -66,9 +66,9 @@ pub async fn receive(
             &mut stdout,
         )
         .await?;
-        // if !base_args.quiet {
+        if !base_args.quiet {
         eprintln!("Next slide please...");
-        // }
+        }
         stdout.flush().await?;
     }
 
