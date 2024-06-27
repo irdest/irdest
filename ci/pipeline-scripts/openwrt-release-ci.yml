@@ -3,6 +3,7 @@
 bundle-ratman-openwrt-ipk:
   tags: [ irdest-nix ]
   stage: bundle
+  allow_failure: true # 32-bit platforms currently not supported
   dependencies:
     - build-ratmand-static-armv7l-musl
   script:

@@ -47,6 +47,7 @@ bundle-ratman-aarch64:
 bundle-ratman-armv7l-musl:
   tags: [ irdest-nix ]
   stage: bundle
+  allow_failure: true # 32-bit systems currently not supperted
   dependencies:
     - build-installer-static-armv7l-musl
     - build-ratmand-static-armv7l-musl
