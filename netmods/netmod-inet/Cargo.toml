@@ -10,7 +10,7 @@ edition = "2018"
 license = "AGPL-3.0-or-later"
 
 [dependencies]
-libratman = { version = "0.5", path = "../../ratman/libratman", features = ["netmod"] }
+libratman = { version = "0.6", path = "../../ratman/libratman", features = ["netmod"] }
 async-trait = "0.1"
 bincode = "1.0"
 byteorder = "1.0"

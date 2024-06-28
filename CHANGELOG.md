@@ -7,7 +7,7 @@ follow the order `Releases`, `Added`, `Changed`, `Fixed`, `Removed`, and
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
-## 0.5.0
+## 0.6.0 (2024-06-28)
 
 The probably biggest Irdest release so far.  It brings many minor and some major
 changes to the codebase and usability of the project.  Importantly, Irdest is
@@ -29,10 +29,6 @@ Hope you enjoy!
 
 ### Added
 
-- LoRa connection support via `netmod-lora`.  See the user manual on how to set
-  up a LoRa modem.
-- Managed WiFi connection support via `netmod-datalink` (supports Linux/
-  NetworkManager)
 - `ratmand generate` command to pre-generate a ratmand configuration.  Overrides
   can be applied with the `--patch` (for simple key=value configuration
   settings) and `--add-peer` (for peers) arguments.
@@ -69,14 +65,7 @@ Hope you enjoy!
 - Entries in the routing table support more than a single link, and will update
   based on the most recently received announcement.  This behaviour is temporary
   and will be replaced with real route scoring in the next release.
-- Many internal and external structural changes that aren't directly reflected
-  in the user experience, but will make development and maintenance easier and
-  faster in the future
-  - The developer facing crates `ratman-client`, `ratman-netmod`,
-    `ratman-types`, etc have been consolidated into `libratman` -- `ratman` on
-    crates.io, which was previously the daemon.
-  - The daemon crate is now called `ratmand` and no longer available on
-    crates.io.
+
 
 ### Fixed
 
@@ -108,6 +97,27 @@ Hope you enjoy!
   done via the `send -z _` parameter) into smaller sub-streams.  On the
   receiving end either use `ratcat recv -c 0` or calculate the exact number of
   stream segments you expect.  The Rust API similarly exposes this feature.
+
+
+## 0.5.0 (2023-08-08)
+
+### Added
+
+- LoRa connection support via `netmod-lora`.  See the user manual on how to set
+  up a LoRa modem.
+- Managed WiFi connection support via `netmod-datalink` (supports Linux/
+  NetworkManager)
+
+### Changed
+
+- Many internal and external structural changes that aren't directly reflected
+  in the user experience, but will make development and maintenance easier and
+  faster in the future
+  - The developer facing crates `ratman-client`, `ratman-netmod`,
+    `ratman-types`, etc have been consolidated into `libratman` -- `ratman` on
+    crates.io, which was previously the daemon.
+  - The daemon crate is now called `ratmand` and no longer available on
+    crates.io.
 
 
 ## 0.4.0 (2022-04-16)

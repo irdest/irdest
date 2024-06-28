@@ -7,4 +7,4 @@ license = "AGPL-3.0-or-later"
 
 [dependencies]
 async-trait = "0.1"
-libratman = { version = "0.5", path = "../../ratman/libratman", features = ["netmod"] }
+libratman = { version = "0.6", path = "../../ratman/libratman", features = ["netmod"] }

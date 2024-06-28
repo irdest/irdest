@@ -7,7 +7,7 @@
 name = "ratmand"
 description = "A decentralised and peer-to-peer packet router"
 license = "AGPL-3.0-or-later"
-version = "0.5.0"
+version = "0.6.0"
 edition = "2018"
 
 
@@ -68,11 +68,6 @@ tracing-futures = "0.2"
 tracing-subscriber = { version = "0.2", features = ["fmt"] }
 tracing-syslog = { version = "0.1", path = "../utils/tracing-syslog" }
 
-## Irdest and Ratman sub-components
-clockctrl = { version = "0.1", path = "../utils/clockctrl" }
-libratman = { version = "0.5", path = "libratman", features = [ "metrics", "daemon" ]}
-task-notify = { version = "1.0", path = "../utils/task-notify" }
-
 ## Web dependencies
 openapi_type = { version = "0.4", optional = true }
 prometheus-client = { version = "0.16", optional = true }
@@ -88,6 +83,11 @@ ipnetwork = "*"
 nix = "0.23"
 pnet = "*"
 tempdir = "*"
+
+## Irdest and Ratman sub-components
+clockctrl = { version = "0.1", path = "../utils/clockctrl" }
+libratman = { version = "0.6", path = "libratman", features = [ "metrics", "daemon" ]}
+task-notify = { version = "1.0", path = "../utils/task-notify" }
 
 ## Bundled network modules
 netmod-datalink = { path = "../netmods/netmod-datalink", version = "0.2", optional = true }
