@@ -16,6 +16,7 @@
 cross-compile-android-vpn:
   <<: *android-configuration
   stage: build
+  allow_failure: true
   script:
     # Install protoc this is a temporory solution 
     # After updating docker image below lines should be removed.
@@ -36,6 +37,7 @@ cross-compile-android-vpn:
 build-android-vpn:
   <<: *android-configuration
   stage: build
+  allow_failure: true
   script:
     - ./gradlew assembleDebug
     - mkdir result-android-vpn && cp app/build/outputs/apk/debug/app-debug.apk result-android-vpn/irdest-vpn-debug.apk

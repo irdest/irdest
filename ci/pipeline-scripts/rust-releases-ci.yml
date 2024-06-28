@@ -20,7 +20,7 @@ bundle-ratman:
     - tar cvf irdest-bundle-x86_64-$CI_COMMIT_TAG.tar.gz irdest-bundle-x86_64-$CI_COMMIT_TAG/
   artifacts:
     paths:
-      - ratman-bundle-x86_64-$CI_COMMIT_TAG.tar.gz
+      - irdest-bundle-x86_64-$CI_COMMIT_TAG.tar.gz
 
 bundle-ratman-aarch64:
   tags: [ irdest-nix ]
@@ -31,7 +31,7 @@ bundle-ratman-aarch64:
     - build-ratman-tools-static-aarch64
     - build-manual
   script:
-    - mkdir ratman-bundle-aarch64  && cd ratman-bundle-aarch64
+    - mkdir irdest-bundle-aarch64  && cd irdest-bundle-aarch64
     - cp -rv ../dist .
     - cp -rv ../docs/man .
     - cp -rv ../result-ratmand/bin .
@@ -39,10 +39,10 @@ bundle-ratman-aarch64:
     - cp -rv ../result-installer/bin/* .
     - cp -rv ../result-manual-user manual
     - cd ..
-    - tar cvf ratman-bundle-aarch64.tar.gz ratman-bundle-aarch64/
+    - tar cvf irdest-bundle-aarch64.tar.gz irdest-bundle-aarch64/
   artifacts:
     paths:
-      - ratman-bundle-aarch64.tar.gz
+      - irdest-bundle-aarch64.tar.gz
 
 bundle-ratman-armv7l-musl:
   tags: [ irdest-nix ]
@@ -54,7 +54,7 @@ bundle-ratman-armv7l-musl:
     - build-ratman-tools-static-armv7l-musl
     - build-manual
   script:
-    - mkdir ratman-bundle-armv7l-musl  && cd ratman-bundle-armv7l-musl
+    - mkdir irdest-bundle-armv7l-musl  && cd irdest-bundle-armv7l-musl
     - cp -rv ../dist .
     - cp -rv ../docs/man .
     - cp -rv ../result-ratmand/bin .
@@ -62,7 +62,7 @@ bundle-ratman-armv7l-musl:
     - cp -rv ../result-installer/bin/* .
     - cp -rv ../result-manual-user manual
     - cd ..
-    - tar cvf ratman-bundle-armv7l-musl.tar.gz ratman-bundle-armv7l-musl/
+    - tar cvf irdest-bundle-armv7l-musl.tar.gz irdest-bundle-armv7l-musl/
   artifacts:
     paths:
-      - ratman-bundle-armv7l-musl.tar.gz
+      - irdest-bundle-armv7l-musl.tar.gz
