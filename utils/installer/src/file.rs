@@ -24,7 +24,7 @@ impl File {
             Self::Ratcat => "bin/ratcat",
             Self::Ratctl => "bin/ratctl",
             Self::RatmandMan => "man/ratmand.1",
-            Self::SystemdUnit => "dist/ratman.service",
+            Self::SystemdUnit => "dist/ratmand.service",
         }
     }
 
