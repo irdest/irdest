@@ -42,11 +42,11 @@ pub struct LetterheadV1 {
 }
 
 impl LetterheadV1 {
-    pub fn new(from: Address, to: Recipient, payload_length: u64) -> Self {
+    pub fn send(from: Address, to: Recipient) -> Self {
         Self {
             from,
             to,
-            stream_size: payload_length,
+            stream_size: 0,
             auxiliary_data: vec![],
         }
     }
