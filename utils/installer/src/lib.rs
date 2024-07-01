@@ -31,7 +31,7 @@ impl Directories {
         self.cfg_dir
             .join("systemd")
             .join("user")
-            .join("ratman.service")
+            .join("ratmand.service")
     }
 
     pub fn ratmand_man_path(&self) -> PathBuf {
