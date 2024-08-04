@@ -33,19 +33,19 @@ Alternatively, make sure you have the following dependencies installed:
 
 ## Building Ratman
 
-Ratman provides several binaries in the `ratman` package.  You can build the entire package with `cargo`.  By default the ratman-dashboard will be included, which requires you to build the sources with `yarn` first.
+Ratman provides several binaries in the `ratman` package.  The name of the binary is `ratmand`.  You can build the entire package with `cargo`.  By default, the ratman-dashboard will be included, which requires you to build the sources with `yarn` first.
 
 ```console
 $ cd ratman/dashboard
 $ yarn && yarn build
 $ cd ../..
-$ cargo build -p ratman --all-features
+$ cargo build -p ratmand --all-features
 ```
 
 Alternatively you can disable the `dashboard` feature.  Unfortunately `cargo` doesn't allow selective disabling of features, so you will need to disable all default features, then select a new set of features as follows:
 
 ```console
-$ cargo build -p ratman --release --disable-default-features \
+$ cargo build -p ratmand --release --disable-default-features \
                         --features "cli datalink inet lan lora upnp"
 ...
 [cargo goes brrr]
