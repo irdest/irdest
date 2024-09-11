@@ -27,7 +27,7 @@ use libratman::{
         sync::{mpsc::channel, Mutex},
         task::spawn,
     },
-    types::{Ident32, InMemoryEnvelope, Neighbour},
+    types::{Ident32, InMemoryEnvelope, Neighbour, RouterMeta},
     NetmodError, RatmanError, Result,
 };
 use serde::{Deserialize, Serialize};
@@ -186,19 +186,6 @@ impl InetEndpoint {
 impl EndpointExt for InetEndpoint {
     async fn start_peering(&self, addr: &str) -> Result<u16> {
         self.add_peer(addr.to_owned()).await
-    }
-
-    /// Return a desired frame size in bytes
-    ///
-    /// A user of this library should use this metric to slice larger
-    /// payloads into frame sequencies via the provided utilities.
-    ///
-    /// This metric is only a hint, and a router can choose to ignore
-    /// it, if it then deals with possible "too large" errors during
-    /// sending.  Choosing between a greedy or cautious approach to
-    /// data slicing is left to the user of the interfaces.
-    fn size_hint(&self) -> usize {
-        0
     }
 
     /// Dispatch a `Frame` across this link

@@ -3,7 +3,7 @@ use ed25519_dalek::ed25519::signature::SignerMut;
 use libratman::{
     frame::{
         carrier::{AnnounceFrame, AnnounceFrameV1, CarrierFrameHeader, OriginDataV1, RouteDataV1},
-        FrameGenerator, FrameParser, EMPTY,
+        FrameGenerator,
     },
     tokio::time,
     types::{AddrAuth, Address, InMemoryEnvelope},

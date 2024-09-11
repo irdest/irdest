@@ -1,19 +1,12 @@
-// SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
+// SPDX-FileCopyrightText: 2019-2024 Katharina Fey <kookie@spacekookie.de>
 // SPDX-FileCopyrightText: 2022 embr <hi@liclac.eu>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 //! Protocol generation module
-//!
-//! The routing protocol, and micro messages (analogous to micro
-//! code), are much better documented in the `R.A.T.M.A.N.` design
-//! specification/paper. But here's a brief overview, and
-//! implementation:
-//!
-//! - `Announce` is sent when a node comes online
-//! - `Sync` is a reply to an `Announce`, only omitted when `no_sync` is set
 
 mod announce;
+mod router;
 
 use crate::{context::RatmanContext, protocol::announce::AddressAnnouncer};
 use libratman::{
@@ -24,15 +17,7 @@ use libratman::{
     types::{AddrAuth, Address},
     NonfatalError, RatmanError, Result,
 };
-use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, sync::Arc};
-
-/// A payload that represents a RATMAN-protocol message
-#[derive(Debug, Serialize, Deserialize)]
-enum ProtoPayload {
-    /// A network-wide announcement message
-    Announce { id: Address, no_sync: bool },
-}
 
 /// Provide a builder API to construct different types of Messages
 #[derive(Default)]

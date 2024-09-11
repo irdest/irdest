@@ -1,7 +1,7 @@
 //! Endpoint abstraction module
 
 use crate::{
-    types::{CurrentStatus, Ident32, InMemoryEnvelope, Neighbour},
+    types::{CurrentStatus, Ident32, InMemoryEnvelope, Neighbour, RouterMeta},
     Result,
 };
 use async_trait::async_trait;
@@ -37,36 +37,22 @@ pub trait EndpointExt {
 
     /// Start a peering session with a remote address
     ///
-    /// The formatting of this address is specific to the netmod
-    /// implementation, meaning that different netmods can rely on
-    /// fundamentally different address schemas to establish their
-    /// connections.  For example, the `inet` netmod simply uses IPv6
-    /// socket addresses, while the `lora` netmod relies on
-    /// cryptographic IDs of nearby gateways.
+    /// The formatting of this address is specific to the netmod implementation,
+    /// meaning that different netmods can rely on fundamentally different
+    /// address schemas to establish their connections.  For example, the `inet`
+    /// netmod simply uses IPv6 socket addresses, while the `lora` netmod relies
+    /// on cryptographic IDs of nearby gateways.
     ///
-    /// The identifier returned must be a unique peer identifier,
-    /// similar to the `Neighbour` abstraction that is used by `send`
-    /// and `next`.  Currently this API doesn't consider stopping a
-    /// peering intent (i.e. even if a connection drops, the netmod
-    /// should always attempt to re-establish the connection).  The
-    /// returned peer identifier can be used in the future to
-    /// disconnect two routers from each other without having to
-    /// restart all other connections.
+    /// The identifier returned must be a unique peer identifier, similar to the
+    /// `Neighbour` abstraction that is used by `send` and `next`.  Currently
+    /// this API doesn't consider stopping a peering intent (i.e. even if a
+    /// connection drops, the netmod should always attempt to re-establish the
+    /// connection).  The returned peer identifier can be used in the future to
+    /// disconnect two routers from each other without having to restart all
+    /// other connections.
     async fn start_peering(&self, _addr: &str) -> Result<u16> {
         unimplemented!()
     }
-
-    /// Return a maximum frame size in bytes
-    ///
-    /// Despite the function name, *this is not a hint* and your
-    /// netmod MAY reject frame envelopes that exceed the maximum
-    /// transfer size of the respective link.
-    ///
-    /// If your communication channel supports external slicing
-    /// mechanisms an implementation MAY also return 0, which will
-    /// disable block-sub-slicing, meaning that full 1K or 32K payload
-    /// frames will be dispatched directly.
-    fn size_hint(&self) -> usize;
 
     /// Send a frame envelope to a target over this link
     ///
@@ -106,10 +92,6 @@ pub trait EndpointExt {
 
 #[async_trait]
 impl<T: EndpointExt + Send + Sync> EndpointExt for Arc<T> {
-    fn size_hint(&self) -> usize {
-        T::size_hint(self)
-    }
-
     async fn send(
         &self,
         envelope: InMemoryEnvelope,

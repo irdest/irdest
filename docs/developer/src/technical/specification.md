@@ -1,244 +1,109 @@
 # Mesh Router Exchange Protocol (MREP)
 
 Status: *pre-draft*
-Start date: *2022-04-05*
-Latest revision: *2023-09-27*
+First revision: *2022-04-05*
+Latest revision: *2024-09-11*
 
-The Irdest router Ratman exchanges user packets as well as routing
-metadata with neighbouring routers.  This communication is facilitated
-through the "mesh router exchange protocol".  It has three scopes.
+The Irdest router Ratman exchanges user packets as well as routing metadata with neighbouring routers.  This communication is facilitated through the "mesh router exchange protocol".  It has three scopes.
 
 1. Exchange user data packets
 2. Collect connection metrics and transmission metadata
 3. Perform routing decisions according to these metrics
 
-The key words "_MUST_", "_MUST NOT_", "_REQUIRED_", "_SHALL_", "_SHALL
-NOT_", "_SHOULD_", "_SHOULD NOT_", "_RECOMMENDED_", "_MAY_", and
-"_OPTIONAL_" in this document are to be interpreted as described in
-[RFC2119]
+The key words "_MUST_", "_MUST NOT_", "_REQUIRED_", "_SHALL_", "_SHALL NOT_", "_SHOULD_", "_SHOULD NOT_", "_RECOMMENDED_", "_MAY_", and "_OPTIONAL_" in this document are to be interpreted as described in [RFC2119]
 
 ## Basics
 
-The Mesh Router Exchange Protocol specifies different mechanisms for
-multiple routers to communicate with each other in order to facilitate
-the flow of messages across a shared network.
+The Mesh Router Exchange Protocol specifies different mechanisms for multiple routers to communicate with each other in order to facilitate the flow of messages across a shared network.
 
-Routers are connected with each other via different communication
-channels (or backplanes), meaning that the routing logic is decoupled
-from the connection logic.  For Ratman, this is done via the *Netmod*
-abstraction.  Each netmod allows routers to peer with each other over
-a variety of backplanes, with each requiring different platform
-specific configuration.
+Routers are connected with each other via different communication channels (or backplanes), meaning that the routing logic is decoupled from the connection logic.  This specification does not make assumptions on the API between a router and the connection logic, but does place requirements and limitations on the information exchange that a valid implementation MUST provide between the two component layers.
 
-Simultaneously an Irdest router MUST allow connections from client
-applications, which can register addresses on the network.  *An
-address on an Irdest network is an [ed25519] public key (32 bytes
-long).*
+Simultaneously an Irdest router MUST allow connections from client applications, which can register addresses on the network.  A client application can register as many addresses as it needs or wants.  From a network perspective the relationship between an address and a device can't necessarily be proven.
 
-A client application can register as many addresses as it needs.  From
-a network perspective the relationship between an address and a device
-can't necessarily be proven.
-
-The terms "Address" and "Id" may be used interchangeably in this
-specification draft.
+The terms "Address" and "Id" may be used interchangeably in this specification draft.
 
 
-### Tangent: Ratman architecture
+### A word on encoding
 
-While this specification doesn't explicitly define the interface
-between an Irdest router and the way it connects networking channels
-between different instances, several of the mechanisms in this
-specification require communication between the wire layer and the
-routing layer.  This section shortly outlines the required function
-endpoints and the data they accept and provide.
+This specification uses Rust-like pseudo-code to express datastructures.  For over-the-network communication MREP uses a low-overhead encoding format called "encoding frames".
 
-(In future this section should become the base for a second
-specification.)
+The "encoding frames" format supports the following data types.  Specific message types are documented in [Appendix A]:
 
-A networking endpoint is defined via the following trait:
+- `u8`, `u16`, `u32`, and `u64`, encoded as 1, 2, 4, or 8 big-endian bytes
+- `bool`, encoded as 1 byte which is either `0`, or `1`
+- `Option<T>`, encoded as a zero-byte
+- `[u8]`, encoded as a 2-byte big-endian length indicator, followed by the raw data buffer
+- `CString`, encoded as a c-style string and zero-byte terminator
+- `Ident32`, is a short-hand for a fixed-size 32-byte buffer which can contain either an address or content ID, and is not length-prepended
 
-```rust
-#[async_trait]
-trait Endpoint {
-    fn msg_size_hint(&self) -> usize;
-
-    async fn peer_mtu(&self, target: Option<Target>) -> Option<usize>;
-
-    async fn send(&self, frame: Frame, target: Target, exclude: Option<u16>) -> Result<()>;
-
-    async fn next(&self) -> Result<(Frame, Target)>;
-}
-```
-
-- `fn msg_size_hint` should return the largest recommended message to
-  be sent over this link at a time.  This metric is used to constrain
-  traffic over low-bandwidth connections.  If no limit exists, return
-  `0`.
-- `fn peer_mtu` queries the MTU value for the peer represented by a
-  target ID.  If no target is given the immediate/ broadcast MTU is
-  queried.  If no MTU could be determined, return `None`.
-- `fn send` takes a frame, a target ID, and an exclusion parameter
-  (used to de-duplicate flood messages on certain backplanes).
-  Returns an error if the frame is too big or the peer is busy.
-- `fn next` will be polled by Ratman on an async task to grab the next
-  incoming frame from a particular endpoint
-  
-## Announcements
-
-Irdest is a gossip based network, meaning that participant addresses need to announce themselves, and rely on intermediary nodes to propagate messages.
-
-Announcements fundamentally allow different network participants to learn of each other's existence without a management intermediary.
+Encoding frames are not self-documenting and instead message types MUST use a versioning byte which is then used to switch between older and newer type implementations.
 
 
-### Router announcements
+### The anatomy of a message
 
-Every router on the Irdest network has a unique address.  Messages sent to this address MUST conform to the MREP Message specification ([Appendix A]).
+When sending a piece of data this is called a "stream", based on the fact that the data is _streamed_ from a connected client to its local router, which encodes the content into [eris] blocks, which are streamed to the local journal.
 
-Routers announce their address to other routers they are immediately connected to.  However unlike regular Irdest addresses, these announcements *SHOULD NOT* be propagated, unless explicitly instructed to do so by the sending router.  This functionality may be added in a later version of this specification.
+From that point routes are selected and the blocks to send are sliced into "frames".  A frame is analogous to a single network packet.  A frame contains metadata such as the sender and recipients, signatures, and ordering information that allows each block to be re-assembled on the receiving end.
 
-Routers announce each other via a specific mechanism in the netmod API.  On broadcast backplanes this should happen at the same frequency as the address announcement loop.
+Intermediary routers can see which frames are associated with a block, but not which blocks make up a full stream.  Because the eris encoding creates a tree of blocks, only the root reference (+ additional metadata) are required to re-assemble the stream.  This message type is called a "manifest", which MUST be additionally encrypted to avoid eavesdropping by intermediary parties.
 
-On connection (or p2p) backplanes this should only be done when initialising a connection, or whenever a connection was re-established/ recovered.
-
-Every router keeps track of the set of routers connected to it, to enable future queries specified in this protocol draft.
+The transport encryption secret is calculated via a diffie-hellman key exchange between the private sender key and the public address key of the recipient (either a single address, or a namespace).
 
 
-### Address announcements
+## Address Announcements
 
-When registering an address, this generates an [ed25519] keypair.  The private key is stored in the router, whereas the public key is used to announce the address on the network.  Ratman does not use address compressions at this time.
+An address in an Irdest network is a 32-byte ed25519 public key, backed by a corresponding private key, which is not shared outside of the router the address belongs to.  The private key MUST be encrypted with some kind of user-facing secret.
 
-The default announcement rate is **2 seconds**.  Following is an example announcement payload.
+For new addresses to spread across the network Irdest uses a gossip announcement approach.  Announcements are re-broadcast periodically (currently every 2 seconds) and have a cryptographically signed timestamp, which MUST be verified by any receiving router.  This way the authenticity of an announced route can be guaranteed.  Announcements with a timestamp outside a particular window of validity MAY be dropped, although this specification does not currently indicate when this should be the case.
 
-```rust
-Announcement {
-  origin: {
-    timestamp: "2022-09-19 23:40:27+02:00",
-  },
-  origin_sign: [binary data],
-  
-  peer: {
-    ...
-  },
-  peer_sign: [binary data],
-  
-  route: {
-    mtu: 1211,
-  },
-}
-```
-
-The announcement structure itself does not need to contain the
-announced address, since it is itself contained in a carrier frame,
-which contains the sending address.
-
-Three metadata sections are used to communicate authenticity,
-reliability and scale of connections across a network.
-
-Origin metadata is provided by the origin of the announcement, and
-*MUST* thus be signed (via the `origin_sign` field).  As per this
-specification it *MUST* contain a timestamp of when the announcement
-was generated.
-
-Additional announcement origin metadata MAY be included by the
-originator in the `origin` section.  Routers *MUST* NOT strip this
-metadata, since it would break the authenticity verification for the
-announcement.  **However** announcements with origin metadata fields
-larger than 1024 bytes *MUST* be discarded.  This limit may be reduced
-in a future version of this specification.
-
-Peer metadata is provided by the immediate peer that an announcement
-was propagated via.  Let's look at the following example.
-
-```
-A  ->  B  ->  C
-```
-
-In the above example, router A is connected to router B, which is
-connected to both A and C, and router C, which is only connected to
-router B.  Messages can flow from A to C via B bidirectionally.
-
-An announcement from A to B will contain origin metadata from A, as
-well as peer metadata from A.  However when B replicates the
-announcement to C, origin metadata will still be from A, but peer
-metadata from B.
-
-Peer metadata is used to provide additional data about a network
-address, which may not be generally relevant to the network and
-instead only spread for a single hop.  Peer metadata is signed by the
-router's address key. For every incoming announcement, routers *MUST*
-replace the previous peer metadata section with their own.  If no
-metadata is provided both the `peer` and `peer_sign` fields *MUST* be
-filled with zeros.
-
-Lastly an announcement contains route metadata, which is not signed
-and can not be trusted.  This field allows routers along the way to
-deposit helpful markers to other routers in the downstream of a
-particular announcement.
-
-This may be related to the reliability of connections, the limitation
-of bandwidth, or that a uni-directional network boundary was crossed.
-Currently only the `mtu` field is specified.  Additional fields will
-be added by later revisions of this specification.
-
-Additionally, the route metadata section *MUST* be pruned if it
-surpasses 512 bytes in length.  Pruning means that only recognized
-fields will be kept, while unknown keys are discarded.
+Announcements MUST NOT be broadcast to the sender channel of the announcement to avoid infinite replication and an announcement ID that has been seen before by a router MUST be dropped.
 
 
-## Route scoring
+## Router announcements
 
-Consider the following scenario:
+Every router on the Irdest network also has a unique address which is not shared with client applications.  Messages sent to this address MUST conform to the MREP Message specification ([Appendix A]).
 
-```
-A -  B  - C
- \ D - E /
-```
+Routers announce their address to other routers they are immediately connected to.  However unlike regular Irdest addresses, these announcements SHOULD NOT be propagated, unless explicitly instructed to do so by the sending router.  However this specification does not currently indicate when this would be the case.
 
-Router A is connected to `B` and `D`, router `B` is connected to `A`
-and `C`, router `C` is connected to `B` and `E`, etc.
-
-Announcements from `A` will reach `C` both via the link from `B` to
-`C` and from `E` to `C`.  Thus, when `C` wants to send a message to
-`A` it needs to consider multiple routes for sending messages.  This
-is called "route scoring" and is implemented via the Route scoring API
-(see Appendix C).
-
-There are many different approaches that can be taken for route
-scoring, especially for loop avoidance strategies.  By making this
-component modular, it means that future additions can radically change
-or overhaul the way that Ratman performs this scoring mechanism,
-without needing large amounts of re-engineering in the core of Ratman.
-
-This also allows network researchers to integrate their research code
-into an existing networking and testing platform.
+Router announcements are re-broadcast periodically (currently every 30 seconds) to all immediately connected routers, via every connection channel.  The receiving router of such an announcement MUST keep track of the connection channel and specific "target ID" of the connection in memory, but SHOULD NOT persist any of the announcement data, unless explicitly indicated by the protocol.  Currently this specification does not indicate when this would be the case.
 
 
-### Default greedy strategy
+## Namespaces
 
-This is the default routing strategy in Ratman.
-
-For any connection/ message pair not qualifying for a small message
-optimisation strategy, ...
-
-*Outline*
-
-- For "large" MTUs (> 1200 bytes?) select path of smallest ETD
-- Otherwise balance an MTU curve vs ETD curve (don't reward high MTU
-  or low ETD at the cost of the other)
+A special kind of address exists called a "namespace".  While a regular address uses an internal private key, a namespace uses a private key provided by a client application.  This allows multiple applications to share the same encryption and verification key for a given namespace to share information amongst different instances of itself across the network.
 
 
-### Small message optimisation strategy
+## Route selection/ "scoring"
 
-This routing strategy is activated when sending messages over a
-connection that fall under the message/ MTU metric requirements of
-[Low bandwidth modes](#Low-bandwidth-modes).
+Because Irdest is a mesh network the selection of a route for any given frame is done by every router that handles it along the way.  This is also due to the fact that no one network participant can have a full picture of the network topology and is thus dependent on peers to forward frames to whichever of their peers is best suited to deliver a particular frame.
 
-*Outline*
+Irdest uses two different route selection (or "route scoring") mechanisms.
 
-- Deny messages that are too big
-- Use pull routing
-- Send the manifest first
-- Use a store & forward protocol (up to a limit?)
+
+### Live route scoring
+
+When a live connection exists this scorer is used.  A connection is considered "live" when the router has received an address announcement from the recipient address in the last 10 seconds.
+
+Because announcements are re-broadcast every 2 seconds this gives some leniance to "network wobbles" and very temporary connection drop-outs.
+
+The live scorer uses both ping latency (calculated based on the signed timestamp in an announcement) and available bandwidth of a given connection.
+
+When a router only has a single link available to reach a peer, this link MUST be used.  When there are multiple routes to a target the links are sorted by their ping times and the lowest ping link MUST be used.
+
+When two ping times are within 10% of each other (i.e. 10ms vs 11ms) the available bandwidth of a link is used as a tie-breaker.  When the bandwidth for each link is _also_ within a 10% window of each other, or one of the links has failed to measure a bandwidth (the announcement didn't contain it, or it was set to `0` for other reasons) only the ping time SHOULD be used to determine the route.
+
+Because ping times are measured end-to-end the overall ping time to a target decreases as a frame gets "closer" to its destination.  This way routing loops can be avoided, because even when a secondary route exists that may provide more bandwidth it is not advantageous for a router to "send back" a frame as it would decrease the ping time.
+
+Links that a frame was received on MUST be excluded from route selection!
+
+
+### Store & Forward scoring
+
+When no live link to a target address exists (i.e. not announcement has been received within the last 10 seconds) the routing behaviour of the live scorer is inverted:
+
+If only one link towards a target address exists it MUST be used.  If multiple links exists, they are sorted by available bandwidth and the link with the highest bandwidth MUST be used.  When two bandwidth values are within a 10% window of each other the ping time to a target MAY be used.
+
+When doing a store & forward routing strategy an implementation MAY rely on the fact that trusted addresses may spend more time in closer proximity to each other, meaning that a trust score can be used to rank them (see Bubble Rap routing in the bibliography).  This mechanism is currently not implemented.
 
 
 ## Security
@@ -463,55 +328,35 @@ For an incoming `LinkLeapRequest` a router MUST spawn a
 
 ## Appendix A: MREP Message specification
 
-This section of the specification outlines the way that MREP container
-messages are encoded.  Any optional fields that are not present in a
-particular structure MUST be replaced with a NULL byte.
+This section of the specification outlines the way that MREP container messages are encoded.  As per the "encoding frames" rules any optional field that is not present MUST be replaced with a zero byte.
 
-The basic container type of any message in an Irdest network is a
-carrier frame, which has the following structure:
+The basic container type of any message in an Irdest network is a carrier frame, which consists of a header and optional payload.  The header has the following structure:
 
 ```rust
-CarrierFrame {
+CarrierFrameHeader {
   version: u8,
   modes: u16,
   recipient: [u8; 32] (optional),
   sender: [u8; 32],
   seq_id: [u8; 34] (optional),
   signature: [u8; 32] (optional),
-  pl_size: u16,
-  payload: [u8, pl_size]
+  payload_size: u16,
 }
 ```
 
 This message structure is **byte aligned**.
 
-- `version` :: indicate which version of the carrier frame format
-  should be parsed.  Currently only the value `0x1` is supported
-- `modes` :: a bitfield that specifies what type of content is encoded
-  into the payload
-- `recipient` :: (Optional) recipient address key.  May be replaced
-  with a single zero byte if the frame is not addressed (see below).
+- `version` :: indicate which version of the carrier frame format should be parsed.  Currently only the value `0x1` is supported
+- `modes` :: a bitfield that specifies what type of content is encoded into the payload
+- `recipient` :: (Optional) recipient address key.  May be replaced with a single zero byte if the frame is not addressed (see below).
 - `sender` :: mandatory sender address key
-- `seq_id` :: (Optional) sequence ID for push messaging payloads,
-  mtu-leap protocol, etc
-- `signature` :: (Optional) payload signature, generated by the
-  sending key.  May be replaced with a single zero byte if the frame
-  has a payload-internal signature (see below).
-- `pl_size` :: 16 bit unsigned integer indicating the size of the data
-  section.  Frame payloads larger than 32kiB are not supported!
-- `payload` :: variable length payload.  Encoding is protocol protocol
-  specific and payload MUST be prepended with an 2 byte size
-  indicator.
+- `seq_id` :: (Optional) sequence ID for push messaging payloads, mtu-leap protocol, etc
+- `signature` :: (Optional) payload signature, generated by the sending key.  May be replaced with a single zero byte if the frame has a payload-internal signature (see below).
+- `payload_size` :: 16 bit unsigned integer indicating the size of the data section.  Frame payloads larger than 32kiB are not supported!
 
-Importantly, the `CarrierFrame` does not include a transmission
-checksum to detect transport errors.  This is because some transport
-channels have a built-in checksum mechanism, and thus the effort would
-be duplicated.  It is up to any netmod to decide whether a
-transmission checksum is required.
+Importantly, the `CarrierFrame` does not include a transmission checksum to detect transport errors.  This is because some transport channels have a built-in checksum mechanism, and thus the effort would be duplicated.  It is up to any netmod to decide whether a transmission checksum is required.
 
-Following is a (*work in progress!*) overview of valid bitfields.  If
-a field is _not_ listed it is _invalid_!  Routers that encounter an
-invalid message MUST discard it.
+Following is a (*work in progress!*) overview of valid bitfields.  If a field is _not_ listed it is _invalid_!  Routers that encounter an invalid message MUST discard it.
 
 
 | Bitfield states       | Frame type descriptor                    |
@@ -532,40 +377,45 @@ invalid message MUST discard it.
 | `???? ???? ???? ????` | LinkLeapNotice                           |
 | `1xxx xxxx xxxx xxxx` | User specified packet type range         |
 
-Message payloads are encoded via their own Protobuf schemas (**TODO**:
-turn pseudo-code schemas from this specification into protobuf type
-definitions).
 
 ### Announcement
 
-`Announcement` frames are special in that they MUST set the
-`recipient` and `signature` field to a single zero byte.  This is
-because announcements are not addressed, and contain a
-payload-internal signature system.  All other message types handled by
-this specification MUST include both a recipient and signature!
+`Announcement` frames are special in that they MUST set the `recipient` and `signature` field to a single zero byte.  This is because announcements are not addressed, and contain a payload-internal signature system.  All other message types handled by this specification MUST include both a recipient and signature!
 
-```protobuf
-message Announcement {
-    OriginData origin = 1;
-    bytes origin_sign = 2;
+The announcement payload consists of multiple parts:
 
-    PeerData peer = 3;
-    bytes peer_sign = 4;
-
-    RouteData route = 5;
-}
-
-message OriginData {
-    string timestamp = 1;
-}
-
-message PeerData { /* tbd */ }
-
-message RouteData {
-    uint32 mtu = 1;
-    uint32 size_hint = 2;
+```rust
+OriginData {
+  timestamp: CString
 }
 ```
+
+The origin data is signed by the announcement sender and MUST not be modified.  Any announcement with an invalid origin data signature MUST be discarded.
+
+```rust
+PeerData { }
+```
+
+Peer data is refreshed at every hop and signed with the corresponding router address key.  This field is currently left blank for future expansion.
+
+```rust
+RouteData {
+  available_bw: u32,
+  available_mtu: u32,
+}
+```
+
+The route data is conditionally modified on every hop and corresponds to the _fully traced_ route from an announced address to an arbitrary recipient on the network.  Both the "bandwidth" and "maximum transfer unit" fields MUST ONLY be updated when the measured value from a particular receiving link is _lower_ than the value that is already included in the route data.
+
+For example, if the given announcement was received over a link that has a measured bandwidth of 32768 B/s (32KB/s) a router MUST update the field before re-broadcasting it to other peers.  For this reason the route data section SHOULD NOT be signed.
+
+```rust
+RouteData {
+  available_bw: 65536
+  available_mtu: 1300,
+}
+```
+
 
 ### Data Frame
 

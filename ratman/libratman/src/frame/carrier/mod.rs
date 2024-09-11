@@ -21,18 +21,27 @@ pub fn random_payload(size: usize) -> Vec<u8> {
 }
 
 pub mod modes {
+    // !!! CONSULT THE MREP SPECIFICATION BEFORE ADDING NEW MESSAGE TYPES !!!
+    
     pub fn str_name(mode: u16) -> &'static str {
         match mode {
             ANNOUNCE => "announce frame",
             DATA => "ERIS block data frame",
             MANIFEST => "ERIS root manifest frame",
+            ROUTER_PEERING => "Router-to-Router introduction",
             _ => "[UNKNOWN]",
         }
     }
 
-    pub const ANNOUNCE: u16 = 2;
-    pub const DATA: u16 = 4;
-    pub const MANIFEST: u16 = 5;
+    // 4-7 are reserved for Announcement types
+    pub const ANNOUNCE: u16 = 4;
+
+    // 8 - are main data payloads
+    pub const DATA: u16 = 8;
+    pub const MANIFEST: u16 = 9;
+
+    // The set of router-router peering protocols are 64-127
+    pub const ROUTER_PEERING: u16 = 64;
 }
 
 ////////////////// SOME TESTS

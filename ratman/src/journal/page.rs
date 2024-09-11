@@ -79,6 +79,11 @@ impl<T: Serialize + DeserializeOwned> CachePage<T> {
             })
             .collect()
     }
+
+    /// Count the number of entries in this cache page
+    pub fn len(&self) -> Result<usize> {
+        Ok(self.0.len()?)
+    }
 }
 
 #[async_trait]

@@ -165,22 +165,13 @@ impl RatmanContext {
 
         // This never fails, we will have a map of netmods here, even if it is empty
         initialise_netmods(&this.config, &this.links, &this.meta_db).await;
-        // {
-        //     let this = Arc::clone(&this);
-        //     new_async_thread("netmod-runner", 128, async move {
-        //         this.tripwire.clone().await;
-        //         debug!("Netmod task system shutting down");
-        //         Ok(())
-        //     });
-        // }
 
-        // Get the initial set of peers from the configuration.
-        // Either this is done via the `peer_file` field, which is
-        // then read and parsed, or via the `peers` list block.  In
-        // either way we have to check for encoding problems.
+        // Get the initial set of peers from the configuration.  Either this is
+        // done via the `peer_file` field, which is then read and parsed, or via
+        // the `peers` list block.  In either way we have to check for encoding
+        // problems.
         //
-        // FIXME: At this point the peer syntax also hasn't been
-        // validated yet!
+        // FIXME: At this point the peer syntax also hasn't been validated yet!
         match ratmand_config
             .get_string_value("peer_file")
             .and_then(|path| helpers::load_peers_file(path).ok())
@@ -188,7 +179,7 @@ impl RatmanContext {
         {
             // If peers exist, add them to the drivers
             Some(peers) => {
-                let mut peer_builder = PeeringBuilder::new(Arc::clone(&this.links));
+                let mut peer_builder = PeeringBuilder::new(Arc::clone(&this.links), Arc::clone(&this.meta_db));
                 for peer in peers {
                     if let Err(e) = peer_builder.attach(peer.as_str()).await {
                         error!("failed to add peer: {}", e);

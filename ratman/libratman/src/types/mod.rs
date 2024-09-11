@@ -6,13 +6,15 @@
 
 mod api_util;
 mod envelope;
-pub mod error;
 mod identifiers;
 mod letterhead;
 mod platform;
 mod recipient;
+mod router;
 mod sequence_id;
 mod status;
+
+pub mod error;
 
 pub use api_util::*;
 pub use envelope::InMemoryEnvelope;
@@ -20,8 +22,10 @@ pub use identifiers::{address::Address, id::Ident32, subnet::Subnet, target::Nei
 pub use letterhead::LetterheadV1;
 pub use platform::{Os, StateDirectoryLock};
 pub use recipient::Recipient;
+pub use router::RouterMeta;
 pub use sequence_id::SequenceIdV1;
 pub use status::CurrentStatus;
+
 use std::ffi::CString;
 
 /// A memcopy-able string shorter than 64 characters

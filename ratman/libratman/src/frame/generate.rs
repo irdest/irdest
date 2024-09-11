@@ -74,6 +74,22 @@ impl FrameGenerator for u64 {
     }
 }
 
+impl FrameGenerator for Option<u64> {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        match self {
+            Some(s) => {
+                buf.push(1);
+                s.generate(buf)?;
+                Ok(())
+            }
+            None => {
+                buf.push(0);
+                Ok(())
+            }
+        }
+    }
+}
+
 #[test]
 fn test_slice_generate() {
     let val: u16 = 1312;

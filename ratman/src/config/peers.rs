@@ -3,8 +3,8 @@
 //! Ratman can either be launched with a known set of peers, or it
 //! must be configured to `accept_unknown_peers`.
 
-use crate::links::LinksMap;
-use libratman::{NetmodError, RatmanError};
+use crate::{links::LinksMap, storage::MetadataDb};
+use libratman::{types::RouterMeta, NetmodError, RatmanError};
 use std::sync::Arc;
 
 /// A helper that parses, validates, and attaches peer data to drivers
@@ -13,6 +13,7 @@ use std::sync::Arc;
 /// ready to use before this process can happen.
 pub struct PeeringBuilder {
     links: Arc<LinksMap>,
+    meta_db: Arc<MetadataDb>,
 }
 
 impl PeeringBuilder {
@@ -20,8 +21,8 @@ impl PeeringBuilder {
     ///
     /// The strings used for identification are used as prefixes in
     /// the peer syntax.
-    pub(crate) fn new(links: Arc<LinksMap>) -> Self {
-        Self { links }
+    pub(crate) fn new(links: Arc<LinksMap>, meta_db: Arc<MetadataDb>) -> Self {
+        Self { links, meta_db }
     }
 
     /// Attach a peer to one of the existing drivers
@@ -39,9 +40,15 @@ impl PeeringBuilder {
 
         match self.links.get_by_name(driver_id).await {
             Some(endpoint) => {
+                let router_meta = RouterMeta {
+                    key_id: self.meta_db.router_id(),
+                    known_peers: self.meta_db.addrs.len()?,
+                    available_buffer: 0,
+                };
+
                 // Ignore the peer_id for now
                 debug!("Start peering request with {address_str}");
-                let _peer_id = endpoint.start_peering(address_str).await;
+                let _peer_id = endpoint.start_peering(address_str, router_meta).await;
                 Ok(())
             }
             None => {

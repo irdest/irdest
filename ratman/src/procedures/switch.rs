@@ -102,7 +102,7 @@ pub(crate) async fn exec_switching_batch(
 
                     match AnnounceFrame::parse(announce_buf) {
                         Ok((remainder, Ok(announce_frame))) => {
-                            // fail softly ;-;
+                            // fixme: fail softly ;-;
                             assert!(remainder.len() == 0);
 
                             // Update the routing table and re-flood the announcement
