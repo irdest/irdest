@@ -73,7 +73,7 @@ Router announcements are re-broadcast periodically (currently every 30 seconds) 
 A special kind of address exists called a "namespace".  While a regular address uses an internal private key, a namespace uses a private key provided by a client application.  This allows multiple applications to share the same encryption and verification key for a given namespace to share information amongst different instances of itself across the network.
 
 
-## Route selection/ "scoring"
+## Route selection / "scoring"
 
 Because Irdest is a mesh network the selection of a route for any given frame is done by every router that handles it along the way.  This is also due to the fact that no one network participant can have a full picture of the network topology and is thus dependent on peers to forward frames to whichever of their peers is best suited to deliver a particular frame.
 
