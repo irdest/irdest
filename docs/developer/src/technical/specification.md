@@ -50,7 +50,7 @@ Intermediary routers can see which frames are associated with a block, but not w
 The transport encryption secret is calculated via a diffie-hellman key exchange between the private sender key and the public address key of the recipient (either a single address, or a namespace).
 
 
-## Address Announcements
+## Address announcements
 
 An address in an Irdest network is a 32-byte ed25519 public key, backed by a corresponding private key, which is not shared outside of the router the address belongs to.  The private key MUST be encrypted with some kind of user-facing secret.
 
