@@ -84,7 +84,7 @@ Irdest uses two different route selection (or "route scoring") mechanisms.
 
 When a live connection exists this scorer is used.  A connection is considered "live" when the router has received an address announcement from the recipient address in the last 10 seconds.
 
-Because announcements are re-broadcast every 2 seconds this gives some leniance to "network wobbles" and very temporary connection drop-outs.
+Because announcements are re-broadcast every 2 seconds this gives some lenience to "network wobbles" and temporary connection drop-outs.
 
 The live scorer uses both ping latency (calculated based on the signed timestamp in an announcement) and available bandwidth of a given connection.
 
