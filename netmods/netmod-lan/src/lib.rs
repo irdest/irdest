@@ -17,9 +17,9 @@ pub(crate) use framing::MemoryEnvelopeExt;
 
 use async_trait::async_trait;
 use libratman::{
-    endpoint::EndpointExt,
+    endpoint::{EndpointExt, NeighbourMetrics},
     types::{Ident32, InMemoryEnvelope, Neighbour},
-    Result,
+    NetmodError, NonfatalError, RatmanError, Result,
 };
 use pnet_datalink::interfaces;
 use std::sync::Arc;
@@ -65,8 +65,26 @@ impl Endpoint {
 
 #[async_trait]
 impl EndpointExt for Endpoint {
-    fn size_hint(&self) -> usize {
-        0
+    async fn metrics_for_neighbour(&self, n: Neighbour) -> Result<NeighbourMetrics> {
+        match n {
+            Neighbour::Single(id) => {
+                let peer_ip = self.addrs.ip(id).await.ok_or(RatmanError::Netmod(
+                    NetmodError::InvalidPeer(format!("{id}")),
+                ))?;
+
+                self.socket
+                    .metrics
+                    .inner
+                    .read()
+                    .await
+                    .get(&peer_ip)
+                    .map(|(_, last_period, _)| *last_period)
+                    .ok_or(RatmanError::Nonfatal(NonfatalError::NoMetrics))
+            }
+            _ => Err(libratman::RatmanError::Netmod(
+                libratman::NetmodError::NotSupported,
+            )),
+        }
     }
 
     async fn send(

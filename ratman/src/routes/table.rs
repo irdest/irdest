@@ -107,9 +107,6 @@ impl RouteTable {
         peer_addr: Address,
         announce_f: AnnounceFrameV1,
     ) -> Result<()> {
-        // let mut tbl = self.routes.lock().await;
-        // let route = RouteType::Remote(EpNeighbourPair(ifid, t));
-
         let new_route;
         match self.meta_db.routes.get(&peer_addr.to_string()).await? {
             Some(RouteData {

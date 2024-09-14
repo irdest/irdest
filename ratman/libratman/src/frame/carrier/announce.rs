@@ -127,25 +127,25 @@ pub struct PeerDataV1 {
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash, Serialize, Deserialize)]
 pub struct RouteDataV1 {
     /// Currently lowest MTU encountered by this announcement
-    pub mtu: u16,
-    /// Currently lowest size_hint encountered by this announcement
-    pub size_hint: u16,
+    pub available_mtu: u32,
+    /// Currently lowest available bandwidth encountered by this announcement
+    pub available_bw: u32,
 }
 
 impl FrameParser for RouteDataV1 {
     type Output = Self;
 
     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
-        let (input, mtu) = parse::take_u16(input)?;
-        let (input, size_hint) = parse::take_u16(input)?;
-        Ok((input, Self { mtu, size_hint }))
+        let (input, available_mtu) = parse::take_u32(input)?;
+        let (input, available_bw) = parse::take_u32(input)?;
+        Ok((input, Self { available_mtu, available_bw }))
     }
 }
 
 impl FrameGenerator for RouteDataV1 {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
-        self.mtu.generate(buf)?;
-        self.size_hint.generate(buf)?;
+        self.available_mtu.generate(buf)?;
+        self.available_bw.generate(buf)?;
         Ok(())
     }
 }
@@ -160,8 +160,8 @@ fn generate_parse_announce() {
         origin,
         origin_signature,
         route: RouteDataV1 {
-            mtu: 0,
-            size_hint: 0,
+            available_mtu: 0,
+            available_bw: 0,
         },
     });
 

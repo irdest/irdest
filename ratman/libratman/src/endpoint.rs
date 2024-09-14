@@ -35,6 +35,12 @@ pub trait EndpointExt {
         CurrentStatus::Unknown
     }
 
+    /// Query collected connection metrics to a given neighbour.  Currently this
+    /// only includes the last measured receive bandwidth.
+    async fn metrics_for_neighbour(&self, _neighbour: Neighbour) -> Result<NeighbourMetrics> {
+        Err(crate::RatmanError::Netmod(crate::NetmodError::NotSupported))
+    }
+
     /// Start a peering session with a remote address
     ///
     /// The formatting of this address is specific to the netmod implementation,
@@ -51,7 +57,7 @@ pub trait EndpointExt {
     /// disconnect two routers from each other without having to restart all
     /// other connections.
     async fn start_peering(&self, _addr: &str) -> Result<u16> {
-        unimplemented!()
+        Err(crate::RatmanError::Netmod(crate::NetmodError::NotSupported))
     }
 
     /// Send a frame envelope to a target over this link
@@ -104,4 +110,16 @@ impl<T: EndpointExt + Send + Sync> EndpointExt for Arc<T> {
     async fn next(&self) -> Result<(InMemoryEnvelope, Neighbour)> {
         T::next(self).await
     }
+}
+
+/// Return measured metrics for a given neighbouing connection
+///
+/// This information is used by the router to update the RouteData in
+/// encountered announcement frames.
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct NeighbourMetrics {
+    /// TX speeds measured in bytes per second
+    pub write_bandwidth: u64,
+    /// RX speeds measured in bytes per second
+    pub read_bandwidth: u64,
 }

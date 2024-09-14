@@ -5,16 +5,19 @@
 //! Socket handler module
 
 use crate::{framing::HandshakeV1, AddrTable, MemoryEnvelopeExt};
+use libratman::endpoint::NeighbourMetrics;
 use libratman::futures::future::{self, Future};
-use libratman::tokio::task::spawn;
+use libratman::tokio::task::{spawn, spawn_local};
+use libratman::tokio::time::{sleep, Instant};
 use libratman::tokio::{net::UdpSocket, sync::RwLock, task};
 use libratman::{
     frame::carrier::{modes, CarrierFrameHeader},
     types::{Ident32, InMemoryEnvelope, Neighbour},
 };
-use std::collections::VecDeque;
+use std::collections::{BTreeMap, VecDeque};
 use std::ffi::CString;
-use std::net::{Ipv6Addr, SocketAddr, SocketAddrV6};
+use std::net::{IpAddr, Ipv6Addr, SocketAddr, SocketAddrV6};
+use std::time::Duration;
 use std::{pin::Pin, sync::Arc, task::Poll};
 use task_notify::Notify;
 
@@ -28,6 +31,55 @@ pub(crate) struct Socket {
     self_rk_id: Ident32,
     sock: Arc<UdpSocket>,
     inbox: Arc<RwLock<Notify<VecDeque<MemoryEnvelopeExt>>>>,
+    pub metrics: Arc<MetricsTable>,
+}
+
+/// The metrics table keeps track of connection metrics for a given
+pub struct MetricsTable {
+    /// (Last time numbers were consolidated, Last period, Current accumulator)
+    pub inner: RwLock<BTreeMap<SocketAddrV6, (Instant, NeighbourMetrics, NeighbourMetrics)>>,
+}
+
+impl MetricsTable {
+    fn new() -> Self {
+        Self {
+            inner: RwLock::new(BTreeMap::new()),
+        }
+    }
+
+    async fn append_write(self: &Arc<Self>, peer: SocketAddrV6, bytes: usize) {
+        let this = Arc::clone(&self);
+        let mut map = self.inner.write().await;
+
+        map.entry(peer).or_insert_with(|| {
+            spawn_local(async move {
+                sleep(Duration::from_secs(12)).await;
+                let mut map = this.inner.write().await;
+                let (mut last_time, mut last_period, mut curr_acc) = map.get_mut(&peer).unwrap();
+                last_time = Instant::now();
+                last_period.write_bandwidth = curr_acc.write_bandwidth;
+                curr_acc.write_bandwidth = 0;
+            });
+            (Instant::now(), Default::default(), Default::default())
+        });
+    }
+
+    async fn append_read(self: &Arc<Self>, peer: SocketAddrV6, bytes: usize) {
+        let this = Arc::clone(&self);
+        let mut map = self.inner.write().await;
+
+        map.entry(peer).or_insert_with(|| {
+            spawn_local(async move {
+                sleep(Duration::from_secs(12)).await;
+                let mut map = this.inner.write().await;
+                let (mut last_time, mut last_period, mut curr_acc) = map.get_mut(&peer).unwrap();
+                last_time = Instant::now();
+                last_period.read_bandwidth = curr_acc.read_bandwidth;
+                curr_acc.read_bandwidth = 0;
+            });
+            (Instant::now(), Default::default(), Default::default())
+        });
+    }
 }
 
 fn if_nametoindex(name: &str) -> std::io::Result<u32> {
@@ -72,6 +124,7 @@ impl Socket {
             self_rk_id: r_key_id,
             sock: Arc::new(sock),
             inbox: Default::default(),
+            metrics: Arc::new(MetricsTable::new()),
         });
 
         Self::incoming_handle(Arc::clone(&arc), table);
@@ -83,10 +136,13 @@ impl Socket {
 
     /// Send a message to one specific client
     pub(crate) async fn send(&self, env: &InMemoryEnvelope, peer: SocketAddrV6) {
-        self.sock
+        let bytes_written = self
+            .sock
             .send_to(&env.buffer.as_slice(), peer)
             .await
             .unwrap();
+        let metrics = Arc::clone(&self.metrics);
+        spawn_local(async move { metrics.append_write(peer, bytes_written).await });
     }
 
     /// Send a multicast with an InMemoryEnvelope
@@ -130,7 +186,7 @@ impl Socket {
                 let mut buf = vec![0; 1024 * 16];
 
                 match arc.sock.recv_from(&mut buf).await {
-                    Ok((_, peer)) => {
+                    Ok((bytes_read, peer)) => {
                         let peer = match peer {
                             SocketAddr::V6(v6) => v6,
                             _ => {
@@ -138,6 +194,9 @@ impl Socket {
                                 continue;
                             }
                         };
+
+                        let metrics = Arc::clone(&arc.metrics);
+                        spawn_local(async move { metrics.append_read(peer, bytes_read).await });
 
                         // Skip this frame if it came from self --
                         // this happens because multicast receives our

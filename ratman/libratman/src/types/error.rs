@@ -96,6 +96,8 @@ pub enum NonfatalError {
     NoStream,
     #[error("requested address {0} is unknown")]
     UnknownAddress(Address),
+    #[error("requested metrics were not available")]
+    NoMetrics,
 }
 
 #[derive(Debug, thiserror::Error)]
