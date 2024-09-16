@@ -13,8 +13,6 @@ mod routes;
 mod server;
 mod session;
 
-use std::sync::Arc;
-
 use peer::{FrameReceiver, FrameSender};
 use routes::Routes;
 use session::{setup_cleanuptask, start_connection, SessionData};
@@ -22,15 +20,16 @@ use {resolve::Resolver, server::Server};
 
 // use async_std::{channel::unbounded, io::WriteExt, net::TcpListener, sync::Arc, task};
 use libratman::{
-    endpoint::EndpointExt,
+    endpoint::{EndpointExt, NeighbourMetrics},
     tokio::{
         sync::{mpsc::channel, Mutex},
         task::spawn,
     },
-    types::{Ident32, InMemoryEnvelope, Neighbour, RouterMeta},
+    types::{Ident32, InMemoryEnvelope, Neighbour},
     NetmodError, RatmanError, Result,
 };
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 
 /// The type of session being created
 #[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -138,6 +137,10 @@ impl InetEndpoint {
             trace!("Target {} exists {}", target, valid);
             let peer = self.routes.get_peer_by_id(target).await.unwrap();
             match peer.send(&envelope).await {
+                Ok(bytes_written) => {
+                    
+                }
+                
                 // In case the connection was dropped, we remove the peer from the routing table
                 Err(_) => {
                     let peer = self.routes.remove_peer(target).await;
@@ -186,6 +189,10 @@ impl InetEndpoint {
 impl EndpointExt for InetEndpoint {
     async fn start_peering(&self, addr: &str) -> Result<u16> {
         self.add_peer(addr.to_owned()).await
+    }
+
+    async fn metrics_for_neighbour(&self, _neighbour: Neighbour) -> Result<NeighbourMetrics> {
+        todo!()
     }
 
     /// Dispatch a `Frame` across this link

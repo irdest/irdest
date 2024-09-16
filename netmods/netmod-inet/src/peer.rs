@@ -86,7 +86,10 @@ impl Peer {
     /// If the sending fails for any reason, the underlying
     /// `SessionData` is returned so that a new session may be
     /// started.
-    pub(crate) async fn send(self: &Arc<Self>, env: &InMemoryEnvelope) -> Result<(), SessionError> {
+    pub(crate) async fn send(
+        self: &Arc<Self>,
+        env: &InMemoryEnvelope,
+    ) -> Result<usize, SessionError> {
         trace!(
             "Sending data for '{}'",
             match env.header.get_seq_id() {
@@ -99,7 +102,7 @@ impl Peer {
         // The TcpStream SHOULD never just disappear
         let tx = txg.as_mut().unwrap();
         match proto::write(&mut *tx, env).await {
-            Ok(()) => Ok(()),
+            Ok(bytes_written) => Ok(bytes_written),
             Err(e) => {
                 warn!("Failed to send data for peer {}: {e:?}", self.session.id);
 
@@ -109,7 +112,7 @@ impl Peer {
                         error!("failed to forward peer restart signal: {e:?}");
                     }
                     debug!("Notify restart hook");
-                    Ok(())
+                    Ok(0)
                 }
                 // Else we just inform the sending context that this
                 // has failed.  On the server side we then remove this

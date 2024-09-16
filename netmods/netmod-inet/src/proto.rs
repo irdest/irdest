@@ -42,13 +42,14 @@ pub(crate) async fn read(rx: &mut OwnedReadHalf) -> Result<InMemoryEnvelope> {
     Ok(read_blocking(rx).await?)
 }
 
-pub(crate) async fn write(tx: &mut OwnedWriteHalf, envelope: &InMemoryEnvelope) -> Result<()> {
+pub(crate) async fn write(tx: &mut OwnedWriteHalf, envelope: &InMemoryEnvelope) -> Result<usize> {
     let mut len_buf = [0; 4];
     BigEndian::write_u32(&mut len_buf, envelope.buffer.len() as u32);
 
-    tx.write(&len_buf).await?;
-    tx.write(&envelope.buffer).await?;
-    Ok(())
+    let mut bytes_written = 0;
+    bytes_written += tx.write(&len_buf).await?;
+    bytes_written += tx.write(&envelope.buffer).await?;
+    Ok(bytes_written)
 }
 
 mod modes {
