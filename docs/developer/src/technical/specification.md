@@ -466,14 +466,18 @@ reserved for such purposes (in decimal numbers `64` to `127`).
 CarrierFrame's in this range MUST NOT be cached in the routing
 journal, or forwarded to any other peer.
 
-```protobuf
-message RouterAnnouncement {
+Currently the only specified message structure is the `RouterMeta` which is used for routers to exchange basic information about their state with their immediate neighbours.  Received router protocol messages MUST NOT be forwarded to other peers.
 
+```rust
+struct RouterMeta {
+    key_id: Ident32,
+    available_buffer: Option<u64>,
+    known_peers: u32
 }
 ```
 
 
-### SyncScopeRequest
+### syncscoperequest
 
 ### SourceRequest
 
@@ -591,7 +595,7 @@ trait RouteScorer {
 
 The implementation of `configure` and `irq_live_announcement` are optional, since the two default scoring mechanisms can run stateless.  Nonetheless configuration and "announcement capture" is supported via this API.
 
-The current definition of `ScorerConfiguration` is defined as follows:
+For any given route scoring module a `ScorerConfiguration` type is constructed and kept in memory along-side the actual scorer.  It's defined as follows:
 
 ```rust
 struct ScorerConfiguration {
@@ -599,70 +603,10 @@ struct ScorerConfiguration {
 }
 ```
 
-It contains a mapping of user-provided trust scores for a set of addresses  Trusted addresses indicate that the user of the device has manually verified the authenticity and validity of a given peer address (for example, that an address does really belong to a given user).  Addresses that have no associated trust score MUST NOT be included in the configuration set.  Currently trust scores are defined per-device.
+It contains a mapping of user-provided trust scores for a set of addresses  Trusted addresses indicate that the user of the device has manually verified the authenticity and validity of a given peer address (for example, that an address does really belong to a given user).  Addresses that have no associated trust score MUST NOT be included in the configuration set.  Currently trust scores are defined per-device.  It is left as an implementation detail to a scoring module how to compute trust scores based on the available router state.
 
-Consider the following scenario:
+When calling `compute` on the route scoring API a module SHOULD return a valid neighbour link and target ID (the link is a connection, the target is a selector for a specific peer on that sub-network).  In case no route could be selected this function MUST return `NonfatalError::NoAvailableRoute` which either fails-over into the next selection strategy or pause routing until a live link could be established again.
 
-```
-A -  B  - C
- \ D - E /
-```
-
-When routing a message from `C` to `A` first the routing table will
-return a set of available routes, with associated metadata:
-
-```rust
-RouteData {
-  peer: [0, 2],
-  meta: {
-    mtu: 1222,
-    size_hint: None,
-    etd: "00:00:31.110",
-  }
-}
-```
-
-- `peer` :: the tuple of `endpoint` and `target` identifiers that
-  identify a routing "direction"
-- `meta.mtu` :: maximum transfer unit of the route
-- `meta.size_hint` :: maximum total message size of the route.  None
-  means there is no imposed limit
-- `meta.etd` :: "estimated transfer delay" uses the incoming
-  announcement timestamp and calculates a delay to the current system
-  time.  While this metric can be _very inaccurate_ due to different
-  time sync mechanisms or badly configured timezones, a route scoring
-  system may still access it.
-
-The API for route scoring is defined via the `RouteScore` trait:
-
-```rust
-trait RouteScore {
-    async fn configure(&self, r: &Router) -> Result<()>; 
-
-    async fn irq_live_announcement(&self, a: &Announcement) -> Result<(), RouteScoreError>;
-    
-    async fn compute(&self, msg_size: usize, meta: [&RouteData]) -> Result<usize, RouteScoreError>;
-}
-```
-
-Via the `configure` flag the router can be set-up to send live
-announcements to the given route score module by calling
-`Router::req_live_announce(&route_scorer)`.  For any incoming
-announcement Ratman will then call the `irq_live_announcement`
-endpoint with a given announcement frame.
-
-```rust
-enum RouteScoreError {
-    UpdateFailed(String),
-    
-    ReSelect(enum Branch {
-        Small,
-        Delay,
-        Trust,
-        Neighbour,
-    })
-}
-```
 
 [RFC2119]: http://www.ietf.org/rfc/rfc2119.txt
 [ERIS]: <https://eris.codeberg.page/spec/>
