@@ -3,17 +3,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use crate::peer::Peer;
-use libratman::tokio::{task::spawn_local, time::sleep};
-use libratman::{endpoint::NeighbourMetrics, tokio::sync::RwLock, types::Ident32};
+use libratman::{tokio::sync::RwLock, types::Ident32};
 use std::{
-    collections::BTreeMap,
-    net::SocketAddr,
-    sync::{
+    collections::BTreeMap, net::SocketAddr, sync::{
         atomic::{AtomicU16, Ordering},
         Arc,
-    },
-    time::{Duration, Instant},
+    }
 };
+use useful_netmod_bits::metrics::MetricsTable;
 
 pub(crate) type Target = u16;
 
@@ -21,7 +18,7 @@ pub(crate) type Target = u16;
 pub(crate) struct Routes {
     latest: AtomicU16,
     pub(crate) inner: RwLock<BTreeMap<Ident32, Arc<Peer>>>,
-    pub(crate) metrics: RwLock<MetricsTable>,
+    pub(crate) metrics: Arc<MetricsTable<SocketAddr>>,
 }
 
 impl Routes {

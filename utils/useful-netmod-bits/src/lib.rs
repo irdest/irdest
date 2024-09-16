@@ -4,3 +4,4 @@
 
 pub mod addrs;
 pub mod framing;
+pub mod metrics;

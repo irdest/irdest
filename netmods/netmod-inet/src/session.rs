@@ -66,7 +66,7 @@ pub(crate) async fn start_connection(
             }
         };
 
-        spawn(Arc::clone(&peer).run());
+        spawn(Arc::clone(&peer).run(Arc::clone(&routes.metrics)));
         routes2.add_peer(id, Arc::clone(&peer)).await;
     });
 

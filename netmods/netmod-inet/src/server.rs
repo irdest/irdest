@@ -113,7 +113,8 @@ async fn handle_stream(s: TcpStream, sender: FrameSender, r: Arc<Routes>, self_k
 
     // Spawn a task to listen for packets for this peer
     let this_peer = Arc::clone(&peer);
-    spawn(async move { this_peer.run().await });
+    let metrics = Arc::clone(&r.metrics);
+    spawn(async move { this_peer.run(metrics).await });
 
     // Also add the peer to the routing table
     r.add_peer(peer.session.peer_router_key_id, peer).await;

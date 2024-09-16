@@ -20,6 +20,7 @@ use std::net::{IpAddr, Ipv6Addr, SocketAddr, SocketAddrV6};
 use std::time::Duration;
 use std::{pin::Pin, sync::Arc, task::Poll};
 use task_notify::Notify;
+use useful_netmod_bits::metrics::MetricsTable;
 
 const MULTI: Ipv6Addr = Ipv6Addr::new(0xFF02, 0, 0, 0, 0, 0, 0, 0x1312);
 const SELF: Ipv6Addr = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0);
@@ -31,55 +32,7 @@ pub(crate) struct Socket {
     self_rk_id: Ident32,
     sock: Arc<UdpSocket>,
     inbox: Arc<RwLock<Notify<VecDeque<MemoryEnvelopeExt>>>>,
-    pub metrics: Arc<MetricsTable>,
-}
-
-/// The metrics table keeps track of connection metrics for a given
-pub struct MetricsTable {
-    /// (Last time numbers were consolidated, Last period, Current accumulator)
-    pub inner: RwLock<BTreeMap<SocketAddrV6, (Instant, NeighbourMetrics, NeighbourMetrics)>>,
-}
-
-impl MetricsTable {
-    fn new() -> Self {
-        Self {
-            inner: RwLock::new(BTreeMap::new()),
-        }
-    }
-
-    async fn append_write(self: &Arc<Self>, peer: SocketAddrV6, bytes: usize) {
-        let this = Arc::clone(&self);
-        let mut map = self.inner.write().await;
-
-        map.entry(peer).or_insert_with(|| {
-            spawn_local(async move {
-                sleep(Duration::from_secs(12)).await;
-                let mut map = this.inner.write().await;
-                let (mut last_time, mut last_period, mut curr_acc) = map.get_mut(&peer).unwrap();
-                last_time = Instant::now();
-                last_period.write_bandwidth = curr_acc.write_bandwidth;
-                curr_acc.write_bandwidth = 0;
-            });
-            (Instant::now(), Default::default(), Default::default())
-        });
-    }
-
-    async fn append_read(self: &Arc<Self>, peer: SocketAddrV6, bytes: usize) {
-        let this = Arc::clone(&self);
-        let mut map = self.inner.write().await;
-
-        map.entry(peer).or_insert_with(|| {
-            spawn_local(async move {
-                sleep(Duration::from_secs(12)).await;
-                let mut map = this.inner.write().await;
-                let (mut last_time, mut last_period, mut curr_acc) = map.get_mut(&peer).unwrap();
-                last_time = Instant::now();
-                last_period.read_bandwidth = curr_acc.read_bandwidth;
-                curr_acc.read_bandwidth = 0;
-            });
-            (Instant::now(), Default::default(), Default::default())
-        });
-    }
+    pub metrics: Arc<MetricsTable<SocketAddrV6>>,
 }
 
 fn if_nametoindex(name: &str) -> std::io::Result<u32> {
@@ -124,7 +77,7 @@ impl Socket {
             self_rk_id: r_key_id,
             sock: Arc::new(sock),
             inbox: Default::default(),
-            metrics: Arc::new(MetricsTable::new()),
+            metrics: Arc::new(MetricsTable::default()),
         });
 
         Self::incoming_handle(Arc::clone(&arc), table);

@@ -285,10 +285,6 @@ impl Endpoint {
 
 #[async_trait]
 impl EndpointExt for Endpoint {
-    fn size_hint(&self) -> usize {
-        1500
-    }
-
     async fn send(
         &self,
         InMemoryEnvelope { mut buffer, header }: InMemoryEnvelope,

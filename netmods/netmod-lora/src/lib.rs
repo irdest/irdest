@@ -157,10 +157,6 @@ impl LoraEndpoint {
 
 #[async_trait]
 impl EndpointExt for LoraEndpoint {
-    fn size_hint(&self) -> usize {
-        PAYLOAD_SIZE
-    }
-
     async fn send(
         &self,
         frame: InMemoryEnvelope,
@@ -175,7 +171,7 @@ impl EndpointExt for LoraEndpoint {
         let header = CtrlHeader {
             magic: IRDEST_MAGIC,
             packet_type: CtrlTypeCode::Data,
-            length: self.size_hint() as u8,
+            length: PAYLOAD_SIZE as u8,
         };
 
         let mut payload = vec![];

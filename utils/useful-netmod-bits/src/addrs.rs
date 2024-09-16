@@ -6,9 +6,8 @@
 
 //! Address resolution table module
 
-use async_std::sync::{Arc, RwLock};
-use libratman::types::Ident32;
-use std::collections::BTreeMap;
+use libratman::{tokio::sync::RwLock, types::Ident32};
+use std::{collections::BTreeMap, sync::Arc};
 
 pub struct AddrTable<T> {
     addrs: Arc<RwLock<BTreeMap<Ident32, T>>>,

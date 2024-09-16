@@ -2,19 +2,23 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
+use std::net::SocketAddr;
 use std::sync::Arc;
 
 use crate::session::{SessionData, SessionError};
 use crate::{proto, routes::Target};
 use libratman::tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
-use libratman::tokio::sync::Mutex;
-use libratman::tokio::task::yield_now;
+use libratman::tokio::{
+    sync::Mutex,
+    task::{spawn_local, yield_now},
+};
 use libratman::types::Ident32;
 use libratman::{
     tokio::sync::mpsc::{Receiver, Sender},
     types::InMemoryEnvelope,
     EncodingError, RatmanError,
 };
+use useful_netmod_bits::metrics::MetricsTable;
 
 pub(crate) type FrameReceiver = Receiver<(Ident32, InMemoryEnvelope)>;
 pub(crate) type FrameSender = Sender<(Ident32, InMemoryEnvelope)>;
@@ -126,7 +130,7 @@ impl Peer {
     }
 
     /// Repeatedly attempt to read from the reading socket
-    pub(crate) async fn run(self: Arc<Self>) {
+    pub(crate) async fn run(self: Arc<Self>, metrics: Arc<MetricsTable<SocketAddr>>) {
         let mut no_data_ctr = 0;
 
         loop {
@@ -142,12 +146,10 @@ impl Peer {
 
             let envelope = match proto::read(rx).await {
                 Ok(f) => {
-                    // trace!("Received frame from stream {}", self.id());
                     no_data_ctr = 0;
                     f
                 }
                 Err(RatmanError::Encoding(EncodingError::NoData)) => {
-                    // trace!("No data for server");
                     no_data_ctr += 1;
                     drop(rxg);
 
@@ -174,6 +176,14 @@ impl Peer {
                 }
                 _ => unreachable!(),
             };
+
+            {
+                // Spawn the metrics update on a local task to not block this loop
+                let metrics2 = Arc::clone(&metrics);
+                let peer_addr = self.session.addr;
+                let bytes_read = envelope.buffer.len();
+                spawn_local(async move { metrics2.append_read(peer_addr, bytes_read).await });
+            }
 
             // If we received a correct frame we forward it to the receiver
             self.receiver

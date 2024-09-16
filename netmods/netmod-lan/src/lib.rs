@@ -72,14 +72,7 @@ impl EndpointExt for Endpoint {
                     NetmodError::InvalidPeer(format!("{id}")),
                 ))?;
 
-                self.socket
-                    .metrics
-                    .inner
-                    .read()
-                    .await
-                    .get(&peer_ip)
-                    .map(|(_, last_period, _)| *last_period)
-                    .ok_or(RatmanError::Nonfatal(NonfatalError::NoMetrics))
+                self.socket.metrics.get_last_period(peer_ip).await
             }
             _ => Err(libratman::RatmanError::Netmod(
                 libratman::NetmodError::NotSupported,

@@ -7,7 +7,5 @@ edition = "2021"
 
 [dependencies]
 libratman = { version = "0.6", path = "../../ratman/libratman", features = ["netmod"] }
-
-async-std = "1.0"
 serde = "1.0"
 bincode = "1.0"

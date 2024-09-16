@@ -23,7 +23,7 @@ use libratman::{
     endpoint::{EndpointExt, NeighbourMetrics},
     tokio::{
         sync::{mpsc::channel, Mutex},
-        task::spawn,
+        task::{spawn, spawn_local},
     },
     types::{Ident32, InMemoryEnvelope, Neighbour},
     NetmodError, RatmanError, Result,
@@ -138,9 +138,13 @@ impl InetEndpoint {
             let peer = self.routes.get_peer_by_id(target).await.unwrap();
             match peer.send(&envelope).await {
                 Ok(bytes_written) => {
-                    
+                    let metrics = Arc::clone(&self.routes.metrics);
+                    let peer_addr = peer.session.addr;
+                    spawn_local(async move {
+                        metrics.append_write(peer_addr, bytes_written).await;
+                    });
                 }
-                
+
                 // In case the connection was dropped, we remove the peer from the routing table
                 Err(_) => {
                     let peer = self.routes.remove_peer(target).await;
@@ -148,7 +152,6 @@ impl InetEndpoint {
                         error!("failed to send frame to peer {}: {}", peer.id(), e);
                     }
                 }
-                _ => {}
             };
         } else {
             error!("Requested peer wasn't found: {:?}", target);
@@ -169,8 +172,17 @@ impl InetEndpoint {
                 _ => {}
             }
 
-            if let Err(e) = peer.send(&envelope).await {
-                error!("failed to send frame to peer {}: {}", peer.id(), e);
+            match peer.send(&envelope).await {
+                Ok(bytes_written) => {
+                    let metrics = Arc::clone(&self.routes.metrics);
+                    let peer_addr = peer.session.addr;
+                    spawn_local(async move {
+                        metrics.append_write(peer_addr, bytes_written).await;
+                    });
+                }
+                Err(e) => {
+                    error!("failed to send frame to peer {}: {}", peer.id(), e);
+                }
             }
         }
 
@@ -191,8 +203,25 @@ impl EndpointExt for InetEndpoint {
         self.add_peer(addr.to_owned()).await
     }
 
-    async fn metrics_for_neighbour(&self, _neighbour: Neighbour) -> Result<NeighbourMetrics> {
-        todo!()
+    async fn metrics_for_neighbour(&self, neighbour: Neighbour) -> Result<NeighbourMetrics> {
+        match neighbour {
+            Neighbour::Single(id) => {
+                let peer_addr = self
+                    .routes
+                    .get_peer_by_id(id)
+                    .await
+                    .ok_or(RatmanError::Netmod(NetmodError::InvalidPeer(format!(
+                        "{neighbour:?}"
+                    ))))?
+                    .session
+                    .addr;
+
+                self.routes.metrics.get_last_period(peer_addr).await
+            }
+            _ => Err(RatmanError::Netmod(NetmodError::InvalidPeer(format!(
+                "{neighbour:?}"
+            )))),
+        }
     }
 
     /// Dispatch a `Frame` across this link
