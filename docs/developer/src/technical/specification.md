@@ -73,7 +73,7 @@ Router announcements are re-broadcast periodically (currently every 30 seconds) 
 A special kind of address exists called a "namespace".  While a regular address uses an internal private key, a namespace uses a private key provided by a client application.  This allows multiple applications to share the same encryption and verification key for a given namespace to share information amongst different instances of itself across the network.
 
 
-## Route selection / "scoring"
+## Route selection / scoring
 
 Because Irdest is a mesh network the selection of a route for any given frame is done by every router that handles it along the way.  This is also due to the fact that no one network participant can have a full picture of the network topology and is thus dependent on peers to forward frames to whichever of their peers is best suited to deliver a particular frame.
 
@@ -90,9 +90,9 @@ The live scorer uses both ping latency (calculated based on the signed timestamp
 
 When a router only has a single link available to reach a peer, this link MUST be used.  When there are multiple routes to a target the links are sorted by their ping times and the lowest ping link MUST be used.
 
-When two ping times are within 10% of each other (i.e. 10ms vs 11ms) the available bandwidth of a link is used as a tie-breaker.  When the bandwidth for each link is _also_ within a 10% window of each other, or one of the links has failed to measure a bandwidth (the announcement didn't contain it, or it was set to `0` for other reasons) only the ping time SHOULD be used to determine the route.
+When two ping times are within 2% of each other (i.e. 10ms vs 11ms) the available bandwidth of a link is used as a tie-breaker.  When the bandwidth for each link is _also_ within a 2% window of each other, or one of the links has failed to measure a bandwidth (the announcement didn't contain it, or it was set to `0` for other reasons) only the ping time SHOULD be used to determine the route.
 
-Because ping times are measured end-to-end the overall ping time to a target decreases as a frame gets "closer" to its destination.  This way routing loops can be avoided, because even when a secondary route exists that may provide more bandwidth it is not advantageous for a router to "send back" a frame as it would decrease the ping time.
+Because ping times are measured end-to-end the overall ping time to a target decreases as a frame gets closer to its destination.  Routing loops can be avoided, because even when a secondary route exists that may provide more bandwidth it is not advantageous for a router to "send back" a frame as it would increase the ping time.
 
 Links that a frame was received on MUST be excluded from route selection!
 
@@ -569,6 +569,37 @@ PullRequest {
 
 
 ## Appendix C: route scoring API
+
+Currently this API is not exposed outside of the router and there is no mechanism to load external route scoring modules at runtime.  Nonetheless, additional route scorers can be added to the ratmand source tree, which comply to the following API:
+
+
+```rust
+#[async_trait]
+trait RouteScorer {
+    async fn configure(&self, _ctx: &Arc<RatmanContext>, _cfg: &mut ScorerConfiguration) -> Result<()> {
+        Ok(())
+    }
+
+    async fn irq_live_announcement(&self, _a: &AnnounceFrame) -> Result<()> {
+        Ok(())
+    }
+
+    async fn compute(&self, _stream_size: usize, _meta: &[&RouteData]) -> Result<EpNeighbourPair>;
+}
+
+```
+
+The implementation of `configure` and `irq_live_announcement` are optional, since the two default scoring mechanisms can run stateless.  Nonetheless configuration and "announcement capture" is supported via this API.
+
+The current definition of `ScorerConfiguration` is defined as follows:
+
+```rust
+struct ScorerConfiguration {
+    trust_scores: BTreeMap<Address, u32>,
+}
+```
+
+It contains a mapping of user-provided trust scores for a set of addresses  Trusted addresses indicate that the user of the device has manually verified the authenticity and validity of a given peer address (for example, that an address does really belong to a given user).  Addresses that have no associated trust score MUST NOT be included in the configuration set.  Currently trust scores are defined per-device.
 
 Consider the following scenario:
 

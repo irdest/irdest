@@ -22,7 +22,7 @@ pub fn random_payload(size: usize) -> Vec<u8> {
 
 pub mod modes {
     // !!! CONSULT THE MREP SPECIFICATION BEFORE ADDING NEW MESSAGE TYPES !!!
-    
+
     pub fn str_name(mode: u16) -> &'static str {
         match mode {
             ANNOUNCE => "announce frame",

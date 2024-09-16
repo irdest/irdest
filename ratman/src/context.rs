@@ -179,7 +179,8 @@ impl RatmanContext {
         {
             // If peers exist, add them to the drivers
             Some(peers) => {
-                let mut peer_builder = PeeringBuilder::new(Arc::clone(&this.links), Arc::clone(&this.meta_db));
+                let mut peer_builder =
+                    PeeringBuilder::new(Arc::clone(&this.links), Arc::clone(&this.meta_db));
                 for peer in peers {
                     if let Err(e) = peer_builder.attach(peer.as_str()).await {
                         error!("failed to add peer: {}", e);

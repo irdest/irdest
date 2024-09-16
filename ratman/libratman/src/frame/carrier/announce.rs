@@ -138,7 +138,13 @@ impl FrameParser for RouteDataV1 {
     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
         let (input, available_mtu) = parse::take_u32(input)?;
         let (input, available_bw) = parse::take_u32(input)?;
-        Ok((input, Self { available_mtu, available_bw }))
+        Ok((
+            input,
+            Self {
+                available_mtu,
+                available_bw,
+            },
+        ))
     }
 }
 
