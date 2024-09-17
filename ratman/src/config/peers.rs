@@ -40,15 +40,15 @@ impl PeeringBuilder {
 
         match self.links.get_by_name(driver_id).await {
             Some(endpoint) => {
-                let router_meta = RouterMeta {
-                    key_id: self.meta_db.router_id(),
-                    known_peers: self.meta_db.addrs.len()?,
-                    available_buffer: 0,
-                };
+                // let router_meta = RouterMeta {
+                //     key_id: self.meta_db.router_id(),
+                //     known_peers: self.meta_db.addrs.len()? as u32,
+                //     available_buffer: 0,
+                // };
 
                 // Ignore the peer_id for now
                 debug!("Start peering request with {address_str}");
-                let _peer_id = endpoint.start_peering(address_str, router_meta).await;
+                let _peer_id = endpoint.start_peering(address_str).await;
                 Ok(())
             }
             None => {

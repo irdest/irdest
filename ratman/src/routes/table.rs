@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 use crate::{
+    links::LinksMap,
     storage::{
         route::{RouteData, RouteEntry, RouteState},
         MetadataDb,
@@ -19,7 +20,7 @@ use libratman::{
         task::{spawn_blocking, spawn_local},
         time::sleep,
     },
-    types::{Address, Ident32},
+    types::{Address, Ident32, Neighbour},
     NonfatalError, RatmanError, Result,
 };
 use serde::{Deserialize, Serialize};
@@ -27,8 +28,10 @@ use std::{
     collections::{BTreeSet, VecDeque},
     iter::FromIterator,
     sync::Arc,
-    time::Duration,
+    time::{Duration, Instant},
 };
+
+use super::scoring::{DefaultScorer, RouteScorer, ScorerConfiguration, StoreForwardScorer};
 
 /// Main Ratman routing table
 ///
@@ -38,7 +41,8 @@ use std::{
 pub(crate) struct RouteTable {
     meta_db: Arc<MetadataDb>,
     activity_tasks: Arc<RwLock<BTreeSet<Address>>>,
-    // routes: Arc<Mutex<BTreeMap<Address, RouteType>>>,
+    solvers: Vec<Box<dyn RouteScorer + Send + Sync + 'static>>,
+    solver_state: RwLock<ScorerConfiguration>,
     #[allow(unused)]
     new: IoPair<Address>,
     #[allow(unused)]
@@ -51,7 +55,8 @@ impl RouteTable {
         let this = Arc::new(Self {
             meta_db,
             activity_tasks: Default::default(),
-            // routes: Default::default(),
+            solvers: vec![Box::new(DefaultScorer), Box::new(StoreForwardScorer)],
+            solver_state: RwLock::new(ScorerConfiguration::default()),
             new: channel(1),
             #[cfg(feature = "dashboard")]
             metrics: metrics::RouteTableMetrics::default(),
@@ -81,7 +86,7 @@ impl RouteTable {
 /////////////////////////////////// SNIP ///////////////////////////////////
 
 /// A netmod endpoint ID and an endpoint target ID
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub(crate) struct EpNeighbourPair(pub(crate) usize, pub(crate) Ident32);
 
 /// An ephemeral routing table
@@ -107,11 +112,14 @@ impl RouteTable {
         peer_addr: Address,
         announce_f: AnnounceFrameV1,
     ) -> Result<()> {
+        let peer_ping = announce_f.origin.elapsed();
+
         let new_route;
         match self.meta_db.routes.get(&peer_addr.to_string()).await? {
             Some(RouteData {
                 peer,
                 mut link_id,
+                ping: _,
                 route_id,
                 mut route,
             }) => {
@@ -134,6 +142,7 @@ impl RouteTable {
                 new_route = RouteData {
                     peer,
                     link_id,
+                    ping: peer_ping,
                     route_id,
                     route,
                 };
@@ -149,6 +158,7 @@ impl RouteTable {
                     peer: peer_addr,
                     link_id: VecDeque::from_iter(vec![ep_neighbour].into_iter()),
                     route_id: Ident32::random(),
+                    ping: peer_ping,
                     route: Some(RouteEntry {
                         data: announce_f.route,
                         state: RouteState::Active,
@@ -189,8 +199,8 @@ impl RouteTable {
     fn start_activity_task(self: Arc<Self>, peer_addr: Address) {
         spawn_local(async move {
             self.activity_tasks.write().await.insert(peer_addr);
-            let announce_timeout = 30;
-            let sleep_time = 10;
+            let announce_timeout = 10;
+            let sleep_time = 4;
             loop {
                 // Check every 30 seconds whether the last announcement
                 // is older than 1 minute.  If so, we declare the route
@@ -285,14 +295,65 @@ impl RouteTable {
     }
 
     /// Get the endpoint and target ID for a peer's address
-    pub(crate) async fn resolve(&self, peer_addr: Address) -> Option<EpNeighbourPair> {
-        self.meta_db
+    pub(crate) async fn resolve(
+        &self,
+        links: &Arc<LinksMap>,
+        peer_addr: Address,
+    ) -> Result<EpNeighbourPair> {
+        let route_data = self
+            .meta_db
             .routes
             .get(&peer_addr.to_string())
             .await
             .ok()
             .flatten()
-            .and_then(|route_data| route_data.link_id.get(0).copied())
+            .ok_or(RatmanError::Nonfatal(NonfatalError::NoAvailableRoute))?;
+
+        let mut scorer_state = self.solver_state.write().await;
+
+        // We know what neighbours we are considering, and we have access to the
+        // links map here.  So we fill in the available bandwidth metrics into
+        // the scorer state here.
+        for EpNeighbourPair(ref link_id, ref neighbour_id) in &route_data.link_id {
+            match links
+                .get(*link_id)
+                .await
+                .1
+                .metrics_for_neighbour(Neighbour::Single(*neighbour_id))
+                .await
+            {
+                Ok(metrics) => {
+                    scorer_state
+                        .available_bw
+                        .insert(EpNeighbourPair(*link_id, *neighbour_id), metrics);
+                }
+                Err(e) => {
+                    warn!("couldn't collect bandwidth metrics for {link_id}:{neighbour_id}: {e}");
+                }
+            }
+        }
+
+        // Now we iterate all the available solvers in the order they were added
+        // to the route table and pass the available route data and scorer state
+        // into it.  The first solver that produces a hit will resolve the
+        // address.
+        for idx in 0..self.solvers.len() {
+            match self
+                .solvers
+                .get(idx)
+                .unwrap()
+                .compute(0, &scorer_state, &route_data)
+                .await
+            {
+                Ok(ep) => return Ok(ep),
+                Err(_) => {
+                    debug!("failed to resolve route via solver id={idx}");
+                }
+            }
+        }
+
+        // If no solverwas able to produce a route we return an error
+        Err(RatmanError::Nonfatal(NonfatalError::NoAvailableRoute))
     }
 
     /// Check if an ID is reachable via currently known routes

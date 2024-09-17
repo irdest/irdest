@@ -32,10 +32,6 @@ impl FuzzEndpoint {
 
 #[async_trait::async_trait]
 impl EndpointExt for FuzzEndpoint {
-    fn size_hint(&self) -> usize {
-        0
-    }
-
     async fn send(
         &self,
         _: InMemoryEnvelope,

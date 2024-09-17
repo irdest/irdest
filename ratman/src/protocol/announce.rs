@@ -48,8 +48,8 @@ impl AddressAnnouncer {
             origin,
             origin_signature: origin_signature.to_bytes(),
             route: RouteDataV1 {
-                mtu: 0,
-                size_hint: 0,
+                available_mtu: 0,
+                available_bw: 0,
             },
         }))
     }

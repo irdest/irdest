@@ -86,11 +86,6 @@ impl MemMod {
 
 #[async_trait]
 impl EndpointExt for MemMod {
-    /// Provides maximum frame-size information to `RATMAN`
-    fn size_hint(&self) -> usize {
-        ::std::u32::MAX as usize
-    }
-
     /// Send a message to a specific endpoint (client)
     ///
     /// # Errors

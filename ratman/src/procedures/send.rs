@@ -275,10 +275,10 @@ pub(crate) async fn dispatch_frame(
         return Ok(());
     }
 
-    let EpNeighbourPair(epid, nb) = match routes.resolve(target_address).await {
+    let EpNeighbourPair(epid, nb) = match routes.resolve(drivers, target_address).await {
         // Return the endpoint/target ID pair from the resolver
-        Some(resolve) => resolve,
-        None => {
+        Ok(resolve) => resolve,
+        Err(_) => {
             debug!(
                 "{}: failed to resolve address {}",
                 "[SOFT FAIL]".custom_color(crate::util::SOFT_WARN_COLOR),

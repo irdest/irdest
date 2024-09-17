@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::{
     frame::{parse, FrameGenerator, FrameParser},
     EncodingError, Result,
@@ -99,6 +101,13 @@ impl OriginDataV1 {
         Self {
             timestamp: Utc::now(),
         }
+    }
+
+    pub fn elapsed(&self) -> Duration {
+        (Utc::now() - self.timestamp)
+            .to_std()
+            // If we fail to convert this duration we just make one up
+            .unwrap_or_else(|_| Duration::from_millis(15 + rand::random::<u64>() % 100))
     }
 }
 

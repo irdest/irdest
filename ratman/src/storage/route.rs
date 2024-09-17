@@ -5,13 +5,14 @@ use libratman::{
     types::{Address, Ident32},
 };
 use serde::{Deserialize, Serialize};
-use std::collections::VecDeque;
+use std::{collections::VecDeque, time::Duration};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RouteData {
     pub peer: Address,
     pub link_id: VecDeque<EpNeighbourPair>,
     pub route_id: Ident32,
+    pub ping: Duration,
     pub route: Option<RouteEntry>,
 }
 
@@ -21,6 +22,7 @@ impl RouteData {
             peer: addr,
             link_id: VecDeque::new(),
             route_id: Ident32::random(),
+            ping: Duration::from_millis(rand::random::<u64>() % 10),
             route: None,
         }
     }

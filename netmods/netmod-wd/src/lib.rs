@@ -50,10 +50,6 @@ impl WdMod {
 
 #[async_trait]
 impl EndpointExt for WdMod {
-    fn size_hint(&self) -> usize {
-        0
-    }
-
     async fn send(&self, frame: InMemoryEnvelope, t: Neighbour, _: Option<Ident32>) -> Result<()> {
         self.send_queue.0.send((frame, t)).await.unwrap();
         Ok(())
