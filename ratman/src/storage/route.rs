@@ -5,25 +5,23 @@ use libratman::{
     types::{Address, Ident32},
 };
 use serde::{Deserialize, Serialize};
-use std::{collections::VecDeque, time::Duration};
+use std::{collections::BTreeMap, time::Duration};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RouteData {
     pub peer: Address,
-    pub link_id: VecDeque<EpNeighbourPair>,
+    pub link_id: Vec<EpNeighbourPair>,
+    pub link_data: BTreeMap<EpNeighbourPair, RouteEntry>,
     pub route_id: Ident32,
-    pub ping: Duration,
-    pub route: Option<RouteEntry>,
 }
 
 impl RouteData {
     pub fn local(addr: Address) -> Self {
         Self {
             peer: addr,
-            link_id: VecDeque::new(),
+            link_id: Vec::new(),
+            link_data: BTreeMap::new(),
             route_id: Ident32::random(),
-            ping: Duration::from_millis(rand::random::<u64>() % 10),
-            route: None,
         }
     }
 }
@@ -33,6 +31,7 @@ impl RouteData {
 pub struct RouteEntry {
     pub data: RouteDataV1,
     pub state: RouteState,
+    pub ping: Duration,
     pub first_seen: DateTime<Utc>,
     pub last_seen: DateTime<Utc>,
 }

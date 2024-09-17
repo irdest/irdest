@@ -25,7 +25,7 @@ use libratman::{
 };
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::{BTreeSet, VecDeque},
+    collections::{BTreeMap, BTreeSet, VecDeque},
     iter::FromIterator,
     sync::Arc,
     time::{Duration, Instant},
@@ -113,58 +113,83 @@ impl RouteTable {
         announce_f: AnnounceFrameV1,
     ) -> Result<()> {
         let peer_ping = announce_f.origin.elapsed();
-
+        let newly_active;
         let new_route;
+
         match self.meta_db.routes.get(&peer_addr.to_string()).await? {
             Some(RouteData {
                 peer,
                 mut link_id,
-                ping: _,
+                mut link_data,
                 route_id,
-                mut route,
             }) => {
-                // If current ifid is contained in route set AND not currently
-                // the highest priority anyway (AND set not empty)
-                if link_id.contains(&ep_neighbour) && link_id.get(0) != Some(&ep_neighbour) {
-                    // filter current ifid from set and write back
-                    link_id = link_id.into_iter().filter(|x| x != &ep_neighbour).collect();
-                    // then push current ifid to front
-                    link_id.push_front(ep_neighbour);
+                // If there are no currently active links we mark this address
+                // as "newly_active", which spawns a activity_check task below
+                newly_active = link_data
+                    .iter()
+                    .find(|(_, entry)| entry.state == RouteState::Active)
+                    .is_none();
+
+                // Update the peer ping for this neighbour
+                match link_data.get_mut(&ep_neighbour) {
+                    Some(ref mut entry) => {
+                        entry.ping = peer_ping;
+                        entry.last_seen = Utc::now();
+                        entry.state = RouteState::Active;
+                        entry.data = announce_f.route;
+                    }
+                    None => {
+                        link_data.insert(
+                            ep_neighbour,
+                            RouteEntry {
+                                data: announce_f.route,
+                                state: RouteState::Active,
+                                ping: peer_ping,
+                                first_seen: Utc::now(),
+                                last_seen: Utc::now(),
+                            },
+                        );
+                        link_id.push(ep_neighbour);
+                    }
                 }
 
-                // Update other bits of metadata
-                if let Some(ref mut route) = route.as_mut() {
-                    route.last_seen = Utc::now();
-                    route.state = RouteState::Active;
-                    route.data = announce_f.route;
-                }
+                // Sort the available neighbours by the new ping times
+                link_id.sort_by(|a, b| link_data[&a].ping.cmp(&link_data[&b].ping));
 
                 new_route = RouteData {
                     peer,
                     link_id,
-                    ping: peer_ping,
+                    link_data,
                     route_id,
-                    route,
                 };
 
                 trace!(
-                    "Update existing route to {} with new link information {new_route:?}",
+                    "Update existing route to {} via neighbour {ep_neighbour:?}",
                     peer.pretty_string()
                 );
             }
             None => {
                 info!("Discovered new address: {}", peer_addr.pretty_string());
+                newly_active = true;
                 new_route = RouteData {
                     peer: peer_addr,
-                    link_id: VecDeque::from_iter(vec![ep_neighbour].into_iter()),
+                    link_id: vec![ep_neighbour],
+                    link_data: {
+                        let mut map = BTreeMap::new();
+                        map.insert(
+                            ep_neighbour,
+                            RouteEntry {
+                                data: announce_f.route,
+                                state: RouteState::Active,
+                                ping: peer_ping,
+                                first_seen: Utc::now(),
+                                last_seen: Utc::now(),
+                            },
+                        );
+
+                        map
+                    },
                     route_id: Ident32::random(),
-                    ping: peer_ping,
-                    route: Some(RouteEntry {
-                        data: announce_f.route,
-                        state: RouteState::Active,
-                        first_seen: Utc::now(),
-                        last_seen: Utc::now(),
-                    }),
                 };
             }
         }
@@ -179,11 +204,9 @@ impl RouteTable {
         // still active.  Inactive addresses don't need this since any new
         // announcement will set their state to active, which will then spawn
         // this task anyway :)
-        if let Some(route) = new_route.route {
-            if route.state == RouteState::Active {
-                if self.activity_tasks.read().await.get(&peer_addr).is_none() {
-                    Arc::clone(self).start_activity_task(peer_addr);
-                }
+        if newly_active {
+            if self.activity_tasks.read().await.get(&peer_addr).is_none() {
+                Arc::clone(self).start_activity_task(peer_addr);
             }
         }
 

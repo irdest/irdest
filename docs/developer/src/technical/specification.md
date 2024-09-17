@@ -75,22 +75,24 @@ A special kind of address exists called a "namespace".  While a regular address 
 
 ## Route selection / scoring
 
-Because Irdest is a mesh network the selection of a route for any given frame is done by every router that handles it along the way.  This is also due to the fact that no one network participant can have a full picture of the network topology and is thus dependent on peers to forward frames to whichever of their peers is best suited to deliver a particular frame.
+Because Irdest is a mesh network the selection of a route for any given frame is done by every router that handles it along the way.  This is also due to the fact that no one network participant can have a full picture of the network topology and is thus dependent on peers to forward frames to whichever of their neighbours is best suited to deliver a particular frame.
+
+A neighbour in Irdest is a device that is connected to the current router via some communication channel (netmod).  The terms "netmod", "connection", and "neighbour" are used interchangably.
 
 Irdest uses two different route selection (or "route scoring") mechanisms.
 
 
 ### Live route scoring
 
-When a live connection exists this scorer is used.  A connection is considered "live" when the router has received an address announcement from the recipient address in the last 10 seconds.
+When a live connection exists this scorer is used.  A connection is considered "live" when the router has received an address announcement from the recipient address from a given neighbour in the last 30 seconds.
 
-Because announcements are re-broadcast every 2 seconds this gives some lenience to "network wobbles" and temporary connection drop-outs.
+Because announcements are re-broadcast every 2 seconds this gives lenience to "network wobbles" and temporary connection drop-outs.  When announcements stop being received from a neighbour it is marked as `Idle` and skipped when doing route selection via the live scorer.
 
-The live scorer uses both ping latency (calculated based on the signed timestamp in an announcement) and available bandwidth of a given connection.
+The live scorer uses both ping latency (calculated based on the signed timestamp in an announcement) and a measured available bandwidth approximation of a given connection.
 
 When a router only has a single link available to reach a peer, this link MUST be used.  When there are multiple routes to a target the links are sorted by their ping times and the lowest ping link MUST be used.
 
-When two ping times are within 2% of each other (i.e. 10ms vs 11ms) the available bandwidth of a link is used as a tie-breaker.  When the bandwidth for each link is _also_ within a 2% window of each other, or one of the links has failed to measure a bandwidth (the announcement didn't contain it, or it was set to `0` for other reasons) only the ping time SHOULD be used to determine the route.
+When two ping times are within 10% of each other (i.e. 10ms vs 11ms) the available bandwidth of a link is used as a tie-breaker.  When the bandwidth for each link is _also_ within a 2% window of each other, or one of the links has failed to measure a bandwidth (the announcement didn't contain it, or it was set to `0` for other reasons) only the ping time SHOULD be used to determine the route.
 
 Because ping times are measured end-to-end the overall ping time to a target decreases as a frame gets closer to its destination.  Routing loops can be avoided, because even when a secondary route exists that may provide more bandwidth it is not advantageous for a router to "send back" a frame as it would increase the ping time.
 
