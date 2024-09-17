@@ -1,6 +1,8 @@
 use crate::{context::RatmanContext, storage::route::RouteData};
 use async_trait::async_trait;
-use libratman::{endpoint::NeighbourMetrics, frame::carrier::AnnounceFrame, types::Address, Result};
+use libratman::{
+    endpoint::NeighbourMetrics, frame::carrier::AnnounceFrame, types::Address, Result,
+};
 use std::{collections::BTreeMap, sync::Arc};
 
 use super::EpNeighbourPair;
@@ -56,6 +58,7 @@ pub struct DefaultScorer;
 impl RouteScorer for DefaultScorer {
     async fn compute(
         &self,
+        // Currently unused
         _stream_size: usize,
         _cfg: &ScorerConfiguration,
         _meta: &RouteData,

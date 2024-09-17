@@ -5,10 +5,12 @@
 use crate::peer::Peer;
 use libratman::{tokio::sync::RwLock, types::Ident32};
 use std::{
-    collections::BTreeMap, net::SocketAddr, sync::{
+    collections::BTreeMap,
+    net::SocketAddr,
+    sync::{
         atomic::{AtomicU16, Ordering},
         Arc,
-    }
+    },
 };
 use useful_netmod_bits::metrics::MetricsTable;
 

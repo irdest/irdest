@@ -99,7 +99,7 @@ pub enum NonfatalError {
     #[error("requested metrics were not available")]
     NoMetrics,
     #[error("requested address could not be routed to at this moment")]
-    NoAvailableRoute
+    NoAvailableRoute,
 }
 
 #[derive(Debug, thiserror::Error)]
