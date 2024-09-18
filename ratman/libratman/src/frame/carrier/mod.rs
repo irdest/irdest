@@ -60,10 +60,7 @@ fn full_announce_frame() {
     let af = AnnounceFrame::V1(AnnounceFrameV1 {
         origin,
         origin_signature,
-        route: RouteDataV1 {
-            mtu: 0,
-            size_hint: 0,
-        },
+        route: RouteDataV1 { available_mtu: 0 },
     });
 
     let mut afb = vec![];

@@ -23,7 +23,7 @@ use libratman::{
     endpoint::{EndpointExt, NeighbourMetrics},
     tokio::{
         sync::{mpsc::channel, Mutex},
-        task::{spawn, spawn_local},
+        task::spawn,
     },
     types::{Ident32, InMemoryEnvelope, Neighbour},
     NetmodError, RatmanError, Result,
@@ -140,7 +140,7 @@ impl InetEndpoint {
                 Ok(bytes_written) => {
                     let metrics = Arc::clone(&self.routes.metrics);
                     let peer_addr = peer.session.addr;
-                    spawn_local(async move {
+                    spawn(async move {
                         metrics.append_write(peer_addr, bytes_written).await;
                     });
                 }
@@ -176,7 +176,7 @@ impl InetEndpoint {
                 Ok(bytes_written) => {
                     let metrics = Arc::clone(&self.routes.metrics);
                     let peer_addr = peer.session.addr;
-                    spawn_local(async move {
+                    spawn(async move {
                         metrics.append_write(peer_addr, bytes_written).await;
                     });
                 }

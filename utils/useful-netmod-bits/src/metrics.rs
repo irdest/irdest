@@ -1,6 +1,6 @@
 use libratman::{
     endpoint::NeighbourMetrics,
-    tokio::{sync::RwLock, task::spawn_local, time::sleep},
+    tokio::{sync::RwLock, task::spawn, time::sleep},
     NonfatalError, RatmanError, Result,
 };
 use std::{
@@ -10,18 +10,27 @@ use std::{
 };
 
 /// The metrics table keeps track of connection metrics for a given
-pub struct MetricsTable<A: PartialOrd + Ord + Copy + 'static> {
+pub struct MetricsTable<A>
+where
+    A: PartialOrd + Ord + Copy + Send + Sync + 'static,
+{
     /// (Last time numbers were consolidated, Last period, Current accumulator)
     pub inner: RwLock<BTreeMap<A, (Instant, NeighbourMetrics, NeighbourMetrics)>>,
 }
 
-impl<A: PartialOrd + Ord + Copy + 'static> Default for MetricsTable<A> {
+impl<A> Default for MetricsTable<A>
+where
+    A: PartialOrd + Ord + Copy + Send + Sync + 'static,
+{
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<A: PartialOrd + Ord + Copy + 'static> MetricsTable<A> {
+impl<A> MetricsTable<A>
+where
+    A: PartialOrd + Ord + Copy + Send + Sync + 'static,
+{
     fn new() -> Self {
         Self {
             inner: RwLock::new(BTreeMap::new()),
@@ -43,7 +52,7 @@ impl<A: PartialOrd + Ord + Copy + 'static> MetricsTable<A> {
 
         map.entry(peer)
             .or_insert_with(move || {
-                spawn_local(async move {
+                spawn(async move {
                     sleep(Duration::from_secs(10)).await;
                     let mut map = this.inner.write().await;
                     let (ref mut last_time, mut last_period, mut curr_acc) =
@@ -64,7 +73,7 @@ impl<A: PartialOrd + Ord + Copy + 'static> MetricsTable<A> {
 
         map.entry(peer)
             .or_insert_with(move || {
-                spawn_local(async move {
+                spawn(async move {
                     sleep(Duration::from_secs(10)).await;
                     let mut map = this.inner.write().await;
                     let (ref mut last_time, mut last_period, mut curr_acc) =

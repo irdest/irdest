@@ -7,7 +7,7 @@
 use crate::{framing::HandshakeV1, AddrTable, MemoryEnvelopeExt};
 use libratman::endpoint::NeighbourMetrics;
 use libratman::futures::future::{self, Future};
-use libratman::tokio::task::{spawn, spawn_local};
+use libratman::tokio::task::spawn;
 use libratman::tokio::time::{sleep, Instant};
 use libratman::tokio::{net::UdpSocket, sync::RwLock, task};
 use libratman::{
@@ -95,7 +95,7 @@ impl Socket {
             .await
             .unwrap();
         let metrics = Arc::clone(&self.metrics);
-        spawn_local(async move { metrics.append_write(peer, bytes_written).await });
+        spawn(async move { metrics.append_write(peer, bytes_written).await });
     }
 
     /// Send a multicast with an InMemoryEnvelope
@@ -149,7 +149,7 @@ impl Socket {
                         };
 
                         let metrics = Arc::clone(&arc.metrics);
-                        spawn_local(async move { metrics.append_read(peer, bytes_read).await });
+                        spawn(async move { metrics.append_read(peer, bytes_read).await });
 
                         // Skip this frame if it came from self --
                         // this happens because multicast receives our

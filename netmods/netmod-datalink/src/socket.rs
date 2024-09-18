@@ -10,7 +10,7 @@ use libratman::{
     futures::future,
     tokio::{
         sync::{Mutex, RwLock},
-        task::spawn_local,
+        task::spawn,
     },
     types::{Ident32, InMemoryEnvelope, Neighbour},
 };
@@ -132,7 +132,7 @@ impl Socket {
 
     #[instrument(skip(arc, table), level = "trace")]
     fn incoming_handle(arc: Arc<Self>, table: Arc<AddrTable<MacAddr>>) {
-        spawn_local(async move {
+        spawn(async move {
             loop {
                 let mut rx = arc.rx.lock().await;
 

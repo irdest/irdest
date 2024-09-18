@@ -47,10 +47,7 @@ impl AddressAnnouncer {
         Ok(AnnounceFrame::V1(AnnounceFrameV1 {
             origin,
             origin_signature: origin_signature.to_bytes(),
-            route: RouteDataV1 {
-                available_mtu: 0,
-                available_bw: 0,
-            },
+            route: RouteDataV1 { available_mtu: 0 },
         }))
     }
 

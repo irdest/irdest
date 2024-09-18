@@ -10,7 +10,7 @@ use crate::{proto, routes::Target};
 use libratman::tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use libratman::tokio::{
     sync::Mutex,
-    task::{spawn_local, yield_now},
+    task::{spawn, yield_now},
 };
 use libratman::types::Ident32;
 use libratman::{
@@ -182,7 +182,7 @@ impl Peer {
                 let metrics2 = Arc::clone(&metrics);
                 let peer_addr = self.session.addr;
                 let bytes_read = envelope.buffer.len();
-                spawn_local(async move { metrics2.append_read(peer_addr, bytes_read).await });
+                spawn(async move { metrics2.append_read(peer_addr, bytes_read).await });
             }
 
             // If we received a correct frame we forward it to the receiver

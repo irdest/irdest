@@ -25,10 +25,9 @@ use libratman::{
 };
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::{BTreeMap, BTreeSet, VecDeque},
-    iter::FromIterator,
+    collections::{BTreeMap, BTreeSet},
     sync::Arc,
-    time::{Duration, Instant},
+    time::Duration,
 };
 
 use super::scoring::{DefaultScorer, RouteScorer, ScorerConfiguration, StoreForwardScorer};
@@ -71,9 +70,12 @@ impl RouteTable {
             .routes
             .iter()
             .into_iter()
-            .filter_map(|(_, entry)| match entry.route {
-                Some(_) => Some(entry.peer),
-                None => None,
+            .filter_map(|(_, entry)| {
+                if entry.link_data.is_empty() {
+                    None
+                } else {
+                    Some(entry.peer)
+                }
             })
             .for_each(|peer| {
                 this.clone().start_activity_task(peer);
@@ -232,25 +234,30 @@ impl RouteTable {
                 sleep(Duration::from_secs(sleep_time)).await;
                 match self.meta_db.routes.get(&peer_addr.to_string()).await {
                     Ok(Some(mut entry)) => {
-                        //
-                        // If the route is None it is a local address and we don't care
-                        if let Some(route) = entry.route.as_mut() {
-                            // todo: make this timeout configurable
-                            if (check - route.last_seen).num_seconds() > announce_timeout {
-                                route.state = RouteState::Idle;
-                                info!("No announcement in >{announce_timeout} seconds: marking address {peer_addr} as IDLE");
-
-                                if let Err(e) = self
-                                    .meta_db
-                                    .routes
-                                    .insert(peer_addr.to_string(), &entry)
-                                    .await
-                                {
-                                    error!("failed to update activity status for peer: {e}, abort acitivy check task");
-                                }
-
-                                break;
+                        // Iterate over all endpoints and mark those that
+                        // haven't received an announcement for a while as
+                        // inactive.
+                        let mut all_down = true;
+                        for (_, ref mut data) in entry.link_data.iter_mut() {
+                            if (check - data.last_seen).num_seconds() > announce_timeout {
+                                data.state = RouteState::Idle;
+                            } else {
+                                all_down = false;
                             }
+                        }
+
+                        if all_down {
+                            // Log that the address is now inaccessible
+                            info!("No announcement in >{announce_timeout} seconds: marking address {peer_addr} as IDLE");
+                        }
+
+                        if let Err(e) = self
+                            .meta_db
+                            .routes
+                            .insert(peer_addr.to_string(), &entry)
+                            .await
+                        {
+                            error!("failed to update activity status for peer: {e}, abort acitivy check task");
                         }
                     }
                     _ => {
@@ -278,13 +285,10 @@ impl RouteTable {
                 // fail on very large nodes.  But that's a future problem
                 .iter()
                 .into_iter()
-                .filter(|(_, entry)| entry.route.is_some())
-                .map(|(_, entry)| PeerEntry {
-                    addr: entry.peer,
-                    first_connection: entry.route.unwrap().first_seen,
-                    last_connection: entry.route.unwrap().last_seen,
-                    active: entry.route.unwrap().state == RouteState::Active,
-                })
+                // Any entry that has link_data is remote
+                .filter(|(_, entry)| !entry.link_data.is_empty())
+                // Then construct a PeerEntry type from the available data
+                .map(|(_, entry)| entry.make_peer_entry())
                 .collect())
         })
         .await?
@@ -314,7 +318,7 @@ impl RouteTable {
                 maybe_local,
             )))
             // Local addresses don't have route data associated
-            .is_ok_and(|rd| rd.route.is_none()))
+            .is_ok_and(|rd| rd.link_data.is_empty()))
     }
 
     /// Get the endpoint and target ID for a peer's address
@@ -393,7 +397,13 @@ impl RouteTable {
             .await
             .ok()
             .flatten()
-            .and_then(|route_data| route_data.route.map(|r| r.state))
+            .and_then(|route_data| {
+                route_data
+                    .link_data
+                    .iter()
+                    .find(|(_, entry)| entry.state == RouteState::Active)
+                    .map(|(_, entry)| entry.state)
+            })
     }
 }
 
