@@ -11,7 +11,7 @@ use crate::{
     journal::Journal,
     links::LinksMap,
     procedures::{self, BlockCollector, BlockNotifier, SenderSystem, SubsManager},
-    protocol::Protocol,
+    protocol::{Protocol, RouterAnnouncement},
     routes::RouteTable,
     storage::MetadataDb,
     util::{self, codes, setup_logging},
@@ -335,7 +335,10 @@ impl RatmanContext {
         }
 
         // Start the router announcement protocol
-        
+        Arc::new(RouterAnnouncement {
+            key_id: this.meta_db.router_id(),
+        })
+        .run(Arc::clone(&this));
 
         // todo: setup management machinery to handle result events
         if let Err(e) = api::start_api_thread(

@@ -149,7 +149,7 @@ impl RouteScorer for StoreForwardScorer {
         &self,
         // Currently unused
         _stream_size: usize,
-        _cfg: &ScorerConfiguration,
+        cfg: &ScorerConfiguration,
         meta: &RouteData,
     ) -> Result<EpNeighbourPair> {
         // If there's no route available we return an error.  This case SHOULD
@@ -162,14 +162,35 @@ impl RouteScorer for StoreForwardScorer {
             // We know there is at least one available link, but we need to check if
             // it's active.  If not we must fail-over into the next scorer
             let link = meta.link_id.get(0).unwrap();
-            let link_data = meta.link_data.get(link).unwrap();
             return Ok(*link);
         } else {
             let nb_a = meta.link_id.get(0).unwrap();
             let nb_b = meta.link_id.get(1).unwrap();
 
-            let link_a = meta.link_data.get(nb_a).unwrap();
-            let link_b = meta.link_data.get(nb_b).unwrap();
+            let link_a_buffer = cfg.available_buffer.get(&nb_a);
+            let link_b_buffer = cfg.available_buffer.get(&nb_b);
+
+            let link_a_bw = cfg.available_bw.get(&nb_a);
+            let link_b_bw = cfg.available_bw.get(&nb_b);
+
+            match (link_a_buffer, link_b_buffer, link_a_bw, link_b_bw) {
+                (_, _, Some(_), None) => Ok(*nb_a),
+                (_, _, None, Some(_)) => Ok(*nb_b),
+                (Some(ba), Some(bb), Some(bwa), Some(bwb)) => {
+                    // If the bandwidth is within 10% of each other
+                    if bwb.write_bandwidth >= (bwa.write_bandwidth * 90 / 100)
+                        && bwb.write_bandwidth <= (bwa.write_bandwidth * 110 / 100)
+                        // And the buffer for b is bigger than for a
+                        && bb > ba
+                    {
+                        Ok(*nb_b)
+                    } else {
+                        Ok(*nb_a)
+                    }
+                }
+                // If we couldn't measure anything useful, use the first link
+                _ => Ok(*nb_a),
+            }
         }
     }
 }
