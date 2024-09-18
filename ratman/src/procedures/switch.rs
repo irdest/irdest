@@ -98,7 +98,7 @@ pub(crate) async fn exec_switching_batch(
                             .await
                             .available_buffer
                             .entry(EpNeighbourPair(id, neighbour.assume_single()))
-                          .or_default()) = router_meta.available_buffer;
+                            .or_default()) = router_meta.available_buffer;
 
                         // todo
                     }
