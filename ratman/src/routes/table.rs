@@ -40,8 +40,8 @@ use super::scoring::{DefaultScorer, RouteScorer, ScorerConfiguration, StoreForwa
 pub(crate) struct RouteTable {
     meta_db: Arc<MetadataDb>,
     activity_tasks: Arc<RwLock<BTreeSet<Address>>>,
-    solvers: Vec<Box<dyn RouteScorer + Send + Sync + 'static>>,
-    solver_state: RwLock<ScorerConfiguration>,
+    pub(crate) solvers: Vec<Box<dyn RouteScorer + Send + Sync + 'static>>,
+    pub(crate) solver_state: RwLock<ScorerConfiguration>,
     #[allow(unused)]
     new: IoPair<Address>,
     #[allow(unused)]

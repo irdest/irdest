@@ -19,6 +19,8 @@ use libratman::{
 };
 use std::{collections::BTreeMap, sync::Arc};
 
+pub(crate) use router::RouterAnnouncement;
+
 /// Provide a builder API to construct different types of Messages
 #[derive(Default)]
 pub(crate) struct Protocol {

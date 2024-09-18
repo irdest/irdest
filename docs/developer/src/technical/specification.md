@@ -2,7 +2,7 @@
 
 Status: *pre-draft*
 First revision: *2022-04-05*
-Latest revision: *2024-09-11*
+Latest revision: *2024-09-18*
 
 The Irdest router Ratman exchanges user packets as well as routing metadata with neighbouring routers.  This communication is facilitated through the "mesh router exchange protocol".  It has three scopes.
 
@@ -160,7 +160,7 @@ MUST NOT be padded with trailing zeros to fill the target MTU.
 
 A `ManifestFrame` contains a binary encoded version of the "Read
 Capability".  If this manifest is too large for the containing
-.carrcarrier frame, it is split into multiple frames (see [Appendix A:
+carrier frame, it is split into multiple frames (see [Appendix A:
 Manifest Frame](#Manifest-Frame))
 
 
@@ -419,29 +419,40 @@ RouteData {
 ```
 
 
-### Data Frame
+### Data frame
 
-A data frame is already explicitly sliced to fit into a .carrcarrier frame
+A data frame is already explicitly sliced to fit into a carrier frame
 (see "MTU leap-frogging" for how to handle exceptions to this).
 Therefore the payload content can simply be encoded as a set of bytes.
 
-The .carrcarrier frame knows the size of the payload.  Thus no special
+The carrier frame knows the size of the payload.  Thus no special
 encoding for data frames is required.
 
 
-### Manifest Frame
+### Manifest frame
 
-Message manifests SHOULD generally fit into a single .carrcarrier frame.
-This may not be the case on low-bandwidth connections.  Additionally,
-because the manifest has no well-defined representation in the [ERIS]
-spec, we need to wrap it in our own encoding schema.
+Message manifests SHOULD generally fit into a single carrier frame.
+This may not be the case on low-bandwidth connections.  Because the manifest has no well-defined representation in the [ERIS] spec, we need to wrap it in our own encoding schema.
 
-```protobuf
-message Manifest {
-    string root_urn = 1;
-    string root_salt = 2;
+Additionally the manifest contains some important metadata about the stream that is about to be received, including the from and to address, the full stream size, and any auxiliary metadata, which can be filled in by the sending application.
+
+The manifest SHOULD be encrypted with a shared symmetric secret based on the sending and receiving address keys.  When receiving a manifest for an address that is not active, it SHOULD be stored until the address key for decryption becomes available.
+
+```rust
+struct Manifest {
+    letterhead: Letterhead {
+        from: Address,
+        to: Recipient,
+        stream_size: u64,
+        auxiliary_data: Vec<(CString, CString)>,
+    },
+    block_size: u8,
+    block_level: u8,
+    root_reference: Ident32,
+    root_key: Ident32,
 }
 ```
+
 
 ### Netmod peering range
 
@@ -479,7 +490,7 @@ struct RouterMeta {
 ```
 
 
-### syncscoperequest
+### SyncScopeRequest
 
 ### SourceRequest
 
@@ -527,7 +538,7 @@ For messages larger than `N` MB (tbd), a sending router MUST generate
 a `PushNotice` before the final message manifest has been generated.
 
 ```rust
-PushNotice {
+struct PushNotice {
   sender: <Address>,
   recipient: <Address>,
   estimate_size: usize, // size in bytes
@@ -537,10 +548,10 @@ PushNotice {
 A receiving router MAY accept this notice by simply not responding, or
 MAY reject the incoming message (for example via an automatic
 filtering rule).  The sequence ID can be obtained from the containing
-.carrcarrier frame.
+carrier frame.
 
 ```rust
-DenyNotice {
+struct DenyNotice {
   id: <Sequence Id>
 }
 ```
@@ -582,15 +593,25 @@ Currently this API is not exposed outside of the router and there is no mechanis
 ```rust
 #[async_trait]
 trait RouteScorer {
-    async fn configure(&self, _ctx: &Arc<RatmanContext>, _cfg: &mut ScorerConfiguration) -> Result<()> {
+    async fn configure(&self, 
+        _ctx: &Arc<RatmanContext>, 
+        _cfg: &mut ScorerConfiguration
+    ) -> Result<()> {
         Ok(())
     }
 
-    async fn irq_live_announcement(&self, _a: &AnnounceFrame) -> Result<()> {
+    async fn irq_live_announcement(&self, 
+        _a: &AnnounceFrame,
+        _cfg: &mut ScorerConfiguration
+    ) -> Result<()> {
         Ok(())
     }
 
-    async fn compute(&self, _stream_size: usize, _meta: &[&RouteData]) -> Result<EpNeighbourPair>;
+    async fn compute(&self, 
+        _stream_size: usize, 
+        _cfg: &ScorerConfiguration, 
+        _meta: &[&RouteData]
+    ) -> Result<EpNeighbourPair>;
 }
 
 ```

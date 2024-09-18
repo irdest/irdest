@@ -334,6 +334,9 @@ impl RatmanContext {
             }
         }
 
+        // Start the router announcement protocol
+        
+
         // todo: setup management machinery to handle result events
         if let Err(e) = api::start_api_thread(
             Arc::clone(&this),

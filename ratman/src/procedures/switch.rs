@@ -8,16 +8,19 @@ use crate::{
     procedures::{self},
     routes::{EpNeighbourPair, RouteTable},
 };
-use libratman::tokio::{
-    select,
-    sync::{broadcast::Sender as BcastSender, mpsc::Sender},
-    task::yield_now,
-};
 use libratman::{
     frame::carrier::modes::{self as fmodes, DATA, MANIFEST},
     frame::{carrier::AnnounceFrame, FrameParser},
     types::{InMemoryEnvelope, Recipient},
     NetmodError, RatmanError,
+};
+use libratman::{
+    tokio::{
+        select,
+        sync::{broadcast::Sender as BcastSender, mpsc::Sender},
+        task::yield_now,
+    },
+    types::RouterMeta,
 };
 use std::sync::Arc;
 use tripwire::Tripwire;
@@ -81,6 +84,30 @@ pub(crate) async fn exec_switching_batch(
         //
         ////////////////////////////////////////////
         match (header.get_modes(), header.get_recipient()) {
+            // We handle router announcements by updating the available
+            // advertised buffer space for a neighbour, and then DON'T spread it
+            // further
+            (fmodes::ROUTER_PEERING, _) => {
+                let payload_buf = &buffer.as_slice()[payload_slice];
+
+                match RouterMeta::parse(payload_buf) {
+                    Ok((_, router_meta)) => {
+                        *(routes
+                            .solver_state
+                            .write()
+                            .await
+                            .available_buffer
+                            .entry(EpNeighbourPair(id, neighbour.assume_single()))
+                          .or_default()) = router_meta.available_buffer;
+
+                        // todo
+                    }
+                    Err(e) => {
+                        warn!("Received invalid RouterMeta payload: {e}");
+                        continue;
+                    }
+                }
+            }
             //
             // For an announcement frame we ignore the recipient, even if it exists
             (fmodes::ANNOUNCE, _) => {
