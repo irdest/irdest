@@ -9,3 +9,7 @@ Irdest is not built from scratch and relies on a lot of existing work done over 
 - [A simple pragmatic approach to mesh routing using BATMAN](https://researchspace.csir.co.za/dspace/bitstream/handle/10204/3035/Johnson3_2008.pdf?sequence=1&isAllowed=y)
 - [Social bubble routing approach](https://www.researchgate.net/profile/Rajan-Patel-7/publication/298803338_Efficient_Routing_using_Bubble_Rap_in_Delay_Tolerant_Network/links/5a1cda930f7e9b2a5316c252/Efficient-Routing-using-Bubble-Rap-in-Delay-Tolerant-Network.pdf)
 - [MTU determinations via QUIC connections](https://www.hb.fh-muenster.de/opus4/frontdoor/deliver/index/docId/14965/file/dplpmtudQuicPaper.pdf)
+- [Orion Routing Protocol for Delay-Tolerant Networks](https://hal.science/hal-00656960/document)
+- [Routing in Delay-Tolerant Networks under uncertain contact plans](https://hal.science/hal-03494116/document)
+- [Towards Software-Defined Delay Tolerant Networks](https://www.mdpi.com/2673-8732/3/1/2/pdf?version=1673344686)
+- [Selfishness in Vehicular Delay-Tolerant Networks: A Review](https://www.mdpi.com/1424-8220/20/10/3000/pdf?version=1590670445)
