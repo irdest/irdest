@@ -306,7 +306,7 @@ pub(super) async fn single_session_exchange<'a>(
         m if m == cm::make(cm::SPACE, cm::UP) => {}
         m if m == cm::make(cm::SPACE, cm::DOWN) => {}
         m if m == cm::make(cm::SPACE, cm::ANYCAST) => {}
-        
+
         //
         //
         // STREAM COMMANDS

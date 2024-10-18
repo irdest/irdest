@@ -6,8 +6,8 @@
 //! Protocol generation module
 
 mod announce;
-mod router;
 mod anycast;
+mod router;
 
 use crate::{context::RatmanContext, protocol::announce::AddressAnnouncer};
 use libratman::{
