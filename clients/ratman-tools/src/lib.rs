@@ -16,6 +16,7 @@ pub mod base_args;
 pub mod peers;
 pub mod recv;
 pub mod send;
+pub mod space;
 pub mod status;
 pub mod stream;
 
@@ -141,6 +142,11 @@ pub async fn command_filter(
                 ("status", "system") => status::system(ipc, base_args, op_matches).await,
                 //// =^-^= Peer commands (ctl)
                 ("peers", "list") => peers::list(ipc, base_args, op_matches).await,
+                //// =^-^= Namespace commands (ctl)
+                ("space", "register") => space::register(ipc, base_args, op_matches).await,
+                ("space", "up") => space::up(ipc, base_args, op_matches).await,
+                ("space", "down") => space::down(ipc, base_args, op_matches).await,
+                ("space", "anycast") => space::anycast(ipc, base_args, op_matches).await,
                 //// =^-^= Stream subscription commands (ctl)
                 ("stream", "sub") => stream::subscribe(ipc, base_args, op_matches).await,
                 ("stream", "unsub") => stream::unsubscribe(ipc, base_args, op_matches).await,

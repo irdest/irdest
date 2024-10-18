@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use clap::{arg, Arg, ArgAction, ArgMatches, Command};
+use clap::{arg, value_parser, Arg, ArgAction, ArgMatches, Command};
 use libratman::{
     api::{default_api_bind, RatmanIpc, RatmanIpcExtV1},
     types::error::UserError,
@@ -161,16 +161,10 @@ fn setup_cli() -> Command {
                     Command::new("register")
                         .about("Register a new namespace key which can be included in a third-party application")
                         .args([
-                            Arg::new("encoding")
-                                .help("Specify the desired output encoding")
-                                .short('e')
-                                .long("encoding")
-                                .action(ArgAction::Set)
-                                .default_value("json")
-                                .value_parser(["json", "ascii", "raw"]),
                             Arg::new("file_name")
                                 .help("Specify the output file name for the namespace key")
                                 .short('f')
+                                .required(true)
                                 .action(ArgAction::Set)
                         ]),
                     Command::new("up")
@@ -187,6 +181,15 @@ fn setup_cli() -> Command {
                             Arg::new("file_name")
                                 .help("Specify the key file created by 'register'")
                                 .short('f')
+                                .action(ArgAction::Set)
+                        ]),
+                    Command::new("anycast")
+                        .about("Send an anycast probe to this namespace, returning address responses ordered by time")
+                        .args([
+                            Arg::new("timeout")
+                                .help("Specify a timeout in milliseconds")
+                                .short('t')
+                                .value_parser(value_parser!(u64))
                                 .action(ArgAction::Set)
                         ])
                 ]),
