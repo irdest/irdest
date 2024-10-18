@@ -1,6 +1,6 @@
 use crate::{
     api::{socket_v2::RawSocketHandle, SubscriptionHandle},
-    types::{error::UserError, AddrAuth, Address, Ident32, LetterheadV1, Recipient},
+    types::{error::UserError, AddrAuth, Address, Ident32, LetterheadV1, Namespace, Recipient},
     ClientError, Result,
 };
 use async_trait::async_trait;

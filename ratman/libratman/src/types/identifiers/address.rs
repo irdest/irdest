@@ -18,7 +18,7 @@ use prometheus_client::encoding::text::Encode;
 #[derive(Copy, Clone, Debug, Hash, PartialOrd, Ord, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Address(pub Ident32);
 
-/// Represent a namespace address
+/// A namespace address
 pub type Namespace = Address;
 
 impl Display for Address {

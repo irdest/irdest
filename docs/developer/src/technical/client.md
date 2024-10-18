@@ -16,6 +16,15 @@ There are three main steps to using the client-lib:
 3. Message sending and receiving
 
 
+### Step 0:
+
+Include libratman in your `Cargo.toml`.  By default libratman enables both "client" and "netmod" features.  If you only want to implement a client, you can disable the default features and only enable the "client" feature explicitly:
+
+```toml
+ratman = { version = "0.6.0", no-default-features = true, features = [ "client "]}
+```
+
+
 ### IPC initialisation
 
 By default the IPC socket for Ratman is running on `localhost:5852`. Many of the Irdest tools allow you to overwrite this socket address, to allow for local testing with multiple routers.  We recommend that your application expose this option to users for testing purposes as well!
