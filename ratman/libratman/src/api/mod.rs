@@ -29,7 +29,7 @@
 
 mod _trait;
 use _trait::StreamGenerator;
-pub use _trait::{NamespaceExt, RatmanIpcExtV1, RatmanStreamExtV1, ReadStream};
+pub use _trait::{NamespaceAnycastExtV1, RatmanIpcExtV1, RatmanStreamExtV1, ReadStream};
 
 mod subscriber;
 pub use subscriber::SubscriptionHandle;
@@ -152,7 +152,6 @@ impl RatmanIpcExtV1 for RatmanIpc {
     async fn addr_create<'n>(
         self: &Arc<Self>,
         name: Option<&'n String>,
-        space_private_key: Option<Ident32>,
     ) -> crate::Result<(Address, AddrAuth)> {
         let mut socket = self.socket().lock().await;
 
@@ -167,7 +166,6 @@ impl RatmanIpcExtV1 for RatmanIpc {
                     name: name.map(|n| {
                         CString::new(n.as_bytes()).expect("failed to encode String to CString")
                     }),
-                    namespace_data: space_private_key,
                 },
             )
             .await?;
@@ -702,8 +700,8 @@ impl RatmanStreamExtV1 for RatmanIpc {
 }
 
 #[async_trait]
-impl NamespaceExt for RatmanIpc {
-    async fn space_register(
+impl NamespaceAnycastExtV1 for RatmanIpc {
+    async fn namespace_register(
         self: &Arc<Self>,
         space_pubkey: Address,
         space_private_key: Ident32,
@@ -711,15 +709,15 @@ impl NamespaceExt for RatmanIpc {
         todo!()
     }
 
-    async fn space_up(self: &Arc<Self>, space_pubkey: Address) -> Result<()> {
+    async fn namespace_up(self: &Arc<Self>, space_pubkey: Address) -> Result<()> {
         todo!()
     }
 
-    async fn space_down(self: &Arc<Self>, space_pubkey: Address) -> Result<()> {
+    async fn namespace_down(self: &Arc<Self>, space_pubkey: Address) -> Result<()> {
         todo!()
     }
 
-    async fn space_anycast_probe(
+    async fn namespace_anycast_probe(
         self: &Arc<Self>,
         space_pubkey: Address,
         timeout: Duration,

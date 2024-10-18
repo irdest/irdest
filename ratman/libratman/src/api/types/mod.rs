@@ -5,6 +5,7 @@
 mod addr;
 mod contact;
 mod link;
+mod namespace;
 mod peer;
 mod recv;
 mod send;

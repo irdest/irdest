@@ -44,6 +44,11 @@ pub fn take_u64(input: &[u8]) -> IResult<&[u8], u64> {
     Ok((input, BigEndian::read_u64(slice)))
 }
 
+pub fn take_u128(input: &[u8]) -> IResult<&[u8], u128> {
+    let (input, slice) = take(core::mem::size_of::<u128>())(input)?;
+    Ok((input, BigEndian::read_u128(slice)))
+}
+
 pub fn take_address(input: &[u8]) -> IResult<&[u8], Address> {
     let (input, slice) = take(32 as usize)(input)?;
     Ok((input, Address::from_bytes(slice)))

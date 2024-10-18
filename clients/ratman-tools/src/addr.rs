@@ -1,4 +1,4 @@
-use crate::{base_args::BaseArgs, encode_list, encode_map, parse_ident32, reply_ok};
+use crate::{base_args::BaseArgs, encode_list, encode_map, reply_ok};
 use clap::ArgMatches;
 use libratman::{
     api::{RatmanIpc, RatmanIpcExtV1},
@@ -13,10 +13,9 @@ pub async fn list(ipc: &Arc<RatmanIpc>, base_args: BaseArgs, _matches: &ArgMatch
 }
 
 pub async fn create(ipc: &Arc<RatmanIpc>, base_args: BaseArgs, matches: &ArgMatches) -> Result<()> {
-    let space_data = parse_ident32(&matches, "namespace");
     let name = matches.get_one::<String>("priv-name");
 
-    let (addr, auth) = ipc.addr_create(name, space_data.ok()).await?;
+    let (addr, auth) = ipc.addr_create(name).await?;
 
     println!(
         "{}",

@@ -3,7 +3,7 @@
 use crate::{frame::FrameGenerator, types::Ident32, EncodingError, Result};
 use byteorder::{BigEndian, ByteOrder};
 use chrono::{DateTime, TimeZone};
-use std::ffi::CString;
+use std::{ffi::CString, time::Duration};
 
 fn u16_to_big_endian(val: u16) -> [u8; 2] {
     let mut v = [0; 2];
@@ -20,6 +20,12 @@ fn u32_to_big_endian(val: u32) -> [u8; 4] {
 fn u64_to_big_endian(val: u64) -> [u8; 8] {
     let mut v = [0; 8];
     BigEndian::write_u64(&mut v, val);
+    v
+}
+
+fn u128_to_big_endian(val: u128) -> [u8; 16] {
+    let mut v = [0; 16];
+    BigEndian::write_u128(&mut v, val);
     v
 }
 
@@ -87,6 +93,13 @@ impl FrameGenerator for Option<u64> {
                 Ok(())
             }
         }
+    }
+}
+
+impl FrameGenerator for u128 {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        let slice = u128_to_big_endian(self);
+        slice.generate(buf)
     }
 }
 

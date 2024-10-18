@@ -71,13 +71,6 @@ fn setup_cli() -> Command {
                                 .long("name")
                                 .help("A private identity name")
                                 .action(ArgAction::Set),
-                            Arg::new("namespace")
-                                .long("space")
-                                .help("A shared network namespace.  This API is a bit of a hack ;-;  \
-                                       Instead of having ratmand generate a keypair and hand out the public address representation, \
-                                       here you have to provide the private key information for the namespace.  \
-                                       This means that the public address differs, and anyone else on the namespace needs to do the same.")
-                                .action(ArgAction::Set)
                         ]),
                     Command::new("up")
                         .about("Mark the given address as online"),
@@ -160,12 +153,13 @@ fn setup_cli() -> Command {
                 .subcommands([
                     Command::new("list").about("List all available peers on the network along some metadata about them"),
                 ]),
+            //// Namespace management commands
             Command::new("space")
                 .about("Manage shared address namespaces")
                 .arg_required_else_help(true)
                 .subcommands([
-                    Command::new("create")
-                        .about("Create a new namespace key which can be included in a third-party application")
+                    Command::new("register")
+                        .about("Register a new namespace key which can be included in a third-party application")
                         .args([
                             Arg::new("encoding")
                                 .help("Specify the desired output encoding")
@@ -176,6 +170,22 @@ fn setup_cli() -> Command {
                                 .value_parser(["json", "ascii", "raw"]),
                             Arg::new("file_name")
                                 .help("Specify the output file name for the namespace key")
+                                .short('f')
+                                .action(ArgAction::Set)
+                        ]),
+                    Command::new("up")
+                        .about("Mark a given namespace as 'up', enabling the router to respond to anycast pings and other protocols")
+                        .args([
+                            Arg::new("file_name")
+                                .help("Specify the key file created by 'register'")
+                                .short('f')
+                                .action(ArgAction::Set)
+                        ]),
+                    Command::new("down")
+                        .about("Mark a given namespace as 'down'")
+                        .args([
+                            Arg::new("file_name")
+                                .help("Specify the key file created by 'register'")
                                 .short('f')
                                 .action(ArgAction::Set)
                         ])

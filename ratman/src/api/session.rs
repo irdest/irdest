@@ -185,8 +185,7 @@ pub(super) async fn single_session_exchange<'a>(
                 .await
                 .unwrap();
             let (addr, client_auth) =
-                crypto::create_addr_key(&ctx.meta_db, addr_create.name, addr_create.namespace_data)
-                    .await?;
+                crypto::create_addr_key(&ctx.meta_db, addr_create.name, None).await?;
             ctx.routes.register_local_route(addr).await?;
 
             ctx.clients

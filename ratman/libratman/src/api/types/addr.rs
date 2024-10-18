@@ -1,10 +1,10 @@
 use crate::{
     frame::{
         micro::parse::{maybe, vec_of},
-        parse::{self, maybe_cstring, maybe_id},
+        parse::{self, maybe_cstring},
         FrameGenerator, FrameParser,
     },
-    types::{Address, Ident32},
+    types::Address,
     MicroframeError, RatmanError, Result,
 };
 use nom::IResult;
@@ -12,18 +12,12 @@ use std::ffi::CString;
 
 pub struct AddrCreate {
     pub name: Option<CString>,
-    pub namespace_data: Option<Ident32>,
-    // pub auto_up: bool,
 }
 
 impl FrameGenerator for AddrCreate {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         match self.name {
             Some(n) => buf.extend_from_slice(n.as_bytes()),
-            None => buf.push(0),
-        };
-        match self.namespace_data {
-            Some(sd) => buf.extend_from_slice(sd.as_bytes()),
             None => buf.push(0),
         };
         Ok(())
@@ -40,15 +34,7 @@ impl FrameParser for AddrCreate {
             _ => None,
         };
 
-        let (input, namespace_data) = maybe_id(input)?;
-
-        Ok((
-            input,
-            Self {
-                name,
-                namespace_data,
-            },
-        ))
+        Ok((input, Self { name }))
     }
 }
 

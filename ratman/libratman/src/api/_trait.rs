@@ -37,7 +37,6 @@ pub trait RatmanIpcExtV1 {
     async fn addr_create<'n>(
         self: &Arc<Self>,
         name: Option<&'n String>,
-        space_private_key: Option<Ident32>,
     ) -> Result<(Address, AddrAuth)>;
 
     /// Delete an address, optionally including all its linked data
@@ -264,7 +263,7 @@ impl<'a> StreamGenerator<'a> {
 }
 
 #[async_trait]
-pub trait NamespaceExt: RatmanIpcExtV1 {
+pub trait NamespaceAnycastExtV1: RatmanIpcExtV1 {
     /// Register a new namespace with the router
     ///
     /// To create a space key, you can either use the `ratctl` CLI or call the
@@ -273,7 +272,7 @@ pub trait NamespaceExt: RatmanIpcExtV1 {
     ///
     /// The private key must be included in every instance of your application
     /// to allow for transport layer space signatures and encryption.
-    async fn space_register(
+    async fn namespace_register(
         self: &Arc<Self>,
         space_pubkey: Address,
         space_privkey: Ident32,
@@ -287,10 +286,18 @@ pub trait NamespaceExt: RatmanIpcExtV1 {
     /// targeted at this namespace.  It also enables the router to pre-cache
     /// messages sent to the namespace, even if no active message subscription
     /// exists
-    async fn space_up(self: &Arc<Self>, space_pubkey: Address) -> Result<()>;
+    ///
+    /// Namespace subscriptions can be maintained independent of whether the
+    /// namespace is up or down.
+    async fn namespace_up(self: &Arc<Self>, space_pubkey: Address) -> Result<()>;
 
     /// Mark a given namespace as "down" for a given application
-    async fn space_down(self: &Arc<Self>, space_pubkey: Address) -> Result<()>;
+    ///
+    /// After this operation the router will no longer respond to anycast probes
+    /// and other namespace protocols, as well as no longer cache incoming
+    /// messages addressed to the namespace.  Namespace subscriptions can be
+    /// maintained independent of whether the namespace is up or down.
+    async fn namespace_down(self: &Arc<Self>, space_pubkey: Address) -> Result<()>;
 
     /// Perform an anycast probe for a given namespace
     ///
@@ -298,7 +305,7 @@ pub trait NamespaceExt: RatmanIpcExtV1 {
     /// instance subscribed to this namespace will reply.  Any address which
     /// responds within the timeout is returned by this function, ordered by
     /// lowest to highest ping times.
-    async fn space_anycast_probe(
+    async fn namespace_anycast_probe(
         self: &Arc<Self>,
         space_pubkey: Address,
         timeout: Duration,
