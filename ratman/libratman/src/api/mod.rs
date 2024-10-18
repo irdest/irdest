@@ -33,7 +33,10 @@ pub use _trait::{NamespaceAnycastExtV1, RatmanIpcExtV1, RatmanStreamExtV1, ReadS
 
 mod subscriber;
 pub use subscriber::SubscriptionHandle;
-use types::{PeerEntry, RecvMany, RouterStatus, SendMany};
+use types::{
+    AnycastProbe, NamespaceDown, NamespaceRegister, NamespaceUp, PeerEntry, RecvMany, RouterStatus,
+    SendMany,
+};
 
 pub mod socket_v2;
 pub mod types;
@@ -703,25 +706,118 @@ impl RatmanStreamExtV1 for RatmanIpc {
 impl NamespaceAnycastExtV1 for RatmanIpc {
     async fn namespace_register(
         self: &Arc<Self>,
+        auth: AddrAuth,
         space_pubkey: Address,
         space_private_key: Ident32,
     ) -> Result<()> {
-        todo!()
+        let mut socket = self.socket().lock().await;
+        socket
+            .write_microframe(
+                MicroframeHeader {
+                    modes: cm::make(cm::SPACE, cm::CREATE),
+                    auth: Some(auth),
+                    ..Default::default()
+                },
+                NamespaceRegister {
+                    pubkey: space_pubkey,
+                    privkey: space_private_key,
+                },
+            )
+            .await?;
+
+        match socket.read_microframe::<ServerPing>().await?.1? {
+            ServerPing::Ok => Ok(()),
+            ServerPing::Error(e) => Err(e.into()),
+            other => Err(ClientError::Internal(format!("{other:?}")).into()),
+        }
     }
 
-    async fn namespace_up(self: &Arc<Self>, space_pubkey: Address) -> Result<()> {
-        todo!()
+    async fn namespace_up(
+        self: &Arc<Self>,
+        client_addr: Address,
+        auth: AddrAuth,
+        space_pubkey: Address,
+    ) -> Result<()> {
+        let mut socket = self.socket().lock().await;
+        socket
+            .write_microframe(
+                MicroframeHeader {
+                    modes: cm::make(cm::SPACE, cm::UP),
+                    auth: Some(auth),
+                    ..Default::default()
+                },
+                NamespaceUp {
+                    client_addr,
+                    namespace_addr: space_pubkey,
+                },
+            )
+            .await?;
+
+        match socket.read_microframe::<ServerPing>().await?.1? {
+            ServerPing::Ok => Ok(()),
+            ServerPing::Error(e) => Err(e.into()),
+            other => Err(ClientError::Internal(format!("{other:?}")).into()),
+        }
     }
 
-    async fn namespace_down(self: &Arc<Self>, space_pubkey: Address) -> Result<()> {
-        todo!()
+    async fn namespace_down(
+        self: &Arc<Self>,
+        client_addr: Address,
+        auth: AddrAuth,
+        space_pubkey: Address,
+    ) -> Result<()> {
+        let mut socket = self.socket().lock().await;
+        socket
+            .write_microframe(
+                MicroframeHeader {
+                    modes: cm::make(cm::SPACE, cm::DOWN),
+                    auth: Some(auth),
+                    ..Default::default()
+                },
+                NamespaceDown {
+                    client_addr,
+                    namespace_addr: space_pubkey,
+                },
+            )
+            .await?;
+
+        match socket.read_microframe::<ServerPing>().await?.1? {
+            ServerPing::Ok => Ok(()),
+            ServerPing::Error(e) => Err(e.into()),
+            other => Err(ClientError::Internal(format!("{other:?}")).into()),
+        }
     }
 
     async fn namespace_anycast_probe(
         self: &Arc<Self>,
+        client_addr: Address,
+        auth: AddrAuth,
         space_pubkey: Address,
         timeout: Duration,
-    ) -> Result<Vec<Address>> {
-        todo!()
+    ) -> Result<Vec<(Address, Duration)>> {
+        let mut socket = self.socket().lock().await;
+        socket
+            .write_microframe(
+                MicroframeHeader {
+                    modes: cm::make(cm::SPACE, cm::ANYCAST),
+                    auth: Some(auth),
+                    ..Default::default()
+                },
+                AnycastProbe {
+                    self_addr: client_addr,
+                    namespace_addr: space_pubkey,
+                    timeout_ms: timeout.as_millis(),
+                },
+            )
+            .await?;
+
+        match socket.read_microframe::<ServerPing>().await?.1? {
+            ServerPing::Anycast(list) => Ok(list
+                .into_iter()
+                .map(|(addr, ms)| (addr, Duration::from_millis(ms)))
+                .collect()),
+            ServerPing::Error(e) => Err(e.into()),
+            other => Err(ClientError::Internal(format!("{other:?}")).into()),
+        }
     }
 }

@@ -274,6 +274,7 @@ pub trait NamespaceAnycastExtV1: RatmanIpcExtV1 {
     /// to allow for transport layer space signatures and encryption.
     async fn namespace_register(
         self: &Arc<Self>,
+        auth: AddrAuth,
         space_pubkey: Address,
         space_privkey: Ident32,
     ) -> Result<()>;
@@ -289,7 +290,12 @@ pub trait NamespaceAnycastExtV1: RatmanIpcExtV1 {
     ///
     /// Namespace subscriptions can be maintained independent of whether the
     /// namespace is up or down.
-    async fn namespace_up(self: &Arc<Self>, space_pubkey: Address) -> Result<()>;
+    async fn namespace_up(
+        self: &Arc<Self>,
+        client_address: Address,
+        auth: AddrAuth,
+        space_pubkey: Address,
+    ) -> Result<()>;
 
     /// Mark a given namespace as "down" for a given application
     ///
@@ -297,7 +303,12 @@ pub trait NamespaceAnycastExtV1: RatmanIpcExtV1 {
     /// and other namespace protocols, as well as no longer cache incoming
     /// messages addressed to the namespace.  Namespace subscriptions can be
     /// maintained independent of whether the namespace is up or down.
-    async fn namespace_down(self: &Arc<Self>, space_pubkey: Address) -> Result<()>;
+    async fn namespace_down(
+        self: &Arc<Self>,
+        client_address: Address,
+        auth: AddrAuth,
+        space_pubkey: Address,
+    ) -> Result<()>;
 
     /// Perform an anycast probe for a given namespace
     ///
@@ -307,7 +318,9 @@ pub trait NamespaceAnycastExtV1: RatmanIpcExtV1 {
     /// lowest to highest ping times.
     async fn namespace_anycast_probe(
         self: &Arc<Self>,
+        client_address: Address,
+        auth: AddrAuth,
         space_pubkey: Address,
         timeout: Duration,
-    ) -> Result<Vec<Address>>;
+    ) -> Result<Vec<(Address, Duration)>>;
 }

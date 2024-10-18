@@ -1,6 +1,6 @@
 use crate::{
     frame::{
-        parse::{take_address, take_id, take_u64},
+        parse::{take_address, take_id, take_u128},
         FrameGenerator, FrameParser,
     },
     types::{Address, Ident32, Namespace},
@@ -97,7 +97,7 @@ impl FrameParser for NamespaceDown {
 pub struct AnycastProbe {
     pub self_addr: Address,
     pub namespace_addr: Address,
-    pub timeout_ms: u64,
+    pub timeout_ms: u128,
 }
 
 impl FrameGenerator for AnycastProbe {
@@ -114,7 +114,7 @@ impl FrameParser for AnycastProbe {
     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
         let (input, self_addr) = take_address(input)?;
         let (input, namespace_addr) = take_address(input)?;
-        let (input, timeout_ms) = take_u64(input)?;
+        let (input, timeout_ms) = take_u128(input)?;
 
         Ok((
             input,

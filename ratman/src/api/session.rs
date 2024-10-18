@@ -362,7 +362,7 @@ pub(super) async fn single_session_exchange<'a>(
                     &ctx,
                     anycast_probe.self_addr,
                     anycast_probe.namespace_addr,
-                    Duration::from_millis(anycast_probe.timeout_ms),
+                    Duration::from_millis(anycast_probe.timeout_ms as u64),
                 )
                 .await?;
 
