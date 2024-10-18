@@ -14,6 +14,7 @@ pub use addr::*;
 use byteorder::{BigEndian, ByteOrder};
 pub use contact::*;
 pub use link::*;
+pub use namespace::*;
 pub use peer::*;
 pub use recv::*;
 pub use send::*;
@@ -96,23 +97,32 @@ pub enum ServerPing {
     /// Communicate some kind of API error to the calling client
     Error(ClientError),
     ///
-    IncompatibleVersion { router: CString, client: CString },
+    IncompatibleVersion {
+        router: CString,
+        client: CString,
+    },
     /// Connection timed out
     Timeout,
     /// Subscription response type
-    Subscription { sub_id: Ident32, sub_bind: CString },
+    Subscription {
+        sub_id: Ident32,
+        sub_bind: CString,
+    },
     /// A list of addresses, either local or remote
     AddrList(Vec<Address>),
     /// A list of peer entries
     PeerList(PeerList),
     /// Indicate that a client should connect to a separate socket to input a data stream
-    SendSocket { socket_bind: CString },
+    SendSocket {
+        socket_bind: CString,
+    },
     Status {
         num_peers: u64,
         num_local: u64,
         num_auth: u64,
         num_collector_workers: u64,
     },
+    Anycast(Vec<(Address, u64)>),
 }
 
 #[derive(Serialize, Deserialize)]
@@ -192,6 +202,10 @@ impl FrameGenerator for ServerPing {
                 num_auth.generate(buf)?;
                 num_collector_workers.generate(buf)?;
             }
+            Self::Anycast(list) => {
+                buf.push(11);
+                list.generate(buf)?;
+            }
         }
 
         Ok(())
@@ -266,6 +280,11 @@ impl FrameParser for ServerPing {
                     num_auth,
                     num_collector_workers,
                 })
+            }
+            11 => {
+                let (input_, list) = Vec::<(Address, u64)>::parse(input)?;
+                input = input_;
+                Ok(Self::Anycast(list))
             }
             _ => Err(EncodingError::Parsing(format!("Invalid ServerPing type={}", tt)).into()),
         };

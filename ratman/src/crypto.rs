@@ -115,6 +115,40 @@ pub fn list_addr_keys(meta_db: &Arc<MetadataDb>) -> Vec<Address> {
         .collect()
 }
 
+pub async fn create_addr_key(
+    meta_db: &Arc<MetadataDb>,
+    name: Option<CString>,
+) -> Result<(Address, AddrAuth)> {
+    let secret = SecretKey::generate(&mut OsRng {});
+    let public = PublicKey::from(&secret);
+    let addr = Address::from_bytes(public.as_bytes());
+
+    // Generate a public-private keypair
+    let client_auth = AddrAuth::new();
+
+    let mut encrypted_secret = *secret.as_bytes();
+    let nonce = encrypt_raw(
+        client_auth.token.as_bytes().try_into().unwrap(),
+        &mut encrypted_secret,
+    );
+
+    meta_db
+        .addrs
+        .insert(
+            addr.to_string(),
+            &AddressData::Local(
+                EncryptedKey {
+                    encrypted: encrypted_secret.to_vec(),
+                    nonce,
+                },
+                name,
+            ),
+        )
+        .await?;
+
+    Ok((addr, client_auth))
+}
+
 pub async fn get_addr_key(
     meta_db: &Arc<MetadataDb>,
     addr: Address,
@@ -150,59 +184,74 @@ pub async fn get_addr_key(
     Ok(Keypair::new(secret_key))
 }
 
-pub async fn create_addr_key(
+//////// Namespace key commands
+
+pub async fn create_namespace(
     meta_db: &Arc<MetadataDb>,
     name: Option<CString>,
-    space: Option<Ident32>,
-) -> Result<(Address, AddrAuth)> {
-    let (secret, addr) = if let Some(secret_data) = space {
-        let secret = SecretKey::from_bytes(secret_data.as_bytes()).unwrap();
-        let public = PublicKey::from(&secret);
-        let addr = Address::from_bytes(public.as_bytes());
-
-        (secret, addr)
-    } else {
-        let secret = SecretKey::generate(&mut OsRng {});
-        let public = PublicKey::from(&secret);
-        let addr = Address::from_bytes(public.as_bytes());
-
-        (secret, addr)
-    };
-
-    // Generate a public-private keypair
-    let client_auth = AddrAuth::new();
+    pubkey: Address,
+    privkey: Ident32,
+) -> Result<()> {
+    let secret = SecretKey::from_bytes(privkey.as_bytes()).unwrap();
+    let public = PublicKey::from(&secret);
+    let addr = Address::from_bytes(public.as_bytes());
+    assert_eq!(addr, pubkey);
 
     let mut encrypted_secret = *secret.as_bytes();
     let nonce = encrypt_raw(
-        client_auth.token.as_bytes().try_into().unwrap(),
+        meta_db.router_id().as_bytes().try_into().unwrap(),
         &mut encrypted_secret,
     );
 
-    let address_data = if space.is_some() {
-        AddressData::Space(
-            EncryptedKey {
-                encrypted: encrypted_secret.to_vec(),
-                nonce,
-            },
-            name,
-        )
-    } else {
-        AddressData::Local(
-            EncryptedKey {
-                encrypted: encrypted_secret.to_vec(),
-                nonce,
-            },
-            name,
-        )
-    };
-
     meta_db
         .addrs
-        .insert(addr.to_string(), &address_data)
+        .insert(
+            addr.to_string(),
+            &AddressData::Space(
+                EncryptedKey {
+                    encrypted: encrypted_secret.to_vec(),
+                    nonce,
+                },
+                name,
+            ),
+        )
         .await?;
 
-    Ok((addr, client_auth))
+    Ok(())
 }
+
+pub async fn get_namespace_key(meta_db: &Arc<MetadataDb>, namespace: Address) -> Result<Keypair> {
+    let key_data =
+        match meta_db
+            .addrs
+            .get(&namespace.to_string())
+            .await?
+            .ok_or(RatmanError::Encoding(libratman::EncodingError::Encryption(
+                "Address key was deleted!".into(),
+            )))? {
+            AddressData::Local(e, _name) => e,
+            AddressData::Space(e, _name) => e,
+            AddressData::Remote => unreachable!("called open_addr_key with a remote key"),
+        };
+
+    let mut decrypted_key = key_data.encrypted.clone();
+    decrypt_raw(
+        meta_db.router_id().as_bytes().try_into().unwrap(),
+        key_data.nonce,
+        &mut decrypted_key,
+    );
+
+    let secret_key = SecretKey::from_bytes(&decrypted_key)
+        .map_err::<RatmanError, _>(|_| ClientError::InvalidAuth.into())?;
+    let public_key = PublicKey::from(&secret_key);
+
+    let computed_addr = Address::from_bytes(public_key.as_bytes());
+    assert_eq!(computed_addr, namespace);
+
+    Ok(Keypair::new(secret_key))
+}
+
+///////////////
 
 /// Destroy the local address key data
 pub async fn destroy_addr_key(meta_db: &Arc<MetadataDb>, addr: Address) -> Result<()> {

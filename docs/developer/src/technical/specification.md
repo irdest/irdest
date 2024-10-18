@@ -494,7 +494,7 @@ struct RouterMeta {
 
 Namespaces allow applications to listen to the same address key across a network, allowing different instances to "find" each other.  The MREP protocol doesn't support real anycast, but can pre-compute route preferences across a namespace.
 
-An anycast probe is addressed to a given namespace address, and contains a timeout duration (in milliseconds) as auxiliary data.  No payload is required for this data type:
+An anycast probe is addressed to a namespace address and contains no payload.
 
 ```rust
 CarrierframeHeaderV1 {
@@ -502,13 +502,27 @@ CarrierframeHeaderV1 {
   sender: [application address],
   recipient: Some([namespace address]),
   seq_id: None,
-  auxiliary_data: Some([timeout in ms as u64]),
-  signature_data: Some([signature data]),
+  auxiliary_data: None,
+  signature_data: None,
   payload_length: 0,
 }
 ```
 
-In order for a router to respond to an anycast probe request it MUST have marked the given namespace as "up".  If this is the case a router switch MUST respond to an anycast probe request.  Responses that reach the originating router after the timeout has elapsed MUST be ignored.
+In order for a router to respond to an anycast probe request it MUST have marked the given namespace as "up".  If this is the case a router switch MUST respond to an anycast probe request.
+
+Responses MUST include a timestamp in the auxiliary_data section to differentiate a probe request and response in a router switch.  A router MAY collect anycast responses that arrive after the listed timeout for analytics or routing purposes, but MUST NOT be included in the API response to the requesting application.
+
+```rust
+CarrierFrameHeaderV1 {
+  modes: 0x1000_000,
+  sender: [application address],
+  recipient: Some([anycast probe initiator address]),
+  seq_id: None,
+  auxiliary_data: Some([encoded UTC timestamp data]),
+  signature_data: None,
+  payload_length: 0,
+}
+```
 
 
 ### SyncScopeRequest

@@ -237,6 +237,15 @@ impl FrameParser for Option<u32> {
     }
 }
 
+impl FrameParser for (Address, u64) {
+    type Output = Self;
+    fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
+        let (input, addr) = take_address(input)?;
+        let (input, timeout) = take_u64(input)?;
+        Ok((input, (addr, timeout)))
+    }
+}
+
 ////// Test that CStrings can be encoded correctly
 
 #[test]

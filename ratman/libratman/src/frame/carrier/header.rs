@@ -1,5 +1,5 @@
 use crate::{
-    frame::{carrier::modes, parse, FrameGenerator, FrameParser},
+    frame::{carrier::modes, generate::pad_aux_data, parse, FrameGenerator, FrameParser},
     types::{Address, Ident32, Recipient, SequenceIdV1},
     EncodingError, Result,
 };
@@ -20,6 +20,38 @@ pub enum CarrierFrameHeader {
 }
 
 impl CarrierFrameHeader {
+    /// Allocate a new header for an anycast probe
+    pub fn new_anycast_probe_frame(sender: Address, recipient: Recipient) -> Self {
+        Self::V1(CarrierFrameHeaderV1 {
+            modes: modes::NAMESPACE_ANYCAST,
+            sender,
+            recipient: Some(recipient),
+            seq_id: None,
+            auxiliary_data: None,
+            signature_data: None,
+            payload_length: 0,
+        })
+    }
+
+    pub fn new_anycast_reply_frame(
+        sender: Address,
+        recipient: Recipient,
+        timestamp: DateTime<Utc>,
+    ) -> Result<Self> {
+        let mut timestamp_data = vec![];
+        timestamp.generate(&mut timestamp_data)?;
+
+        Ok(Self::V1(CarrierFrameHeaderV1 {
+            modes: modes::NAMESPACE_ANYCAST,
+            sender,
+            recipient: Some(recipient),
+            seq_id: None,
+            auxiliary_data: Some(pad_aux_data(timestamp_data)),
+            signature_data: None,
+            payload_length: 0,
+        }))
+    }
+
     /// Allocate a new Header for a netmod peering protocol
     pub fn new_netmodproto_frame(modes: u16, router_addr: Address, payload_length: u16) -> Self {
         Self::V1(CarrierFrameHeaderV1 {

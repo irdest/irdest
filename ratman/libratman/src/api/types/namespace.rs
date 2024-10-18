@@ -1,9 +1,9 @@
 use crate::{
     frame::{
-        parse::{take_address, take_id, take_u128},
+        parse::{take_address, take_id, take_u64},
         FrameGenerator, FrameParser,
     },
-    types::{Address, Ident32},
+    types::{Address, Ident32, Namespace},
     Result,
 };
 use nom::IResult;
@@ -34,14 +34,76 @@ impl FrameParser for NamespaceRegister {
     }
 }
 
+pub struct NamespaceUp {
+    pub client_addr: Address,
+    pub namespace_addr: Namespace,
+}
+
+impl FrameGenerator for NamespaceUp {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        self.client_addr.generate(buf)?;
+        self.namespace_addr.generate(buf)?;
+        Ok(())
+    }
+}
+
+impl FrameParser for NamespaceUp {
+    type Output = NamespaceUp;
+
+    fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
+        let (input, client_addr) = take_address(input)?;
+        let (input, namespace_addr) = take_address(input)?;
+
+        Ok((
+            input,
+            NamespaceUp {
+                client_addr,
+                namespace_addr,
+            },
+        ))
+    }
+}
+
+pub struct NamespaceDown {
+    pub client_addr: Address,
+    pub namespace_addr: Namespace,
+}
+
+impl FrameGenerator for NamespaceDown {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        self.client_addr.generate(buf)?;
+        self.namespace_addr.generate(buf)?;
+        Ok(())
+    }
+}
+
+impl FrameParser for NamespaceDown {
+    type Output = NamespaceDown;
+
+    fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
+        let (input, client_addr) = take_address(input)?;
+        let (input, namespace_addr) = take_address(input)?;
+
+        Ok((
+            input,
+            NamespaceDown {
+                client_addr,
+                namespace_addr,
+            },
+        ))
+    }
+}
+
 pub struct AnycastProbe {
-    pub pubkey: Address,
-    pub timeout_ms: u128,
+    pub self_addr: Address,
+    pub namespace_addr: Address,
+    pub timeout_ms: u64,
 }
 
 impl FrameGenerator for AnycastProbe {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
-        self.pubkey.generate(buf)?;
+        self.self_addr.generate(buf)?;
+        self.namespace_addr.generate(buf)?;
         self.timeout_ms.generate(buf)?;
         Ok(())
     }
@@ -50,9 +112,17 @@ impl FrameGenerator for AnycastProbe {
 impl FrameParser for AnycastProbe {
     type Output = AnycastProbe;
     fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
-        let (input, pubkey) = take_address(input)?;
-        let (input, timeout_ms) = take_u128(input)?;
+        let (input, self_addr) = take_address(input)?;
+        let (input, namespace_addr) = take_address(input)?;
+        let (input, timeout_ms) = take_u64(input)?;
 
-        Ok((input, AnycastProbe { pubkey, timeout_ms }))
+        Ok((
+            input,
+            AnycastProbe {
+                self_addr,
+                namespace_addr,
+                timeout_ms,
+            },
+        ))
     }
 }

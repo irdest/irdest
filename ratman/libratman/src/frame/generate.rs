@@ -1,9 +1,13 @@
 //! Generator utilities
 
-use crate::{frame::FrameGenerator, types::Ident32, EncodingError, Result};
+use crate::{
+    frame::FrameGenerator,
+    types::{Address, Ident32},
+    EncodingError, Result,
+};
 use byteorder::{BigEndian, ByteOrder};
 use chrono::{DateTime, TimeZone};
-use std::{ffi::CString, time::Duration};
+use std::ffi::CString;
 
 fn u16_to_big_endian(val: u16) -> [u8; 2] {
     let mut v = [0; 2];
@@ -181,6 +185,14 @@ impl<T: FrameGenerator> FrameGenerator for Vec<T> {
     }
 }
 
+impl FrameGenerator for (Address, u64) {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        self.0.generate(buf)?;
+        self.1.generate(buf)?;
+        Ok(())
+    }
+}
+
 impl<Tz: TimeZone> FrameGenerator for DateTime<Tz> {
     fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
         let utc_string = self.to_rfc3339();
@@ -246,4 +258,19 @@ fn vector_encode_decode() {
 /// Read any `repr(C)` type as binary data for serialisation
 pub unsafe fn any_as_u8_slice<T: Sized>(p: &T) -> &[u8] {
     core::slice::from_raw_parts((p as *const T) as *const u8, core::mem::size_of_val(p))
+}
+
+pub fn pad_aux_data(mut buffer: Vec<u8>) -> [u8; 64] {
+    assert!(buffer.len() <= 64);
+
+    let diff = 64 - buffer.len();
+    buffer.append(&mut vec![0; diff]);
+
+    buffer
+        .into_iter()
+        .enumerate()
+        .fold([0; 64], |mut acc, (idx, item)| {
+            acc[idx] = item;
+            acc
+        })
 }

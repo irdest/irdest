@@ -319,6 +319,7 @@ impl RatmanContext {
                             &this_.links,
                             &this_.journal,
                             &this_.collector,
+                            &this_.protocol,
                             this_.tripwire.clone(),
                             (&name, &ep),
                             ingress_tx,

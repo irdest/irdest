@@ -12,8 +12,9 @@ use libratman::{
     api::{
         socket_v2::RawSocketHandle,
         types::{
-            AddrCreate, AddrDestroy, AddrDown, AddrList, AddrUp, Handshake, PeerList, RecvMany,
-            RecvOne, SendMany, SendOne, ServerPing, SubsCreate, SubsDelete, SubsRestore,
+            AddrCreate, AddrDestroy, AddrDown, AddrList, AddrUp, AnycastProbe, Handshake,
+            NamespaceDown, NamespaceRegister, NamespaceUp, PeerList, RecvMany, RecvOne, SendMany,
+            SendOne, ServerPing, SubsCreate, SubsDelete, SubsRestore,
         },
         version_str, versions_compatible,
     },
@@ -192,7 +193,7 @@ pub(super) async fn single_session_exchange<'a>(
                 .await
                 .unwrap();
             let (addr, client_auth) =
-                crypto::create_addr_key(&ctx.meta_db, addr_create.name, None).await?;
+                crypto::create_addr_key(&ctx.meta_db, addr_create.name).await?;
             ctx.routes.register_local_route(addr).await?;
 
             ctx.clients
@@ -302,10 +303,82 @@ pub(super) async fn single_session_exchange<'a>(
         // NAMESPACE COMMANDS
         //
         //
-        m if m == cm::make(cm::SPACE, cm::CREATE) => {}
-        m if m == cm::make(cm::SPACE, cm::UP) => {}
-        m if m == cm::make(cm::SPACE, cm::DOWN) => {}
-        m if m == cm::make(cm::SPACE, cm::ANYCAST) => {}
+        m if m == cm::make(cm::SPACE, cm::CREATE) => {
+            let NamespaceRegister { pubkey, privkey } = raw_socket
+                .read_payload::<NamespaceRegister>(header.payload_size)
+                .await?;
+
+            crypto::create_namespace(&ctx.meta_db, None, pubkey, privkey).await?;
+            ctx.routes.register_local_route(pubkey).await?;
+
+            raw_socket
+                .write_microframe(MicroframeHeader::intrinsic_noauth(), ServerPing::Ok)
+                .await?;
+        }
+        m if m == cm::make(cm::SPACE, cm::UP) => {
+            let NamespaceUp {
+                client_addr,
+                namespace_addr,
+            } = raw_socket
+                .read_payload::<NamespaceUp>(header.payload_size)
+                .await?;
+            let _ = crypto::get_namespace_key(&ctx.meta_db, namespace_addr).await?;
+
+            ctx.protocol
+                .clone()
+                .online_namespace(client_addr, namespace_addr)
+                .await?;
+
+            raw_socket
+                .write_microframe(MicroframeHeader::intrinsic_noauth(), ServerPing::Ok)
+                .await?;
+        }
+        m if m == cm::make(cm::SPACE, cm::DOWN) => {
+            let NamespaceDown {
+                client_addr,
+                namespace_addr,
+            } = raw_socket
+                .read_payload::<NamespaceDown>(header.payload_size)
+                .await?;
+            ctx.protocol
+                .clone()
+                .offline_namespace(client_addr, namespace_addr)
+                .await?;
+
+            raw_socket
+                .write_microframe(MicroframeHeader::intrinsic_noauth(), ServerPing::Ok)
+                .await?;
+        }
+        m if m == cm::make(cm::SPACE, cm::ANYCAST) => {
+            let anycast_probe = raw_socket
+                .read_payload::<AnycastProbe>(header.payload_size)
+                .await?;
+
+            let auth = check_auth(&header, anycast_probe.self_addr, auth_guard).await?;
+
+            let peers = ctx
+                .protocol
+                .run_anycast_probe(
+                    &ctx,
+                    anycast_probe.self_addr,
+                    anycast_probe.namespace_addr,
+                    Duration::from_millis(anycast_probe.timeout_ms),
+                )
+                .await?;
+
+            raw_socket
+                .write_microframe(
+                    MicroframeHeader::intrinsic_auth(auth),
+                    ServerPing::Anycast(
+                        peers
+                            .into_iter()
+                            // FIXME: why is one a u64 and one u128??
+                            .map(|(addr, timeout)| (addr, timeout.as_millis() as u64))
+                            .collect(),
+                    ),
+                )
+                .await?;
+        }
 
         //
         //

@@ -5,12 +5,17 @@
 use crate::{
     journal::Journal,
     links::{GenericEndpoint, LinksMap},
-    procedures::{self},
+    procedures,
+    protocol::Protocol,
     routes::{EpNeighbourPair, RouteTable},
 };
+use chrono::Utc;
 use libratman::{
-    frame::carrier::modes::{self as fmodes, DATA, MANIFEST},
-    frame::{carrier::AnnounceFrame, FrameParser},
+    frame::carrier::modes::{self as fmodes, DATA, MANIFEST, NAMESPACE_ANYCAST},
+    frame::{
+        carrier::{AnnounceFrame, CarrierFrameHeader},
+        FrameParser,
+    },
     types::{InMemoryEnvelope, Recipient},
     NetmodError, RatmanError,
 };
@@ -44,6 +49,8 @@ pub(crate) async fn exec_switching_batch(
     // Allow spawning frames on the local collector that are addressed
     // to a local address
     collector: &Arc<BlockCollector>,
+    // Reference to protocol tracker
+    protocol: &Arc<Protocol>,
     // Allow the switch to shut down gracefully
     tripwire: Tripwire,
     // The netmod driver endpoint to switch messages for
@@ -169,6 +176,39 @@ pub(crate) async fn exec_switching_batch(
                     }
                 }
             }
+            //
+            // Handle anycast requests
+            (mode, Some(Recipient::Namespace(namespace))) if mode == NAMESPACE_ANYCAST => {
+                let now = Utc::now();
+
+                // If the namespace isn't actually listened to on this node this
+                // loop will return nothing and we don't send any reply
+                let local_addrs = protocol.get_namespace_listeners(namespace).await;
+                for addr in local_addrs {
+                    if let Err(e) = procedures::dispatch_frame(
+                        routes,
+                        links,
+                        collector,
+                        block_notify_tx.clone(),
+                        InMemoryEnvelope::from_header_and_payload(
+                            CarrierFrameHeader::new_anycast_reply_frame(
+                                addr,
+                                Recipient::Address(header.get_sender()),
+                                now.clone(),
+                            )
+                            .expect("failed to encode anycast probe response"),
+                            vec![],
+                        )
+                        .expect("failed to encode anycast probe response"),
+                    )
+                    .await
+                    {
+                        error!("failed to send anycast probe response: {e}");
+                        continue;
+                    }
+                }
+            }
+
             ///////////////////////////////////////////////////////////
             //
             // Any frame that's addressed to an address
