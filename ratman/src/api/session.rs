@@ -167,6 +167,13 @@ pub(super) async fn single_session_exchange<'a>(
         m if m == cm::make(cm::INTRINSIC, cm::DOWN) => {
             return Ok(SessionResult::Drop);
         }
+
+        //
+        //
+        // ADDRESS COMMANDS
+        //
+        //
+
         //
         //
         // ^-^ List locally available addresses
@@ -289,6 +296,23 @@ pub(super) async fn single_session_exchange<'a>(
                 )
                 .await?;
         }
+
+        //
+        //
+        // NAMESPACE COMMANDS
+        //
+        //
+        m if m == cm::make(cm::SPACE, cm::CREATE) => {}
+        m if m == cm::make(cm::SPACE, cm::UP) => {}
+        m if m == cm::make(cm::SPACE, cm::DOWN) => {}
+        m if m == cm::make(cm::SPACE, cm::ANYCAST) => {}
+        
+        //
+        //
+        // STREAM COMMANDS
+        //
+        //
+
         //
         //
         // ^-^ Create a new stream subscription

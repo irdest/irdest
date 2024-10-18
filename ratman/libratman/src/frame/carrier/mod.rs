@@ -42,6 +42,9 @@ pub mod modes {
 
     // The set of router-router peering protocols are 64-127
     pub const ROUTER_PEERING: u16 = 64;
+
+    // Specific ratman/ irdest protocols
+    pub const NAMESPACE_ANYCAST: u16 = 0b1000_0000;
 }
 
 ////////////////// SOME TESTS

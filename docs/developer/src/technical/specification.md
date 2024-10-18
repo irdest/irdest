@@ -361,23 +361,24 @@ Importantly, the `CarrierFrame` does not include a transmission checksum to dete
 Following is a (*work in progress!*) overview of valid bitfields.  If a field is _not_ listed it is _invalid_!  Routers that encounter an invalid message MUST discard it.
 
 
-| Bitfield states       | Frame type descriptor                    |
-|-----------------------|------------------------------------------|
-| `0000 0000 0000 01xx` | Base address announcements               |
-| `0000 0000 0000 1000` | ERIS Data frame                          |
-| `0000 0000 0000 1001` | ERIS Manifest frame                      |
-| `0000 0000 0000 1xxx` | *(Reserved for future data frame types)* |
-| `0000 0000 0001 xxxx` | *(Reserved)*                             |
-| `0000 0000 001x xxxx` | Netmod/ Wire peering frames              |
-| `0000 0000 01xx xxxx` | Router to Router peering frames          |
-| `???? ???? ???? ????` | SyncScopeRequest                         |
-| `???? ???? ???? ????` | SourceRequest                            |
-| `???? ???? ???? ????` | SourceResponse                           |
-| `???? ???? ???? ????` | PushNotice                               |
-| `???? ???? ???? ????` | DenyNotice                               |
-| `???? ???? ???? ????` | PullRequest                              |
-| `???? ???? ???? ????` | LinkLeapNotice                           |
-| `1xxx xxxx xxxx xxxx` | User specified packet type range         |
+| Bitfield states | Frame type descriptor                    |
+|-----------------|------------------------------------------|
+| `000 01xx`      | Base address announcements               |
+| `0000 1000`     | ERIS Data frame                          |
+| `0000 1001`     | ERIS Manifest frame                      |
+| `0000 1xxx`     | *(Reserved for future data frame types)* |
+| `0001 xxxx`     | *(Reserved)*                             |
+| `001x xxxx`     | Netmod/ Wire peering frames              |
+| `01xx xxxx`     | Router to Router peering frames          |
+| `1000 0001`     | Anycast Probe Request                    |
+| `???? ????`     | SyncScopeRequest                         |
+| `???? ????`     | SourceRequest                            |
+| `???? ????`     | SourceResponse                           |
+| `???? ????`     | PushNotice                               |
+| `???? ????`     | DenyNotice                               |
+| `???? ????`     | PullRequest                              |
+| `???? ????`     | LinkLeapNotice                           |
+| `xxxx xxxx`     | User specified packet type range         |
 
 
 ### Announcement
@@ -488,6 +489,26 @@ struct RouterMeta {
     known_peers: u32
 }
 ```
+
+## Anycast Probe Request
+
+Namespaces allow applications to listen to the same address key across a network, allowing different instances to "find" each other.  The MREP protocol doesn't support real anycast, but can pre-compute route preferences across a namespace.
+
+An anycast probe is addressed to a given namespace address, and contains a timeout duration (in milliseconds) as auxiliary data.  No payload is required for this data type:
+
+```rust
+CarrierframeHeaderV1 {
+  modes: 0b1000_0000,
+  sender: [application address],
+  recipient: Some([namespace address]),
+  seq_id: None,
+  auxiliary_data: Some([timeout in ms as u64]),
+  signature_data: Some([signature data]),
+  payload_length: 0,
+}
+```
+
+In order for a router to respond to an anycast probe request it MUST have marked the given namespace as "up".  If this is the case a router switch MUST respond to an anycast probe request.  Responses that reach the originating router after the timeout has elapsed MUST be ignored.
 
 
 ### SyncScopeRequest

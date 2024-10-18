@@ -7,6 +7,7 @@
 
 mod announce;
 mod router;
+mod anycast;
 
 use crate::{context::RatmanContext, protocol::announce::AddressAnnouncer};
 use libratman::{

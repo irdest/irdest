@@ -39,6 +39,8 @@ pub mod client_modes {
     pub const SEND: u8      = 0x6;
     /// Incoming message streams
     pub const STREAM: u8    = 0x7;
+    /// Namespace addresses
+    pub const SPACE: u8     = 0x8;
     
 
     //// Creating new data or destroying it permanently
@@ -65,6 +67,9 @@ pub mod client_modes {
     pub const ONE: u8       = 0x32;
     pub const MANY: u8      = 0x33;
     pub const STATUS: u8    = 0x34;
+
+    /// TODO: replace this with a more generic protocol extension.  This sucks
+    pub const ANYCAST: u8   = 0x35;
     
 
     /// Assemble a full mode byte from a command namespace and a
@@ -138,32 +143,3 @@ impl FrameParser for MicroframeHeader {
         ))
     }
 }
-
-// /// Creates a Microframe from
-// ///
-// /// - message modes
-// /// - an optional client auth token
-// /// - an optional inner message payload
-// pub fn encode_micro_frame<T: FrameGenerator>(
-//     modes: u16,
-//     auth: Option<AddrAuth>,
-//     payload: Option<T>,
-// ) -> Result<Vec<u8>> {
-//     let mut payload_buf = vec![];
-//     match payload {
-//         Some(p) => p.generate(&mut payload_buf)?,
-//         None => {}
-//     };
-
-//     let header = MicroframeHeader {
-//         modes,
-//         auth,
-//         payload_size: payload_buf.len() as u32,
-//     };
-
-//     let mut complete = vec![];
-//     header.generate(&mut complete)?;
-//     complete.append(&mut payload_buf);
-
-//     Ok(complete)
-// }
