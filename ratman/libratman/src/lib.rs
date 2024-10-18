@@ -27,6 +27,8 @@ pub mod frame;
 pub mod rt;
 pub mod types;
 
+use ed25519_dalek::{PublicKey, SecretKey};
+use rand::rngs::OsRng;
 // Re-export existing errors at the root to make them more convenient
 // to access.  Importantly errors are name-spaced while results are
 // not.  A result MUST always be of type Result<T, RatmanError>.
@@ -43,6 +45,7 @@ pub use tokio_util;
 
 // Re-export some other utilities too
 pub use hex;
+use types::{Address, Ident32};
 
 /// Print a log message and exit
 // TODO: turn into macro
@@ -59,4 +62,14 @@ pub fn env_xdg_data() -> Option<String> {
 /// Get XDG_CONFIG_HOME from the environment
 pub fn env_xdg_config() -> Option<String> {
     std::env::var("XDG_CONFIG_HOME").ok()
+}
+
+pub fn generate_space_key() -> (Address, Ident32) {
+    let secret_key = SecretKey::generate(&mut OsRng {});
+    let public_key = PublicKey::from(&secret_key);
+
+    let space_key = Ident32::from_bytes(secret_key.as_bytes());
+    let space_addr = Address::from_bytes(public_key.as_bytes());
+
+    (space_addr, space_key)
 }

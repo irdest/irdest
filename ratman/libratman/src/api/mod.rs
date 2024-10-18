@@ -29,7 +29,7 @@
 
 mod _trait;
 use _trait::StreamGenerator;
-pub use _trait::{RatmanIpcExtV1, RatmanStreamExtV1, ReadStream};
+pub use _trait::{NamespaceExt, RatmanIpcExtV1, RatmanStreamExtV1, ReadStream};
 
 mod subscriber;
 pub use subscriber::SubscriptionHandle;
@@ -56,6 +56,7 @@ use std::{
     ffi::CString,
     net::{Ipv4Addr, SocketAddr, SocketAddrV4},
     sync::Arc,
+    time::Duration,
 };
 use tokio::{
     io::{AsyncRead, AsyncReadExt},
@@ -697,5 +698,32 @@ impl RatmanStreamExtV1 for RatmanIpc {
             read: 0,
             inner: ReadStream(socket),
         })
+    }
+}
+
+#[async_trait]
+impl NamespaceExt for RatmanIpc {
+    async fn space_register(
+        self: &Arc<Self>,
+        space_pubkey: Address,
+        space_private_key: Ident32,
+    ) -> Result<()> {
+        todo!()
+    }
+
+    async fn space_up(self: &Arc<Self>, space_pubkey: Address) -> Result<()> {
+        todo!()
+    }
+
+    async fn space_down(self: &Arc<Self>, space_pubkey: Address) -> Result<()> {
+        todo!()
+    }
+
+    async fn space_anycast_probe(
+        self: &Arc<Self>,
+        space_pubkey: Address,
+        timeout: Duration,
+    ) -> Result<Vec<Address>> {
+        todo!()
     }
 }

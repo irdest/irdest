@@ -159,7 +159,27 @@ fn setup_cli() -> Command {
                 .arg_required_else_help(true)
                 .subcommands([
                     Command::new("list").about("List all available peers on the network along some metadata about them"),
-                ])
+                ]),
+            Command::new("space")
+                .about("Manage shared address namespaces")
+                .arg_required_else_help(true)
+                .subcommands([
+                    Command::new("create")
+                        .about("Create a new namespace key which can be included in a third-party application")
+                        .args([
+                            Arg::new("encoding")
+                                .help("Specify the desired output encoding")
+                                .short('e')
+                                .long("encoding")
+                                .action(ArgAction::Set)
+                                .default_value("json")
+                                .value_parser(["json", "ascii", "raw"]),
+                            Arg::new("file_name")
+                                .help("Specify the output file name for the namespace key")
+                                .short('f')
+                                .action(ArgAction::Set)
+                        ])
+                ]),
         ])
         .after_help(
             "For more documentation, please consult the user manual at https://docs.irde.st/user/",

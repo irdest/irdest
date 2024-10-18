@@ -4,7 +4,7 @@ use crate::{
     ClientError, Result,
 };
 use async_trait::async_trait;
-use std::{net::SocketAddr, sync::Arc};
+use std::{net::SocketAddr, sync::Arc, time::Duration};
 use tokio::{io::AsyncRead, sync::MutexGuard};
 
 use super::types::{PeerEntry, RouterStatus, ServerPing};
@@ -261,4 +261,46 @@ impl<'a> StreamGenerator<'a> {
             Some(_) => Err(UserError::RecvLimitReached.into()),
         }
     }
+}
+
+#[async_trait]
+pub trait NamespaceExt: RatmanIpcExtV1 {
+    /// Register a new namespace with the router
+    ///
+    /// To create a space key, you can either use the `ratctl` CLI or call the
+    /// function `generate_space_key()` and store its output in your application
+    /// source code.
+    ///
+    /// The private key must be included in every instance of your application
+    /// to allow for transport layer space signatures and encryption.
+    async fn space_register(
+        self: &Arc<Self>,
+        space_pubkey: Address,
+        space_privkey: Ident32,
+    ) -> Result<()>;
+
+    /// Mark a given namespace as "up" for a given application
+    ///
+    /// This is different from a stream subscription, which listens to messages
+    /// sent to a given namespace.  This function should be used by an
+    /// application using a space for responding to various protocols that are
+    /// targeted at this namespace.  It also enables the router to pre-cache
+    /// messages sent to the namespace, even if no active message subscription
+    /// exists
+    async fn space_up(self: &Arc<Self>, space_pubkey: Address) -> Result<()>;
+
+    /// Mark a given namespace as "down" for a given application
+    async fn space_down(self: &Arc<Self>, space_pubkey: Address) -> Result<()>;
+
+    /// Perform an anycast probe for a given namespace
+    ///
+    /// The anycast ping is sent out across the whole network and any client
+    /// instance subscribed to this namespace will reply.  Any address which
+    /// responds within the timeout is returned by this function, ordered by
+    /// lowest to highest ping times.
+    async fn space_anycast_probe(
+        self: &Arc<Self>,
+        space_pubkey: Address,
+        timeout: Duration,
+    ) -> Result<Vec<Address>>;
 }
