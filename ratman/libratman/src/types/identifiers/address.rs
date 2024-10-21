@@ -18,6 +18,9 @@ use prometheus_client::encoding::text::Encode;
 #[derive(Copy, Clone, Debug, Hash, PartialOrd, Ord, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Address(pub Ident32);
 
+/// Represent a namespace address
+pub type Namespace = Address;
+
 impl Display for Address {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)

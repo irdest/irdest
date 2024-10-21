@@ -18,7 +18,13 @@ pub mod error;
 
 pub use api_util::*;
 pub use envelope::InMemoryEnvelope;
-pub use identifiers::{address::Address, id::Ident32, subnet::Subnet, target::Neighbour, ID_LEN};
+pub use identifiers::{
+    address::{Address, Namespace},
+    id::Ident32,
+    subnet::Subnet,
+    target::Neighbour,
+    ID_LEN,
+};
 pub use letterhead::LetterheadV1;
 pub use platform::{Os, StateDirectoryLock};
 pub use recipient::Recipient;
