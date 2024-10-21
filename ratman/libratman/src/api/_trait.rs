@@ -263,7 +263,7 @@ impl<'a> StreamGenerator<'a> {
 }
 
 #[async_trait]
-pub trait NamespaceAnycastExtV1: RatmanIpcExtV1 {
+pub trait RatmanNamespaceExt: RatmanIpcExtV1 {
     /// Register a new namespace with the router
     ///
     /// To create a space key, you can either use the `ratctl` CLI or call the
