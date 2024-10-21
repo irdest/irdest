@@ -259,6 +259,13 @@ pub async fn destroy_addr_key(meta_db: &Arc<MetadataDb>, addr: Address) -> Resul
     Ok(())
 }
 
+/// Destroy the local address key data
+pub async fn destroy_space_key(meta_db: &Arc<MetadataDb>, addr: Address) -> Result<()> {
+    meta_db.addrs.remove(addr.to_string()).await?;
+    Ok(())
+}
+
+
 /// Verify the signature of a payload with a peer's public key (address)
 #[allow(unused)] // todo
 pub fn verify_message(peer: Address, msg: &[u8], signature: Signature) -> Option<()> {

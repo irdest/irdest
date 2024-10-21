@@ -279,6 +279,17 @@ pub trait NamespaceAnycastExtV1: RatmanIpcExtV1 {
         space_privkey: Ident32,
     ) -> Result<()>;
 
+    /// List all locally available namespaces that have previously been
+    /// registered on this system
+    async fn namespace_list(self: &Arc<Self>) -> Result<Vec<Namespace>>;
+
+    /// Destroy all local data associated with a namespace
+    ///
+    /// Note: this does not stop another client from re-registering this
+    /// namespace, however deleted data can not be recovered.
+    async fn namespace_destroy(self: &Arc<Self>, pubkey: Namespace, privkey: Ident32)
+        -> Result<()>;
+
     /// Mark a given namespace as "up" for a given application
     ///
     /// This is different from a stream subscription, which listens to messages

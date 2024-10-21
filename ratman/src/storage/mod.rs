@@ -18,8 +18,7 @@ use crate::{
 };
 use fjall::{Keyspace, PartitionCreateOptions};
 use libratman::{
-    tokio::task::block_in_place,
-    types::{Ident32, LetterheadV1},
+    types::{Ident32, LetterheadV1, Namespace},
     Result,
 };
 use std::marker::PhantomData;

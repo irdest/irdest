@@ -34,6 +34,30 @@ impl FrameParser for NamespaceRegister {
     }
 }
 
+pub struct NamespaceDestroy {
+    pub pubkey: Address,
+    pub privkey: Ident32,
+}
+
+impl FrameGenerator for NamespaceDestroy {
+    fn generate(self, buf: &mut Vec<u8>) -> Result<()> {
+        self.pubkey.generate(buf)?;
+        self.privkey.generate(buf)?;
+        Ok(())
+    }
+}
+
+impl FrameParser for NamespaceDestroy {
+    type Output = NamespaceDestroy;
+
+    fn parse(input: &[u8]) -> IResult<&[u8], Self::Output> {
+        let (input, pubkey) = take_address(input)?;
+        let (input, privkey) = take_id(input)?;
+
+        Ok((input, NamespaceDestroy { pubkey, privkey }))
+    }
+}
+
 pub struct NamespaceUp {
     pub client_addr: Address,
     pub namespace_addr: Namespace,

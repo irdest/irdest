@@ -80,6 +80,21 @@ impl<T: Serialize + DeserializeOwned> CachePage<T> {
             .collect()
     }
 
+    /// Iterate over this cache page while pre-filtering desired values
+    pub fn iter_filter(&self, f: impl FnMut(&(String, T)) -> bool) -> Vec<(String, T)> {
+        self.0
+            .iter()
+            .filter_map(|item| match item {
+                Ok((key, val)) => Some((
+                    String::from_utf8(key.to_vec()).unwrap(),
+                    bincode::deserialize(&*val).unwrap(),
+                )),
+                Err(_) => None,
+            })
+            .filter(f)
+            .collect()
+    }
+
     /// Count the number of entries in this cache page
     pub fn len(&self) -> Result<usize> {
         Ok(self.0.len()?)

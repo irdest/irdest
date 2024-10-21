@@ -33,10 +33,6 @@ pub use _trait::{NamespaceAnycastExtV1, RatmanIpcExtV1, RatmanStreamExtV1, ReadS
 
 mod subscriber;
 pub use subscriber::SubscriptionHandle;
-use types::{
-    AnycastProbe, NamespaceDown, NamespaceRegister, NamespaceUp, PeerEntry, RecvMany, RouterStatus,
-    SendMany,
-};
 
 pub mod socket_v2;
 pub mod types;
@@ -44,14 +40,17 @@ pub mod types;
 #[cfg(test)]
 mod test;
 
-use self::types::{self as ty, AddrList};
+use self::types::{
+    self as ty, AddrList, AnycastProbe, NamespaceDown, NamespaceRegister, NamespaceUp, PeerEntry,
+    RecvMany, RouterStatus, SendMany,
+};
 use crate::{
     api::{
         socket_v2::RawSocketHandle,
         types::{Handshake, RecvOne, SendOne, ServerPing, SubsCreate, SubsDelete, SubsRestore},
     },
     frame::micro::{client_modes as cm, MicroframeHeader},
-    types::{AddrAuth, Address, Ident32, LetterheadV1, Recipient},
+    types::{AddrAuth, Address, Ident32, LetterheadV1, Namespace, Recipient},
     ClientError, EncodingError, Result,
 };
 use async_trait::async_trait;
@@ -727,6 +726,30 @@ impl NamespaceAnycastExtV1 for RatmanIpc {
 
         match socket.read_microframe::<ServerPing>().await?.1? {
             ServerPing::Ok => Ok(()),
+            ServerPing::Error(e) => Err(e.into()),
+            other => Err(ClientError::Internal(format!("{other:?}")).into()),
+        }
+    }
+
+    async fn namespace_destroy(self: &Arc<Self>, pubkey: Namespace, privkey: Ident32) -> Result<()> {
+        Ok(())
+    }
+    
+    async fn namespace_list(self: &Arc<Self>) -> Result<Vec<Namespace>> {
+        let mut socket = self.socket().lock().await;
+        socket
+            .write_microframe(
+                MicroframeHeader {
+                    modes: cm::make(cm::SPACE, cm::LIST),
+                    auth: None,
+                    ..Default::default()
+                },
+                (),
+            )
+            .await?;
+
+        match socket.read_microframe::<ServerPing>().await?.1? {
+            ServerPing::AddrList(addr_vec) => Ok(addr_vec),
             ServerPing::Error(e) => Err(e.into()),
             other => Err(ClientError::Internal(format!("{other:?}")).into()),
         }
