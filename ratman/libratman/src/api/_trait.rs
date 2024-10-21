@@ -287,8 +287,12 @@ pub trait RatmanNamespaceExt: RatmanIpcExtV1 {
     ///
     /// Note: this does not stop another client from re-registering this
     /// namespace, however deleted data can not be recovered.
-    async fn namespace_destroy(self: &Arc<Self>, pubkey: Namespace, privkey: Ident32)
-        -> Result<()>;
+    async fn namespace_destroy(
+        self: &Arc<Self>,
+        auth: AddrAuth,
+        pubkey: Namespace,
+        privkey: Ident32,
+    ) -> Result<()>;
 
     /// Mark a given namespace as "up" for a given application
     ///

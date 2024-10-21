@@ -1,38 +1,61 @@
 //! Ratman client bindings library
 //!
-//! To learn more about Ratman and Irdest, visit https://irde.st!
+//! To learn more about how to use this library we recommend you read our
+//! developer manual: https://docs.irde.st/developer/technical/client.html
 //!
-//! In order to interact with the Ratman daemon your application must
-//! send properly formatted API messages over a local TCP socket.
-//! These data formats are outlined in the [types
-//! module](crate::types)!
+//! Fundamentally this library connects you to an instance of the Ratman packet
+//! router.  It allows you to manage addresses, namespaces, message streams, and
+//! subscriptions.
 //!
-//! This crate provides a simple API over these API messages!
+//! ## Example
 //!
-//! **This API is currently still very unstable!**
+//! ```rust
+//! #[tokio::main]
+//! async fn main() -> Result<()> {
+//!     let ipc = RatmanIpc::start(default_api_bind()).await?;
 //!
-//! ## Version numbers
+//!     // The "name" parameter is only used for local identification and not shared
+//!     let (addr, auth) = ipc.addr_create(Some(&"my-amazing-app".to_owned())).await?;
 //!
-//! The client library MAJOR and MINOR version follow a particular
-//! Ratman release.  So for example, version `0.4.0` of this crate is
-//! built against version `0.4.0` of `ratmand`.  Because Ratman itself
-//! follows semantic versioning, this crate is in turn also
-//! semantically versioned.
+//!     // Mark the address as "up", which starts announcing it
+//!     ipc.addr_up(auth, addr).await?;
 //!
-//! Any change that needs to be applied to this library that does not
-//! impact `ratmand` or the stability of this API will be implemented
-//! as a patch-version.
+//!     // Find any other peer on the network
+//!     let peers = ipc.peers_list().await?;
+//!     let friend = peers
+//!         .first()
+//!         .expect("You need to have a friend to talk to :(");
 //!
-//! Also: by default this library will refuse to connect to a running
-//! `ratmand` that does not match the libraries version number.  This
-//! behaviour can be disabled via the `RatmanIpc` API.
+//!     // Take data from stdin and send it across the network
+//!     let mut stdin = tokio::io::stdin();
+//!     ipc.send_to(
+//!         auth,
+//!         LetterheadV1::send(addr, Recipient::Address(friend.addr)),
+//!         &mut stdin,
+//!     )
+//!     .await?;
+//! ```
+//!
+//! You will find additional examples in the libratman sources.  And if you have
+//! any questions on how to use this library/ router, don't hesitate to ask!
+//!
+//! ## Versioning
+//!
+//! Ratman and libratman both follow semantic versioning.  While Ratman is still
+//! in the `0.x` versioning phase every release may add breaking API changes.
+//! During this time you MUST connect your application's libratman version must
+//! be the same as the router.
+//!
+//! After a `1.0` release this restriction will be lowered, but that is still
+//! some time away.
 
 mod _trait;
 use _trait::StreamGenerator;
-pub use _trait::{RatmanNamespaceExt, RatmanIpcExtV1, RatmanStreamExtV1, ReadStream};
+pub use _trait::{RatmanIpcExtV1, RatmanNamespaceExt, RatmanStreamExtV1, ReadStream};
 
 mod subscriber;
 pub use subscriber::SubscriptionHandle;
+use types::NamespaceDestroy;
 
 pub mod socket_v2;
 pub mod types;
@@ -731,10 +754,34 @@ impl RatmanNamespaceExt for RatmanIpc {
         }
     }
 
-    async fn namespace_destroy(self: &Arc<Self>, pubkey: Namespace, privkey: Ident32) -> Result<()> {
-        Ok(())
+    async fn namespace_destroy(
+        self: &Arc<Self>,
+        auth: AddrAuth,
+        space_addr: Namespace,
+        space_key: Ident32,
+    ) -> Result<()> {
+        let mut socket = self.socket().lock().await;
+        socket
+            .write_microframe(
+                MicroframeHeader {
+                    modes: cm::make(cm::SPACE, cm::DESTROY),
+                    auth: Some(auth),
+                    ..Default::default()
+                },
+                NamespaceDestroy {
+                    pubkey: space_addr,
+                    privkey: space_key,
+                },
+            )
+            .await?;
+
+        match socket.read_microframe::<ServerPing>().await?.1? {
+            ServerPing::Ok => Ok(()),
+            ServerPing::Error(e) => Err(e.into()),
+            other => Err(ClientError::Internal(format!("{other:?}")).into()),
+        }
     }
-    
+
     async fn namespace_list(self: &Arc<Self>) -> Result<Vec<Namespace>> {
         let mut socket = self.socket().lock().await;
         socket
