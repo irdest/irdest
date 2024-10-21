@@ -11,7 +11,7 @@ async fn main() -> Result<()> {
 
     // Create a regular address
     // The second parameter can be used to create a specific namespace key
-    let (addr, auth) = ipc.addr_create(Some(&"my-name".to_owned()), None).await?;
+    let (addr, auth) = ipc.addr_create(Some(&"my-name".to_owned())).await?;
 
     // Start advertising the address on the network
     ipc.addr_up(auth, addr).await?;
