@@ -1,3 +1,8 @@
+//! Low level data chunking mechanisms and utilities
+//!
+//! In most use-cases you shouldn't have to use these abstractions yourself, but
+//! they are exposed just in case you do want them.
+
 use crate::Result;
 use bytes::{buf::BufMut, Buf};
 use std::{

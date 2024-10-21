@@ -7,14 +7,15 @@ use crate::{
     context::RatmanContext,
     crypto,
     procedures::{handle_subscription_socket, SenderSystem},
+    storage::addr_key::AddressData,
 };
 use libratman::{
     api::{
         socket_v2::RawSocketHandle,
         types::{
             AddrCreate, AddrDestroy, AddrDown, AddrList, AddrUp, AnycastProbe, Handshake,
-            NamespaceDown, NamespaceRegister, NamespaceUp, PeerList, RecvMany, RecvOne, SendMany,
-            SendOne, ServerPing, SubsCreate, SubsDelete, SubsRestore,
+            NamespaceDestroy, NamespaceDown, NamespaceRegister, NamespaceUp, PeerList, RecvMany,
+            RecvOne, SendMany, SendOne, ServerPing, SubsCreate, SubsDelete, SubsRestore,
         },
         version_str, versions_compatible,
     },
@@ -313,6 +314,58 @@ pub(super) async fn single_session_exchange<'a>(
 
             raw_socket
                 .write_microframe(MicroframeHeader::intrinsic_noauth(), ServerPing::Ok)
+                .await?;
+        }
+        m if m == cm::make(cm::SPACE, cm::DESTROY) => {
+            let NamespaceDestroy { pubkey, privkey } = raw_socket
+                .read_payload::<NamespaceDestroy>(header.payload_size)
+                .await?;
+
+            let keypair = crypto::get_namespace_key(&ctx.meta_db, pubkey).await?;
+
+            if keypair
+                .inner
+                .secret
+                .as_bytes()
+                .cmp(&privkey.slice())
+                .is_eq()
+            {
+                crypto::destroy_addr_key(&ctx.meta_db, pubkey).await?;
+
+                // TODO: delete all the data
+
+                raw_socket
+                    .write_microframe(MicroframeHeader::intrinsic_noauth(), ServerPing::Ok)
+                    .await?;
+            } else {
+                raw_socket
+                    .write_microframe(
+                        MicroframeHeader::intrinsic_noauth(),
+                        ServerPing::Error(ClientError::User(UserError::InvalidInput(
+                            "space secret key incorrect".into(),
+                            None,
+                        ))),
+                    )
+                    .await?;
+            }
+        }
+        m if m == cm::make(cm::SPACE, cm::LIST) => {
+            let namespaces = ctx
+                .meta_db
+                .addrs
+                .iter_filter(|(_, addr_type)| match addr_type {
+                    AddressData::Space(_, _) => true,
+                    _ => false,
+                })
+                .into_iter()
+                .map(|(addr, _)| Address::from_string(&addr))
+                .collect::<Vec<_>>();
+
+            raw_socket
+                .write_microframe(
+                    MicroframeHeader::intrinsic_noauth(),
+                    ServerPing::AddrList(namespaces),
+                )
                 .await?;
         }
         m if m == cm::make(cm::SPACE, cm::UP) => {
