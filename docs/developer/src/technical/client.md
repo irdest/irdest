@@ -7,7 +7,7 @@ You can find `ratman-client` on
 [docs.rs](https://docs.rs/ratman-client)!
 
 
-## Workflow
+## Getting started
 
 There are three main steps to using the client-lib:
 
@@ -27,7 +27,7 @@ ratman = { version = "0.6.0", no-default-features = true, features = [ "client "
 
 ### IPC initialisation
 
-By default the IPC socket for Ratman is running on `localhost:5852`. Many of the Irdest tools allow you to overwrite this socket address, to allow for local testing with multiple routers.  We recommend that your application expose this option to users for testing purposes as well!
+By default the IPC socket for Ratman is running on `localhost:5852`. Many of the Irdest tools allow you to overwrite this socket address, to allow for local testing with multiple routers.  We recommend that your application expose this option to users as well!
 
 
 ### Address registration
@@ -90,3 +90,17 @@ async fn main() -> Result<()> {
     Ok(())
 }
 ```
+
+
+## Additional concepts
+
+Generally we recommend reading the [Ratman Internals](./internals/index.md) to gain additional context on how Irdest works.  This following section will outline some of the API client concepts and how to use them.
+
+
+### Namespaces
+
+A namespace is a special type of address in Irdest.  While normal addresses are specific to one device, a namespace can be shared across multiple devices.
+
+The creation process is also slightly different.  While `addr_create(...)` only takes a single parameter (an optional name), and creates an address key for you (which is not returned from the API), the function `namespace_register(...)` takes both the public and private key parts that the namespace consists of.
+
+Namespace data (private and public keys) need to be included in every application that wishes to use the namespace.  Messages to a namespace are still encrypted and signed, but since the key is shared across different application instances, messages should not be considered to be private.

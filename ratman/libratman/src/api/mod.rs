@@ -29,7 +29,7 @@
 
 mod _trait;
 use _trait::StreamGenerator;
-pub use _trait::{NamespaceAnycastExtV1, RatmanIpcExtV1, RatmanStreamExtV1, ReadStream};
+pub use _trait::{RatmanNamespaceExt, RatmanIpcExtV1, RatmanStreamExtV1, ReadStream};
 
 mod subscriber;
 pub use subscriber::SubscriptionHandle;
@@ -702,7 +702,7 @@ impl RatmanStreamExtV1 for RatmanIpc {
 }
 
 #[async_trait]
-impl NamespaceAnycastExtV1 for RatmanIpc {
+impl RatmanNamespaceExt for RatmanIpc {
     async fn namespace_register(
         self: &Arc<Self>,
         auth: AddrAuth,
