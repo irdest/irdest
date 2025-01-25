@@ -17,7 +17,7 @@ edition = "2018"
 ## the main way users interact with the router.  For very low-power
 ## targets it can be disabled with --no-default-features
 default = [ "dashboard", "datalink", "inet", "lan", "lora" ]
-dashboard = [ "rust-embed", "openapi_type", "prometheus-client" ]
+dashboard = [ "rust-embed", "openapi_type", "prometheus-client", "mime", "mime_guess" ]
 
 # Allow different netmods to be enabled or disabled at compile-time.
 # By default we want to include all of them (see above).  If a user
@@ -69,9 +69,11 @@ tracing-subscriber = { version = "0.2", features = ["fmt"] }
 tracing-syslog = { version = "0.1", path = "../utils/tracing-syslog" }
 
 ## Web dependencies
+mime_guess= { version = "2.0", optional = true }
+mime = { version = "0.3", optional = true }
 openapi_type = { version = "0.4", optional = true }
 prometheus-client = { version = "0.16", optional = true }
-rust-embed = { version = "6.3", optional = true }
+rust-embed = { version = "8.0", optional = true }
 serde_json = "1.0"
 
 ## System integration and tooling
