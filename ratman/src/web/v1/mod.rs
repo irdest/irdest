@@ -1,4 +1,5 @@
 use crate::{routes::EpNeighbourPair, storage::route::RouteData, web::WebState};
+use chrono::{DateTime, Utc};
 use libratman::types::Address;
 use libratman::{
     axum::{extract::State, Json},
@@ -6,6 +7,14 @@ use libratman::{
 };
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
+
+/// A metadata struct for the web API
+#[derive(Serialize, Deserialize)]
+struct WebAddress {
+    key: Address,
+    first_seen: DateTime<Utc>,
+    last_seen: DateTime<Utc>,
+}
 
 // `Json` gives a content-type of `application/json` and works with any type
 // that implements `serde::Serialize`

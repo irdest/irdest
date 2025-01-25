@@ -39,6 +39,7 @@ pub use types::error::{
 
 // Re-export tokio and futures crates to share async abstractions
 pub use axum;
+pub use axum_embed;
 pub use futures;
 pub use tokio;
 pub use tokio_stream;
