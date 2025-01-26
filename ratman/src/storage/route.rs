@@ -8,6 +8,7 @@ use libratman::{
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, time::Duration};
 
+/// This structure is used in the routing table and web API
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RouteData {
     pub peer: Address,

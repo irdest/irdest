@@ -7,8 +7,8 @@ application:
 index:
   title: Start
   placeholder:
-    heading: Aktuell bekannte Addressen
-    greeting: ratmand trackt addressen welche es bereits im Netzwerk gefunden hat, die in der Liste unten aufgelistet sind. Weite diagnostische Werkzeuge werden in diesem interface hinzugefuegt werden!
+    heading: Ratman Daemon Router-Dashboard
+    greeting: Willkommen im ratman Router-Dashboard.  Hier kannst du den aktuellen Status des routes sehen, und Konfigurations-Einstellungen verändern.
 addr:
   group:
     local: Lokale Addressen

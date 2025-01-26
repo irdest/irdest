@@ -3,7 +3,9 @@ function parseAddrs(addrs) {
 }
 
 <template>
-  {{# each (parseAddrs @addrs) as | addr | }}
-    <p>{{ addr.key }}</p>
-  {{/ each }}
+  <table>
+    {{# each (parseAddrs @addrs) as | addr | }}
+    <tr> {{ addr.key }} |awawa|{{ addr.val }}</tr>
+    {{/ each }}
+  </table>
 </template>
