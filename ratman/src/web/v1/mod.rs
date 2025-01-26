@@ -8,18 +8,19 @@ use libratman::{
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
-/// A metadata struct for the web API
-#[derive(Serialize, Deserialize)]
-struct WebAddress {
-    key: Address,
-    first_seen: DateTime<Utc>,
-    last_seen: DateTime<Utc>,
-}
-
 // `Json` gives a content-type of `application/json` and works with any type
 // that implements `serde::Serialize`
 pub async fn get_addrs(State(state): State<Arc<WebState>>) -> Json<BTreeMap<Address, RouteData>> {
-    Json(state.router.routes.all_entries().await)
+    Json(
+        state
+            .router
+            .meta_db
+            .routes
+            .iter()
+            .into_iter()
+            .map(|(s, d)| (Address::from_string(&s), d))
+            .collect::<BTreeMap<Address, RouteData>>(),
+    )
 }
 
 #[derive(Serialize, Deserialize)]

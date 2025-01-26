@@ -7,8 +7,8 @@ application:
 index:
   title: Home
   placeholder:
-    heading: Currently known addresses
-    greeting: ratmand keeps track of any address it has encountered on the network before. Following is a list of them. Further diagnostics tools will follow!
+    heading: Ratman daemon router dashboard
+    greeting: Welcome to the ratman router dashboard.  It shows the current router status, and allows you to change configuration settings.
 addr:
   group:
     local: Local Addresses
