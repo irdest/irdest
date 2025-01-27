@@ -1,8 +1,11 @@
 import { LinkTo } from '@ember/routing';
+import { t } from 'ember-intl';
 
 <template>
-  <ul>
-    <li><LinkTo @route="index">Overview</LinkTo></li>
-    <li><LinkTo @route="api">API</LinkTo></li>
-  </ul>
+  <div class="navbar">
+    <LinkTo @route="index">{{ t 'navigation.home' }}</LinkTo>
+    <LinkTo @route="index">{{ t 'navigation.peers' }}</LinkTo>
+    <LinkTo @route="index">{{ t 'navigation.neighbours' }}</LinkTo>
+    <LinkTo @route="api">{{ t 'navigation.api' }}</LinkTo>
+  </div>
 </template>
