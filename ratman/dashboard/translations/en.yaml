@@ -4,8 +4,12 @@
 
 application:
   title: ratmand
+navigation:
+  home: Overview
+  peers: Network peers
+  neighbours: Connection neighbours
+  api: Developer API
 index:
-  title: Home
   placeholder:
     heading: Ratman daemon router dashboard
     greeting: Welcome to the ratman router dashboard.  It shows the current router status, and allows you to change configuration settings.

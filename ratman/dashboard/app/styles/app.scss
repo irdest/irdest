@@ -4,6 +4,33 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
  */
 
-.table {
-    
+* {
+  margin: 0;
+}
+
+body {
+    font-family: sans-serif;
+    background: #CFCFCF;
+    padding: 0;
+}
+
+.content {
+    padding: 1em 1em;
+}
+
+.navbar {
+    display: flex;
+    flex-direction: horizontal;
+    font-size: 1.5em;
+    background: #2f556b;
+    padding: 1em;
+}
+
+.navbar > a {
+    padding: 0em 0.25em;
+    color: #CFCFCF;
+}
+
+.navbar > a:hover {
+    color: #FFFFFF;
 }
