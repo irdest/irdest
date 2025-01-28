@@ -4,12 +4,7 @@
 
 application:
   title: ratmand
-navigation:
-  home: Übersicht
-  peers: Netzwerk Teilnehmer
-  neighbours: Nachbarn
-  api: Entwickler API
-index:
+home:
   placeholder:
     heading: Ratman Daemon Router-Dashboard
     greeting: Willkommen im ratman Router-Dashboard.  Hier kannst du den aktuellen Status des routes sehen, und Konfigurations-Einstellungen verändern.

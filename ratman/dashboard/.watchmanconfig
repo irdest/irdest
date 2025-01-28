@@ -1,3 +1,5 @@
 {
-  "ignore_dirs": ["dist"]
+  "ignore_dirs": ["dist"],
+  "ignore_glob": []
 }
+
