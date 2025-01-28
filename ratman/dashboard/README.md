@@ -16,8 +16,8 @@ When building `ratmand` via `cargo` you will have to first build and
 bundle the web dashboard:
 
 ```
-$ env -C ratman/dashboard yarn
-$ env -C ratman/dashboard yarn build
+$ env -C ratman/dashboard npm i
+$ env -C ratman/dashboard npm build
 $ cargo build --bin ratmand --all-features
 ```
 
@@ -26,7 +26,7 @@ When hacking on the dashboard itself remember to point it at the
 
 ```
 $ cd ratman/dashboard
-$ yarn start --proxy=http://localhost:8090
+$ npx ember --proxy=http://localhost:8090
 ```
 
 ## Prerequisites
