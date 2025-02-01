@@ -8,14 +8,23 @@ import { service } from '@ember/service';
 import RSVP from 'rsvp';
 
 export default class IndexRoute extends Route {
-    @service store;
-    // @service metrics;
+  @service store;
+  // @service metrics;
 
-    async model() {
-	const res = await this.store.requestManager.request({
-            url: "/api/v1/addrs"
-	});
+  async model() {
+	  const addrs = await this.store.requestManager.request({
+      url: "/api/v1/addrs"
+	  });
 
-	return res.content;
-    }
+    const peers = await this.store.requestManager.request({
+      url: "/api/v1/peers"
+    });
+
+    const neighbours = await this.store.requestManager.request({
+      url: "/api/v1/neighbours"
+    });
+
+	  //return { addrs: addrs.content, peers: peers.content, neighbours: neighbours.content };
+    return addrs.content;
+  }
 }

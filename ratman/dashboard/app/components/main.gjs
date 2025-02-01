@@ -1,9 +1,9 @@
 import Nav from './nav';
 
 <template>
-<Nav />
+  <Nav />
 
-<div class="content">
-  {{ yield }}
-</div>
+  <div class="content">
+    {{ yield }}
+  </div>
 </template>

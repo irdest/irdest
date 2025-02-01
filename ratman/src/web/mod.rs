@@ -41,9 +41,9 @@ pub async fn start(
     // Build a router and attach some routes to it
     let router = Router::new()
         .nest_service("/", serve_dashboard)
-        //.route("/", get(hello_world))
         .route("/api/v1/addrs", get(v1::get_addrs))
         .route("/api/v1/peers", get(v1::get_peers))
+        .route("/api/v1/neighbours", get(v1::get_neighbours))
         .with_state(Arc::new(state));
 
     let listener = TcpListener::bind(bind_addr.clone())

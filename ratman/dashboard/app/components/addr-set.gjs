@@ -15,7 +15,6 @@ const qr = modifier((canvas, [content]) => {
 });
 
 class Addr extends Component {
-
   @tracked qrDataUrl;
 
   constructor(...args) {

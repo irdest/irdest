@@ -13,4 +13,6 @@ export default class Router extends EmberRouter {
 Router.map(function () {
   this.route('api');
   this.route('peers');
+  this.route('neighbours');
+  this.route('spaces');
 });
