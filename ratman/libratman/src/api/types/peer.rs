@@ -41,7 +41,9 @@ impl FrameParser for PeerQuery {
     }
 }
 
-/// A peer entry
+/// A peer metadata entry
+///
+/// This type must be serde serialisable because it is used in the web API
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PeerEntry {
     pub addr: Address,

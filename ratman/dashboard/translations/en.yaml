@@ -5,12 +5,18 @@
 application:
   title: ratmand
 home:
-  placeholder:
-    heading: Ratman daemon router dashboard
-    greeting: Welcome to the ratman router dashboard.  It shows the current router status, and allows you to change configuration settings.
+  heading: Dashboard Overview
+  greeting: This page shows a general overview of your router, it's health, various other usage metrics.
+  addrs: Local addresses
+  peers: Known remote addresses
+  spaces: Known namespaces
+  quota_metadb: On-disk metadata
+  quota_journal: On-disk data journal
 addr:
   group:
     local: Local Addresses
     remote: Remote Addresses
 api:
   title: API Reference
+peers:
+  title: Network peers

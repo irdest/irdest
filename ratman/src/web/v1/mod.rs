@@ -1,5 +1,5 @@
-use crate::{routes::EpNeighbourPair, storage::route::RouteData, web::WebState};
-use chrono::{DateTime, Utc};
+use crate::{routes::EpNeighbourPair, web::WebState};
+use libratman::api::types::PeerEntry;
 use libratman::types::Address;
 use libratman::{
     axum::{extract::State, Json},
@@ -8,19 +8,20 @@ use libratman::{
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
-// `Json` gives a content-type of `application/json` and works with any type
-// that implements `serde::Serialize`
-pub async fn get_addrs(State(state): State<Arc<WebState>>) -> Json<BTreeMap<Address, RouteData>> {
-    Json(
+pub async fn get_addrs(State(state): State<Arc<WebState>>) -> Json<BTreeMap<Address, PeerEntry>> {
+    dbg!(Json(
         state
             .router
-            .meta_db
             .routes
-            .iter()
-            .into_iter()
-            .map(|(s, d)| (Address::from_string(&s), d))
-            .collect::<BTreeMap<Address, RouteData>>(),
-    )
+            .list_remote()
+            .await
+            .map(|vec| {
+                vec.into_iter()
+                    .map(|entry| (entry.addr, entry))
+                    .collect::<BTreeMap<Address, PeerEntry>>()
+            })
+            .unwrap(),
+    ))
 }
 
 #[derive(Serialize, Deserialize)]

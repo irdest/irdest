@@ -6,7 +6,31 @@ SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 {{page-title (t 'navigation.home')}}
 
-<h2>{{t 'home.placeholder.heading'}}</h2>
-<p>{{t 'home.placeholder.greeting'}}</p>
+<h2>{{t 'home.heading'}}</h2>
+
+<p>{{ t 'home.greeting' }}</p>
+
+<table>
+  <tr>
+    <td>{{ t 'home.addrs' }}</td>
+    <td>???</td>
+  </tr>
+  <tr>
+    <td>{{ t 'home.peers' }}</td>
+    <td>?</td>
+  </tr>
+  <tr>
+    <td>{{ t 'home.spaces' }}</td>
+    <td>1</td>
+  </tr>
+  <tr>
+    <td>{{ t 'home.quota_metadb' }}</td>
+    <td>16MB (no limit)</td>
+  </tr>
+  <tr>
+    <td>{{ t 'home.quota_journal' }}</td>
+    <td>712MB / 2GB</td>
+  </tr>
+</table>
 
 <AddrSet @addrs={{@model}}/>
