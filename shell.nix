@@ -11,6 +11,12 @@ with import (import nix/sources.nix).nixpkgs {};
 stdenv.mkDerivation {
   name = "irdest-base";
   buildInputs = [ 
+    # nix tools
+    nixd
+
+    # debugging tools
+    strace valgrind
+
     # core build tools
     rustc cargo rustfmt rust-analyzer clangStdenv
 
