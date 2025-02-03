@@ -324,6 +324,7 @@ impl RatmanContext {
                             &this_.routes,
                             &this_.links,
                             &this_.journal,
+                            &this_.meta_db,
                             &this_.collector,
                             &this_.protocol,
                             this_.tripwire.clone(),

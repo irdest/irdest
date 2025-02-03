@@ -9,11 +9,11 @@ import RSVP from 'rsvp';
 export default class PeersRoute extends Route {
     @service store;
 
-    async model() {
-	const res = await this.store.requestManager.request({
-            url: "/api/v1/addrs"
-	});
+  async model() {
+	  const res = await this.store.requestManager.request({
+      url: "/api/v1/peers"
+	  });
 
-	return res.content;
-    }
+	  return res.content;
+  }
 }

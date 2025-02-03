@@ -1,3 +1,9 @@
 {{ page-title (t 'peers.title') }}
 
-Peers go here or something idk
+<h2>{{t 'peers.heading'}}</h2>
+
+<p>{{t 'peers.intro' }}</p>
+
+<hr />
+
+<AddrSet @addrs={{ @model }} />

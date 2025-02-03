@@ -115,6 +115,15 @@ impl Journal {
         })
     }
 
+    pub fn used_space(&self) -> u64 {
+        self.db.disk_space()
+    }
+
+    // Disk quotas are currently not implemented
+    pub fn disk_quota(&self) -> Option<u64> {
+        None
+    }
+
     pub async fn is_unknown(&self, frame_id: &Ident32) -> Result<bool> {
         self.seen_frames
             .get(&frame_id.to_string())

@@ -55,13 +55,10 @@ pub async fn start_api_thread(
                 format!("ratmand-api-{}", client_id.to_string().to_ascii_lowercase()),
                 16,
                 async move {
-                    debug!("Oiiii");
                     let res = jh
                         .into_future()
                         .await
                         .expect("failed to join `run_client_handler` future");
-
-                    debug!("AWAWAWAWAWA");
 
                     // Remove the client here, no matter what the runner task does
                     ctx.clients.lock_inner().await.remove(&client_id);

@@ -38,4 +38,4 @@
 mod scoring;
 
 mod table;
-pub(crate) use table::{EpNeighbourPair, RouteTable};
+pub(crate) use table::{EpNeighbourPair, NeighbourEntry, RouteTable};

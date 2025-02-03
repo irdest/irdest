@@ -72,6 +72,15 @@ impl MetadataDb {
         }
     }
 
+    pub fn used_space(&self) -> u64 {
+	self.db.disk_space()
+    }
+
+    // Disk quotas are currently not implemented
+    pub fn disk_quota(&self) -> Option<u64> {
+	None
+    }
+
     pub fn new(db: Keyspace) -> Result<Self> {
         let addrs = CachePage(
             db.open_partition("meta_addrs", PartitionCreateOptions::default())?,

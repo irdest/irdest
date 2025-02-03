@@ -6,9 +6,10 @@ application:
   title: ratmand
 home:
   heading: Dashboard Overview
-  greeting: This page shows a general overview of your router, it's health, various other usage metrics.
+  greeting: This page shows a general overview of your router, it's health, and other usage metrics.
   addrs: Local addresses
   peers: Known remote addresses
+  neighbours: Current node neighbours
   spaces: Known namespaces
   quota_metadb: On-disk metadata
   quota_journal: On-disk data journal
@@ -20,3 +21,12 @@ api:
   title: API Reference
 peers:
   title: Network peers
+  heading: Known remote addresses
+  intro: This page shows known remote addresses, which are part of the current Irdest network and are not registered on the local router.
+neighbours:
+  title: Node neighbours
+  heading: Directly neighbouring nodes
+  intro: This page shows node neighbours, which are other instances of Ratman with which this router is connected.
+  intro2: Each neighbour provides access to a different set of remote addresses, and has different limitations on bandwidth, available buffer space, and uptime.
+spaces:
+  title: Network namespaces

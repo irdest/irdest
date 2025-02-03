@@ -9,7 +9,6 @@ import RSVP from 'rsvp';
 
 export default class IndexRoute extends Route {
   @service store;
-  // @service metrics;
 
   async model() {
 	  const addrs = await this.store.requestManager.request({
@@ -24,7 +23,20 @@ export default class IndexRoute extends Route {
       url: "/api/v1/neighbours"
     });
 
-	  //return { addrs: addrs.content, peers: peers.content, neighbours: neighbours.content };
-    return addrs.content;
+    const spaces = await this.store.requestManager.request({
+      url: "/api/v1/spaces"
+    });
+
+    const quota = await this.store.requestManager.request({
+      url: "/api/v1/node/quota"
+    });
+
+	  return {
+      addrs: addrs.content,
+      peers: peers.content,
+      neighbours: neighbours.content,
+      spaces: spaces.content,
+      quota: quota.content,
+    };
   }
 }

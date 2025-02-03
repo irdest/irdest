@@ -10,19 +10,14 @@ use crate::{
         MetadataDb,
     },
     util::IoPair,
-    web::NeighbourEntry,
 };
 use chrono::Utc;
 use libratman::{
-    api::types::PeerEntry,
-    frame::carrier::AnnounceFrameV1,
-    tokio::{
+    api::types::PeerEntry, endpoint::NeighbourMetrics, frame::carrier::AnnounceFrameV1, tokio::{
         sync::{mpsc::channel, RwLock},
         task::{spawn_blocking, spawn_local},
         time::sleep,
-    },
-    types::{Address, Ident32, Neighbour},
-    NonfatalError, RatmanError, Result,
+    }, types::{Address, Ident32, Neighbour}, NonfatalError, RatmanError, Result
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -92,12 +87,20 @@ impl RouteTable {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub(crate) struct EpNeighbourPair(pub(crate) usize, pub(crate) Ident32);
 
+// todo: store this in the database?
+#[derive(Serialize, Deserialize)]
+pub struct NeighbourEntry {
+    pub neighbour_id: String,
+    pub neighbour_ping: Duration,
+    pub bandwidth: NeighbourMetrics,
+    pub buffer: u64,
+}
+
 /// An ephemeral routing table
 ///
 /// It only captures the current state of best routes and has no
 /// persistence relationships.  It can update entries for topology
 /// changes, but these are not carried between sessions.
-
 impl RouteTable {
     /// Register metrics with a Prometheus registry.
     #[cfg(feature = "dashboard")]

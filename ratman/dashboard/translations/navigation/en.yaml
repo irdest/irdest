@@ -1,5 +1,5 @@
 home: Overview
-peers: Network peers
-neighbours: Connection neighbours
+peers: Peers
+neighbours: Neighbours
 api: Developer API
 spaces: Namespaces

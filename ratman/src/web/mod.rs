@@ -4,11 +4,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
 mod v1;
-use libratman::axum::response::Html;
+use libratman::axum::routing::post;
 use libratman::axum_embed::ServeEmbed;
-use libratman::tokio::spawn;
 use rust_embed::RustEmbed;
-pub use v1::NeighbourEntry;
 
 use crate::context::RatmanContext;
 use libratman::axum::{routing::get, serve, Router};
@@ -44,6 +42,9 @@ pub async fn start(
         .route("/api/v1/addrs", get(v1::get_addrs))
         .route("/api/v1/peers", get(v1::get_peers))
         .route("/api/v1/neighbours", get(v1::get_neighbours))
+        .route("/api/v1/spaces", get(v1::get_spaces))
+        .route("/api/v1/spaces", post(v1::create_space))
+        .route("/api/v1/node/quota", get(v1::get_quotas))
         .with_state(Arc::new(state));
 
     let listener = TcpListener::bind(bind_addr.clone())

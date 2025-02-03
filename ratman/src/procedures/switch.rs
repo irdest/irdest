@@ -7,7 +7,7 @@ use crate::{
     links::{GenericEndpoint, LinksMap},
     procedures,
     protocol::Protocol,
-    routes::{EpNeighbourPair, RouteTable},
+    routes::{EpNeighbourPair, RouteTable}, storage::MetadataDb,
 };
 use chrono::Utc;
 use libratman::{
@@ -46,6 +46,8 @@ pub(crate) async fn exec_switching_batch(
     // The switch needs access to the central state manager for blocks
     // and frames
     journal: &Arc<Journal>,
+    // To update known neighbour data we need the metadata DB handle
+    _metadata: &Arc<MetadataDb>,
     // Allow spawning frames on the local collector that are addressed
     // to a local address
     collector: &Arc<BlockCollector>,
@@ -107,6 +109,8 @@ pub(crate) async fn exec_switching_batch(
                             .entry(EpNeighbourPair(id, neighbour.assume_single()))
                             .or_default()) = router_meta.available_buffer;
 
+			// metadata.neighbours.insert(key, value)
+			
                         // todo
                     }
                     Err(e) => {
