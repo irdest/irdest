@@ -257,7 +257,7 @@ impl RatmanContext {
             let block_notify_tx = block_notify_tx.clone();
 
             let this_ = Arc::clone(&this);
-            new_async_thread("ratmand-ingress", 1024 * 8, async move {
+            new_async_thread("ratmand-ingress", 8, async move {
                 procedures::exec_ingress_system(this_, ingress_rx, block_notify_tx).await;
                 Ok(())
             });
@@ -272,7 +272,7 @@ impl RatmanContext {
         {
             let ctx = Arc::clone(&this);
             let block_notify_tx = block_notify_tx.clone();
-            new_async_thread("ratmand-collector", 1024 * 32, async move {
+            new_async_thread("ratmand-collector", 32, async move {
                 procedures::exec_block_collector_system(ctx, collector_rx, block_notify_tx).await
             });
         }
