@@ -53,7 +53,7 @@ pub async fn start_api_thread(
             let ctx = Arc::clone(&context);
             new_async_thread(
                 format!("ratmand-api-{}", client_id.to_string().to_ascii_lowercase()),
-                1024 * 16,
+                16,
                 async move {
                     debug!("Oiiii");
                     let res = jh

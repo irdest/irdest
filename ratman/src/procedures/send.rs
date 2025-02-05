@@ -58,7 +58,7 @@ pub(crate) async fn exec_sender_system<const L: usize>(
         let collector = Arc::clone(&collector);
         new_async_thread(
             format!("sender-system-{}k", L / 1024),
-            1024 * 8,
+            8,
             async move {
                 debug!("Setup sender system for {}kB blocks", L / 1024);
                 loop {

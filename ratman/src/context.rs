@@ -311,7 +311,7 @@ impl RatmanContext {
 
                 new_async_thread::<String, _, ()>(
                     format!("ratmand-switch-{name}"),
-                    1024 * 4,
+                    4,
                     async move {
                         procedures::exec_switching_batch(
                             id,
