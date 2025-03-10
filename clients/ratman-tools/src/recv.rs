@@ -24,16 +24,17 @@ pub async fn receive(
     let recp_filter = if space_mode {
         Recipient::Namespace(Address(
             matches
-                .get_one::<String>("to-address")
+                .get_one::<String>("recv-filter")
                 .and_then(|buf| Ident32::try_from(buf.as_str()).ok())
+		// [fixme]: unsure whether this is actually the case, but better safe for now
                 .ok_or(RatmanError::User(UserError::MissingInput(
-                    "[to-address] is mandatory when also providing -s".into(),
+                    "[recv-filter] is mandatory when also providing -s".into(),
                 )))?,
         ))
     } else {
         Recipient::Address(Address(
             matches
-                .get_one::<String>("to-address")
+                .get_one::<String>("recv-filter")
                 .and_then(|buf| Ident32::try_from(buf.as_str()).ok())
                 .unwrap_or_else(|| addr.0),
         ))

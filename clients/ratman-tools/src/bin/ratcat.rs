@@ -29,19 +29,16 @@ pub fn setup_cli() -> Command {
                 .alias("send-to")
                 .about("Send messages across the network")
                 .args([
-                    // Arg::new("to-contact").conflicts_with_all(["to-address", "flood"]).,
                     Arg::new("to-address")
                         .short('a')
                         .long("addr")
-                        // .required(true)
-                        .help("Address a message stream to a single network participant")
+                        .help("Address a message stream to a regular address")
                         .action(ArgAction::Append)
                         .conflicts_with_all(["to-space"]),
                     Arg::new("to-space")
                         .short('s')
                         .long("space")
-                        // .required(true)
-                        .help("Address a message stream to a namespace address")
+                        .help("Address a message stream to a space address")
                         .action(ArgAction::Append)
                         .conflicts_with_all(["to-address"]),
                     Arg::new("chunk-size")
@@ -65,12 +62,13 @@ NOTE: ratcat will not terminate on its own and will have to be stopped externall
                         .default_value("1"),
 		    Arg::new("space-mode")
 			.short('s')
+			.long("space")
 			.action(ArgAction::SetTrue)
 			.help("Indicate that the provided list of addresses refer to space addresses.  \
 			       Receiving for both regular and space addresses is not supported via ratcat"),
-                    Arg::new("to-address")
+                    Arg::new("recv-filter")
                         .action(ArgAction::Set)
-                        .help("Filter incoming message streams by the recipient address"),
+                        .help("Filter incoming message streams by the recipient address/ space.  Will receive ALL incoming messages if no filter is set"),
                 ])
         ])
 }
