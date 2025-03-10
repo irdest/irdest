@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use clap::{arg, value_parser, Arg, ArgAction, ArgMatches, Command};
+use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
 use libratman::{
     api::{default_api_bind, RatmanIpc, RatmanIpcExtV1},
     types::error::UserError,
@@ -21,36 +21,7 @@ fn setup_cli() -> Command {
         .after_help("For more documentation, please consult the user manual at https://docs.irde.st/user/")
         .max_term_width(110)
         .subcommand_required(true)
-        .args(
-            [
-                Arg::new("api-bind")
-                    .action(ArgAction::Set)
-                    .help("Override the default client API socket address")
-                    .short('b')
-                    .long("bind")
-                    .default_value("127.0.0.1:5852"),
-                Arg::new("curr-id")
-                    .action(ArgAction::Set)
-                    .help("Specify the path for the current identity")
-                    .short('i')
-                    .long("cid")
-                    .default_value("$XDG_CONFIG_HOME/ratcat/id"),
-                Arg::new("profile")
-                    .action(ArgAction::Set)
-                    .help("Use a named address profile")
-                    .short('p')
-                    .long("prof")
-                    .default_value("id"),
-                Arg::new("output-format")
-                    .action(ArgAction::Set)
-                    .help("Specify the desired output format for commands")
-                    .short('o')
-                    .long("out")
-                    .value_parser(["lines", "json"])
-                    .default_value("lines"),
-                arg!(-q --quiet "Disable additional output.  Results are still sent to stdout, making it easier to use ratctl in scripts")
-            ]
-        )
+        .args(ratman_tools::global_args())
         .subcommands([
             Command::new("idpath").about("Print the currently selected identity"),
             //// \^-^/ Address management commands
@@ -158,8 +129,8 @@ fn setup_cli() -> Command {
                 .about("Manage shared address namespaces")
                 .arg_required_else_help(true)
                 .subcommands([
-                    Command::new("generate")
-                        .about("Register a new namespace keypair to be included in a third-party application")
+                    Command::new("register")
+                        .about("Register a new namespace key which can be included in a third-party application")
                         .args([
                             Arg::new("file_name")
                                 .help("Specify the output file name for the namespace key")
@@ -167,15 +138,6 @@ fn setup_cli() -> Command {
                                 .required(true)
                                 .action(ArgAction::Set)
                         ]),
-		    Command::new("load")
-			.about("Load an existing namespace keypair from a file")
-			.args([
-			    Arg::new("file_name")
-				.help("Specify the input file name for the namespace key")
-				.short('f')
-				.required(true)
-				.action(ArgAction::Set)
-			]),
                     Command::new("up")
                         .about("Mark a given namespace as 'up', enabling the router to respond to anycast pings and other protocols")
                         .args([
@@ -239,23 +201,19 @@ fn main() {
         let m = cli.get_matches();
         let base_args = parse_base_args(&m);
 
-        match dbg!(run_program(m, base_args).await) {
+        match run_program(m, base_args).await {
             Ok(()) => std::process::exit(0),
 
             Err(RatmanError::User(u)) => {
-                eprintln!("Invalid usage: {u}");
+                eprintln!("You did it wrong: {u}");
                 std::process::exit(1);
             }
             Err(RatmanError::ClientApi(c)) => {
                 eprintln!("Client-Router communication error: {c}");
                 std::process::exit(2);
             }
-            Err(RatmanError::Io(e)) | Err(RatmanError::TokioIo(e)) => {
-                eprintln!("ratctl failed to connect to ratman daemon: {e}");
-                std::process::exit(2);
-            }
             Err(e) => {
-                eprintln!("ratctl encountered an error: {e}");
+                eprintln!("ratcat encountered an error: {e}");
                 std::process::exit(2);
             }
         }

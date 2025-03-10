@@ -29,6 +29,7 @@ pub mod types;
 
 use ed25519_dalek::{PublicKey, SecretKey};
 use rand::rngs::OsRng;
+
 // Re-export existing errors at the root to make them more convenient
 // to access.  Importantly errors are name-spaced while results are
 // not.  A result MUST always be of type Result<T, RatmanError>.
@@ -37,16 +38,16 @@ pub use types::error::{
     RatmanError, Result, ScheduleError,
 };
 
-// Re-export tokio and futures crates to share async abstractions
+#[cfg(feature = "daemon")]
 pub use axum;
+#[cfg(feature = "daemon")]
 pub use axum_embed;
 pub use futures;
+pub use hex;
 pub use tokio;
 pub use tokio_stream;
 pub use tokio_util;
 
-// Re-export some other utilities too
-pub use hex;
 use types::{Address, Ident32};
 
 /// Print a log message and exit

@@ -54,6 +54,7 @@ pub enum RatmanError {
     Schedule(#[from] self::ScheduleError),
     #[error("a storage error: {0}")]
     Storage(#[from] fjall::Error),
+    #[cfg(feature = "daemon")]
     #[error("web engine error: {0}")]
     WebDashboardError(#[from] axum::Error),
     #[error("failed to acquire state directory lock")]

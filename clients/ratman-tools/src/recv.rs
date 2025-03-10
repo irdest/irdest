@@ -19,19 +19,31 @@ pub async fn receive(
 ) -> Result<()> {
     let (addr, auth) = base_args.identity_data?;
     let count = matches.get_one::<u64>("streams-count").unwrap_or(&1);
+    let space_mode = matches.get_flag("space-mode");
 
-    let addr_to = Address(
-        matches
-            .get_one::<String>("to-address")
-            .and_then(|buf| Ident32::try_from(buf.as_str()).ok())
-            .unwrap_or_else(|| addr.0),
-    );
+    let recp_filter = if space_mode {
+        Recipient::Namespace(Address(
+            matches
+                .get_one::<String>("to-address")
+                .and_then(|buf| Ident32::try_from(buf.as_str()).ok())
+                .ok_or(RatmanError::User(UserError::MissingInput(
+                    "[to-address] is mandatory when also providing -s".into(),
+                )))?,
+        ))
+    } else {
+        Recipient::Address(Address(
+            matches
+                .get_one::<String>("to-address")
+                .and_then(|buf| Ident32::try_from(buf.as_str()).ok())
+                .unwrap_or_else(|| addr.0),
+        ))
+    };
 
     let mut stream_gen = ipc
         .recv_many(
             auth,
             addr,
-            Recipient::Address(addr_to),
+            recp_filter,
             // A count of 0 means we want to listen forever
             if *count == 0 {
                 None

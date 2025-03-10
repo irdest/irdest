@@ -1,7 +1,7 @@
 //! Ratman API library
 
 use base_args::BaseArgs;
-use clap::ArgMatches;
+use clap::{Arg, ArgAction, ArgMatches};
 use libratman::{
     api::RatmanIpc,
     tokio::runtime::{Builder, Runtime},
@@ -21,6 +21,39 @@ pub mod status;
 pub mod stream;
 
 pub const RATS: &'static str = include_str!("../rats.ascii");
+
+pub fn global_args() -> Vec<Arg> {
+    vec![
+        Arg::new("api-bind")
+            .action(ArgAction::Set)
+            .help("Override the default client API socket address")
+            .short('b')
+            .long("bind")
+            .default_value("127.0.0.1:5852"),
+        Arg::new("state-dir")
+            .action(ArgAction::Set)
+            .help("Override the state/config directory")
+            .short('d')
+            .long("dir"),
+        Arg::new("profile")
+            .action(ArgAction::Set)
+            .help("Use a named address profile")
+            .short('p')
+            .long("prof")
+            .default_value("id"),
+        Arg::new("output-format")
+            .action(ArgAction::Set)
+            .help("Specify the desired output format for commands")
+            .short('o')
+            .long("out")
+            .value_parser(["lines", "json"])
+            .default_value("lines"),
+        Arg::new("quiet")
+            .action(ArgAction::SetTrue)
+            .short('q')
+            .help("Disable additional output.  Results are still sent to stdout, making it easier to use ratcat in scripts")
+    ]
+}
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum OutputFormat {
@@ -130,37 +163,51 @@ pub async fn command_filter(
     matches: ArgMatches,
 ) -> Result<()> {
     match matches.subcommand() {
-        Some((cmd, operand)) => match operand.subcommand() {
-            Some((op, op_matches)) => match (cmd, op) {
-                //// =^-^= Address commands (ctl)
-                ("addr", "create") => addr::create(ipc, base_args, op_matches).await,
-                ("addr", "destroy") => addr::destroy(ipc, base_args, op_matches).await,
-                ("addr", "up") => addr::up(ipc, base_args, op_matches).await,
-                ("addr", "down") => addr::down(ipc, base_args, op_matches).await,
-                ("addr", "list") => addr::list(ipc, base_args, op_matches).await,
-                //// =^-^= Status commands (ctl)
-                ("status", "system") => status::system(ipc, base_args, op_matches).await,
-                //// =^-^= Peer commands (ctl)
-                ("peers", "list") => peers::list(ipc, base_args, op_matches).await,
-                //// =^-^= Namespace commands (ctl)
-                ("space", "generate") => space::generate(ipc, base_args, op_matches).await,
-		("space", "load") => space::load(ipc, base_args, op_matches).await,
-                ("space", "up") => space::up(ipc, base_args, op_matches).await,
-                ("space", "down") => space::down(ipc, base_args, op_matches).await,
-                ("space", "anycast") => space::anycast(ipc, base_args, op_matches).await,
-                //// =^-^= Stream subscription commands (ctl)
-                ("stream", "sub") => stream::subscribe(ipc, base_args, op_matches).await,
-                ("stream", "unsub") => stream::unsubscribe(ipc, base_args, op_matches).await,
-                ("stream", "resub") => stream::resubscribe(ipc, base_args, op_matches).await,
-                _ => unreachable!("oops! looks like the cli library didn't filter this"),
-            },
-            None => match cmd {
-                //// =^-^= Send commands (cat)
-                "send" => send::send(ipc, base_args, operand).await,
-                "recv" => recv::receive(ipc, base_args, &operand).await,
-                _ => unreachable!("oops! looks like the cli library didn't filter this"),
-            },
-        },
+        Some((cmd, operand)) => {
+            match operand.subcommand() {
+                Some((op, op_matches)) => match (cmd, op) {
+                    //// =^-^= Address commands (ctl)
+                    ("addr", "create") => addr::create(ipc, base_args, op_matches).await,
+                    ("addr", "destroy") => addr::destroy(ipc, base_args, op_matches).await,
+                    ("addr", "up") => addr::up(ipc, base_args, op_matches).await,
+                    ("addr", "down") => addr::down(ipc, base_args, op_matches).await,
+                    ("addr", "list") => addr::list(ipc, base_args, op_matches).await,
+                    //// =^-^= Status commands (ctl)
+                    ("status", "system") => status::system(ipc, base_args, op_matches).await,
+                    //// =^-^= Peer commands (ctl)
+                    ("peers", "list") => peers::list(ipc, base_args, op_matches).await,
+                    //// =^-^= Namespace commands (ctl)
+                    ("space", "generate") => space::generate(ipc, base_args, op_matches).await,
+                    ("space", "load") => space::load(ipc, base_args, op_matches).await,
+                    ("space", "up") => space::up(ipc, base_args, op_matches).await,
+                    ("space", "down") => space::down(ipc, base_args, op_matches).await,
+                    ("space", "anycast") => space::anycast(ipc, base_args, op_matches).await,
+                    //// =^-^= Stream subscription commands (ctl)
+                    ("stream", "sub") => stream::subscribe(ipc, base_args, op_matches).await,
+                    ("stream", "unsub") => stream::unsubscribe(ipc, base_args, op_matches).await,
+                    ("stream", "resub") => stream::resubscribe(ipc, base_args, op_matches).await,
+                    //// =^-^= House-keeping and meta commands
+                    ("idpath", _) => {
+                        println!("{}", base_args.identity_path);
+                        Ok(())
+                    }
+                    _ => unreachable!("oops! looks like the cli library didn't filter this"),
+                },
+                None => match cmd {
+                    //// =^-^= Send commands (cat)
+                    "send" => send::send(ipc, base_args, operand).await,
+                    "recv" => recv::receive(ipc, base_args, &operand).await,
+                    //// =^-^= House-keeping and meta commands
+                    "idpath" => {
+                        println!("{}", base_args.identity_path);
+                        // Completely bail out here to avoid printing the "statistics page" for ratcat
+                        // which will be very silly on a command that only prints a single line
+                        std::process::exit(0);
+                    }
+                    _ => unreachable!("oops! looks like the cli library didn't filter this"),
+                },
+            }
+        }
         _ => unreachable!("oops! looks like the cli library didn't filter this"),
     }
 }

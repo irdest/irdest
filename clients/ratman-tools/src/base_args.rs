@@ -1,41 +1,41 @@
 use crate::{encode_map, OutputFormat};
 use clap::ArgMatches;
+use directories::BaseDirs;
 use libratman::{
     tokio::{fs::OpenOptions, io::AsyncWriteExt},
-    types::{error::UserError, AddrAuth, Address},
-    RatmanError, Result,
+    types::{AddrAuth, Address},
+    Result,
 };
-use std::{collections::BTreeMap, env, path::PathBuf};
+use std::{collections::BTreeMap, path::PathBuf};
 
+#[derive(Debug)]
 pub struct BaseArgs {
     pub identity_path: String,
     pub identity_data: Result<(Address, AddrAuth)>,
     pub out_fmt: OutputFormat,
-    pub profile: Result<String>,
+    pub profile: String,
     pub quiet: bool,
 }
 
 pub fn parse_base_args(m: &ArgMatches) -> BaseArgs {
     let output_format = m.get_one::<String>("output-format").unwrap();
+    let profile: String = m
+        .get_one::<String>("profile")
+        .map(Clone::clone)
+        .unwrap_or("id".to_string());
 
-    let profile: &String = m.get_one("profile").unwrap();
-
-    let identity_file_path: String = m
-        .get_one::<String>("curr-id")
-        .map(|x| x.to_string())
+    let selected_state_path: PathBuf = m
+        .get_one::<String>("state-dir")
+        .map(|x| PathBuf::new().join(x))
         .unwrap_or_else(|| {
-            env::var("XDG_CONFIG_HOME")
-                .map(|config_home| {
-                    PathBuf::new()
-                        .join(config_home)
-                        .join("ratcat")
-                        .join(&profile)
-                })
-                .expect("Must set XDG_CONFIG_HOME")
-                .to_str()
-                .unwrap()
-                .to_string()
+            BaseDirs::new()
+                .expect("failed to determine directories")
+                .config_dir()
+                .to_path_buf()
+                .join("ratcat")
         });
+
+    let selected_id_path = selected_state_path.join(&profile).clone();
 
     let out_fmt = match output_format.as_str() {
         "lines" => OutputFormat::Lines,
@@ -43,8 +43,12 @@ pub fn parse_base_args(m: &ArgMatches) -> BaseArgs {
         _ => unreachable!(),
     };
 
+    if let Err(e) = std::fs::create_dir_all(selected_state_path) {
+        eprintln!("(nonfatal) failed to create ratcat state directory: {e}");
+    }
+
     let identity_data = (|| -> Result<(Address, AddrAuth)> {
-        let mut f = std::fs::File::open(identity_file_path.clone())?;
+        let mut f = std::fs::File::open(selected_id_path.as_path())?;
         let mut s = String::new();
 
         use std::io::Read;
@@ -69,17 +73,13 @@ pub fn parse_base_args(m: &ArgMatches) -> BaseArgs {
         }
     })();
 
-    let profile = m
-        .get_one::<String>("profile")
-        .ok_or(RatmanError::User(UserError::MissingInput(
-            "operation expected profile to be provided".to_string(),
-        )))
-        .cloned();
-
     let quiet = m.get_flag("quiet");
 
     BaseArgs {
-        identity_path: identity_file_path,
+        identity_path: selected_id_path
+            .to_str()
+            .expect("identity file path was unprintable in UTF-8")
+            .to_string(),
         identity_data,
         out_fmt,
         profile,

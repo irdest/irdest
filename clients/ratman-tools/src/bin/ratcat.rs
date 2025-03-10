@@ -21,39 +21,7 @@ pub fn setup_cli() -> Command {
         .after_help("For more documentation, please consult the user manual at https://docs.irde.st/user/")
         .max_term_width(110)
         .subcommand_required(true)
-        .args(
-            [
-                Arg::new("api-bind")
-                    .action(ArgAction::Set)
-                    .help("Override the default client API socket address")
-                    .short('b')
-                    .long("bind")
-                    .default_value("127.0.0.1:5852"),
-                Arg::new("curr-id")
-                    .action(ArgAction::Set)
-                    .help("Specify the path for the current identity")
-                    .short('i')
-                    .long("cid")
-                    .default_value("$XDG_CONFIG_HOME/ratcat/id"),
-                Arg::new("profile")
-                    .action(ArgAction::Set)
-                    .help("Use a named address profile")
-                    .short('p')
-                    .long("prof")
-                    .default_value("id"),
-                Arg::new("output-format")
-                    .action(ArgAction::Set)
-                    .help("Specify the desired output format for commands")
-                    .short('o')
-                    .long("out")
-                    .value_parser(["lines", "json"])
-                    .default_value("lines"),
-                Arg::new("quiet")
-                    .action(ArgAction::SetTrue)
-                    .short('q')
-                    .help("Disable additional output.  Results are still sent to stdout, making it easier to use ratcat in scripts")
-            ]
-        )
+        .args(ratman_tools::global_args())
         .subcommands([
             Command::new("idpath").about("Print the currently selected identity"),
             Command::new("send")
@@ -95,6 +63,11 @@ NOTE: ratcat will not terminate on its own and will have to be stopped externall
                                For longer receive sessions it's recommended you set up a subscription instead")
                         .value_parser(value_parser!(u64))
                         .default_value("1"),
+		    Arg::new("space-mode")
+			.short('s')
+			.action(ArgAction::SetTrue)
+			.help("Indicate that the provided list of addresses refer to space addresses.  \
+			       Receiving for both regular and space addresses is not supported via ratcat"),
                     Arg::new("to-address")
                         .action(ArgAction::Set)
                         .help("Filter incoming message streams by the recipient address"),
