@@ -1,28 +1,22 @@
 use crate::{base_args::BaseArgs, encode_map, OutputFormat};
 use clap::ArgMatches;
 use libratman::{
-    api::{RatmanIpc, RatmanNamespaceExt},
+    api::{RatmanIpc, RatmanSpaceExt},
     tokio::{
         fs::File,
         io::{AsyncReadExt, AsyncWriteExt},
     },
-    types::Address,
+    types::{Address, Ident32},
     Result,
 };
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
-pub async fn register(
-    ipc: &Arc<RatmanIpc>,
-    base_args: BaseArgs,
-    matches: &ArgMatches,
-) -> Result<()> {
-    let (_, auth) = base_args.identity_data?;
+pub async fn generate(_: &Arc<RatmanIpc>, base_args: BaseArgs, matches: &ArgMatches) -> Result<()> {
+    let (_, _) = base_args.identity_data?;
     let space_file = matches.get_one::<String>("file_name").unwrap();
     let (pubkey, privkey) = libratman::generate_space_key();
 
-    ipc.namespace_register(auth, pubkey, privkey).await?;
-
-    let mut f = File::open(space_file).await?;
+    let mut f = File::create(space_file).await?;
     f.write_all(
         format!(
             "{}",
@@ -37,6 +31,40 @@ pub async fn register(
         .as_bytes(),
     )
     .await?;
+
+    Ok(())
+}
+
+pub async fn load(ipc: &Arc<RatmanIpc>, base_args: BaseArgs, matches: &ArgMatches) -> Result<()> {
+    let (_, auth) = base_args.identity_data?;
+    let space_file = matches.get_one::<String>("file_name").unwrap();
+
+    let mut f = File::open(space_file).await?;
+    let mut buf = String::new();
+    f.read_to_string(&mut buf).await?;
+
+    let (pubkey, privkey) = match base_args.out_fmt {
+        OutputFormat::Lines => {
+            let mut lines = buf.lines();
+
+            let pubkey = lines.next().unwrap().split("=").last().unwrap().to_string();
+            let privkey = lines.next().unwrap().split("=").last().unwrap().to_string();
+
+            (
+                Address::from_string(&pubkey),
+                Ident32::from_string(&privkey),
+            )
+        }
+        OutputFormat::Json => {
+            let mut map: BTreeMap<String, String> = serde_json::from_str(buf.as_str()).unwrap();
+            (
+                Address::from_string(&map.remove("pubkey").unwrap()),
+                Ident32::from_string(&map.remove("privkey").unwrap()),
+            )
+        }
+    };
+
+    ipc.space_load(auth, pubkey, privkey).await?;
 
     Ok(())
 }
@@ -70,7 +98,7 @@ pub async fn up(ipc: &Arc<RatmanIpc>, base_args: BaseArgs, matches: &ArgMatches)
         }
     };
 
-    ipc.namespace_up(addr, auth, pubkey).await?;
+    ipc.space_up(addr, auth, pubkey).await?;
 
     Ok(())
 }
@@ -104,7 +132,7 @@ pub async fn down(ipc: &Arc<RatmanIpc>, base_args: BaseArgs, matches: &ArgMatche
         }
     };
 
-    ipc.namespace_down(addr, auth, pubkey).await?;
+    ipc.space_down(addr, auth, pubkey).await?;
     Ok(())
 }
 
@@ -143,7 +171,7 @@ pub async fn anycast(
     };
 
     let addrs = ipc
-        .namespace_anycast_probe(addr, auth, pubkey, Duration::from_millis(*timeout))
+        .space_anycast_probe(addr, auth, pubkey, Duration::from_millis(*timeout))
         .await?;
 
     println!(

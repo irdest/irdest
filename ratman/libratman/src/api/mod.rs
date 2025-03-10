@@ -51,7 +51,7 @@
 
 mod _trait;
 use _trait::StreamGenerator;
-pub use _trait::{RatmanIpcExtV1, RatmanNamespaceExt, RatmanStreamExtV1, ReadStream};
+pub use _trait::{RatmanIpcExtV1, RatmanSpaceExt, RatmanStreamExtV1, ReadStream};
 
 mod subscriber;
 pub use subscriber::SubscriptionHandle;
@@ -725,8 +725,8 @@ impl RatmanStreamExtV1 for RatmanIpc {
 }
 
 #[async_trait]
-impl RatmanNamespaceExt for RatmanIpc {
-    async fn namespace_register(
+impl RatmanSpaceExt for RatmanIpc {
+    async fn space_load(
         self: &Arc<Self>,
         auth: AddrAuth,
         space_pubkey: Address,
@@ -754,7 +754,7 @@ impl RatmanNamespaceExt for RatmanIpc {
         }
     }
 
-    async fn namespace_destroy(
+    async fn space_destroy(
         self: &Arc<Self>,
         auth: AddrAuth,
         space_addr: Namespace,
@@ -782,7 +782,7 @@ impl RatmanNamespaceExt for RatmanIpc {
         }
     }
 
-    async fn namespace_list(self: &Arc<Self>) -> Result<Vec<Namespace>> {
+    async fn space_list(self: &Arc<Self>) -> Result<Vec<Namespace>> {
         let mut socket = self.socket().lock().await;
         socket
             .write_microframe(
@@ -802,7 +802,7 @@ impl RatmanNamespaceExt for RatmanIpc {
         }
     }
 
-    async fn namespace_up(
+    async fn space_up(
         self: &Arc<Self>,
         client_addr: Address,
         auth: AddrAuth,
@@ -830,7 +830,7 @@ impl RatmanNamespaceExt for RatmanIpc {
         }
     }
 
-    async fn namespace_down(
+    async fn space_down(
         self: &Arc<Self>,
         client_addr: Address,
         auth: AddrAuth,
@@ -858,7 +858,7 @@ impl RatmanNamespaceExt for RatmanIpc {
         }
     }
 
-    async fn namespace_anycast_probe(
+    async fn space_anycast_probe(
         self: &Arc<Self>,
         client_addr: Address,
         auth: AddrAuth,

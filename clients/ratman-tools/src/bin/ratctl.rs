@@ -158,8 +158,8 @@ fn setup_cli() -> Command {
                 .about("Manage shared address namespaces")
                 .arg_required_else_help(true)
                 .subcommands([
-                    Command::new("register")
-                        .about("Register a new namespace key which can be included in a third-party application")
+                    Command::new("generate")
+                        .about("Register a new namespace keypair to be included in a third-party application")
                         .args([
                             Arg::new("file_name")
                                 .help("Specify the output file name for the namespace key")
@@ -167,6 +167,15 @@ fn setup_cli() -> Command {
                                 .required(true)
                                 .action(ArgAction::Set)
                         ]),
+		    Command::new("load")
+			.about("Load an existing namespace keypair from a file")
+			.args([
+			    Arg::new("file_name")
+				.help("Specify the input file name for the namespace key")
+				.short('f')
+				.required(true)
+				.action(ArgAction::Set)
+			]),
                     Command::new("up")
                         .about("Mark a given namespace as 'up', enabling the router to respond to anycast pings and other protocols")
                         .args([

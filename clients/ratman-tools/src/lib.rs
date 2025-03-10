@@ -143,7 +143,8 @@ pub async fn command_filter(
                 //// =^-^= Peer commands (ctl)
                 ("peers", "list") => peers::list(ipc, base_args, op_matches).await,
                 //// =^-^= Namespace commands (ctl)
-                ("space", "register") => space::register(ipc, base_args, op_matches).await,
+                ("space", "generate") => space::generate(ipc, base_args, op_matches).await,
+		("space", "load") => space::load(ipc, base_args, op_matches).await,
                 ("space", "up") => space::up(ipc, base_args, op_matches).await,
                 ("space", "down") => space::down(ipc, base_args, op_matches).await,
                 ("space", "anycast") => space::anycast(ipc, base_args, op_matches).await,

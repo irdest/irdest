@@ -46,7 +46,7 @@ pub async fn get_spaces(State(_state): State<Arc<WebState>>) -> Json<BTreeMap<Na
     Json(BTreeMap::new())
 }
 
-pub async fn create_spacem(State(state): State<Arc<WebState>>) -> Json<(Address, Ident32)> {
+pub async fn create_space(State(state): State<Arc<WebState>>) -> Json<(Address, Ident32)> {
     let (pubkey, privkey) = libratman::generate_space_key();
 
     crypto::create_namespace(&state.router.meta_db, None, pubkey, privkey)

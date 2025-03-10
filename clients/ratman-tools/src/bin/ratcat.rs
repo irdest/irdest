@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
 
-use clap::{arg, value_parser, Arg, ArgAction, ArgMatches, Command};
+use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
 use libratman::{
     api::{default_api_bind, RatmanIpc, RatmanIpcExtV1},
     types::error::UserError,

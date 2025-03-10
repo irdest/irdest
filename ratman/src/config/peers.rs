@@ -4,7 +4,7 @@
 //! must be configured to `accept_unknown_peers`.
 
 use crate::{links::LinksMap, storage::MetadataDb};
-use libratman::{types::RouterMeta, NetmodError, RatmanError};
+use libratman::{NetmodError, RatmanError};
 use std::sync::Arc;
 
 /// A helper that parses, validates, and attaches peer data to drivers

@@ -263,31 +263,31 @@ impl<'a> StreamGenerator<'a> {
 }
 
 #[async_trait]
-pub trait RatmanNamespaceExt: RatmanIpcExtV1 {
-    /// Register a new namespace with the router
+pub trait RatmanSpaceExt: RatmanIpcExtV1 {
+    /// Load an existing namespace for the first time
     ///
-    /// To create a space key, you can either use the `ratctl` CLI or call the
-    /// function `generate_space_key()` and store its output in your application
-    /// source code.
+    /// You can generate a namespace keypair via
+    /// `crate::generate_space_key()` or by calling `ratctl space
+    /// generate` on the commandline.
     ///
-    /// The private key must be included in every instance of your application
-    /// to allow for transport layer space signatures and encryption.
-    async fn namespace_register(
+    /// This function returns a non-fatal error if the namespace key
+    /// has already been registered
+    async fn space_load(
         self: &Arc<Self>,
         auth: AddrAuth,
         space_pubkey: Address,
-        space_privkey: Ident32,
+        space_priv: Ident32,
     ) -> Result<()>;
 
     /// List all locally available namespaces that have previously been
     /// registered on this system
-    async fn namespace_list(self: &Arc<Self>) -> Result<Vec<Namespace>>;
+    async fn space_list(self: &Arc<Self>) -> Result<Vec<Namespace>>;
 
     /// Destroy all local data associated with a namespace
     ///
     /// Note: this does not stop another client from re-registering this
     /// namespace, however deleted data can not be recovered.
-    async fn namespace_destroy(
+    async fn space_destroy(
         self: &Arc<Self>,
         auth: AddrAuth,
         pubkey: Namespace,
@@ -305,7 +305,7 @@ pub trait RatmanNamespaceExt: RatmanIpcExtV1 {
     ///
     /// Namespace subscriptions can be maintained independent of whether the
     /// namespace is up or down.
-    async fn namespace_up(
+    async fn space_up(
         self: &Arc<Self>,
         client_address: Address,
         auth: AddrAuth,
@@ -318,7 +318,7 @@ pub trait RatmanNamespaceExt: RatmanIpcExtV1 {
     /// and other namespace protocols, as well as no longer cache incoming
     /// messages addressed to the namespace.  Namespace subscriptions can be
     /// maintained independent of whether the namespace is up or down.
-    async fn namespace_down(
+    async fn space_down(
         self: &Arc<Self>,
         client_address: Address,
         auth: AddrAuth,
@@ -331,7 +331,7 @@ pub trait RatmanNamespaceExt: RatmanIpcExtV1 {
     /// instance subscribed to this namespace will reply.  Any address which
     /// responds within the timeout is returned by this function, ordered by
     /// lowest to highest ping times.
-    async fn namespace_anycast_probe(
+    async fn space_anycast_probe(
         self: &Arc<Self>,
         client_address: Address,
         auth: AddrAuth,

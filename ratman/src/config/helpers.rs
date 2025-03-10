@@ -17,7 +17,7 @@ pub fn load_peers_file(path: impl Into<PathBuf>) -> Result<Vec<String>> {
     }))
 }
 
-pub(super) fn get_node_name_attribute<'p>(node: &'p KdlNode) -> Option<&str> {
+pub(super) fn get_node_name_attribute(node: &KdlNode) -> Option<&str> {
     node.get(0)
         .and_then(|entry| match entry.value().as_string() {
             Some(name) => Some(name),
