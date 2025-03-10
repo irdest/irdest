@@ -1,4 +1,4 @@
-    # SPDX-FileCopyrightText: 2019-2022 Katharina Fey <kookie@spacekookie.de>
+# SPDX-FileCopyrightText: 2019-2025 Katharina Fey <kookie@spacekookie.de>
 # SPDX-FileCopyrightText: 2022 embr <git@liclac.eu>
 #
 # SPDX-License-Identifier: CC0-1.0
@@ -6,25 +6,27 @@
 [package]
 name = "ratmand"
 description = "A decentralised and peer-to-peer packet router"
+repository = "https://codeberg.org/irdest/irdest"
 license = "AGPL-3.0-or-later"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2018"
 
 
 [features]
 
-## The dashboard should really always be included, since it will be
-## the main way users interact with the router.  For very low-power
-## targets it can be disabled with --no-default-features
+# The dashboard should really always be included, since it will be the main way users interact with
+# the router.  For very low-power targets it can be disabled with --no-default-features
 default = [ "dashboard", "datalink", "inet", "lan", "lora" ]
 dashboard = [ "rust-embed", "openapi_type", "prometheus-client", "mime", "mime_guess" ]
 
-# Allow different netmods to be enabled or disabled at compile-time.
-# By default we want to include all of them (see above).  If a user
-# passes --no-default-features, they can then manually select the set
-# of netmods they want to include in the router binary.
+## UNUSED
+android = []
+
+# Allow different netmods to be enabled or disabled at compile-time.  By default we want to include
+# all of them (see above).  If a user passes --no-default-features, they can then manually select
+# the set of netmods they want to include in the router binary.
 datalink = [ "netmod-datalink" ]
-# fuzz = [ "netmod-fuzz" ]
+fuzz = [ "netmod-fuzz" ]
 inet = [ "netmod-inet" ]
 lan = [ "netmod-lan" ]
 lora = [ "netmod-lora" ]
@@ -32,8 +34,8 @@ lora = [ "netmod-lora" ]
 
 [dependencies]
 
-## Core dependencies.  If you're not sure where to add something, put
-## it here first.  Large clusters can then always be expanded later.
+## Core dependencies.  If you're not sure where to add something, put it here first.  Large clusters
+## can then always be expanded later.
 async-eris = { version = "0.1", path = "../utils/eris-rs" }
 async-trait = "0.1"
 atomptr = "1.0"
@@ -87,20 +89,21 @@ tempdir = "*"
 
 ## Irdest and Ratman sub-components
 clockctrl = { version = "0.1", path = "../utils/clockctrl" }
-libratman = { version = "0.6", path = "libratman", features = [ "metrics", "daemon" ]}
+libratman = { version = "0.7", path = "libratman", features = [ "metrics", "daemon" ]}
 task-notify = { version = "1.0", path = "../utils/task-notify" }
 
 ## Bundled network modules
-netmod-datalink = { path = "../netmods/netmod-datalink", version = "0.2", optional = true }
-netmod-inet = { path = "../netmods/netmod-inet", version = "0.4", optional = true }
-netmod-lan = { path = "../netmods/netmod-lan", version = "0.2", optional = true }
-netmod-lora = { path = "../netmods/netmod-lora", version = "0.1", optional = true }
-netmod-mem = { path = "../netmods/netmod-mem", version = "0.4", optional = true }
+netmod-datalink = { path = "../netmods/netmod-datalink", optional = true }
+netmod-inet = { path = "../netmods/netmod-inet", optional = true }
+netmod-lan = { path = "../netmods/netmod-lan", optional = true }
+netmod-lora = { path = "../netmods/netmod-lora", optional = true }
+netmod-mem = { path = "../netmods/netmod-mem", optional = true }
+netmod-fuzz = { path = "../netmods/netmod-fuzz", optional = true }
 
 
 [dev-dependencies]
 bincode = "1.2"
-netmod-inet = { path = "../netmods/netmod-inet", version = "*" }
+netmod-inet = { path = "../netmods/netmod-inet" }
 tracing-subscriber = { version = "0.2", features = ["fmt"] }
 
 # This dependency is required to make async tests in ratmand work

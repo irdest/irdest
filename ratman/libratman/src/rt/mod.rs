@@ -118,7 +118,7 @@ fn simple_tcp_transfer() {
     let (tx, mut rx) = channel(1);
 
     new_async_thread("tcp server", 32, async move {
-        let l = TcpListener::bind("localhost:5555").await.unwrap();
+        let l = TcpListener::bind("localhost:19991").await.unwrap();
         let (mut stream, _addr) = l.accept().await.unwrap();
 
         let length = LengthReader::new(&mut stream).read_u32().await.unwrap();
@@ -142,10 +142,13 @@ fn simple_tcp_transfer() {
     new_async_thread("tcp client", 32, async move {
         let to_send = to_send.clone();
 
-        let mut stream = timeout(Duration::from_secs(2), TcpStream::connect("localhost:5555"))
-            .await
-            .unwrap()
-            .unwrap();
+        let mut stream = timeout(
+            Duration::from_secs(2),
+            TcpStream::connect("localhost:19991"),
+        )
+        .await
+        .unwrap()
+        .unwrap();
 
         write_u32(&mut stream, to_send.len() as u32).await.unwrap();
         AsyncWriter::new(to_send.as_slice(), &mut stream)

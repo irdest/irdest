@@ -26,14 +26,14 @@ use prometheus_client::encoding::text::Encode;
 ///
 /// 2. An ed25519 public key, backed by a corresponding private key.
 ///
-/// API functions that _require_ an `Id` to be backed by a private key MUST wrap
-/// it via the [`Address`](super::address::Address) type.
+/// API functions that _require_ an `Id` to be backed by a private key MUST wrap it via the
+/// [`Address`](super::address::Address) type.
 ///
-/// For every consumer that simply wants to identify a unique object, with a
-/// reasonable amount of entropy to avoid collisions, this type is sufficient.
-/// You can generate it via [`random()`](Id::random) function, or by hashing a
-/// piece of data ([`from_hash()])(Id::from_hash).  The hash function used is
-/// blake2.
+/// For every consumer that simply wants to identify a unique object, with a reasonable amount of
+/// entropy to avoid collisions, this type is sufficient.
+///
+/// You can generate it via [`random()`](Ident32::random) function, or by hashing a piece of data
+/// ([`with_digest()`](Ident32::with_digest)).  The hash function used is blake2.
 #[derive(Copy, Clone, Hash, PartialOrd, Ord, PartialEq, Eq)]
 pub struct Ident32([u8; ID_LEN]);
 
@@ -403,7 +403,6 @@ mod test {
     use serde_json;
 
     #[test]
-    #[cfg(not(features = "aligned"))]
     fn json_serde() {
         let s = b"Yes, we will make total destroy.";
         let i = Ident32::truncate(&s.to_vec());
@@ -417,7 +416,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(not(features = "aligned"))]
     fn bincode_serde() {
         let s = b"Yes, we will make total destroy.";
         let i = Ident32::truncate(&s.to_vec());
@@ -432,13 +430,6 @@ mod test {
         );
         let i2 = bincode::deserialize(&v).unwrap();
         assert_eq!(i, i2);
-    }
-
-    /// This is the default length
-    #[test]
-    #[cfg(not(features = "aligned"))]
-    fn sized() {
-        assert_eq!(super::ID_LEN, 32);
     }
 }
 

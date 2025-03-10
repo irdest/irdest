@@ -56,125 +56,121 @@ pub(crate) async fn exec_sender_system<const L: usize>(
         let routes = Arc::clone(routes);
         let drivers = Arc::clone(drivers);
         let collector = Arc::clone(&collector);
-        new_async_thread(
-            format!("sender-system-{}k", L / 1024),
-            8,
-            async move {
-                debug!("Setup sender system for {}kB blocks", L / 1024);
-                loop {
-                    let routes = Arc::clone(&routes);
-                    let drivers = Arc::clone(&drivers);
-                    let collector = Arc::clone(&collector);
-                    let block_bcast = block_bcast.clone();
+        new_async_thread(format!("sender-system-{}k", L / 1024), 8, async move {
+            debug!("Setup sender system for {}kB blocks", L / 1024);
+            loop {
+                let routes = Arc::clone(&routes);
+                let drivers = Arc::clone(&drivers);
+                let collector = Arc::clone(&collector);
+                let block_bcast = block_bcast.clone();
 
-                    let tw = tripwire.clone();
-                    let (read_cap, letterhead): (ReadCapability, LetterheadV1) = select! {
-                        _ = tw => break,
-                        i = rx_l.recv() => {
-                            match i {
-                                Some(i) => i,
-                                None => break,
-                            }
+                let tw = tripwire.clone();
+                let (read_cap, letterhead): (ReadCapability, LetterheadV1) = select! {
+                    _ = tw => break,
+                    i = rx_l.recv() => {
+                        match i {
+                            Some(i) => i,
+                            None => break,
+                        }
+                    }
+                };
+
+                debug!(
+                    "Got block stream to handle, (to: {}, stream_len: {})",
+                    letterhead.to.inner_address().pretty_string(),
+                    letterhead.stream_size
+                );
+                let (local_tx, mut local_rx) = channel::<(Block<L>, LetterheadV1)>(1);
+                let manifest = ManifestFrame::V1(ManifestFrameV1::from((
+                    read_cap.clone(),
+                    letterhead.clone(),
+                )));
+
+                send_manifest(
+                    manifest,
+                    letterhead.clone(),
+                    &read_cap,
+                    &routes,
+                    &journal,
+                    &ingress_tx,
+                    &block_bcast,
+                    &drivers,
+                    &collector,
+                )
+                .await?;
+
+                let journal = Arc::clone(&journal);
+                spawn(BlockWorker { read_cap }.traverse_block_tree::<L>(
+                    Arc::clone(&journal),
+                    letterhead.clone(),
+                    local_tx,
+                ));
+
+                while let Some((block, letterhead)) = local_rx.recv().await {
+                    let bid = block.reference();
+
+                    let frame_buf = match BlockSlicer
+                        .produce_frames(block, letterhead.from, letterhead.to)
+                        .await
+                    {
+                        Ok(buf) => buf,
+                        Err(e) => {
+                            error!("failed to slice block to frames: {e}");
+                            continue;
                         }
                     };
 
-                    debug!(
-                        "Got block stream to handle, (to: {}, stream_len: {})",
-                        letterhead.to.inner_address().pretty_string(),
-                        letterhead.stream_size
+                    let frame_count = frame_buf.get(0).unwrap().buffer.len();
+
+                    let bid32 = Ident32::from_bytes(bid.as_slice()).pretty_string();
+
+                    trace!(
+                        "Block {} turned into {}x {:.1}kB frames",
+                        bid32,
+                        frame_buf.len(),
+                        frame_count as f32 / 1024.0,
                     );
-                    let (local_tx, mut local_rx) = channel::<(Block<L>, LetterheadV1)>(1);
-                    let manifest = ManifestFrame::V1(ManifestFrameV1::from((
-                        read_cap.clone(),
-                        letterhead.clone(),
-                    )));
 
-                    send_manifest(
-                        manifest,
-                        letterhead.clone(),
-                        &read_cap,
-                        &routes,
-                        &journal,
-                        &ingress_tx,
-                        &block_bcast,
-                        &drivers,
-                        &collector,
-                    )
-                    .await?;
-
-                    let journal = Arc::clone(&journal);
-                    spawn(BlockWorker { read_cap }.traverse_block_tree::<L>(
-                        Arc::clone(&journal),
-                        letterhead.clone(),
-                        local_tx,
-                    ));
-
-                    while let Some((block, letterhead)) = local_rx.recv().await {
-                        let bid = block.reference();
-
-                        let frame_buf = match BlockSlicer
-                            .produce_frames(block, letterhead.from, letterhead.to)
-                            .await
-                        {
-                            Ok(buf) => buf,
-                            Err(e) => {
-                                error!("failed to slice block to frames: {e}");
-                                continue;
-                            }
-                        };
-
-                        let frame_count = frame_buf.get(0).unwrap().buffer.len();
-
-                        let bid32 = Ident32::from_bytes(bid.as_slice()).pretty_string();
+                    for envelope in frame_buf {
+                        if envelope.header.get_seq_id().is_none() {
+                            error!("{:?}", envelope.header);
+                            panic!(
+                                "WAS ABOUT TO SEND OFF A DATA FRAME WITHOUT SEQUENCE ID
+WHAT THE FUCK"
+                            );
+                        }
 
                         trace!(
-                            "Block {} turned into {}x {:.1}kB frames",
+                            "Dispatching {} byte frame {}/{}",
+                            envelope.buffer.len(),
                             bid32,
-                            frame_buf.len(),
-                            frame_count as f32 / 1024.0,
+                            envelope.header.get_seq_id().unwrap().num
                         );
 
-                        for envelope in frame_buf {
-                            if envelope.header.get_seq_id().is_none() {
-                                error!("{:?}", envelope.header);
-                                panic!(
-                                    "WAS ABOUT TO SEND OFF A DATA FRAME WITHOUT SEQUENCE ID
-WHAT THE FUCK"
-                                );
-                            }
-
-                            trace!(
-                                "Dispatching {} byte frame {}/{}",
-                                envelope.buffer.len(),
-                                bid32,
-                                envelope.header.get_seq_id().unwrap().num
-                            );
-
-                            if let Err(e) = dispatch_frame(
-                                &routes,
-                                &drivers,
-                                &collector,
-                                block_bcast.clone(),
-                                envelope,
-                            )
-                            .await
-                            {
-                                error!("failed to dispatch frame: {e}");
-                            }
-
-                            // Yield before sending the next frame
-                            yield_now().await;
+                        if let Err(e) = dispatch_frame(
+                            &routes,
+                            &drivers,
+                            &collector,
+                            block_bcast.clone(),
+                            envelope,
+                        )
+                        .await
+                        {
+                            error!("failed to dispatch frame: {e}");
                         }
-                    }
 
-                    // Yield before starting the next stream
-                    yield_now().await;
+                        // Yield before sending the next frame
+                        yield_now().await;
+                    }
                 }
 
-                //
-                Ok(())
-            },
-        );
+                // Yield before starting the next stream
+                yield_now().await;
+            }
+
+            //
+            Ok(())
+        });
     }
 
     tx_l

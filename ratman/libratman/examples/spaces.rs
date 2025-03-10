@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use libratman::{
-    api::{default_api_bind, RatmanIpc, RatmanIpcExtV1, RatmanNamespaceExt},
+    api::{default_api_bind, RatmanIpc, RatmanIpcExtV1, RatmanSpaceExt},
     generate_space_key, tokio, Result,
 };
 
@@ -15,13 +15,13 @@ async fn main() -> Result<()> {
     // Start advertising the address on the network
     ipc.addr_up(auth, addr).await?;
 
-    // Create the namespace key and register it with the router
+    // Create the space key and register it with the router
     let (space_addr, space_key) = generate_space_key();
-    ipc.namespace_register(auth, space_addr, space_key).await?;
+    ipc.space_load(space_addr, space_key).await?;
 
-    // Send an anycast probe to all other namespace participants
+    // Send an anycast probe to all other space participants
     let peers = ipc
-        .namespace_anycast_probe(addr, auth, space_addr, Duration::from_millis(500))
+        .space_anycast_probe(addr, auth, space_addr, Duration::from_millis(500))
         .await?;
 
     println!("Found these peers on the network {peers:?}");

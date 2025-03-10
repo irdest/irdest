@@ -7,7 +7,8 @@ use crate::{
     links::{GenericEndpoint, LinksMap},
     procedures,
     protocol::Protocol,
-    routes::{EpNeighbourPair, RouteTable}, storage::MetadataDb,
+    routes::{EpNeighbourPair, RouteTable},
+    storage::MetadataDb,
 };
 use chrono::Utc;
 use libratman::{
@@ -109,8 +110,8 @@ pub(crate) async fn exec_switching_batch(
                             .entry(EpNeighbourPair(id, neighbour.assume_single()))
                             .or_default()) = router_meta.available_buffer;
 
-			// metadata.neighbours.insert(key, value)
-			
+                        // metadata.neighbours.insert(key, value)
+
                         // todo
                     }
                     Err(e) => {

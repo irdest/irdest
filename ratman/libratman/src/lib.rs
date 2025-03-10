@@ -1,19 +1,4 @@
-//! Ratman client & interface library
-//!
-//! Ratman is a packet router daemon, which can either run
-//! stand-alone, or be embedded into existing applications.  This
-//! library provides type definitions, utilities, and interfaces to
-//! interact with the Ratman router core.
-//!
-//! This library can be used in two different ways (not mutually
-//! exclusive, although doing both at the same time would be a bit
-//! weird.  But we won't judge you).
-//!
-//! 1. To write a ratman-client application.  The main types for this
-//! can be found in `api`.
-//!
-//! 2. To write a ratman-netmod driver.  The main trait type to
-//! implement can be found in `endpoint`.
+#![doc = include_str!("../README.md")]
 
 // We include all tracing macros to make our life easier
 #[macro_use]

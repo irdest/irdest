@@ -1,19 +1,7 @@
-# Ratman client & interface library
+# libratman
 
-Ratman is a packet router daemon, which can either run stand-alone, or
-be embedded into existing applications.  This library provides type
-definitions, utilities, and interfaces to interact with the Ratman
-router core.
+**libratman** is a  core part of the Irdest project, providing shared utilities for `ratmand` (a routing daemon), `ratcat` (a messaging tool), and `ratctl` (a control utility). It includes type definitions, encoding logic, and functions used by these tools and `netmod` libraries—userspace drivers for network hardware and protocols.
 
-This library can be used in two different ways (not mutually
-exclusive, although doing both at the same time would be a bit weird.
-But hey, we won't judge you).
+The crate offers two optional features: `client` and `netmod`. The `client` feature enables applications to connect to `ratmand` via a TCP socket for tasks like address management or message streaming, used by `ratctl` and `ratcat`.  The `netmod` feature provides tools for building `netmod` drivers, handling frame processing and link configuration independently of the router.
 
-- You want to write a ratman-client application (i.e. a program that
-uses Irdest as its network backend).  Use the types and functions
-exported from the [client](crate::client) module
-- You want to write a ratman-netmod driver (i.e. a plug-in for Ratman
-to peer with other instances via some new communication channel).  Use
-the types and functions exported from the [netmod](crate::netmod)
-module
-
+If you're looking at these crate docs you're most likely interested in writing an application (or integration) for Ratman, which means you should check out the [api] module!

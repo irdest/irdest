@@ -272,11 +272,8 @@ pub trait RatmanSpaceExt: RatmanIpcExtV1 {
     ///
     /// This function returns a non-fatal error if the namespace key
     /// has already been registered
-    async fn space_load(
-        self: &Arc<Self>,
-        space_pubkey: Address,
-        space_priv: Ident32,
-    ) -> Result<()>;
+    async fn space_load(self: &Arc<Self>, space_pubkey: Address, space_priv: Ident32)
+        -> Result<()>;
 
     /// List all locally available namespaces that have previously been
     /// registered on this system

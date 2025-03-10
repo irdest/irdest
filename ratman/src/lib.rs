@@ -1,6 +1,11 @@
-// SPDX-FileCopyrightText: 2019-2023 Katharina Fey <kookie@spacekookie.de>
+// SPDX-FileCopyrightText: 2019-2025 Katharina Fey <kookie@spacekookie.de>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later WITH LicenseRef-AppStore
+
+// This feels bad, but the stuff that's 'unused' is just WIP features that will get finished
+// eventually.  It's ok to have code that's not actively being used actually.  Not all features can
+// manifest themselves into existence within a single release cycle.
+#![allow(unused)]
 
 //! # Ratman packet router
 //!
@@ -18,9 +23,8 @@
 //! See the Irdest repository README for additional permissions
 //! granted by the authors for this code.
 
-use std::path::PathBuf;
-
 use libratman::rt::AsyncSystem;
+use std::path::PathBuf;
 
 #[macro_use]
 extern crate tracing;
@@ -47,9 +51,7 @@ mod test;
 
 /// Start a new Ratman router instance with a launch configuration
 ///
-/// When embedding Ratman into an existing application context (i.e. a
-/// mobile app), take care to provide a [Config](crate::util::Config)
-/// that will initialise drivers and OS operations correctly.
+/// When embedding Ratman into an existing application context (i.e. a mobile app), take care to provide a [ConfigTree](crate::config::ConfigTree) that will initialise drivers and OS operations correctly.
 ///
 /// Special permissions may be required for certain features!
 pub fn start_with_configuration(cfg: config::ConfigTree, state_path: PathBuf) {

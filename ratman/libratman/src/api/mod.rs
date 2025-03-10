@@ -1,15 +1,25 @@
-//! Ratman client bindings library
+//! Ratman client API
 //!
-//! To learn more about how to use this library we recommend you read our
-//! developer manual: https://docs.irde.st/developer/technical/client.html
+//! This module provides the primary interface for applications to interact with the `ratmand` router via asynchronous IPC (Inter-Process Communication).
 //!
-//! Fundamentally this library connects you to an instance of the Ratman packet
-//! router.  It allows you to manage addresses, namespaces, message streams, and
-//! subscriptions.
+//! It exposes methods to manage network addresses (`addr_create`, `addr_up`), discover peers (`peers_list`), and send/receive message streams (`send_to`), abstracting low-level details like socket management and frame serialization.
+//!
+//! Both `libratman` and `ratmand` are built on [tokio](https://tokio.rs), meaning your application _should_ also use it as a runtime to avoid compatibility issues.
+//!
+//! The module’s core struct `RatmanIpc` handles connection lifecycle, while versioned extension traits (e.g., `RatmanIpcExtV1`, `RatmanStreamExtV1`) opt-into different function scopes on the router.  Ideally this enables you to focus on writing your application, without having to worry about encoding, framing, or routing in a mesh network.
+//!
+//! Following is an example putting together a small application that registers an address, picks the first available peer from the network and sends whatever is coming in from `stdin` their way (they might block you).
 //!
 //! ## Example
 //!
 //! ```rust
+//! # mod fake_main {
+//! use libratman::{
+//!     api::{default_api_bind, RatmanIpc, RatmanIpcExtV1, RatmanStreamExtV1},
+//!     types::{LetterheadV1, Recipient},
+//!     Result,
+//! };
+//!
 //! #[tokio::main]
 //! async fn main() -> Result<()> {
 //!     let ipc = RatmanIpc::start(default_api_bind()).await?;
@@ -34,6 +44,11 @@
 //!         &mut stdin,
 //!     )
 //!     .await?;
+//!
+//!     Ok(())
+//! }
+//! # }
+//! # fn main() {}
 //! ```
 //!
 //! You will find additional examples in the libratman sources.  And if you have

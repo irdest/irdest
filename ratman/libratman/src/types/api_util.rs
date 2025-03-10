@@ -93,7 +93,7 @@ impl FrameParser for AddrAuth {
     }
 }
 
-/// Apply a tri-state modification to an existing Option<T>
+/// Apply a tri-state modification to an existing `Option<T>`
 pub enum Modify<T> {
     Keep,
     Change(T),

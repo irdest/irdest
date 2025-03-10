@@ -6,65 +6,74 @@ follow the order `Releases`, `Added`, `Changed`, `Fixed`, `Removed`, and
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## 0.7.0 (2025-03-10)
+
+Since the last release we moved infrastructure from our own gitlab to [codeberg.org](https://codeberg.org), an organisation who's values align very much with our own, and that hosts infrastructure outside the US (which was the initial requirement making us self-host).  At the moment nobody on the team has time anymore to maintain the servers, so this will make life easier for everyone.
+
+This release encompasses a lot of smaller changes as well as preparatory work for big future additions.
+
+Also, since the https://irde.st website is currently down, the https://codeberg.org/irdest/irdest is (for now) the only way to get access to the software.
+
+### Releases
+
+- Ratman daemon `0.7.0`
+- ratcat `0.7.0`
+- ratctl `0.7.0`
+- libratman `0.7.0`
+
+### Added
+
+- Ratman router daemon dashboard was fixed and improved visually.  It's still barebones, but much better than before
+- Developer documentation for sending messages with `libratman`
+- Bandwidth/ throughput metrics collection in endponits, currently only used for basic routing decisions (see 'Changes' below)
+- "Spaces" (group addresses), which support regular message sending as well as anycast probes.  Spaces can be used in different ways, outlined in the developer manual
+
+### Changed
+
+- Routing is now done based on connection metrics.  "Live" (greedy in terms of latency) connections are scored differently than "dead" (greedy in terms of throughput).  This behaviour should become configurable in the future
+- Update developer manual bibliography with more literature that has informed our development in the last few months
+
+### Fixed
+
+- Dramatically reduced memory allocation by ratman daemon
+- Made multicast errors in netmod-lan non-fatal
+- Fixed the `idpath` command on `ratcat` and `ratctl`
+
 
 ## 0.6.0 (2024-06-28)
 
-The probably biggest Irdest release so far.  It brings many minor and some major
-changes to the codebase and usability of the project.  Importantly, Irdest is
-once again grant funded (via NLnet ♥).
+The probably biggest Irdest release so far.  It brings many minor and some major changes to the codebase and usability of the project.  Importantly, Irdest is once again grant funded (via NLnet ♥).
 
-The changelog has also been changed in structure, since this monorepo consists
-of lots of components, each with their own release versions.  We'll experiment
-with different changelog formats for future releases to make it more clear what
-changes were made to which components.
+The changelog has also been changed in structure, since this monorepo consists of lots of components, each with their own release versions.  We'll experiment with different changelog formats for future releases to make it more clear what changes were made to which components.
 
 Hope you enjoy!
 
 ### Releases
 
-- Ratman daemon (ratmand) `0.5.0`
-- ratcat `0.5.0`
-- ratctl `0.5.0`
-- libratman `0.5.0`
+- Ratman daemon (ratmand) `0.6.0`
+- ratcat `0.6.0`
+- ratctl `0.6.0`
+- libratman `0.6.0`
 
 ### Added
 
-- `ratmand generate` command to pre-generate a ratmand configuration.  Overrides
-  can be applied with the `--patch` (for simple key=value configuration
-  settings) and `--add-peer` (for peers) arguments.
-- Locally registered addresses and routing tables are now persisted on disk
-  between restarts.
-- Frames that fail to be delivered are now cached in an on-disk journal instead
-  of being dropped
-- Blocks are cached on disk while a large message stream is being encoded.  For
-  large message streams this means that the router will no longer run out of
-  memory and crash.  Currently we hold back the whole message stream until all
-  blocks are encoded to allow the manifest to be sent first.
-- Clients can now subscribe to an address (if they posses the auth token) or
-  namespace to be notified of future messages.  Missed messages are replayed
-  when restoring a subscription from a restarting client.
-- Domain name resolution in `netmod-inet`: you can now list your peers as any
-  DNS accessible domain entry and ratmand will resolve the IP address itself.
-  This may fail if no resolver is available on your system.
+- `ratmand generate` command to pre-generate a ratmand configuration.  Overrides can be applied with the `--patch` (for simple key=value configuration settings) and `--add-peer` (for peers) arguments.
+- Locally registered addresses and routing tables are now persisted on disk between restarts.
+- Frames that fail to be delivered are now cached in an on-disk journal instead of being dropped
+- Blocks are cached on disk while a large message stream is being encoded.  For large message streams this means that the router will no longer run out of memory and crash.  Currently we hold back the whole message stream until all blocks are encoded to allow the manifest to be sent first.
+- Clients can now subscribe to an address (if they posses the auth token) or namespace to be notified of future messages.  Missed messages are replayed when restoring a subscription from a restarting client.
+- Domain name resolution in `netmod-inet`: you can now list your peers as any DNS accessible domain entry and ratmand will resolve the IP address itself. This may fail if no resolver is available on your system.
 
 ### Changed
 
-- Router dashboard now updates automatically and shows connection statistics for
-  peers
+- Router dashboard now updates automatically and shows connection statistics for peers
 - User and developer manuals were completely overhauled
-- The Ratman configuration now uses the KDL language, which supports comments
-  and nested blocks, without getting unwielding to edit.
+- The Ratman configuration now uses the KDL language, which supports comments and nested blocks, without getting unwielding to edit.
 - The `ratcat` CLI has changed significantly
-  - Managament functions (handle addresses, subscriptions, and in future
-  contacts, peers, links, routes, ...)  has been moved to `ratctl`
-  - Stream handling (sending and receiving data) remains in `ratcat`, with
-    easier commandline interfaces.
-- On-disk state has been changed from a random assortment of json files to the
-  [fjall](https://github.com/fjall-rs/fjall) embedded database, enabling better
-  persistence and upgradability.
-- Entries in the routing table support more than a single link, and will update
-  based on the most recently received announcement.  This behaviour is temporary
-  and will be replaced with real route scoring in the next release.
+  - Managament functions (handle addresses, subscriptions, and in future contacts, peers, links, routes, ...)  has been moved to `ratctl`
+  - Stream handling (sending and receiving data) remains in `ratcat`, with easier commandline interfaces.
+- On-disk state has been changed from a random assortment of json files to the [fjall](https://github.com/fjall-rs/fjall) embedded database, enabling better persistence and upgradability.
+- Entries in the routing table support more than a single link, and will update based on the most recently received announcement.  This behaviour is temporary and will be replaced with real route scoring in the next release.
 
 
 ### Fixed
@@ -81,22 +90,13 @@ Hope you enjoy!
 
 ### Removed
 
-- `armv7l` CI pipelines were soft-removed since the new database backend doesn't
-  currently support 32-bit systems.  This will change with the next release of
-  fjall, but for the time being we're disabling those targets.
-- The web dashboard is currently forcably disabled.  Some diagnostics can be
-  retrieved via `ratctl peers` or `ratctl status`.
+- `armv7l` CI pipelines were soft-removed since the new database backend doesn't currently support 32-bit systems.  This will change with the next release of fjall, but for the time being we're disabling those targets.
+- The web dashboard is currently forcably disabled.  Some diagnostics can be retrieved via `ratctl peers` or `ratctl status`.
 
 ### Known bugs
 
-- Due to [kdl issue #65](https://github.com/kdl-org/kdl-rs/issues/65) insertions
-  made to the `peers` block of the ratmand configuration produce wrong
-  formatting for the first entry.
-- Very arge message streams (>1GB) sometimes get stuck in decoding.  For general
-  performance reasons it's recommended to chunk these (in `ratcat` this can be
-  done via the `send -z _` parameter) into smaller sub-streams.  On the
-  receiving end either use `ratcat recv -c 0` or calculate the exact number of
-  stream segments you expect.  The Rust API similarly exposes this feature.
+- Due to [kdl issue #65](https://github.com/kdl-org/kdl-rs/issues/65) insertions made to the `peers` block of the ratmand configuration produce wrong formatting for the first entry.
+- Very arge message streams (>1GB) sometimes get stuck in decoding.  For general performance reasons it's recommended to chunk these (in `ratcat` this can be done via the `send -z _` parameter) into smaller sub-streams.  On the receiving end either use `ratcat recv -c 0` or calculate the exact number of stream segments you expect.  The Rust API similarly exposes this feature.
 
 
 ## 0.5.0 (2023-08-08)
@@ -126,17 +126,13 @@ Hope you enjoy!
 
 - `ratmand` supports `--daemonize` and `--pidfile` CLI arguments
 - Support socket activating `ratmand` on the API socket
-- `ratmand` now stores configuration values in
-  `$XDG_CONFIG_HOME/ratmand/config.json` and can be launched without providing
-  any command line arguments
-- `ratmand` now serves a simple dashboard on `localhost:8090` to list known
-  network addresses
+- `ratmand` now stores configuration values in `$XDG_CONFIG_HOME/ratmand/config.json` and can be launched without providing any command line arguments
+- `ratmand` now serves a simple dashboard on `localhost:8090` to list known network addresses
 
 
 ### Changed
 
-- Network flood messages are now namespaced via an address, instead of going to
-  every participant
+- Network flood messages are now namespaced via an address, instead of going to every participant
 - `netmod-inet` has been simplified
 
 

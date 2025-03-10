@@ -26,7 +26,7 @@ pub async fn receive(
             matches
                 .get_one::<String>("recv-filter")
                 .and_then(|buf| Ident32::try_from(buf.as_str()).ok())
-		// [fixme]: unsure whether this is actually the case, but better safe for now
+                // [fixme]: unsure whether this is actually the case, but better safe for now
                 .ok_or(RatmanError::User(UserError::MissingInput(
                     "[recv-filter] is mandatory when also providing -s".into(),
                 )))?,

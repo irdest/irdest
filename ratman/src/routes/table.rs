@@ -13,11 +13,16 @@ use crate::{
 };
 use chrono::Utc;
 use libratman::{
-    api::types::PeerEntry, endpoint::NeighbourMetrics, frame::carrier::AnnounceFrameV1, tokio::{
+    api::types::PeerEntry,
+    endpoint::NeighbourMetrics,
+    frame::carrier::AnnounceFrameV1,
+    tokio::{
         sync::{mpsc::channel, RwLock},
         task::{spawn_blocking, spawn_local},
         time::sleep,
-    }, types::{Address, Ident32, Neighbour}, NonfatalError, RatmanError, Result
+    },
+    types::{Address, Ident32, Neighbour},
+    NonfatalError, RatmanError, Result,
 };
 use serde::{Deserialize, Serialize};
 use std::{

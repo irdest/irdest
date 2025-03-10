@@ -6,6 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-libratman = { version = "0.6", path = "../../ratman/libratman", features = ["netmod"] }
+libratman = { path = "../../ratman/libratman", features = ["netmod"] }
 serde = "1.0"
 bincode = "1.0"

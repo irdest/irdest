@@ -16,7 +16,7 @@ pub type Result<T> = std::result::Result<T, RatmanError>;
 /// A central error facade for Ratman and tools
 ///
 /// Every error must have a namespace.  When mapping an existing error
-/// type into RatmanError care should be taken to not overload a
+/// type into `RatmanError` care should be taken to not overload a
 /// particular domain.  For example: having a single I/O error makes
 /// sense, instead of having.  However, consider giving it a secondary
 /// Error, to express the context that a particular "base error"
@@ -171,7 +171,7 @@ pub enum ScheduleError {
 /// subscriptions, tokens, etc).
 ///
 /// Importantly, more base-type errors (such as I/O and encoding) are
-/// handled by [RatmanError](crate::RatmanError) instead!
+/// handled by [`RatmanError`] instead!
 #[derive(Debug, thiserror::Error, Serialize, Deserialize)]
 pub enum ClientError {
     #[error("ratman-client ({0}) and router ({1}) have incompatible versions")]
