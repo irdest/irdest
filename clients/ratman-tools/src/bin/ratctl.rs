@@ -239,19 +239,23 @@ fn main() {
         let m = cli.get_matches();
         let base_args = parse_base_args(&m);
 
-        match run_program(m, base_args).await {
+        match dbg!(run_program(m, base_args).await) {
             Ok(()) => std::process::exit(0),
 
             Err(RatmanError::User(u)) => {
-                eprintln!("You did it wrong: {u}");
+                eprintln!("Invalid usage: {u}");
                 std::process::exit(1);
             }
             Err(RatmanError::ClientApi(c)) => {
                 eprintln!("Client-Router communication error: {c}");
                 std::process::exit(2);
             }
+            Err(RatmanError::Io(e)) | Err(RatmanError::TokioIo(e)) => {
+                eprintln!("ratctl failed to connect to ratman daemon: {e}");
+                std::process::exit(2);
+            }
             Err(e) => {
-                eprintln!("ratcat encountered an error: {e}");
+                eprintln!("ratctl encountered an error: {e}");
                 std::process::exit(2);
             }
         }

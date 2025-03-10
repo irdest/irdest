@@ -1,13 +1,5 @@
-# Ratman client lib
+# Basic client API example
 
-This is the client library used to write applications for Ratman.  Currently only a [Rust](https://rust-lang.org) implementation exists.  The raw protocol is documented in the next chapter.
-
-You can find `ratman-client` on
-[crates.io](https://crates.io/crates/ratman-client) and its documentation on
-[docs.rs](https://docs.rs/ratman-client)!
-
-
-## Getting started
 
 There are three main steps to using the client-lib:
 
@@ -16,28 +8,25 @@ There are three main steps to using the client-lib:
 3. Message sending and receiving
 
 
-### Step 0:
+## Setup
 
 Include libratman in your `Cargo.toml`.  By default libratman enables both "client" and "netmod" features.  If you only want to implement a client, you can disable the default features and only enable the "client" feature explicitly:
 
 ```toml
-ratman = { version = "0.6.0", no-default-features = true, features = [ "client "]}
+ratman = { version = "0.6.0", no-default-features = true, features = [ "client" ] }
 ```
-
-
-### IPC initialisation
 
 By default the IPC socket for Ratman is running on `localhost:5852`. Many of the Irdest tools allow you to overwrite this socket address, to allow for local testing with multiple routers.  We recommend that your application expose this option to users as well!
 
 
-### Address registration
+## Address registration
 
 An address for Ratman is associated with a cryptographic key pair.  Currently we don't expose the private key from the router to applications (which will probably change in the future!)
 
 When your application is given an address you should store it in your application state somewhere, along with the corresponding address auth token.  These will be important the next time your application starts.  *For privacy reasons you should encrypt this data with a user password!*
 
 
-### Message sending and receiving
+## Message sending and receiving
 
 Every "message" in Irdest is a stream, which is encoded into encrypted data blocks, along with a manifest which contains the root block reference and key.  Currently the manifest is not encrypted, meaning that anyone intercepting it will be able to decode the rest of the block stream.
 
@@ -57,9 +46,9 @@ A message sent to the namespace
 `ECB4-30B9-4416-C403-716F-601F-FC56-9AD3-BD2E-3892-227A-84AD-E6FC-A1CE-0A92-03F6` will be delivered to all applications that are _listening_ on this namespace.
 
 
-### API example
+## Putting it all together
 
-This is a small program demonstrating the most basic usage of the ratman-client SDK.  At start-up it registers a new address, listens to any incoming messages, and returns them as they are to the sender.
+This is a small program demonstrating the most basic usage of the ratman-client SDK.  At start-up it registers a new address, listens to any incoming messages, and returns them as they are to their sender.
 
 ```rust
 use libratman::{
@@ -91,16 +80,3 @@ async fn main() -> Result<()> {
 }
 ```
 
-
-## Additional concepts
-
-Generally we recommend reading the [Ratman Internals](./internals/index.md) to gain additional context on how Irdest works.  This following section will outline some of the API client concepts and how to use them.
-
-
-### Namespaces
-
-A namespace is a special type of address in Irdest.  While normal addresses are specific to one device, a namespace can be shared across multiple devices.
-
-The creation process is also slightly different.  While `addr_create(...)` only takes a single parameter (an optional name), and creates an address key for you (which is not returned from the API), the function `namespace_register(...)` takes both the public and private key parts that the namespace consists of.
-
-Namespace data (private and public keys) need to be included in every application that wishes to use the namespace.  Messages to a namespace are still encrypted and signed, but since the key is shared across different application instances, messages should not be considered to be private.

@@ -3,7 +3,7 @@ use clap::ArgMatches;
 use libratman::{
     api::{RatmanIpc, RatmanSpaceExt},
     tokio::{
-        fs::File,
+        fs::{File, OpenOptions},
         io::{AsyncReadExt, AsyncWriteExt},
     },
     types::{Address, Ident32},
@@ -12,11 +12,16 @@ use libratman::{
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
 pub async fn generate(_: &Arc<RatmanIpc>, base_args: BaseArgs, matches: &ArgMatches) -> Result<()> {
-    let (_, _) = base_args.identity_data?;
     let space_file = matches.get_one::<String>("file_name").unwrap();
     let (pubkey, privkey) = libratman::generate_space_key();
 
-    let mut f = File::create(space_file).await?;
+    let mut f = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(true)
+        .open(space_file)
+        .await?;
+
     f.write_all(
         format!(
             "{}",
@@ -36,7 +41,6 @@ pub async fn generate(_: &Arc<RatmanIpc>, base_args: BaseArgs, matches: &ArgMatc
 }
 
 pub async fn load(ipc: &Arc<RatmanIpc>, base_args: BaseArgs, matches: &ArgMatches) -> Result<()> {
-    let (_, auth) = base_args.identity_data?;
     let space_file = matches.get_one::<String>("file_name").unwrap();
 
     let mut f = File::open(space_file).await?;
@@ -64,7 +68,7 @@ pub async fn load(ipc: &Arc<RatmanIpc>, base_args: BaseArgs, matches: &ArgMatche
         }
     };
 
-    ipc.space_load(auth, pubkey, privkey).await?;
+    ipc.space_load(pubkey, privkey).await?;
 
     Ok(())
 }

@@ -728,7 +728,6 @@ impl RatmanStreamExtV1 for RatmanIpc {
 impl RatmanSpaceExt for RatmanIpc {
     async fn space_load(
         self: &Arc<Self>,
-        auth: AddrAuth,
         space_pubkey: Address,
         space_private_key: Ident32,
     ) -> Result<()> {
@@ -737,7 +736,7 @@ impl RatmanSpaceExt for RatmanIpc {
             .write_microframe(
                 MicroframeHeader {
                     modes: cm::make(cm::SPACE, cm::CREATE),
-                    auth: Some(auth),
+                    auth: None,
                     ..Default::default()
                 },
                 NamespaceRegister {

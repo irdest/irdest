@@ -274,7 +274,6 @@ pub trait RatmanSpaceExt: RatmanIpcExtV1 {
     /// has already been registered
     async fn space_load(
         self: &Arc<Self>,
-        auth: AddrAuth,
         space_pubkey: Address,
         space_priv: Ident32,
     ) -> Result<()>;

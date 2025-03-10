@@ -141,11 +141,15 @@ fn main() {
                 std::process::exit(0);
             }
             Err(RatmanError::User(u)) => {
-                eprintln!("You did it wrong: {u}");
+                eprintln!("Invalid usage: {u}");
                 std::process::exit(1);
             }
             Err(RatmanError::ClientApi(c)) => {
                 eprintln!("Client-Router communication error: {c}");
+                std::process::exit(2);
+            }
+            Err(RatmanError::Io(e)) | Err(RatmanError::TokioIo(e)) => {
+                eprintln!("ratcat failed to connect to ratman daemon: {e}");
                 std::process::exit(2);
             }
             Err(e) => {
